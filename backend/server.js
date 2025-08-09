@@ -96,45 +96,39 @@ const corsOptions = {
   origin: function (origin, callback) {
     console.log('[CORS] Request from origin:', origin);
 
-    // FOR TESTING ONLY: Allow all origins temporarily to diagnose issues
-    // This should be removed after testing
-    if (process.env.NODE_ENV === 'production' && process.env.CORS_BYPASS === 'true') {
-      console.warn('[CORS] WARNING: CORS bypass enabled in production - SECURITY RISK');
-      return callback(null, true);
-    }
-
-    // In development, allow requests with no origin (like curl, Postman)
-    if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        // For now, allow no-origin requests in production for troubleshoot
-        console.warn('[CORS] Allowing no-origin request in production for troubleshooting');
-        return callback(null, true);
-      } else {
-        console.log('[CORS] Request with no origin allowed in development');
-        return callback(null, true);
+    // PRODUCTION SECURITY: STRICT ORIGIN VALIDATION ONLY
+    if (process.env.NODE_ENV === 'production') {
+      // NO bypass allowed in production - SECURITY FIRST
+      if (!origin) {
+        console.error('[CORS] BLOCKED: No origin header in production request');
+        const error = new Error('CORS policy: Origin required in production');
+        error.status = 403;
+        return callback(error, false);
       }
-    }
-
-    // More flexible origin checking - exact match or pattern matching
-    const originMatches = allowedOrigins.some(allowedOrigin => {
-      // Exact match
-      if (allowedOrigin === origin) return true;
-
-      // Netlify subdomain pattern match
-
-
-      return false;
-    });
-
-    if (originMatches) {
-      console.log('[CORS] Origin allowed:', origin);
+      
+      // Only allow exact frontend domain in production
+      if (origin !== process.env.FRONTEND_URL) {
+        console.error(`[CORS] BLOCKED: Unauthorized origin: ${origin}`);
+        const error = new Error(`CORS policy: Origin ${origin} not authorized`);
+        error.status = 403;
+        return callback(error, false);
+      }
+      
+      console.log(`[CORS] AUTHORIZED: ${origin}`);
       return callback(null, true);
     }
 
-    // Block disallowed origins but log them thoroughly
-    console.error('[CORS] Origin blocked:', origin);
-    console.error('[CORS] Allowed origins:', allowedOrigins);
-    return callback(new Error(`CORS: Origin ${origin} not allowed`), false);
+    // Development mode - allow localhost origins only
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`[CORS] Dev mode - allowed: ${origin || 'no-origin'}`);
+      return callback(null, true);
+    }
+    
+    // Reject all unauthorized origins
+    console.error(`[CORS] BLOCKED: Unauthorized origin: ${origin}`);
+    const error = new Error(`CORS policy: Origin ${origin} not authorized`);
+    error.status = 403;
+    return callback(error, false);
   },
   // Extended methods and headers for better compatibility
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -215,163 +209,119 @@ app.use((req, res, next) => {
   next();
 });
 
+// Import logger for consistent detailed logging
+const logger = require("./utils/logger");
+
 // Health check endpoint for Render deployment
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
-// EMERGENCY DIAGNOSTIC ROUTE - for debugging deployment issues
-app.get("/emergency-diagnostics", (req, res) => {
-  console.log("EMERGENCY DIAGNOSTICS ENDPOINT ACCESSED");
-
-  // Get information about the environment
-  const diagnosticInfo = {
-    environment: process.env.NODE_ENV,
-    port: process.env.PORT,
-    mongoUriExists: !!process.env.MONGO_URI,
-    jwtSecretExists: !!process.env.JWT_SECRET,
-    headers: req.headers,
-    buildDirectories: {
-      staticPath: path.join(__dirname, "../frontend/build"),
-      staticPathExists: require("fs").existsSync(
-        path.join(__dirname, "../frontend/build")
-      ),
-      indexPath: path.resolve(
-        __dirname,
-        "../",
-        "frontend",
-        "build",
-        "index.html"
-      ),
-      indexPathExists: require("fs").existsSync(
-        path.resolve(__dirname, "../", "frontend", "build", "index.html")
-      )
-    },
-    serverUptime: process.uptime(),
-    memoryUsage: process.memoryUsage(),
-    time: new Date().toISOString()
-  };
-
-  if (diagnosticInfo.buildDirectories.staticPathExists) {
-    try {
-      // List files in build directory
-      const files = require("fs").readdirSync(
-        diagnosticInfo.buildDirectories.staticPath
-      );
-      diagnosticInfo.buildDirectories.files = files;
-
-      // Check if index.html has content
-      if (diagnosticInfo.buildDirectories.indexPathExists) {
-        const indexContent = require("fs").readFileSync(
-          diagnosticInfo.buildDirectories.indexPath,
-          "utf8"
-        );
-        diagnosticInfo.buildDirectories.indexContentLength =
-          indexContent.length;
-        diagnosticInfo.buildDirectories.indexContentPreview =
-          indexContent.substring(0, 100) + "...";
-      }
-    } catch (err) {
-      diagnosticInfo.buildDirectories.error = err.message;
+// CRITICAL SECURITY: Block ALL external requests (curl, postman, direct HTTP)
+// This blocks requests that bypass browser CORS protection
+app.use('/api', (req, res, next) => {
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+  const userAgent = req.headers['user-agent'] || '';
+  const host = req.headers.host;
+  
+  logger.info('SECURITY', 'Request validation', {
+    ip: req.ip,
+    origin: origin || 'NO_ORIGIN',
+    referer: referer || 'NO_REFERER', 
+    userAgent: userAgent,
+    host: host,
+    path: req.path,
+    method: req.method
+  });
+  
+  // Allow health check to pass through
+  if (req.path === '/health') {
+    return next();
+  }
+  
+  // PRODUCTION: Strict validation - BLOCK ALL external requests
+  if (process.env.NODE_ENV === 'production') {
+    // Must have origin from authorized frontend
+    if (!origin || origin !== process.env.FRONTEND_URL) {
+      logger.warn('SECURITY', 'BLOCKED: Unauthorized origin in production', {
+        ip: req.ip,
+        origin: origin || 'MISSING',
+        userAgent: userAgent,
+        path: req.path
+      });
+      return res.status(403).json({ 
+        error: 'Access denied', 
+        code: 'UNAUTHORIZED_ORIGIN',
+        message: 'This API only accepts requests from authorized frontend applications'
+      });
+    }
+    
+    // Must have referer from authorized frontend 
+    if (!referer || !referer.startsWith(process.env.FRONTEND_URL)) {
+      logger.warn('SECURITY', 'BLOCKED: Invalid referer in production', {
+        ip: req.ip,
+        referer: referer || 'MISSING',
+        userAgent: userAgent,
+        path: req.path
+      });
+      return res.status(403).json({ 
+        error: 'Access denied',
+        code: 'INVALID_REFERER',
+        message: 'Invalid request source' 
+      });
+    }
+    
+    // Block suspicious user agents (curl, postman, wget, etc)
+    const suspiciousAgents = ['curl', 'postman', 'wget', 'httpie', 'insomnia', 'rest-client', 'python-requests'];
+    const isSuspicious = suspiciousAgents.some(agent => 
+      userAgent.toLowerCase().includes(agent.toLowerCase())
+    );
+    
+    if (isSuspicious || !userAgent || userAgent.length < 10) {
+      logger.warn('SECURITY', 'BLOCKED: Suspicious user agent', {
+        ip: req.ip,
+        userAgent: userAgent || 'MISSING',
+        path: req.path,
+        isSuspicious: isSuspicious
+      });
+      return res.status(403).json({ 
+        error: 'Access denied',
+        code: 'SUSPICIOUS_CLIENT',
+        message: 'Direct API access not allowed'
+      });
     }
   }
-
-  // Create simple HTML response with diagnostic info
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>GradeBook Emergency Diagnostics</title>
-      <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
-        h1 { color: #333; }
-        .success { color: green; }
-        .error { color: red; }
-      </style>
-    </head>
-    <body>
-      <h1>GradeBook Emergency Diagnostics</h1>
-      <h2>Server Environment</h2>
-      <pre>${JSON.stringify(diagnosticInfo, null, 2)}</pre>
-
-      <h2>Manual Authentication Test</h2>
-      <form id="authForm" action="/api/users/login" method="post">
-        <div>
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email" required>
-        </div>
-        <div style="margin-top: 10px;">
-          <label for="password">Password:</label>
-          <input type="password" id="password" name="password" required>
-        </div>
-        <div style="margin-top: 10px;">
-          <button type="submit">Test Login</button>
-        </div>
-      </form>
-
-      <div id="result" style="margin-top: 20px;"></div>
-
-      <script>
-        document.getElementById('authForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const email = document.getElementById('email').value;
-          const password = document.getElementById('password').value;
-
-          try {
-            const response = await fetch('/api/users/login', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            const resultDiv = document.getElementById('result');
-            if (response.ok) {
-              resultDiv.innerHTML =
-                '<div class="success">Login Successful!</div>' +
-                '<h3>Auth Data:</h3>' +
-                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-
-              // Store token for testing
-              localStorage.setItem('testToken', data.token);
-
-              // Test a protected endpoint
-              if (data.token) {
-                const meResponse = await fetch('/api/users/me', {
-                  headers: {
-                    'Authorization': 'Bearer ' + data.token
-                  }
-                });
-
-                const meData = await meResponse.json();
-                resultDiv.innerHTML +=
-                  '<h3>Protected Endpoint Test:</h3>' +
-                  '<pre>' + JSON.stringify(meData, null, 2) + '</pre>';
-              }
-            } else {
-              resultDiv.innerHTML =
-                '<div class="error">Login Failed</div>' +
-                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-            }
-          } catch (error) {
-            document.getElementById('result').innerHTML =
-              '<div class="error">Error: ' + error.message + '</div>';
-          }
-        });
-      </script>
-    </body>
-    </html>
-  `;
-
-  res.send(htmlContent);
+  
+  // Development mode: Still block obvious external tools
+  if (process.env.NODE_ENV !== 'production') {
+    const suspiciousAgents = ['curl', 'postman', 'wget', 'httpie'];
+    const isSuspicious = suspiciousAgents.some(agent => 
+      userAgent.toLowerCase().includes(agent.toLowerCase())
+    );
+    
+    if (isSuspicious) {
+      logger.warn('SECURITY', 'BLOCKED: External tool in dev mode', {
+        ip: req.ip,
+        userAgent: userAgent,
+        path: req.path
+      });
+      return res.status(403).json({ 
+        error: 'Access denied',
+        code: 'EXTERNAL_TOOL_BLOCKED',
+        message: 'External API tools are blocked. Use the frontend application.'
+      });
+    }
+  }
+  
+  logger.info('SECURITY', 'Request authorized', {
+    ip: req.ip,
+    path: req.path,
+    userAgent: userAgent.substring(0, 50) + '...'
+  });
+  
+  next();
 });
-
-// Import logger for consistent detailed logging
-const logger = require("./utils/logger");
 
 // Import migrations
 const { updateAllAdminPermissions } = require("./utils/migrations");
@@ -541,12 +491,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add rate limiting middleware for security
+// Add AGGRESSIVE rate limiting middleware for security under attack
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // Limit each IP to 500 requests per windowMs
-    message: "Too many requests from this IP, please try again later"
+    max: process.env.NODE_ENV === 'production' ? 100 : 500, // STRICT limit in production
+    message: "Rate limit exceeded - access temporarily restricted",
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+      // Never skip rate limiting in production
+      return false;
+    }
   })
 );
 
