@@ -1,0 +1,3 @@
+// This file has been completely removed as it contained legacy permission code
+// that is no longer needed. The current userController.js contains the updated
+// implementation without the legacy school permission system.
