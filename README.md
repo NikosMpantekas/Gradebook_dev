@@ -1,4 +1,4 @@
-# GradeBook - Progressive Web App
+# GradeBook - Progressive Web App - Beta (Dev) Channel
 
 A comprehensive Progressive Web App (PWA) for managing student grades and notifications across multiple platforms.
 
