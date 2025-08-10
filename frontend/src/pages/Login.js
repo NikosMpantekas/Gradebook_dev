@@ -17,7 +17,7 @@ import {
   Checkbox,
   CircularProgress,
 } from '@mui/material';
-import { LockOutlined as LockOutlinedIcon } from '@mui/icons-material';
+import { LockOutlined as LockOutlinedIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { login, reset } from '../features/auth/authSlice';
 
 const Login = () => {
@@ -204,6 +204,25 @@ const Login = () => {
             ) : (
               t('auth.loginButton')
             )}
+          </Button>
+          
+          <Button
+            component={RouterLink}
+            to="/"
+            startIcon={<ArrowBackIcon />}
+            variant="outlined"
+            fullWidth
+            sx={{ 
+              mb: 2,
+              color: 'text.secondary',
+              borderColor: 'text.secondary',
+              '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+              }
+            }}
+          >
+            Back to Homepage
           </Button>
           {/* Sign-up option removed as accounts are admin-created only */}
         </Box>
