@@ -3,17 +3,17 @@
   "name": "GradeBook",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64",
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "/logo192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "/logo512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
