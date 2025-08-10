@@ -301,6 +301,34 @@ const ContactMessages = () => {
                     Mark as {message.read ? 'Unread' : 'Read'}
                   </Button>
                   
+                  {/* Show Approve/Deny for password reset requests */}
+                  {message.subject?.startsWith('[Password Reset]') && (
+                    <>
+                      <Button
+                        size="small"
+                        color="success"
+                        onClick={() => { /* no-op for now */ }}
+                        sx={{ 
+                          width: { xs: '100%', sm: 'auto' },
+                          fontSize: { xs: '0.875rem', sm: '1rem' }
+                        }}
+                      >
+                        Approve Reset
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => { /* no-op for now */ }}
+                        sx={{ 
+                          width: { xs: '100%', sm: 'auto' },
+                          fontSize: { xs: '0.875rem', sm: '1rem' }
+                        }}
+                      >
+                        Deny
+                      </Button>
+                    </>
+                  )}
+                  
                   <Button
                     size="small"
                     color="primary"

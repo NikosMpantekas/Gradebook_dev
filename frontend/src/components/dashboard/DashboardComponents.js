@@ -436,7 +436,7 @@ export const RecentNotificationsPanel = ({ notifications = [], loading = false, 
             {notifications.slice(0, 5).map((notification, index) => {
               // Defensive rendering to prevent null access
               const safeNotification = notification || {};
-              const uniqueKey = safeNotification._id || `notification-${index}-${Date.now()}`;
+              const uniqueKey = safeNotification._id || `notification-${index}`;
               
               return (
                 <ListItemButton
@@ -608,7 +608,7 @@ export const RecentGradesPanel = ({ grades = [], loading = false, onViewAll, use
             {grades.slice(0, 5).map((grade, index) => {
               // Defensive rendering to prevent null access
               const safeGrade = grade || {};
-              const uniqueKey = safeGrade._id || `grade-${index}-${Date.now()}`;
+              const uniqueKey = safeGrade._id || `grade-${index}`;
               
               return (
                 <ListItemButton
@@ -788,7 +788,7 @@ export const UpcomingClassesPanel = ({ classes = [], loading = false, onViewAll,
             {classes.slice(0, 5).map((classItem, index) => {
               // Defensive rendering to prevent null access
               const safeClassItem = classItem || {};
-              const uniqueKey = safeClassItem._id || `class-${index}-${Date.now()}`;
+              const uniqueKey = safeClassItem._id || `class-${index}`;
               
               return (
                 <ListItemButton

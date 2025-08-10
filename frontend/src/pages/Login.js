@@ -16,9 +16,14 @@ import {
   FormControlLabel,
   Checkbox,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { LockOutlined as LockOutlinedIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { login, reset } from '../features/auth/authSlice';
+import authService from '../features/auth/authService';
 
 const Login = () => {
   const { t } = useTranslation();
@@ -29,6 +34,9 @@ const Login = () => {
   });
 
   const [version, setVersion] = useState('');
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
 
   const { email, password, saveCredentials } = formData;
 
@@ -136,6 +144,28 @@ const Login = () => {
     dispatch(login(userData));
   };
 
+  const handleForgot = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error('Please enter your email');
+      return;
+    }
+    setIsSubmittingForgot(true);
+    try {
+      await authService.forgotPasswordRequest(forgotEmail);
+      toast.success('If this email is registered, we notified the appropriate administrator.');
+      setForgotOpen(false);
+      setForgotEmail('');
+    } catch (err) {
+      // Backend responds generically; we also show generic success
+      toast.success('If this email is registered, we notified the appropriate administrator.');
+      setForgotOpen(false);
+      setForgotEmail('');
+    } finally {
+      setIsSubmittingForgot(false);
+    }
+  };
+
   return (
     <Container component="main" maxWidth="xs">
       <Paper 
@@ -196,7 +226,7 @@ const Login = () => {
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ mt: 3, mb: 2, py: 1.2 }}
+            sx={{ mt: 3, mb: 1.5, py: 1.2 }}
             disabled={isLoading}
           >
             {isLoading ? (
@@ -204,6 +234,15 @@ const Login = () => {
             ) : (
               t('auth.loginButton')
             )}
+          </Button>
+
+          <Button
+            fullWidth
+            variant="text"
+            sx={{ mb: 2, textTransform: 'none' }}
+            onClick={() => setForgotOpen(true)}
+          >
+            Forgot password?
           </Button>
           
           <Button
@@ -227,6 +266,34 @@ const Login = () => {
           {/* Sign-up option removed as accounts are admin-created only */}
         </Box>
       </Paper>
+
+      {/* Forgot password dialog */}
+      <Dialog open={forgotOpen} onClose={() => setForgotOpen(false)} fullWidth maxWidth="xs" keepMounted disableRestoreFocus>
+        <DialogTitle>Forgot password</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enter the email you use to sign in. We will notify the appropriate administrator to help reset your password.
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="forgot-email"
+            label="Email"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={forgotEmail}
+            onChange={(e) => setForgotEmail(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setForgotOpen(false)} disabled={isSubmittingForgot}>Cancel</Button>
+          <Button onClick={handleForgot} variant="contained" disabled={isSubmittingForgot}>
+            {isSubmittingForgot ? <CircularProgress size={20} color="inherit" /> : 'Send request'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Box sx={{ mt: 4, textAlign: 'center' }}>
         <Typography variant="body2" color="text.secondary">
           {'© '}

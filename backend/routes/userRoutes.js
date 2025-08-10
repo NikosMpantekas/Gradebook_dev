@@ -17,7 +17,8 @@ const {
   getParentsByStudent,
   getStudentsDataForParent,
   getStudentsByParent,
-  unlinkParentFromStudents
+  unlinkParentFromStudents,
+  forgotPasswordRequest
 } = require('../controllers/userController');
 const { protect, admin, canManageUsers } = require('../middleware/authMiddleware');
 
@@ -25,6 +26,7 @@ const { protect, admin, canManageUsers } = require('../middleware/authMiddleware
 router.post('/', registerUser);
 router.post('/login', loginUser);
 router.post('/refresh-token', refreshToken);
+router.post('/forgot-password', forgotPasswordRequest);
 router.post('/logout', protect, logoutUser); 
 
 // Protected routes - accessible to authenticated users

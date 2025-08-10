@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const User = require('../models/userModel');
 const Class = require('../models/classModel');
 const logger = require('../utils/logger');
+const Contact = require('../models/contactModel');
 // Single database architecture - no need for multiDbConnect
 
 // Email service function for sending credentials via Brevo SMTP
@@ -79,6 +80,80 @@ const sendCredentialsEmail = async ({ name, email, loginEmail, password, role, s
   await transporter.sendMail(mailOptions);
   console.log(`Credentials email sent to ${email} for user ${name}`);
 };
+
+// NEW: Forgot password request handler
+// @desc    Handle forgot password by notifying appropriate admin(s)
+// @route   POST /api/users/forgot-password
+// @access  Public
+const forgotPasswordRequest = asyncHandler(async (req, res) => {
+  const { email } = req.body || {};
+
+  // Always respond generically to avoid account enumeration
+  const genericOk = () => res.status(200).json({ message: 'If this email is registered, the appropriate administrator has been notified.' });
+
+  console.log('[FORGOT-PASSWORD] Incoming request', { email: email || '(missing)' });
+
+  if (!email || typeof email !== 'string') {
+    console.log('[FORGOT-PASSWORD] Missing or invalid email');
+    return genericOk();
+  }
+
+  try {
+    // Try to find the user by email
+    const user = await User.findOne({ email }).select('_id name email role schoolId');
+
+    if (!user) {
+      console.log('[FORGOT-PASSWORD] No user found for email (responding generically)');
+      return genericOk();
+    }
+
+    console.log('[FORGOT-PASSWORD] Found user', {
+      id: user._id?.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      schoolId: user.schoolId?.toString() || null,
+    });
+
+    // Build a contact message entry that will appear in admins panel
+    const subject = `[Password Reset] Request for ${user.email}`;
+
+    const bodyLines = [
+      `A user requested a password reset.`,
+      `Name: ${user.name || 'N/A'}`,
+      `Email: ${user.email}`,
+      `Role: ${user.role}`,
+      user.schoolId ? `SchoolId: ${user.schoolId}` : null,
+      '',
+      'Action requested: Please reset this user\'s password via the admin panel.',
+    ].filter(Boolean);
+
+    const contactDoc = await Contact.create({
+      user: user._id,
+      schoolId: user.schoolId || undefined,
+      subject,
+      message: bodyLines.join('\n'),
+      userName: user.name || user.email,
+      userEmail: user.email,
+      userRole: user.role,
+      status: 'new',
+      read: false,
+      isBugReport: false,
+      isPublicContact: false,
+    });
+
+    console.log('[FORGOT-PASSWORD] Contact message created', {
+      contactId: contactDoc?._id?.toString(),
+      subject,
+      schoolId: contactDoc?.schoolId?.toString() || null,
+    });
+
+    return genericOk();
+  } catch (err) {
+    console.error('[FORGOT-PASSWORD] Handler error', { message: err.message, stack: err.stack });
+    return genericOk();
+  }
+});
 
 // @desc    Register new user
 // @route   POST /api/users
@@ -1862,5 +1937,7 @@ module.exports = {
   getStudentsByParent,
   unlinkParentFromStudents,
   generateToken,
-  generateRefreshToken
+  generateRefreshToken,
+  // NEW export
+  forgotPasswordRequest,
 };
