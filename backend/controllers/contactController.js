@@ -148,16 +148,26 @@ const getContactMessages = asyncHandler(async (req, res) => {
   }
 
   try {
+    console.log('[CONTACT] getContactMessages called by', {
+      userId: req.user._id?.toString(),
+      role: req.user.role,
+      schoolId: req.user.schoolId?.toString() || null,
+    });
+
     // Superadmins can see all messages including public ones
-    // Regular admins only see their own messages
+    // Regular admins see all messages within their school
     const filter = req.user.role === 'superadmin' 
       ? {} 
-      : { user: req.user._id, schoolId: req.user.schoolId };
-      
+      : { schoolId: req.user.schoolId };
+
+    console.log('[CONTACT] Using filter', filter);
+        
     // Get messages for this user/superadmin, newest first
     const messages = await Contact.find(filter)
       .sort({ createdAt: -1 })
       .lean();
+
+    console.log('[CONTACT] Retrieved messages count', messages.length);
     
     // For superadmins, add a "Public" flag to public contact messages
     if (req.user.role === 'superadmin') {
@@ -190,11 +200,12 @@ const updateContactMessage = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, read, adminReply } = req.body;
     
-    console.log('Updating message:', id, 'with data:', { status, read, adminReply });
+    console.log('[CONTACT] updateContactMessage', { id, status, read, hasReply: !!adminReply });
 
     // ENHANCED FIX: First verify the message exists before attempting updates
     const existingMessage = await Contact.findById(id);
     if (!existingMessage) {
+      console.log('[CONTACT] updateContactMessage - not found', { id });
       res.status(404);
       throw new Error('Message not found');
     }
@@ -218,9 +229,8 @@ const updateContactMessage = asyncHandler(async (req, res) => {
       updateData.read = true;
       updateData.replyRead = false; // Reset replyRead for new reply
       
-      console.log('Adding admin reply data:', { 
-        replyText: updateData.adminReply.substring(0, 30) + '...',
-        replyDate: updateData.adminReplyDate
+      console.log('[CONTACT] updateContactMessage - adding reply data', { 
+        replyPreview: (updateData.adminReply || '').substring(0, 30)
       });
       
       // Send email for public contact messages
@@ -233,7 +243,7 @@ const updateContactMessage = asyncHandler(async (req, res) => {
             replyBody: adminReply,
             originalMessage: existingMessage.message // Pass the original message body
           });
-          console.log(`Email sent to ${existingMessage.userEmail} for public contact message ${id}`);
+          console.log('[CONTACT] updateContactMessage - public reply email sent');
         } catch (emailError) {
           console.error('Failed to send contact reply email:', emailError);
           // Don't fail the entire request if email fails
@@ -253,18 +263,15 @@ const updateContactMessage = asyncHandler(async (req, res) => {
     // Reload to make sure we have the latest version
     const updatedMessage = await Contact.findById(id);
 
-    console.log(`Message ${id} updated:`, {
-      status: updatedMessage.status,
-      hasReply: updatedMessage.adminReply ? true : false,
-      replyText: updatedMessage.adminReply ? updatedMessage.adminReply.substring(0, 30) + '...' : 'No reply',
-      replyDate: updatedMessage.adminReplyDate
-    });
+    console.log('[CONTACT] updateContactMessage - updated', { id, status: updatedMessage.status });
 
-    res.status(200).json(updatedMessage);
+    res.json(updatedMessage);
   } catch (error) {
-    console.error('Error updating contact message:', error);
-    res.status(500);
-    throw new Error('Failed to update message: ' + error.message);
+    console.error('[CONTACT] updateContactMessage - error', error);
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+    throw error;
   }
 });
 

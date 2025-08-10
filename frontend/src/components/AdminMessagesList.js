@@ -315,29 +315,49 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                   </Grid>
                 </Grid>
                 
-                <Box sx={{ mt: 2 }}>
-                  <TextField
-                    fullWidth
-                    label="Reply to user"
-                    multiline
-                    rows={4}
-                    variant="outlined"
-                    value={replyText[message._id] || ''}
-                    onChange={(e) => handleReplyChange(message._id, e.target.value)}
-                    placeholder="Enter your reply here..."
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                {/* For password reset requests, show Approve/Deny buttons instead of reply box */}
+                {message.subject?.startsWith('[Password Reset]') ? (
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2, flexWrap: 'wrap' }}>
                     <Button
                       variant="contained"
-                      color="primary"
-                      startIcon={<SendIcon />}
-                      onClick={() => handleSendReply(message._id)}
-                      disabled={replying[message._id] || !replyText[message._id]}
+                      color="success"
+                      onClick={() => { /* no-op for now */ }}
                     >
-                      {replying[message._id] ? 'Sending...' : 'Send Reply'}
+                      Approve Reset
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => { /* no-op for now */ }}
+                    >
+                      Deny
                     </Button>
                   </Box>
-                </Box>
+                ) : (
+                  <Box sx={{ mt: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Reply to user"
+                      multiline
+                      rows={4}
+                      variant="outlined"
+                      value={replyText[message._id] || ''}
+                      onChange={(e) => handleReplyChange(message._id, e.target.value)}
+                      placeholder="Enter your reply here..."
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<SendIcon />}
+                        onClick={() => handleSendReply(message._id)}
+                        disabled={replying[message._id] || !replyText[message._id]}
+                      >
+                        {replying[message._id] ? 'Sending...' : 'Send Reply'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Box>
           </AccordionDetails>

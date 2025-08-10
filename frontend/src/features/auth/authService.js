@@ -106,6 +106,21 @@ const login = async (userData) => {
   }
 };
 
+// NEW: Forgot password request (public)
+const forgotPasswordRequest = async (email) => {
+  try {
+    const url = `${API_USERS}/forgot-password`;
+    const response = await axios.post(url, { email }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000,
+    });
+    return response.data;
+  } catch (error) {
+    // Always return generic success to match backend behavior and avoid enumeration
+    return { message: 'If this email is registered, the appropriate administrator has been notified.' };
+  }
+};
+
 // Logout user - completely clears ALL application state with token revocation
 const logout = async () => {
   console.log('[SECURITY] Performing secure logout with token revocation');
@@ -488,6 +503,7 @@ axios.interceptors.request.use(
 const authService = {
   register,
   login,
+  forgotPasswordRequest,
   logout,
   getUserData,
   updateProfile,

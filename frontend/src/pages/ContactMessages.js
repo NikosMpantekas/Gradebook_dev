@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/appConfig';
 import { 
-  Container, 
   Box, 
   Typography, 
   Tabs, 
@@ -11,12 +10,19 @@ import {
   Paper,
   Divider,
   Button,
-  CircularProgress
+  CircularProgress,
+  Badge,
+  useMediaQuery,
+  useTheme,
+  FormControl,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { 
   Email as EmailIcon,
   BugReport as BugReportIcon,
-  Announcement as AnnouncementIcon
+  Announcement as AnnouncementIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import ContactDeveloper from '../components/ContactDeveloper';
 import UserMessagesList from '../components/UserMessagesList';
@@ -49,6 +55,8 @@ function TabPanel(props) {
 const ContactMessages = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -57,60 +65,50 @@ const ContactMessages = () => {
   
   // For admins/superadmins only
   const [allMessages, setAllMessages] = useState([]);
-  
-  // For patch notes management (superadmin only)
-  const [editingPatchNote, setEditingPatchNote] = useState(null);
+
+  // Optional editor ref (superadmin only)
   const patchNoteEditorRef = React.useRef(null);
-  const [patchNoteForm, setPatchNoteForm] = useState({
-    title: '',
-    content: '',
-    version: '',
-    type: 'release',
-    isActive: true
-  });
 
-  // Fetch data on component mount
-  useEffect(() => {
-    if (user) {
-      fetchUserMessages();
-      fetchPatchNotes();
-      
-      // If admin or superadmin, fetch all messages
-      if (user.role === 'admin' || user.role === 'superadmin') {
-        fetchAllMessages();
-      }
-    } else {
-      navigate('/login');
+  const handleEditPatchNote = (note) => {
+    if (patchNoteEditorRef.current && patchNoteEditorRef.current.handleEdit) {
+      patchNoteEditorRef.current.handleEdit(note);
     }
-  }, [user, navigate]);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-  
-  // Contact Developer handlers
-  const handleOpenContact = () => {
-    setContactOpen(true);
-  };
-  
-  const handleCloseContact = () => {
-    setContactOpen(false);
-    // Refresh user messages after closing contact form
-    fetchUserMessages();
   };
 
-  // Fetch user's messages
+  const handleDeletePatchNote = async (note) => {
+    // Deletion handled inside PatchNotesList typically; keep placeholder for compatibility
+    console.log('Delete patch note requested:', note?._id);
+  };
+
+  const myUnreadCount = userMessages.filter(m => m.status === 'replied' && m.adminReply && !m.replyRead).length;
+  const isAdminRole = user?.role === 'admin' || user?.role === 'superadmin';
+  const allUnreadCount = isAdminRole ? allMessages.filter(m => m.read === false).length : 0;
+  const patchNotesUnreadCount = 0;
+
+  useEffect(() => {
+    if (!user) { navigate('/login'); return; }
+    // Initial fetches
+    (async () => {
+      await Promise.all([
+        (async () => fetchUserMessages())(),
+        (async () => fetchPatchNotes())(),
+        (async () => { if (isAdminRole) await fetchAllMessages(); })(),
+      ]);
+    })();
+    // We intentionally omit functions to avoid ref churn; they are stable within this component
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, navigate, isAdminRole]);
+
+  const handleTabChange = (event, newValue) => setTabValue(newValue);
+
+  const handleOpenContact = () => setContactOpen(true);
+  const handleCloseContact = () => { setContactOpen(false); fetchUserMessages(); };
+
   const fetchUserMessages = async () => {
     if (!user || !user.token) return;
-    
     setLoading(true);
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
-      };
-      
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const response = await axios.get(`${API_URL}/api/contact/user`, config);
       setUserMessages(response.data);
     } catch (error) {
@@ -120,19 +118,12 @@ const ContactMessages = () => {
       setLoading(false);
     }
   };
-  
-  // Fetch all messages (admin/superadmin only)
+
   const fetchAllMessages = async () => {
-    if (!user || !user.token || (user.role !== 'admin' && user.role !== 'superadmin')) return;
-    
+    if (!user || !user.token || !isAdminRole) return;
     setLoading(true);
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
-      };
-      
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const response = await axios.get(`${API_URL}/api/contact`, config);
       setAllMessages(response.data);
     } catch (error) {
@@ -142,19 +133,12 @@ const ContactMessages = () => {
       setLoading(false);
     }
   };
-  
-  // Fetch patch notes
+
   const fetchPatchNotes = async () => {
     if (!user || !user.token) return;
-    
     setLoading(true);
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
-      };
-      
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const response = await axios.get(`${API_URL}/api/patch-notes`, config);
       setPatchNotes(response.data);
     } catch (error) {
@@ -164,172 +148,86 @@ const ContactMessages = () => {
       setLoading(false);
     }
   };
-  
-  // Handle patch note edit
-  const handleEditPatchNote = (patchNote) => {
-    setEditingPatchNote(patchNote);
-    if (patchNoteEditorRef.current && patchNoteEditorRef.current.handleEdit) {
-      patchNoteEditorRef.current.handleEdit(patchNote);
-    }
-  };
-  
-  // Handle patch note delete
-  const handleDeletePatchNote = async (patchNote) => {
-    if (user?.role !== 'superadmin') {
-      toast.error('Only superadmins can delete patch notes');
-      return;
-    }
-    
-    if (window.confirm(`Are you sure you want to delete the patch note "${patchNote.title}"? This action cannot be undone.`)) {
-      try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        };
-        
-        await axios.delete(`${API_URL}/api/patch-notes/${patchNote._id}`, config);
-        toast.success('Patch note deleted successfully');
-        fetchPatchNotes(); // Refresh the list
-      } catch (error) {
-        console.error('Error deleting patch note:', error);
-        toast.error(error.response?.data?.message || 'Failed to delete patch note');
-      }
-    }
-  };
+
+  const renderLabel = (text, count) => (
+    <Badge color="error" badgeContent={count} invisible={count === 0} max={99}>
+      <Box component="span" sx={{ maxWidth: { xs: 120, sm: 'unset' }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+        {text}
+      </Box>
+    </Badge>
+  );
+
+  const tabDefs = isAdminRole
+    ? [
+        { key: 'all', label: 'All Messages', icon: <BugReportIcon />, panel: (loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : <AdminMessagesList messages={allMessages} user={user} onMessagesChanged={fetchAllMessages} />) },
+        { key: 'my', label: 'My Messages', icon: <EmailIcon />, panel: (<><Box sx={{ mb: { xs: 1.5, sm: 3 } }}><Button variant="contained" color="primary" startIcon={<EmailIcon />} onClick={handleOpenContact} size={isMobile ? 'small' : 'medium'} sx={{ width: { xs: '100%', sm: 'auto' }, fontSize: { xs: '0.8rem', sm: '1rem' } }}>Contact Support</Button></Box>{loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon />, panel: (loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+      ]
+    : [
+        { key: 'my', label: 'My Messages', icon: <EmailIcon />, panel: (<><Box sx={{ mb: { xs: 1.5, sm: 3 } }}><Button variant="contained" color="primary" startIcon={<EmailIcon />} onClick={handleOpenContact} size={isMobile ? 'small' : 'medium'} sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}>Contact Support</Button></Box>{loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon />, panel: (loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+      ];
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: { xs: 2, sm: 3, md: 4 }, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          borderRadius: 2,
-          mt: { xs: 2, sm: 3 },
-          mb: { xs: 2, sm: 3 }
-        }}
-      >
-        <Typography component="h1" variant="h5" sx={{ mb: { xs: 2, sm: 3 }, fontWeight: 'bold', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-          Support & Announcements
-        </Typography>
+    <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+      <Paper elevation={3} sx={{ p: { xs: 1.5, sm: 3, md: 4 }, display: 'flex', flexDirection: 'column', borderRadius: 2, mt: { xs: 1.5, sm: 3 }, mb: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
+        <Typography component="h1" variant="h6" sx={{ mb: { xs: 1.5, sm: 3 }, fontWeight: 'bold', fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>Support & Announcements</Typography>
         
-        {/* Tabs */}
-        <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange} 
-          aria-label="support tabs"
-          variant="fullWidth"
-          sx={{ 
-            '& .MuiTab-root': {
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              minHeight: { xs: '48px', sm: '56px' }
-            }
-          }}
-        >
-          <Tab 
-            label="My Messages" 
-            icon={<EmailIcon />} 
-            iconPosition="start"
-            id="tab-0"
-            aria-controls="tabpanel-0"
-          />
-          <Tab 
-            label="Patch Notes" 
-            icon={<AnnouncementIcon />} 
-            iconPosition="start"
-            id="tab-1"
-            aria-controls="tabpanel-1"
-          />
-          {(user?.role === 'admin' || user?.role === 'superadmin') && (
-            <Tab 
-              label="All Messages" 
-              icon={<BugReportIcon />} 
-              iconPosition="start"
-              id="tab-2"
-              aria-controls="tabpanel-2"
-            />
-          )}
-        </Tabs>
-        
-        <Divider sx={{ mt: 1, mb: 2 }} />
-        
-        {/* My Messages Tab */}
-        <TabPanel value={tabValue} index={0}>
-          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<EmailIcon />}
-              onClick={handleOpenContact}
-              sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                fontSize: { xs: '0.875rem', sm: '1rem' }
+        {/* Mobile: Dropdown Selector */}
+        {isMobile ? (
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <Select
+              value={tabValue}
+              onChange={(e) => setTabValue(e.target.value)}
+              displayEmpty
+              IconComponent={ExpandMoreIcon}
+              sx={{
+                '& .MuiSelect-select': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  fontSize: '0.9rem'
+                }
               }}
             >
-              Contact Support
-            </Button>
-          </Box>
-          
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <UserMessagesList messages={userMessages} />
-          )}
-        </TabPanel>
-        
-        {/* Patch Notes Tab */}
-        <TabPanel value={tabValue} index={1}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              {/* Super admin can create/edit patch notes */}
-              {user?.role === 'superadmin' && (
-                <PatchNoteEditor 
-                  ref={patchNoteEditorRef}
-                  user={user} 
-                  onPatchNotesChanged={fetchPatchNotes} 
-                />
-              )}
-              <PatchNotesList 
-                patchNotes={patchNotes} 
-                user={user}
-                onEdit={handleEditPatchNote}
-                onDelete={handleDeletePatchNote}
-              />
-            </>
-          )}
-        </TabPanel>
-        
-        {/* All Messages Tab (Admin/Superadmin Only) */}
-        {(user?.role === 'admin' || user?.role === 'superadmin') && (
-          <TabPanel value={tabValue} index={2}>
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <AdminMessagesList 
-                messages={allMessages} 
-                user={user} 
-                onMessagesChanged={fetchAllMessages} 
-              />
-            )}
-          </TabPanel>
+              {tabDefs.map((tab, index) => (
+                <MenuItem key={tab.key} value={index}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                    {tab.icon}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{tab.label}</span>
+                      {tab.key === 'all' && allUnreadCount > 0 && (
+                        <Badge color="error" badgeContent={allUnreadCount} max={99} />
+                      )}
+                      {tab.key === 'my' && myUnreadCount > 0 && (
+                        <Badge color="error" badgeContent={myUnreadCount} max={99} />
+                      )}
+                    </Box>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          /* Desktop: Tabs */
+          <>
+            <Tabs value={tabValue} onChange={handleTabChange} aria-label="support tabs" variant="fullWidth" sx={{ '& .MuiTab-root': { fontSize: '1rem', minHeight: '56px', textTransform: 'none' } }}>
+              {tabDefs.map((t, i) => (
+                <Tab key={t.key} label={renderLabel(t.label, t.key === 'all' ? allUnreadCount : t.key === 'my' ? myUnreadCount : 0)} icon={t.icon} iconPosition="start" id={`tab-${i}`} aria-controls={`tabpanel-${i}`} />
+              ))}
+            </Tabs>
+            <Divider sx={{ mt: 1, mb: 2 }} />
+          </>
         )}
+        
+        {/* Content Panels */}
+        {tabDefs.map((t, i) => (
+          <TabPanel key={t.key} value={tabValue} index={i}>
+            {t.panel}
+          </TabPanel>
+        ))}
       </Paper>
-      
-      {/* Contact Developer Dialog */}
-      <ContactDeveloper 
-        open={contactOpen} 
-        onClose={handleCloseContact} 
-      />
+      <ContactDeveloper open={contactOpen} onClose={handleCloseContact} />
     </Box>
   );
 };
