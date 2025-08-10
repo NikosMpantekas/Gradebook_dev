@@ -15,8 +15,6 @@ const STATIC_CACHE_NAME = `gradebook-static-${APP_VERSION}`;
 const DYNAMIC_CACHE_NAME = `gradebook-dynamic-${APP_VERSION}`;
 const DATA_CACHE_NAME = `gradebook-api-${APP_VERSION}`;
 const ICON_CACHE_NAME = 'gradebook-icons'; // Separate cache for icons to control updates
-const OFFLINE_URL = '/offline.html';
-
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
   '/',
@@ -25,7 +23,6 @@ const STATIC_ASSETS = [
   '/static/js/bundle.js',
   '/static/js/vendors~main.chunk.js',
   '/manifest.json',
-  '/offline.html',
   // Add other static assets your app needs
 ];
 
@@ -193,8 +190,8 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .catch(() => {
-          // If offline, serve the offline page
-          return caches.match(OFFLINE_URL);
+          // Let the app's offline handling manage this
+          return caches.match(event.request);
         })
     );
     return;
