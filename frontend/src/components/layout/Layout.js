@@ -86,7 +86,7 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: '100%',
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
@@ -103,6 +103,12 @@ const Layout = () => {
             display: 'flex',
             flexDirection: 'column',
             width: '100%',
+            // Ensure MUI Container (used across pages) spans full available width
+            '& .MuiContainer-root': {
+              maxWidth: '100% !important',
+              paddingLeft: { xs: 2, sm: 3, md: 4 },
+              paddingRight: { xs: 2, sm: 3, md: 4 },
+            },
           }}
         >
           <OfflineDetector>
