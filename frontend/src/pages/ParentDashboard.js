@@ -15,7 +15,7 @@ import {
   RecentNotificationsPanel,
   RecentGradesPanel,
   UpcomingClassesPanel
-} from '../components/dashboard/DashboardComponents';
+} from '../components/dashboard';
 import { useFeatureToggles } from '../context/FeatureToggleContext';
 import { DashboardErrorBoundary, safeEventHandler } from '../utils/dashboardErrorHandler';
 import axios from 'axios';

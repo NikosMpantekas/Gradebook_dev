@@ -430,12 +430,24 @@ const NotificationRecipients = ({
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {selected.map((value) => {
                   const selectedUser = filteredUsers.find(user => user._id === value);
+                  
+                  // GHOST USER FIX: Only render chips for valid users with names
+                  if (!selectedUser || !selectedUser.name || selectedUser.name.trim() === '') {
+                    console.warn('NotificationRecipients: Filtering out invalid user selection:', value);
+                    // Auto-remove invalid user from selection
+                    setTimeout(() => {
+                      const newSelected = selectedRecipients.filter(id => id !== value);
+                      onRecipientsChange({ target: { value: newSelected } });
+                    }, 0);
+                    return null; // Don't render this chip
+                  }
+                  
                   return (
                     <Chip 
                       key={value} 
-                      label={selectedUser ? `${selectedUser.name} (${selectedUser.role})` : value}
+                      label={`${selectedUser.name} (${selectedUser.role})`}
                       size="small"
-                      color={selectedUser?.role === 'teacher' ? 'secondary' : 'primary'}
+                      color={selectedUser.role === 'teacher' ? 'secondary' : 'primary'}
                       onDelete={() => {
                         const newSelected = selectedRecipients.filter(id => id !== value);
                         onRecipientsChange({ target: { value: newSelected } });

@@ -16,7 +16,7 @@ import {
   RecentNotificationsPanel,
   RecentGradesPanel,
   UpcomingClassesPanel
-} from '../../components/dashboard/DashboardComponents';
+} from '../../components/dashboard';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';

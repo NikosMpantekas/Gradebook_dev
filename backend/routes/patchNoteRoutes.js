@@ -5,7 +5,8 @@ const {
   getPatchNotes,
   getPatchNoteById,
   updatePatchNote,
-  deletePatchNote
+  deletePatchNote,
+  getPublicPatchNotes
 } = require('../controllers/patchNoteController');
 const { protect, admin, superadmin } = require('../middleware/authMiddleware');
 
@@ -17,6 +18,10 @@ const adminOrSuperadmin = (req, res, next) => {
   res.status(403);
   throw new Error('Access denied. Admin or superadmin role required.');
 };
+
+// Public route (no authentication required) - must be defined BEFORE /:id route
+router.route('/public')
+  .get(getPublicPatchNotes);
 
 router.route('/')
   .get(protect, getPatchNotes)

@@ -930,11 +930,7 @@ function App() {
                 <SchoolPermissionsManager />
               </SuperAdminRoute>
             } />
-            <Route path="/superadmin/migration" element={
-              <SuperAdminRoute>
-                <SystemMaintenance />
-              </SuperAdminRoute>
-            } />
+
             <Route path="/superadmin/system-logs" element={
               <SuperAdminRoute>
                 <SystemLogs />
