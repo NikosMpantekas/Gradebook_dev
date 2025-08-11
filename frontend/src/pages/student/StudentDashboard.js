@@ -15,7 +15,9 @@ import {
   WelcomePanel,
   ProfileInfoPanel,
   RecentNotificationsPanel,
-  RecentGradesPanel
+  RecentGradesPanel,
+  UpcomingClassesPanel,
+  GradesOverTimePanel
 } from '../../components/dashboard';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import axios from 'axios';
