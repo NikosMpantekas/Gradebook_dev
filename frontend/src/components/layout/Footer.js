@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import axios from 'axios';
-import { API_URL } from '../../config/appConfig';
+import { API_URL, appConfig } from '../../config/appConfig';
 
 const Footer = () => {
-  // Use state to store the version
-  const [version, setVersion] = useState('');
-  const [loading, setLoading] = useState(true);
+  // Start with appConfig version immediately (no loading state)
+  const [version, setVersion] = useState(appConfig.version);
+  const [showVersion, setShowVersion] = useState(true);
   
-  // Fetch the latest patch note version
+  // Fetch the latest patch note version (runs in background)
   useEffect(() => {
     const fetchLatestVersion = async () => {
       try {
@@ -24,7 +24,8 @@ const Footer = () => {
           
           if (latestPatchNote.version) {
             setVersion(latestPatchNote.version);
-            console.log('Footer - Latest patch note version:', latestPatchNote.version);
+            setShowVersion(true);
+            console.log('Footer - Updated to latest patch note version:', latestPatchNote.version);
           } else {
             throw new Error('No version found in latest patch note');
           }
@@ -34,17 +35,9 @@ const Footer = () => {
       } catch (error) {
         console.error('Footer - Failed to fetch latest patch note version:', error);
         
-        // Fallback to appConfig version if patch notes fetch fails
-        try {
-          const module = await import('../../config/appConfig.js');
-          setVersion(module.appConfig.version);
-          console.log('Footer - Using fallback version from appConfig:', module.appConfig.version);
-        } catch (configError) {
-          console.error('Footer - Failed to load appConfig fallback:', configError);
-          setVersion('0.0.0');
-        }
-      } finally {
-        setLoading(false);
+        // Hide version if patch notes fetch fails (as requested by user)
+        setShowVersion(false);
+        console.log('Footer - Hiding version due to patch notes fetch failure');
       }
     };
     
@@ -66,9 +59,11 @@ const Footer = () => {
         {new Date().getFullYear()}
         {' GradeBook - Progressive Web App \n Created by the GradeBook Team'}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {'Version: '}{loading ? 'Loading...' : (version || '0.0.0')}
-      </Typography>
+      {showVersion && (
+        <Typography variant="body2" color="text.secondary">
+          {'Version: '}{version}
+        </Typography>
+      )}
     </Box>
   );
 };
