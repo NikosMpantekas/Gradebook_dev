@@ -36,7 +36,7 @@ export const notificationsEndpoint = createApiEndpoint('/api/notifications');
 export const subscriptionsEndpoint = createApiEndpoint('/api/subscriptions');
 export const eventsEndpoint = createApiEndpoint('/api/events');
 export const directionsEndpoint = createApiEndpoint('/api/directions');
-export const migrationsEndpoint = createApiEndpoint('/api/admin/migrations');
+
 
 // Debug logging in development
 if (process.env.NODE_ENV !== 'production') {

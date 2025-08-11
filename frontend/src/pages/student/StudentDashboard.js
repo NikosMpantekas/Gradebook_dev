@@ -13,10 +13,10 @@ import {
 import { keyframes } from '@mui/system';
 import {
   WelcomePanel,
-  GradesOverTimePanel,
+  ProfileInfoPanel,
   RecentNotificationsPanel,
-  UpcomingClassesPanel
-} from '../../components/dashboard/DashboardComponents';
+  RecentGradesPanel
+} from '../../components/dashboard';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';

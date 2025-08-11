@@ -173,10 +173,32 @@ const deletePatchNote = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get active patch notes (public endpoint for version display)
+// @route   GET /api/patch-notes/public
+// @access  Public (no authentication required)
+const getPublicPatchNotes = asyncHandler(async (req, res) => {
+  try {
+    // Only return active patch notes for public endpoint
+    const patchNotes = await PatchNote.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .select('title version type createdAt') // Only return essential fields for security
+      .lean();
+    
+    console.log('Public patch notes requested - returning', patchNotes.length, 'active patch notes');
+    
+    res.status(200).json(patchNotes);
+  } catch (error) {
+    console.error('Error retrieving public patch notes:', error);
+    res.status(500);
+    throw new Error('Failed to retrieve patch notes: ' + error.message);
+  }
+});
+
 module.exports = {
   createPatchNote,
   getPatchNotes,
   getPatchNoteById,
   updatePatchNote,
-  deletePatchNote
+  deletePatchNote,
+  getPublicPatchNotes
 };

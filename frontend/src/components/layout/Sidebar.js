@@ -483,15 +483,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, permanent = fals
         description: 'Send global notifications to all schools'
       },
       
-      // 6. System Migration (SuperAdmin)
-      {
-        text: 'Database Migration',
-        icon: <SettingsIcon />,
-        path: '/superadmin/migration',
-        roles: ['superadmin'],
-        section: 'superadmin',
-        description: 'Perform database updates and system migrations'
-      },
+
       
       // 6. Global Analytics (SuperAdmin)
       {
