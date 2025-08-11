@@ -275,12 +275,28 @@ function App() {
     components: {
       MuiCssBaseline: {
         styleOverrides: {
-          // Prevent Material-UI from adding padding when modals open
+          // Reset base layout; no reserved scrollbar gutter to avoid right-side gap
           html: {
-            scrollbarGutter: 'stable',
+            margin: 0,
+            padding: 0,
+            width: '100%',
           },
           body: {
-            scrollbarGutter: 'stable',
+            margin: 0,
+            padding: 0,
+            width: '100%',
+            overflowX: 'hidden',
+          },
+          '#root': {
+            margin: 0,
+            padding: 0,
+            width: '100%',
+            maxWidth: '100%',
+          },
+          main: {
+            margin: 0,
+            padding: 0,
+            width: '100%',
           },
         },
       },
