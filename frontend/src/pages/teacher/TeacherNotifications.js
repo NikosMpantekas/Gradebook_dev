@@ -583,6 +583,8 @@ const TeacherNotifications = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           handleMarkAsRead(notification._id);
+                          // Dispatch custom event to refresh header counts
+                          window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
                         }}
                         title="Mark as read"
                       >
@@ -623,10 +625,12 @@ const TeacherNotifications = () => {
                         <IconButton
                           color="success"
                           size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkAsRead(notification._id);
-                          }}
+                                                  onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsRead(notification._id);
+                          // Dispatch custom event to refresh header counts
+                          window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+                        }}
                           title="Mark as read"
                         >
                           <MarkReadIcon />

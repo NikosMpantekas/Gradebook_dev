@@ -106,6 +106,8 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       if (onMessagesChanged) {
         onMessagesChanged();
       }
+      // Dispatch custom event to refresh header counts
+      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
     } catch (error) {
       console.error('Error updating message status:', error);
       toast.error('Failed to update message status');
@@ -130,6 +132,8 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       if (onMessagesChanged) {
         onMessagesChanged();
       }
+      // Dispatch custom event to refresh header counts
+      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
     } catch (error) {
       console.error('Error marking message as read:', error);
       toast.error('Failed to mark message as read');
@@ -179,6 +183,8 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       if (onMessagesChanged) {
         onMessagesChanged();
       }
+      // Dispatch custom event to refresh header counts
+      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
     } catch (error) {
       console.error('Error sending reply:', error);
       toast.error('Failed to send reply');
@@ -187,6 +193,33 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
         ...replying,
         [messageId]: false
       });
+    }
+  };
+
+  const handleDenyPasswordReset = async (messageId) => {
+    if (!user || !user.token) return;
+
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        }
+      };
+
+      // Delete the password reset request
+      await axios.delete(`${API_URL}/api/contact/${messageId}`, config);
+
+      toast.success('Password reset request denied and removed');
+      
+      if (onMessagesChanged) {
+        onMessagesChanged();
+      }
+      // Dispatch custom event to refresh header counts
+      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+    } catch (error) {
+      console.error('Error denying password reset request:', error);
+      toast.error('Failed to deny password reset request');
     }
   };
 
@@ -328,7 +361,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                     <Button
                       variant="outlined"
                       color="error"
-                      onClick={() => { /* no-op for now */ }}
+                      onClick={() => handleDenyPasswordReset(message._id)}
                     >
                       Deny
                     </Button>

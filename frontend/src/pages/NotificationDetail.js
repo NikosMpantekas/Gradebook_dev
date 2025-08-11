@@ -63,7 +63,11 @@ const NotificationDetail = () => {
     
     // If notification is not read, mark it as read
     if (notification && !notification.isRead) {
-      dispatch(markNotificationAsRead(id));
+      dispatch(markNotificationAsRead(id))
+        .then(() => {
+          // Dispatch custom event to refresh header counts
+          window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+        });
     }
   }, [notification, isError, isSuccess, message, id, dispatch, navigate]);
 

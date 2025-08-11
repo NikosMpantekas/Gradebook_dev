@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { API_URL } from '../config/appConfig';
 import { 
   Box, 
@@ -55,8 +55,13 @@ function TabPanel(props) {
 const ContactMessages = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Check if this is the superadmin patch notes route
+  const isSuperadminPatchNotesRoute = location.pathname === '/superadmin/patch-notes';
+  
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -83,11 +88,17 @@ const ContactMessages = () => {
   const myUnreadCount = userMessages.filter(m => m.status === 'replied' && m.adminReply && !m.replyRead).length;
   const isAdminRole = user?.role === 'admin' || user?.role === 'superadmin';
   const allUnreadCount = isAdminRole ? allMessages.filter(m => m.read === false).length : 0;
-  const patchNotesUnreadCount = 0;
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    // Initial fetches
+    
+    // If this is the superadmin patch notes route, only fetch patch notes
+    if (isSuperadminPatchNotesRoute) {
+      fetchPatchNotes();
+      return;
+    }
+    
+    // Initial fetches for full contact messages page
     (async () => {
       await Promise.all([
         (async () => fetchUserMessages())(),
@@ -97,7 +108,7 @@ const ContactMessages = () => {
     })();
     // We intentionally omit functions to avoid ref churn; they are stable within this component
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, navigate, isAdminRole]);
+  }, [user, navigate, isAdminRole, isSuperadminPatchNotesRoute]);
 
   const handleTabChange = (event, newValue) => setTabValue(newValue);
 
@@ -156,6 +167,35 @@ const ContactMessages = () => {
       </Box>
     </Badge>
   );
+
+  // If this is the superadmin patch notes route, show only patch notes
+  if (isSuperadminPatchNotesRoute) {
+    return (
+      <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+        <Paper elevation={3} sx={{ p: { xs: 1.5, sm: 3, md: 4 }, display: 'flex', flexDirection: 'column', borderRadius: 2, mt: { xs: 1.5, sm: 3 }, mb: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
+          <Typography component="h1" variant="h6" sx={{ mb: { xs: 1.5, sm: 3 }, fontWeight: 'bold', fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>Patch Notes Management</Typography>
+          
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              {user?.role === 'superadmin' && (
+                <PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />
+              )}
+              <PatchNotesList 
+                patchNotes={patchNotes} 
+                user={user} 
+                onEdit={handleEditPatchNote} 
+                onDelete={handleDeletePatchNote} 
+              />
+            </>
+          )}
+        </Paper>
+      </Box>
+    );
+  }
 
   const tabDefs = isAdminRole
     ? [
