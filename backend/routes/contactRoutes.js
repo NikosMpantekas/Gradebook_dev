@@ -6,7 +6,8 @@ const {
   updateContactMessage,
   getUserMessages,
   markReplyAsRead,
-  sendPublicContactMessage
+  sendPublicContactMessage,
+  deleteContactMessage
 } = require('../controllers/contactController');
 const { protect, admin, superadmin, adminOrSecretary } = require('../middleware/authMiddleware');
 
@@ -49,5 +50,8 @@ router.get('/', protect, superadminOrAuthorized, getContactMessages);
 
 // Admin and superadmin routes - update message status and send replies
 router.put('/:id', protect, superadminOrAuthorized, updateContactMessage);
+
+// Admin and superadmin routes - delete contact messages (e.g., denied password reset requests)
+router.delete('/:id', protect, superadminOrAuthorized, deleteContactMessage);
 
 module.exports = router;

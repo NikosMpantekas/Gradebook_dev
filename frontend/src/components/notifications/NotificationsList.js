@@ -318,6 +318,8 @@ const NotificationsList = ({
                           e.stopPropagation();
                           if (typeof onMarkAsRead === 'function') {
                             onMarkAsRead(safeNotification._id);
+                            // Dispatch custom event to refresh header counts
+                            window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
                           }
                         }}
                       >
@@ -396,6 +398,8 @@ const NotificationsList = ({
                           e.stopPropagation();
                           if (typeof onMarkAsRead === 'function') {
                             onMarkAsRead(safeNotification._id);
+                            // Dispatch custom event to refresh header counts
+                            window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
                           }
                         }}
                       >

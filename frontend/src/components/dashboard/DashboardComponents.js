@@ -826,20 +826,18 @@ export const UpcomingClassesPanel = ({ classes = [], loading = false, onViewAll,
                     </Typography>
                   }
                   secondary={
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                          {safeClassItem.startTime && safeClassItem.endTime ? (
-                            `${formatTime(safeClassItem.startTime)} - ${formatTime(safeClassItem.endTime)}`
-                        ) : (
-                          'Time not specified'
-                        )}
-                      </Typography>
-                        {safeClassItem.room && (
-                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                            • Room {safeClassItem.room}
-                        </Typography>
+                    <>
+                      {safeClassItem.startTime && safeClassItem.endTime ? (
+                        `${formatTime(safeClassItem.startTime)} - ${formatTime(safeClassItem.endTime)}`
+                      ) : (
+                        'Time not specified'
                       )}
-                    </Box>
+                      {safeClassItem.room && (
+                        <span style={{ marginLeft: '8px' }}>
+                          • Room {safeClassItem.room}
+                        </span>
+                      )}
+                    </>
                   }
                 />
                 </ListItemButton>

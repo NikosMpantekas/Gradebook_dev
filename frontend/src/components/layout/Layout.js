@@ -87,12 +87,11 @@ const Layout = () => {
         sx={{
           flexGrow: 1,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
           overflowX: 'hidden', // Prevent horizontal scrolling
-          overflowY: 'auto', // Enable vertical scrolling for desktop
+          overflowY: { xs: 'hidden', sm: 'auto' }, // Hide scrollbar on mobile, show on desktop
         }}
       >
         {/* Main content area */}

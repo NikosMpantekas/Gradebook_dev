@@ -570,11 +570,52 @@ const sendPublicContactMessage = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Delete a contact message (admin/superadmin only)
+// @route   DELETE /api/contact/:id
+// @access  Private (admin/superadmin only)
+const deleteContactMessage = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Find the message to check if it exists and get schoolId for filtering
+    const message = await Contact.findById(id);
+    
+    if (!message) {
+      res.status(404);
+      throw new Error('Contact message not found');
+    }
+    
+    // Apply school filtering if user is not superadmin
+    if (req.user.role !== 'superadmin' && req.user.schoolId) {
+      if (message.schoolId && message.schoolId.toString() !== req.user.schoolId.toString()) {
+        res.status(403);
+        throw new Error('Not authorized to delete this message');
+      }
+    }
+    
+    // Delete the message
+    await Contact.findByIdAndDelete(id);
+    
+    res.json({ 
+      success: true, 
+      message: 'Contact message deleted successfully' 
+    });
+    
+    console.log(`Contact message ${id} deleted by user ${req.user._id} (${req.user.role})`);
+    
+  } catch (error) {
+    console.error('Error deleting contact message:', error);
+    res.status(500);
+    throw new Error('Failed to delete contact message: ' + error.message);
+  }
+});
+
 module.exports = {
   sendContactMessage,
   getContactMessages,
   updateContactMessage,
   getUserMessages,
   markReplyAsRead,
-  sendPublicContactMessage
+  sendPublicContactMessage,
+  deleteContactMessage
 };

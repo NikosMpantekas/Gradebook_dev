@@ -124,6 +124,8 @@ const Notifications = () => {
       .then(() => {
         toast.success('Notification marked as read');
         dispatch(getMyNotifications());
+        // Dispatch custom event to refresh header counts
+        window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
       })
       .catch((error) => {
         console.error('Failed to mark notification as read:', error);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -14,7 +14,7 @@ import PushNotificationManager from './components/PushNotificationManager';
 
 // CRITICAL FIX: Import error handling and safety guard systems
 import { initGlobalErrorHandlers, trackError } from './utils/errorHandler';
-import { applyGlobalSafetyGuards, safe, safeGet } from './utils/safetyGuards';
+import { applyGlobalSafetyGuards } from './utils/safetyGuards';
 
 // Layout Components
 import Layout from './components/layout/Layout';
@@ -37,8 +37,6 @@ import PasswordChange from './components/PasswordChange';
 import Maintenance from './pages/Maintenance';
 
 // Common Pages
-import Dashboard from './pages/Dashboard';
-import UnifiedDashboard from './pages/UnifiedDashboard';
 import StandaloneDashboard from './pages/StandaloneDashboard';
 import DiagnosticPage from './pages/DiagnosticPage';
 import Profile from './pages/Profile';
@@ -66,7 +64,6 @@ import ParentDashboard from './pages/ParentDashboard';
 import ParentGrades from './pages/parent/ParentGrades';
 
 // Teacher Pages
-import TeacherGrades from './pages/teacher/TeacherGrades';
 import ManageGrades from './pages/teacher/ManageGrades';
 import CreateGradeSimple from './pages/teacher/CreateGradeSimple';
 import TeacherNotifications from './pages/teacher/TeacherNotifications';
@@ -116,7 +113,6 @@ function App() {
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
   const { darkMode, themeColor } = useSelector((state) => state.ui);
-  const [routingError, setRoutingError] = useState(null);
   const [configInitialized, setConfigInitialized] = useState(false);
   
   // Log important application state on mount and auth changes
@@ -176,7 +172,7 @@ function App() {
       trackError(error, 'App.initialization');
       setConfigInitialized(false);
     }
-  }, []);
+  }, [setConfigInitialized]);
   
   // Initialize axios interceptors for token management
   useEffect(() => {
@@ -277,6 +273,17 @@ function App() {
       fontFamily: 'Roboto, Arial, sans-serif',
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          // Prevent Material-UI from adding padding when modals open
+          html: {
+            scrollbarGutter: 'stable',
+          },
+          body: {
+            scrollbarGutter: 'stable',
+          },
+        },
+      },
       MuiButton: {
         styleOverrides: {
           root: {
@@ -377,6 +384,28 @@ function App() {
           },
         },
       },
+      MuiModal: {
+        styleOverrides: {
+          root: {
+            '& + .MuiBackdrop-root': {
+              marginRight: 0,
+            },
+          },
+        },
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+      MuiPopover: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+      MuiMenu: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
     },
   });
 
@@ -411,7 +440,7 @@ function App() {
       
       // Set routing error if related to routing
       if (event.message?.includes('router') || event.message?.includes('navigate')) {
-        setRoutingError(event.message);
+        // setRoutingError(event.message); // This line was removed as per the edit hint
       }
     };
     
@@ -424,7 +453,7 @@ function App() {
       });
     };
     
-    // Handle React errors
+/*     // Handle React errors
     const handleReactError = (error, errorInfo) => {
       logger.critical('REACT', 'Error in React component tree', {
         error: error.message,
@@ -432,7 +461,7 @@ function App() {
         stack: error.stack,
         currentPath: window.location.pathname
       });
-    };
+    }; */
     
     // Register handlers
     window.addEventListener('error', handleGlobalError);
@@ -443,7 +472,7 @@ function App() {
       window.removeEventListener('error', handleGlobalError);
       window.removeEventListener('unhandledrejection', handlePromiseRejection);
     };
-  }, []);
+  }, []); // Changed dependency array to []
 
   return (
     <ErrorBoundary fallback={<DiagnosticPage />} componentName="Application Root">

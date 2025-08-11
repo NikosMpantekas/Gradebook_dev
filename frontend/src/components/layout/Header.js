@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   AppBar, 
   Box, 
@@ -9,7 +9,6 @@ import {
   Menu, 
   Badge,
   MenuItem, 
-  Avatar,
   Tooltip,
   ListItemIcon,
   ListItemText,
@@ -20,12 +19,9 @@ import {
   Notifications as NotificationsIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
-  AccountCircle,
-  Logout as LogoutIcon,
   Email as EmailIcon
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout, reset } from '../../features/auth/authSlice';
 import { toggleDarkMode } from '../../features/ui/uiSlice';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import axios from 'axios';
@@ -33,12 +29,12 @@ import { API_URL } from '../../config/appConfig';
 import { getMyNotifications } from '../../features/notifications/notificationSlice';
 
 const Header = ({ drawerWidth, handleDrawerToggle }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
   const [contactUnreadCount, setContactUnreadCount] = useState(0);
   const [contactUnreadPreview, setContactUnreadPreview] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
@@ -48,44 +44,69 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const notifUnreadCount = notifications?.filter(n => !n.isRead).length || 0;
   const combinedUnreadCount = (notifUnreadCount || 0) + (contactUnreadCount || 0);
 
+  // Function to fetch contact unread count - using useCallback to prevent recreation
+  const fetchContactUnread = useCallback(async () => {
+    if (!user) return;
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      if (user.role === 'admin' || user.role === 'superadmin') {
+        // Admins: unread are messages with read === false in school scope
+        const res = await axios.get(`${API_URL}/api/contact`, config);
+        const unread = (res.data || []).filter(m => m && m.read === false);
+        setContactUnreadCount(unread.length);
+        setContactUnreadPreview(unread.slice(0, 5));
+      } else {
+        // Others: unread are replies not yet read by the user
+        const res = await axios.get(`${API_URL}/api/contact/user`, config);
+        const unread = (res.data || []).filter(m => m && m.status === 'replied' && m.adminReply && m.replyRead === false);
+        setContactUnreadCount(unread.length);
+        setContactUnreadPreview(unread.slice(0, 5));
+      }
+    } catch (err) {
+      console.error('[Header] Failed to fetch contact unread:', err?.response?.data || err.message);
+      setContactUnreadCount(0);
+      setContactUnreadPreview([]);
+    }
+  }, [user]);
+
   // Fetch both notifications and contact unread on mount and when user changes
   useEffect(() => {
     if (!user) return;
     // Ensure notifications are fetched
     dispatch(getMyNotifications());
+    fetchContactUnread();
+  }, [user, dispatch, fetchContactUnread]);
 
-    const fetchContactUnread = async () => {
-      try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        };
+  // Refresh counts when route changes (e.g., after marking notifications as read)
+  useEffect(() => {
+    if (user) {
+      fetchContactUnread();
+    }
+  }, [location.pathname, fetchContactUnread, user]);
 
-        if (user.role === 'admin' || user.role === 'superadmin') {
-          // Admins: unread are messages with read === false in school scope
-          const res = await axios.get(`${API_URL}/api/contact`, config);
-          const unread = (res.data || []).filter(m => m && m.read === false);
-          setContactUnreadCount(unread.length);
-          setContactUnreadPreview(unread.slice(0, 5));
-        } else {
-          // Others: unread are replies not yet read by the user
-          const res = await axios.get(`${API_URL}/api/contact/user`, config);
-          const unread = (res.data || []).filter(m => m && m.status === 'replied' && m.adminReply && m.replyRead === false);
-          setContactUnreadCount(unread.length);
-          setContactUnreadPreview(unread.slice(0, 5));
-        }
-      } catch (err) {
-        console.error('[Header] Failed to fetch contact unread:', err?.response?.data || err.message);
-        setContactUnreadCount(0);
-        setContactUnreadPreview([]);
+  // Listen for custom events to refresh counts
+  useEffect(() => {
+    const handleRefreshCounts = () => {
+      if (user) {
+        fetchContactUnread();
+        dispatch(getMyNotifications());
       }
     };
 
-    fetchContactUnread();
-  }, [user, dispatch]);
+    // Listen for custom event to refresh counts
+    window.addEventListener('refreshHeaderCounts', handleRefreshCounts);
+    
+    return () => {
+      window.removeEventListener('refreshHeaderCounts', handleRefreshCounts);
+    };
+  }, [user, dispatch, fetchContactUnread]);
   
-  const handleMenu = (event) => {
+/*   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -97,7 +118,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     dispatch(logout());
     dispatch(reset());
     navigate('/login');
-  };
+  }; */
 
   const handleDarkModeToggle = () => {
     dispatch(toggleDarkMode());
@@ -116,9 +137,11 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     if (user?.role === 'student') {
       navigate('/app/student/notifications');
     } else if (user?.role === 'teacher') {
-      navigate('/app/teacher/notifications');
+      navigate('/app/admin/notifications/manage');
     } else if (user?.role === 'admin') {
-      navigate('/app/notifications');
+      navigate('/app/admin/notifications/manage');
+    } else if (user?.role === 'superadmin') {
+      navigate('/app/admin/notifications/manage');
     } else if (user?.role === 'parent') {
       navigate('/app/parent/notifications');
     } else {
@@ -160,9 +183,6 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     handleViewContactMessages();
   };
   
-  // Add debug log to track navigation
-  console.log('Current user:', user);
-
   // Prepare notification preview
   const notifPreview = (notifications || []).filter(n => !n.isRead).slice(0, 5);
 
@@ -213,7 +233,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
               </IconButton>
             </Tooltip>
             
-            <Tooltip title="Notifications & Messages">
+            <Tooltip title={`Notifications & Messages (${notifUnreadCount} unread, ${contactUnreadCount} contact)`}>
               <IconButton
                 size="large"
                 color="inherit"
