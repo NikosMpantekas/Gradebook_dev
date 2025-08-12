@@ -54,183 +54,291 @@ const convertBase64ToUint8Array = (base64String) => {
 };
 
 /**
- * Sets up push notifications with enhanced Android support
- * @returns {Promise<PushSubscription>} The created subscription object
+ * Send subscription to server with enhanced iOS debugging
  */
-export const setupPushNotifications = async () => {
+const sendSubscriptionToServer = async (subscription) => {
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  
   try {
-    // 1. Check browser support
-    if (!('serviceWorker' in navigator)) {
-      throw new Error('Service Workers are not supported in this browser');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/api/subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(subscription)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server returned ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    // iOS DEBUGGING: Log server response
+    if (isIOS) {
+      console.log('[Push Service] iOS Server Registration Success:', {
+        status: response.status,
+        resultKeys: Object.keys(result),
+        timestamp: new Date().toISOString()
+      });
     }
     
+    return result;
+  } catch (error) {
+    if (isIOS) {
+      console.error('[Push Service] iOS Server Registration Error:', {
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+    throw error;
+  }
+};
+
+/**
+ * Convert base64 string to Uint8Array
+ * @param {string} base64String - Base64 encoded string
+ * @returns {Uint8Array} Converted array
+ */
+const urlBase64ToUint8Array = (base64String) => {
+  try {
+    // Remove any padding or whitespace
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Decode the base64 string
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    
+    return outputArray;
+  } catch (error) {
+    console.error('Failed to convert base64 to Uint8Array:', error);
+    throw new Error('Invalid VAPID key format');
+  }
+};
+
+/**
+ * Setup push notifications with enhanced iOS debugging
+ */
+export const setupPushNotifications = async () => {
+  return await initializePushNotifications();
+};
+
+/**
+ * Enhanced initializePushNotifications with iOS debugging
+ */
+export const initializePushNotifications = async () => {
+  try {
+    console.log('[Push Service] Initializing push notifications');
+    
+    // iOS DEBUGGING: Enhanced browser and device detection
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    
+    console.log('[Push Service] iOS Debug Info:', {
+      userAgent: navigator.userAgent,
+      isIOS,
+      isSafari,
+      isStandalone,
+      hasServiceWorker: 'serviceWorker' in navigator,
+      hasPushManager: 'PushManager' in window,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Check if the browser supports service workers and push messaging
+    if (!('serviceWorker' in navigator)) {
+      const error = 'Service workers not supported';
+      if (isIOS) {
+        console.error('[Push Service] iOS Service Worker Error:', error);
+      }
+      throw new Error(error);
+    }
+
     if (!('PushManager' in window)) {
-      throw new Error('Push notifications are not supported in this browser');
+      const error = 'Push messaging not supported';
+      if (isIOS) {
+        console.error('[Push Service] iOS Push Manager Error:', error);
+      }
+      throw new Error(error);
     }
     
     console.log('Push notification prerequisites check passed');
     
-    // 2. Ensure push service worker is registered and active
-    let registration;
-    try {
-      // Specifically register the push notification service worker
-      // This is separate from the main service worker to avoid conflicts
-      registration = await navigator.serviceWorker.register('/push-service-worker.js', {
-        scope: '/'
+    // Check if notifications are supported
+    if (!('Notification' in window)) {
+      const error = 'This browser does not support desktop notifications';
+      if (isIOS) {
+        console.error('[Push Service] iOS Notification Error:', error);
+      }
+      throw new Error(error);
+    }
+
+    // iOS DEBUGGING: Log notification permission state
+    if (isIOS) {
+      console.log('[Push Service] iOS Notification Permission State:', {
+        permission: Notification.permission,
+        canRequestPermission: typeof Notification.requestPermission === 'function'
       });
-      
-      // Wait for the service worker to be activated
-      if (registration.installing) {
-        console.log('Push service worker installing...');
-        const worker = registration.installing;
-        
-        // Wait for the worker to change state to installed or activated
-        await new Promise((resolve) => {
-          worker.addEventListener('statechange', (e) => {
-            if (e.target.state === 'activated') {
-              console.log('Push service worker has been activated');
-              resolve();
-            }
-          });
+    }
+
+    // Register the service worker
+    console.log('[Push Service] Registering service worker...');
+    const registration = await navigator.serviceWorker.register('/push-service-worker.js', {
+      scope: '/'
+    });
+
+    console.log('[Push Service] Service worker registered:', registration.scope);
+    
+    // iOS DEBUGGING: Log service worker registration details
+    if (isIOS) {
+      console.log('[Push Service] iOS Service Worker Registration:', {
+        scope: registration.scope,
+        active: !!registration.active,
+        installing: !!registration.installing,
+        waiting: !!registration.waiting,
+        updateViaCache: registration.updateViaCache
+      });
+    }
+
+    // Wait for the service worker to be ready
+    await navigator.serviceWorker.ready;
+    console.log('[Push Service] Service worker ready');
+    
+    // iOS DEBUGGING: Log service worker ready state
+    if (isIOS) {
+      const readyRegistration = await navigator.serviceWorker.ready;
+      console.log('[Push Service] iOS Service Worker Ready:', {
+        scope: readyRegistration.scope,
+        active: !!readyRegistration.active,
+        pushManager: !!readyRegistration.pushManager
+      });
+    }
+    
+    // Get VAPID public key from server
+    console.log('[Push Service] Fetching VAPID public key...');
+    const response = await fetch(`${API_URL}/api/notifications/vapid-public-key`);
+    if (!response.ok) {
+      const error = 'Failed to fetch VAPID public key';
+      if (isIOS) {
+        console.error('[Push Service] iOS VAPID Fetch Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url
         });
-      } else if (registration.waiting) {
-        console.log('Push service worker is waiting');
-        // Force activation
-        registration.waiting.postMessage({type: 'SKIP_WAITING'});
-      } else {
-        console.log('Push service worker is active');
       }
-      
-      // Force update the service worker to ensure we have the latest version
-      await registration.update().catch(e => {
-        console.log('Push service worker update failed, continuing with existing worker:', e);
+      throw new Error(error);
+    }
+    const { publicKey } = await response.json();
+    
+    console.log('[Push Service] VAPID public key received');
+    
+    // iOS DEBUGGING: Log VAPID key details
+    if (isIOS) {
+      console.log('[Push Service] iOS VAPID Key Debug:', {
+        publicKeyLength: publicKey?.length,
+        publicKeyPreview: publicKey?.substring(0, 20) + '...'
       });
-      
-      console.log('Push service worker is ready for subscription');
-    } catch (swError) {
-      console.error('Error preparing push service worker:', swError);
-      throw new Error('Failed to initialize push service worker: ' + swError.message);
     }
+
+    // Check for existing subscription
+    const existingSubscription = await registration.pushManager.getSubscription();
     
-    // 3. Check for existing subscription
-    try {
-      const existingSubscription = await registration.pushManager.getSubscription();
+    if (existingSubscription) {
+      console.log('[Push Service] Found existing subscription');
       
-      if (existingSubscription) {
-        try {
-          // Validate existing subscription
-          const endpoint = existingSubscription.endpoint;
-          const keys = existingSubscription.options?.applicationServerKey || 
-                      existingSubscription.getKey?.('p256dh');
-          
-          if (endpoint && keys) {
-            console.log('Valid push subscription exists, reusing it');
-            
-            // Verify the subscription is registered on the server
-            try {
-              await store.dispatch(subscribeToPushNotifications(existingSubscription));
-              console.log('Existing subscription refreshed on server');
-            } catch (refreshError) {
-              console.warn('Could not refresh subscription on server, but will still use it:', refreshError);
-            }
-            
-            return existingSubscription;
-          }
-        } catch (validationError) {
-          console.warn('Existing subscription is invalid, will create new one:', validationError);
-        }
-        
-        // Unsubscribe from invalid subscription
-        try {
-          await existingSubscription.unsubscribe();
-          console.log('Successfully unsubscribed from invalid subscription');
-        } catch (unsubError) {
-          console.warn('Could not unsubscribe from existing subscription:', unsubError);
-          // Continue anyway - we'll create a new one
-        }
-      }
-    } catch (subCheckError) {
-      console.warn('Error checking existing subscription:', subCheckError);
-      // Continue to create new subscription
-    }
-    
-    // 4. Get VAPID key from server
-    let applicationServerKey;
-    try {
-      // Fetch the VAPID public key
-      const vapidResponse = await store.dispatch(getVapidPublicKey());
-      
-      if (vapidResponse.error) {
-        throw new Error(vapidResponse.error.message || 'Server returned an error');
+      // iOS DEBUGGING: Log existing subscription details
+      if (isIOS) {
+        console.log('[Push Service] iOS Existing Subscription:', {
+          endpoint: existingSubscription.endpoint,
+          hasKeys: !!existingSubscription.getKey,
+          p256dhKey: existingSubscription.getKey ? !!existingSubscription.getKey('p256dh') : false,
+          authKey: existingSubscription.getKey ? !!existingSubscription.getKey('auth') : false
+        });
       }
       
-      if (!vapidResponse.payload?.vapidPublicKey) {
-        throw new Error('Server returned empty VAPID key');
-      }
-      
-      // Convert the key to the right format for browsers
-      applicationServerKey = convertBase64ToUint8Array(vapidResponse.payload.vapidPublicKey);
-      console.log('VAPID key successfully retrieved and converted');
-    } catch (keyError) {
-      console.error('Failed to get or process VAPID key:', keyError);
-      throw new Error('Could not prepare push notification key: ' + keyError.message);
-    }
-    
-    // 5. Create push subscription with focus on Android compatibility
-    try {
-      console.log('Requesting push notification permission...');
-      
-      // Use a 30-second timeout for Android which can be slow with permissions
-      const subscription = await Promise.race([
-        registration.pushManager.subscribe({
-          userVisibleOnly: true,  // Required for Chrome/Android
-          applicationServerKey  // The converted VAPID key
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Push subscription timed out after 30s')), 30000)
-        )
-      ]);
-      
-      if (!subscription) {
-        throw new Error('Subscription creation failed - received empty subscription');
-      }
-      
-      console.log('Push subscription successfully created:', 
-        subscription.endpoint ? subscription.endpoint.substr(0, 50) + '...' : 'No endpoint');
-      
-      // 6. Register the subscription with the server
+      // Verify the subscription is still valid by sending it to the server
       try {
-        await store.dispatch(subscribeToPushNotifications(subscription));
-        console.log('Subscription saved on server');
-      } catch (serverError) {
-        console.error('Failed to save subscription on server:', serverError);
-        // Don't throw - we'll still return the subscription since it might work for push
+        await sendSubscriptionToServer(existingSubscription);
+        console.log('[Push Service] Existing subscription verified');
+        return { success: true, subscription: existingSubscription };
+      } catch (error) {
+        console.warn('[Push Service] Existing subscription invalid, creating new one:', error.message);
+        if (isIOS) {
+          console.warn('[Push Service] iOS Subscription Verification Failed:', error.message);
+        }
+        await existingSubscription.unsubscribe();
       }
-      
-      return subscription;
-    } catch (subscribeError) {
-      console.error('Failed to create push subscription:', subscribeError);
-      
-      // Provide user-friendly error messages
-      if (subscribeError.name === 'NotAllowedError') {
-        throw new Error('Push notification permission was denied by the user');
-      } else if (subscribeError.name === 'AbortError') {
-        throw new Error('Push notification request was aborted');
-      } else {
-        throw new Error('Failed to subscribe to push notifications: ' + subscribeError.message);
-      }
+    } else if (isIOS) {
+      console.log('[Push Service] iOS: No existing subscription found');
     }
+    
+    // Subscribe to push notifications
+    console.log('[Push Service] Creating new push subscription...');
+    
+    // iOS DEBUGGING: Log subscription attempt
+    if (isIOS) {
+      console.log('[Push Service] iOS Subscription Attempt:', {
+        userVisibleOnly: true,
+        applicationServerKeyLength: urlBase64ToUint8Array(publicKey).length,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
+
+    console.log('[Push Service] New subscription created');
+    
+    // iOS DEBUGGING: Log new subscription details
+    if (isIOS) {
+      console.log('[Push Service] iOS New Subscription:', {
+        endpoint: subscription.endpoint,
+        hasKeys: !!subscription.getKey,
+        p256dhKey: subscription.getKey ? !!subscription.getKey('p256dh') : false,
+        authKey: subscription.getKey ? !!subscription.getKey('auth') : false,
+        endpointDomain: new URL(subscription.endpoint).hostname,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Send subscription to server
+    console.log('[Push Service] Sending subscription to server...');
+    await sendSubscriptionToServer(subscription);
+    
+    console.log('[Push Service] Push notifications initialized successfully');
+    return { success: true, subscription };
+
   } catch (error) {
-    // Top-level error handler for better user feedback
-    console.error('Push notification setup failed:', error);
+    console.error('[Push Service] Failed to initialize push notifications:', error);
     
-    // Format a user-friendly error message
-    let userMessage = 'Could not enable notifications';
-    if (error.message) {
-      userMessage += ': ' + error.message;
+    // iOS DEBUGGING: Enhanced error logging for iOS
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      console.error('[Push Service] iOS Initialization Error Details:', {
+        error: error.message,
+        name: error.name,
+        stack: error.stack,
+        notificationPermission: Notification.permission,
+        timestamp: new Date().toISOString()
+      });
     }
     
-    throw new Error(userMessage);
+    return { success: false, error: error.message };
   }
 };
 

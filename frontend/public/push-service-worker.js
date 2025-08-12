@@ -7,6 +7,18 @@
 self.addEventListener('push', (event) => {
   console.log('[Push Service Worker] Push Received');
   
+  // iOS DEBUGGING: Enhanced logging for iOS push notification debugging
+  const isIOS = /iPhone|iPad|iPod/i.test(self.navigator.userAgent);
+  const isSafari = /Safari/i.test(self.navigator.userAgent) && !/Chrome/i.test(self.navigator.userAgent);
+  
+  console.log('[Push Service Worker] iOS Debug Info:', {
+    userAgent: self.navigator.userAgent,
+    isIOS,
+    isSafari,
+    hasEventData: !!event.data,
+    timestamp: new Date().toISOString()
+  });
+  
   // Ensure the event waits for our async operations
   event.waitUntil(
     (async () => {
@@ -18,9 +30,37 @@ self.addEventListener('push', (event) => {
           try {
             data = event.data.json();
             console.log('[Push Service Worker] Push data:', data);
+            
+            // iOS DEBUGGING: Log payload structure for iOS debugging
+            if (isIOS) {
+              console.log('[Push Service Worker] iOS Payload Debug:', {
+                hasTitle: !!data.title,
+                hasBody: !!data.body,
+                hasNotificationId: !!data.notificationId,
+                payloadKeys: Object.keys(data)
+              });
+            }
           } catch (e) {
             console.error('[Push Service Worker] Error parsing push data:', e);
+            // iOS DEBUGGING: Enhanced error logging for iOS
+            if (isIOS) {
+              console.error('[Push Service Worker] iOS Parse Error Details:', {
+                error: e.message,
+                rawData: event.data ? event.data.text() : 'No data',
+                dataType: typeof event.data
+              });
+            }
             // Use the default if JSON parsing fails
+          }
+        } else {
+          console.log('[Push Service Worker] No event data received');
+          // iOS DEBUGGING: Log when no data is received on iOS
+          if (isIOS) {
+            console.log('[Push Service Worker] iOS No Data Debug:', {
+              eventKeys: Object.keys(event),
+              hasData: !!event.data,
+              eventType: event.type
+            });
           }
         }
         
@@ -56,6 +96,16 @@ self.addEventListener('push', (event) => {
         // Always show notification on mobile
         const isMobile = /iPhone|iPad|iPod|Android/i.test(self.navigator.userAgent);
         
+        // iOS DEBUGGING: Enhanced client and notification display logging
+        if (isIOS) {
+          console.log('[Push Service Worker] iOS Client Debug:', {
+            focusedClient: !!focusedClient,
+            clientCount: clientList.length,
+            isMobile,
+            willShowNotification: !focusedClient || isMobile
+          });
+        }
+        
         // Only skip notification if app is in focus AND not on mobile
         if (focusedClient && !isMobile) {
           console.log('[Push Service Worker] Application is focused, posting message instead of notification');
@@ -68,10 +118,40 @@ self.addEventListener('push', (event) => {
               options: options
             }
           });
+          
+          // iOS DEBUGGING: Log message posting for iOS
+          if (isIOS) {
+            console.log('[Push Service Worker] iOS Message Posted to Client:', {
+              clientUrl: focusedClient.url,
+              messageType: 'PUSH_RECEIVED'
+            });
+          }
         } else {
           // Show notification if app is not in focus or on mobile
           console.log('[Push Service Worker] Showing notification');
-          return self.registration.showNotification(title, options);
+          
+          // iOS DEBUGGING: Log notification display attempt for iOS
+          if (isIOS) {
+            console.log('[Push Service Worker] iOS Notification Display:', {
+              title,
+              optionsKeys: Object.keys(options),
+              registrationScope: self.registration.scope,
+              timestamp: new Date().toISOString()
+            });
+          }
+          
+          const notificationResult = await self.registration.showNotification(title, options);
+          
+          // iOS DEBUGGING: Log notification result for iOS
+          if (isIOS) {
+            console.log('[Push Service Worker] iOS Notification Result:', {
+              result: notificationResult,
+              success: notificationResult === undefined, // showNotification returns undefined on success
+              timestamp: new Date().toISOString()
+            });
+          }
+          
+          return notificationResult;
         }
       } catch (error) {
         console.error('[Push Service Worker] Error handling push:', error);

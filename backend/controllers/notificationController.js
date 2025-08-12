@@ -96,7 +96,7 @@ const createNotification = asyncHandler(async (req, res) => {
     let potentialRecipients = [];
     
     if (sendToAll) {
-      console.log('[SECURITY] Processing sendToAll notification with role restrictions');
+      console.log(`[SECURITY] Processing sendToAll notification with role restrictions`);
       // SECURITY: Only admins can send to all users - teachers limited to students only
       let allowedRoles;
       if (req.user.role === 'admin') {
@@ -392,21 +392,32 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       console.log('[SECURITY] Admin user - full school access granted');
     }
     else if (req.user.role === 'parent') {
-      // PARENTS: Can see notifications sent to them or their children
-      console.log('[SECURITY] Parent user - applying parent-specific filtering for user:', req.user._id);
+      // PARENTS: Can ONLY see notifications sent directly to them - STRICT SEPARATION from student notifications
+      console.log('[SECURITY] Parent user - applying STRICT parent-only filtering for user:', req.user._id);
       
-      // Find parent's linked students
-      const parentUser = await User.findById(req.user._id).select('linkedStudentIds').lean();
-      const linkedStudentIds = parentUser?.linkedStudentIds || [];
-      
-      query.$or = [
-        // Notifications sent directly to parent
-        { recipients: req.user._id },
-        // Notifications sent to parent's linked students
-        ...(linkedStudentIds.length > 0 ? [{ recipients: { $in: linkedStudentIds } }] : [])
+      // CRITICAL: Parents can ONLY see notifications directly addressed to them
+      // NO ACCESS to student notifications - complete separation as requested
+      query.$and = [
+        {
+          $or: [
+            // ONLY notifications sent directly to this parent
+            { recipients: req.user._id },
+            // ONLY notifications with parent role targeting
+            {
+              $and: [
+                { targetRole: { $in: ['parent', 'all'] } },
+                { recipients: { $exists: false, $eq: [] } } // General announcements without specific recipients
+              ]
+            }
+          ]
+        },
+        // SECURITY: Explicitly exclude any student-targeted notifications
+        { targetRole: { $nin: ['student'] } },
+        // SECURITY: Exclude notifications sent by students
+        { senderRole: { $ne: 'student' } }
       ];
       
-      console.log(`[SECURITY] Parent ${req.user._id} can access notifications for ${linkedStudentIds.length} linked students`);
+      console.log(`[SECURITY] Parent ${req.user._id} STRICT SEPARATION enforced`);
     }
     else {
       // SECURITY: Unknown role - deny access
