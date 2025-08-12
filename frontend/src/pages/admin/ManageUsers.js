@@ -235,19 +235,20 @@ const ManageUsers = () => {
     // Filter by class - check if user is associated with the selected class
     if (classFilter) {
       filtered = filtered.filter(user => {
-        // For teachers: check if they teach in this class
-        if (user.role === 'teacher' && user.classes && Array.isArray(user.classes)) {
-          return user.classes.some(cls => 
-            (typeof cls === 'object' ? cls._id : cls) === classFilter
+        const selectedClass = classes.find(cls => cls._id === classFilter);
+        if (!selectedClass) return false;
+        
+        // For students: check if they are enrolled in this class
+        if (user.role === 'student' && selectedClass.students && Array.isArray(selectedClass.students)) {
+          return selectedClass.students.some(student => 
+            (typeof student === 'object' ? student._id : student) === user._id
           );
         }
         
-        // For students: check if they are enrolled in this class
-        // We need to check if this user appears in the selected class's students array
-        const selectedClass = classes.find(cls => cls._id === classFilter);
-        if (selectedClass && selectedClass.students && Array.isArray(selectedClass.students)) {
-          return selectedClass.students.some(student => 
-            (typeof student === 'object' ? student._id : student) === user._id
+        // For teachers: check if they teach in this class
+        if (user.role === 'teacher' && selectedClass.teachers && Array.isArray(selectedClass.teachers)) {
+          return selectedClass.teachers.some(teacher => 
+            (typeof teacher === 'object' ? teacher._id : teacher) === user._id
           );
         }
         
@@ -804,17 +805,17 @@ const ManageUsers = () => {
           </Grid>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth variant="outlined">
-              <InputLabel id="school-filter-label">Filter by School</InputLabel>
+              <InputLabel id="school-filter-label">Filter by School Branch</InputLabel>
               <Select
                 labelId="school-filter-label"
                 id="school-filter"
                 value={schoolFilter}
                 onChange={handleSchoolFilterChange}
-                label="Filter by School"
+                label="Filter by School Branch"
                 disabled={schoolsLoading || !schools || schools.length === 0}
               >
                 <MenuItem value="">
-                  <em>All Schools</em>
+                  <em>All School Branches</em>
                 </MenuItem>
                 {Array.isArray(schools) && schools.map((school) => (
                   <MenuItem key={school._id} value={school._id}>
