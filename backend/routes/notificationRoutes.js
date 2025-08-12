@@ -19,8 +19,9 @@ const {
 const { protect, admin, teacher, canSendNotifications } = require('../middleware/authMiddleware');
 
 // Protected routes - all authenticated users can access their own notifications
-// VAPID endpoint before /:id route to prevent conflicts
+// VAPID endpoints before /:id route to prevent conflicts
 router.get('/vapid', protect, getVapidPublicKey);
+router.get('/vapid-public-key', protect, getVapidPublicKey);
 router.get('/sent', protect, canSendNotifications, getSentNotifications);
 router.get('/:id', protect, getNotificationById);
 router.put('/:id/read', protect, markNotificationRead);
