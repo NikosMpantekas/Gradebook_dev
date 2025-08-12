@@ -106,9 +106,12 @@ self.addEventListener('push', (event) => {
           });
         }
         
-        // Only skip notification if app is in focus AND not on mobile
-        if (focusedClient && !isMobile) {
-          console.log('[Push Service Worker] Application is focused, posting message instead of notification');
+        // CRITICAL iPhone FIX: Always show notifications on iOS devices
+        // iPhone focus detection is unreliable, so always display notifications
+        const shouldSkipNotification = focusedClient && !isMobile && !isIOS;
+        
+        if (shouldSkipNotification) {
+          console.log('[Push Service Worker] Application is focused on desktop, posting message instead of notification');
           // Send the notification data to the focused client
           focusedClient.postMessage({
             type: 'PUSH_RECEIVED',
@@ -119,16 +122,14 @@ self.addEventListener('push', (event) => {
             }
           });
           
-          // iOS DEBUGGING: Log message posting for iOS
-          if (isIOS) {
-            console.log('[Push Service Worker] iOS Message Posted to Client:', {
-              clientUrl: focusedClient.url,
-              messageType: 'PUSH_RECEIVED'
-            });
-          }
+          console.log('[Push Service Worker] Message posted to focused desktop client');
         } else {
-          // Show notification if app is not in focus or on mobile
-          console.log('[Push Service Worker] Showing notification');
+          // ALWAYS show notification on iPhone/mobile OR when app not focused
+          const reason = isIOS ? 'iOS device (always show)' : 
+                        isMobile ? 'mobile device' : 
+                        !focusedClient ? 'no focused client' : 
+                        'fallback';
+          console.log(`[Push Service Worker] Showing notification (${reason})`);
           
           // iOS DEBUGGING: Log notification display attempt for iOS
           if (isIOS) {

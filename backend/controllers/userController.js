@@ -1189,6 +1189,16 @@ const deleteUser = asyncHandler(async (req, res) => {
     
     console.log(`Deleting user: ${userToDelete.name} (${userToDelete.email}) - Role: ${userToDelete.role}`);
     
+    // CRITICAL FIX: Clean up push subscriptions before deleting user
+    try {
+      const Subscription = require('../models/subscriptionModel');
+      const deletedSubscriptions = await Subscription.deleteMany({ user: req.params.id });
+      console.log(`PUSH_CLEANUP: Deleted ${deletedSubscriptions.deletedCount} push subscriptions for user ${userToDelete.name}`);
+    } catch (subscriptionError) {
+      console.warn(`PUSH_CLEANUP: Failed to clean up subscriptions for user ${userToDelete.name}:`, subscriptionError.message);
+      // Don't fail user deletion if subscription cleanup fails
+    }
+    
     // Delete the user
     await User.findByIdAndDelete(req.params.id);
     
