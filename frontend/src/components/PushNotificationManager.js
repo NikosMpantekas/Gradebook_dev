@@ -97,14 +97,14 @@ const PushNotificationManager = () => {
       
       // Get VAPID public key from backend - use API_URL for secure HTTPS in production
       console.log('Fetching VAPID public key using API_URL:', API_URL);
-      const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid`, {
+      const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
         headers: { 
           'Authorization': `Bearer ${user.token}`,
           'Cache-Control': 'no-cache'
         }
       });
       
-      const publicKey = vapidResponse.data.vapidPublicKey;
+      const publicKey = vapidResponse.data.publicKey;
       
       if (!publicKey) {
         throw new Error('Failed to get VAPID public key');
