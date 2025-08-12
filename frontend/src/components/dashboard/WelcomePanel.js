@@ -110,7 +110,7 @@ export const WelcomePanel = ({ user, userType, subtitle }) => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <TimeIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />
                   <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {format(currentTime, 'h:mm:ss a')}
+                    {format(currentTime, 'HH:mm:ss')}
                   </Typography>
                 </Box>
               </Box>
@@ -164,7 +164,7 @@ export const WelcomePanel = ({ user, userType, subtitle }) => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <TimeIcon />
                   <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                    {format(currentTime, 'h:mm:ss a')}
+                    {format(currentTime, 'HH:mm:ss')}
                   </Typography>
                 </Box>
               </Box>
