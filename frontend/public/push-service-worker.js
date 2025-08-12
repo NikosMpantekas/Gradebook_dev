@@ -3,22 +3,39 @@
 // This is a dedicated service worker for push notifications
 // It handles push notifications separately from the main service worker
 
-// Handle incoming push events
-self.addEventListener('push', (event) => {
-  console.log('[Push Service Worker] Push Received');
+// Enhanced push event handler with comprehensive iOS debugging
+self.addEventListener('push', async function(event) {
+  console.log('[Push Service Worker] Push event received');
   
-  // iOS DEBUGGING: Enhanced logging for iOS push notification debugging
-  const isIOS = /iPhone|iPad|iPod/i.test(self.navigator.userAgent);
-  const isSafari = /Safari/i.test(self.navigator.userAgent) && !/Chrome/i.test(self.navigator.userAgent);
+  // iOS DEBUGGING: Log push event details
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
-  console.log('[Push Service Worker] iOS Debug Info:', {
-    userAgent: self.navigator.userAgent,
-    isIOS,
-    isSafari,
-    hasEventData: !!event.data,
-    timestamp: new Date().toISOString()
+  // CRITICAL iPhone DEBUG: Log EVERYTHING about the push event
+  console.log('[Push Service Worker] CRITICAL iPhone DEBUG - Push Event Received:', {
+    isIOS: isIOS,
+    isMobile: isMobile,
+    userAgent: navigator.userAgent,
+    hasData: !!event.data,
+    dataExists: event.data !== null && event.data !== undefined,
+    timestamp: new Date().toISOString(),
+    serviceWorkerState: self.registration?.active?.state,
+    registrationScope: self.registration?.scope,
+    eventConstructor: event.constructor.name
   });
   
+  if (isIOS) {
+    console.log('[Push Service Worker] iOS SPECIFIC DEBUG:', {
+      hasData: !!event.data,
+      dataText: event.data ? event.data.text() : 'no data',
+      eventType: event.type,
+      timestamp: new Date().toISOString(),
+      serviceWorkerState: self.registration?.active?.state,
+      pushManagerState: self.registration?.pushManager ? 'available' : 'not available',
+      notificationPermission: Notification?.permission || 'unknown'
+    });
+  }
+
   // Ensure the event waits for our async operations
   event.waitUntil(
     (async () => {
@@ -150,6 +167,31 @@ self.addEventListener('push', (event) => {
               success: notificationResult === undefined, // showNotification returns undefined on success
               timestamp: new Date().toISOString()
             });
+            
+            // CRITICAL iPhone FIX: Double-check notification was displayed
+            setTimeout(async () => {
+              try {
+                const notifications = await self.registration.getNotifications();
+                console.log('[Push Service Worker] iOS Notification Verification:', {
+                  activeNotifications: notifications.length,
+                  lastNotificationTitle: notifications[0]?.title,
+                  timestamp: new Date().toISOString()
+                });
+                
+                // If no notifications are active, try to force display
+                if (notifications.length === 0) {
+                  console.warn('[Push Service Worker] iOS WARNING: No active notifications found, attempting force display');
+                  await self.registration.showNotification('iPhone Debug: Notification Test', {
+                    body: 'This is a test notification to debug iPhone display issues',
+                    icon: '/icon-192x192.png',
+                    badge: '/icon-192x192.png',
+                    tag: 'iphone-debug'
+                  });
+                }
+              } catch (verifyError) {
+                console.error('[Push Service Worker] iOS notification verification failed:', verifyError);
+              }
+            }, 1000);
           }
           
           return notificationResult;
