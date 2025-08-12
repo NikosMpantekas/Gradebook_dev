@@ -277,14 +277,76 @@ const createNotification = asyncHandler(async (req, res) => {
           }
         });
 
+        // iOS DEBUGGING: Enhanced push notification error logging
+        console.log('NOTIFICATION_CREATE', `Attempting push to subscription ${subscription._id}:`, {
+          endpoint: subscription.endpoint?.substring(0, 50) + '...',
+          hasKeys: !!(subscription.keys && subscription.keys.p256dh && subscription.keys.auth),
+          payloadLength: payload.length
+        });
+
         return webpush.sendNotification(subscription, payload)
+          .then(result => {
+            console.log('NOTIFICATION_CREATE', `Push notification SUCCESS for subscription ${subscription._id}:`, {
+              statusCode: result?.statusCode,
+              headers: result?.headers,
+              body: result?.body?.substring(0, 100)
+            });
+            return result;
+          })
           .catch(error => {
-            console.error('NOTIFICATION_CREATE', `Push notification failed for subscription ${subscription._id}:`, error.message);
+            // iOS DEBUGGING: Comprehensive error logging
+            console.error('NOTIFICATION_CREATE', `Push notification FAILED for subscription ${subscription._id}:`, {
+              errorMessage: error.message,
+              errorName: error.name,
+              statusCode: error.statusCode,
+              headers: error.headers,
+              body: error.body,
+              endpoint: subscription.endpoint?.substring(0, 50) + '...',
+              subscriptionKeys: {
+                hasP256dh: !!(subscription.keys && subscription.keys.p256dh),
+                hasAuth: !!(subscription.keys && subscription.keys.auth),
+                p256dhLength: subscription.keys?.p256dh?.length,
+                authLength: subscription.keys?.auth?.length
+              },
+              stack: error.stack
+            });
+            
+            // Check for specific iOS/Safari push notification errors
+            if (error.statusCode === 410 || error.statusCode === 404) {
+              console.warn('NOTIFICATION_CREATE', `Subscription ${subscription._id} is expired/invalid, removing from database`);
+              // Remove invalid subscription from database
+              try {
+                await Subscription.findByIdAndDelete(subscription._id);
+                console.log('NOTIFICATION_CREATE', `Successfully removed invalid subscription ${subscription._id}`);
+              } catch (deleteError) {
+                console.error('NOTIFICATION_CREATE', `Failed to remove invalid subscription ${subscription._id}:`, deleteError.message);
+              }
+            } else if (error.statusCode === 400) {
+              console.error('NOTIFICATION_CREATE', `Bad request - payload or subscription format issue for ${subscription._id}`);
+            } else if (error.statusCode === 413) {
+              console.error('NOTIFICATION_CREATE', `Payload too large for subscription ${subscription._id}`);
+            } else if (error.message && error.message.includes('Received unexpected response code')) {
+              console.error('NOTIFICATION_CREATE', `iOS/Safari specific error - likely subscription format or APNs connectivity issue for ${subscription._id}`);
+            }
+            
+            return null; // Don't rethrow, just log and continue
           });
       });
 
-      await Promise.allSettled(pushPromises);
-      console.log('NOTIFICATION_CREATE', 'Push notifications sent');
+      const pushResults = await Promise.allSettled(pushPromises);
+      const successCount = pushResults.filter(result => result.status === 'fulfilled' && result.value !== null).length;
+      const failureCount = pushResults.filter(result => result.status === 'rejected' || result.value === null).length;
+      
+      console.log('NOTIFICATION_CREATE', `Push notifications completed: ${successCount} success, ${failureCount} failures out of ${subscriptions.length} total`);
+      
+      // iOS DEBUGGING: Log detailed results
+      pushResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error('NOTIFICATION_CREATE', `Push promise ${index} rejected:`, result.reason);
+        } else if (result.value === null) {
+          console.warn('NOTIFICATION_CREATE', `Push promise ${index} returned null (failed but caught)`);
+        }
+      });
     }
 
     // Populate the response
