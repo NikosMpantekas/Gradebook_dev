@@ -73,7 +73,10 @@ const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('');
+  const [classFilter, setClassFilter] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
@@ -82,6 +85,36 @@ const ManageUsers = () => {
   
   // Get schools data from Redux store
   const { schools, isLoading: schoolsLoading } = useSelector((state) => state.schools);
+  
+  // Fetch classes data
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        setClassesLoading(true);
+        const response = await fetch(`${currentUser.baseURL || 'https://beta-backend.gradebook.pro'}/api/classes`, {
+          headers: {
+            'Authorization': `Bearer ${currentUser.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setClasses(Array.isArray(data) ? data : []);
+        } else {
+          console.error('Failed to fetch classes');
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      } finally {
+        setClassesLoading(false);
+      }
+    };
+    
+    if (currentUser?.token) {
+      fetchClasses();
+    }
+  }, [currentUser?.token]);
 
   // Monitor data loading state changes
   useEffect(() => {
@@ -95,7 +128,7 @@ const ManageUsers = () => {
     if (!isLoading && Array.isArray(users) && users.length > 0) {
       applyFilters();
     }
-  }, [isLoading, users, schools]);
+  }, [isLoading, users, schools, classes]);
 
   // Debug logs
   console.log('ManageUsers rendering:', { 
@@ -158,69 +191,63 @@ const ManageUsers = () => {
       console.log('Applying filters to', users.length, 'users');
       applyFilters();
     } else if (!isLoading && Array.isArray(users)) {
-      // Data loaded but empty
-      setFilteredUsers([]);
+      applyFilters();
     }
-  }, [users, searchTerm, roleFilter, schoolFilter]);
+  }, [searchTerm, roleFilter, schoolFilter, classFilter, users]);
 
   const applyFilters = () => {
-    try {
-      if (!Array.isArray(users) || users.length === 0) {
-        setFilteredUsers([]);
-        return;
-      }
-      
-      console.log('Applying filters to', users.length, 'users');
-      console.log('Search term:', searchTerm || 'none');
-      console.log('Role filter:', roleFilter || 'none');
-      console.log('School filter:', schoolFilter || 'none');
-
-      let filtered = [...users];
-      
-      // First filter by search term (case insensitive)
-      if (searchTerm) {
-        const lowerSearchTerm = searchTerm.toLowerCase();
-        filtered = filtered.filter(user => {
-          const name = user?.name || '';
-          const email = user?.email || '';
-          
-          return name.toLowerCase().includes(lowerSearchTerm) || 
-                 email.toLowerCase().includes(lowerSearchTerm);
-        });
-      }
-      
-      // Then filter by role if specified
-      if (roleFilter) {
-        filtered = filtered.filter(user => user?.role === roleFilter);
-      }
-      
-      // Then filter by school if specified
-      if (schoolFilter) {
-        filtered = filtered.filter(user => {
-          // Handle different data structures for school references
-          if (user?.schoolId && typeof user.schoolId === 'string') {
-            return user.schoolId === schoolFilter;
-          } 
-          if (user?.school && typeof user.school === 'string') {
-            return user.school === schoolFilter;
-          }
-          if (user?.school && user.school._id) {
-            return user.school._id === schoolFilter;
-          }
-          return false;
-        });
-      }
-      
-      console.log('Filtered to', filtered.length, 'users');
-      setFilteredUsers(filtered);
-      
-      // Reset pagination to first page when filters change
-      setPage(0);
-    } catch (error) {
-      console.error('Error applying filters:', error);
-      // Fallback to empty array in case of any error
-      setFilteredUsers([]);
+    let filtered = [...users];
+    
+    // Filter by search term (name or email)
+    if (searchTerm) {
+      filtered = filtered.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
+
+    // Filter by role
+    if (roleFilter) {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    // Filter by school
+    if (schoolFilter) {
+      filtered = filtered.filter(user => {
+        // Check both old and new field formats
+        if (user.schools && Array.isArray(user.schools)) {
+          return user.schools.some(school => 
+            (typeof school === 'object' ? school._id : school) === schoolFilter
+          );
+        }
+        if (user.school) {
+          if (Array.isArray(user.school)) {
+            return user.school.some(school => 
+              (typeof school === 'object' ? school._id : school) === schoolFilter
+            );
+          }
+          return (typeof user.school === 'object' ? user.school._id : user.school) === schoolFilter;
+        }
+        return false;
+      });
+    }
+
+    // Filter by class
+    if (classFilter) {
+      filtered = filtered.filter(user => {
+        // Check if user has classes array
+        if (user.classes && Array.isArray(user.classes)) {
+          return user.classes.some(cls => 
+            (typeof cls === 'object' ? cls._id : cls) === classFilter
+          );
+        }
+        return false;
+      });
+    }
+
+    console.log('Filtered users:', filtered.length, 'out of', users.length);
+    setFilteredUsers(filtered);
+    setPage(0);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -244,7 +271,10 @@ const ManageUsers = () => {
   
   const handleSchoolFilterChange = (event) => {
     setSchoolFilter(event.target.value);
-    setPage(0);
+  };
+  
+  const handleClassFilterChange = (event) => {
+    setClassFilter(event.target.value);
   };
 
   const handleAddUser = (isSecretary = false) => {
@@ -524,8 +554,7 @@ const ManageUsers = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
-                <TableCell>School/Direction</TableCell>
-                <TableCell>Subjects</TableCell>
+                <TableCell>Class</TableCell>
                 <TableCell>Created</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
@@ -553,96 +582,36 @@ const ManageUsers = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        {/* School and Direction information - now supporting both field name formats */}
-                        {/* Check for both old and new field names to ensure compatibility */}
-                        {(user.schools?.length > 0 || user.school) ? (
-                          <Typography variant="body2">
-                            <strong>School{(user.schools?.length > 1 || (Array.isArray(user.school) && user.school.length > 1)) ? 's' : ''}:</strong> 
-                            {/* Try new field name first, fall back to old one */}
-                            {user.schools && user.schools.length > 0 ? (
-                              // Process schools array from new field name
-                              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                {user.schools.map((school, idx) => (
-                                  <span key={idx}>
-                                    {school.name || school}
-                                    {idx < user.schools.length - 1 && ', '}
-                                  </span>
-                                ))}
-                              </Box>
-                            ) : Array.isArray(user.school) ? (
-                              // Fall back to old field name as array
-                              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                {user.school.map((school, idx) => (
-                                  <span key={idx}>
-                                    {school.name || school}
-                                    {idx < user.school.length - 1 && ', '}
-                                  </span>
-                                ))}
-                              </Box>
-                            ) : (
-                              // Handle single school (typically for students)
-                              user.school?.name || user.school
-                            )}
-                            
-                            {/* Check for both direction field names */}
-                            {(user.directions?.length > 0 || user.direction) && (
-                              <>
-                                <br />
-                                <strong>Direction{(user.directions?.length > 1 || (Array.isArray(user.direction) && user.direction.length > 1)) ? 's' : ''}:</strong> 
-                                {/* Try new field name first, fall back to old one */}
-                                {user.directions && user.directions.length > 0 ? (
-                                  // Process directions array from new field name
-                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    {user.directions.map((direction, idx) => (
-                                      <span key={idx}>
-                                        {direction.name || direction}
-                                        {idx < user.directions.length - 1 && ', '}
-                                      </span>
-                                    ))}
-                                  </Box>
-                                ) : Array.isArray(user.direction) ? (
-                                  // Fall back to old field name as array
-                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    {user.direction.map((direction, idx) => (
-                                      <span key={idx}>
-                                        {direction.name || direction}
-                                        {idx < user.direction.length - 1 && ', '}
-                                      </span>
-                                    ))}
-                                  </Box>
-                                ) : (
-                                  // Handle single direction (typically for students)
-                                  user.direction?.name || user.direction
-                                )}
-                              </>
-                            )}
-                          </Typography>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">Not assigned</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {/* Subjects information */}
-                        {user.subjects && user.subjects.length > 0 ? (
+                        {/* Class information */}
+                        {user.classes && user.classes.length > 0 ? (
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {user.subjects.slice(0, 2).map((subject, idx) => (
+                            {user.classes.slice(0, 2).map((cls, idx) => {
+                              // Find class details from classes array
+                              const classDetails = classes.find(c => c._id === (typeof cls === 'object' ? cls._id : cls));
+                              const displayName = classDetails ? 
+                                `${classDetails.className} - ${classDetails.subject?.name || classDetails.subject}` : 
+                                (cls.className || cls);
+                              
+                              return (
+                                <Chip
+                                  key={idx}
+                                  label={displayName}
+                                  size="small"
+                                  variant="outlined"
+                                  color="primary"
+                                />
+                              );
+                            })}
+                            {user.classes.length > 2 && (
                               <Chip
-                                key={idx}
-                                label={subject.name || subject}
-                                size="small"
-                                variant="outlined"
-                              />
-                            ))}
-                            {user.subjects.length > 2 && (
-                              <Chip
-                                label={`+${user.subjects.length - 2} more`}
+                                label={`+${user.classes.length - 2} more`}
                                 size="small"
                                 variant="outlined"
                               />
                             )}
                           </Box>
                         ) : (
-                          <Typography variant="body2" color="text.secondary">None assigned</Typography>
+                          <Typography variant="body2" color="text.secondary">No classes</Typography>
                         )}
                       </TableCell>
                       <TableCell>
@@ -678,7 +647,7 @@ const ManageUsers = () => {
                   ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
+                  <TableCell colSpan={6} align="center">
                     {isLoading ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                         <CircularProgress size={24} />
@@ -820,7 +789,7 @@ const ManageUsers = () => {
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               variant="outlined"
@@ -836,7 +805,7 @@ const ManageUsers = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="role-filter-label">Filter by Role</InputLabel>
               <Select
@@ -852,6 +821,7 @@ const ManageUsers = () => {
                 <MenuItem value="admin">Admin</MenuItem>
                 <MenuItem value="teacher">Teacher</MenuItem>
                 <MenuItem value="student">Student</MenuItem>
+                <MenuItem value="parent">Parent</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -872,6 +842,28 @@ const ManageUsers = () => {
                 {Array.isArray(schools) && schools.map((school) => (
                   <MenuItem key={school._id} value={school._id}>
                     {school.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel id="class-filter-label">Filter by Class</InputLabel>
+              <Select
+                labelId="class-filter-label"
+                id="class-filter"
+                value={classFilter}
+                onChange={handleClassFilterChange}
+                label="Filter by Class"
+                disabled={classesLoading || !classes || classes.length === 0}
+              >
+                <MenuItem value="">
+                  <em>All Classes</em>
+                </MenuItem>
+                {Array.isArray(classes) && classes.map((cls) => (
+                  <MenuItem key={cls._id} value={cls._id}>
+                    {cls.className} - {cls.subject?.name || cls.subject}
                   </MenuItem>
                 ))}
               </Select>

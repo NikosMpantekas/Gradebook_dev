@@ -181,6 +181,10 @@ const CreateUser = (props) => {
 
   // Check if secretary restriction is enabled from URL parameter
   const [restrictSecretary, setRestrictSecretary] = useState(false);
+  
+  // Check if admin already exists (only one admin allowed per organization)
+  const [restrictAdmin, setRestrictAdmin] = useState(false);
+  const [adminExists, setAdminExists] = useState(false);
 
   useEffect(() => {
     // Check URL parameters to see if secretary role creation should be restricted
@@ -190,6 +194,39 @@ const CreateUser = (props) => {
       setRestrictSecretary(true);
     }
   }, [user]);
+  
+  // Check for existing admin account on component mount
+  useEffect(() => {
+    const checkExistingAdmin = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/users`, {
+          headers: {
+            'Authorization': `Bearer ${user?.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const users = await response.json();
+          const hasAdmin = users.some(u => u.role === 'admin');
+          
+          if (hasAdmin) {
+            setAdminExists(true);
+            setRestrictAdmin(true);
+            console.log('Admin account already exists - preventing creation of second admin');
+          }
+        } else {
+          console.error('Failed to check for existing admin accounts');
+        }
+      } catch (error) {
+        console.error('Error checking for existing admin accounts:', error);
+      }
+    };
+    
+    if (user?.token) {
+      checkExistingAdmin();
+    }
+  }, [user?.token]);
 
   // Additional state for loading options
   const [loadingOptions, setLoadingOptions] = useState({
@@ -956,7 +993,9 @@ const CreateUser = (props) => {
                   <MenuItem value="">
                     <em>Select a role</em>
                   </MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="admin" disabled={restrictAdmin}>
+                    {restrictAdmin ? "Admin (Only one admin allowed)" : "Admin"}
+                  </MenuItem>
                   <MenuItem value="secretary" disabled={restrictSecretary}>
                     {restrictSecretary ? "Secretary (Only admin can create)" : "Secretary"}
                   </MenuItem>
@@ -965,6 +1004,11 @@ const CreateUser = (props) => {
                 </Select>
                 {formErrors.role && (
                   <FormHelperText>{formErrors.role}</FormHelperText>
+                )}
+                {adminExists && (
+                  <FormHelperText>
+                    ⚠️ An admin account already exists for this organization. Only one admin is allowed.
+                  </FormHelperText>
                 )}
               </FormControl>
             </Grid>

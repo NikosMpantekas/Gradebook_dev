@@ -881,6 +881,7 @@ const EditUser = () => {
                   value={formData.role}
                   onChange={handleChange}
                   label="Role"
+                  disabled={userData?.role === 'admin'}
                 >
                   <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="secretary">Secretary</MenuItem>
@@ -888,7 +889,9 @@ const EditUser = () => {
                   <MenuItem value="student">Student</MenuItem>
                   <MenuItem value="parent">Parent</MenuItem>
                 </Select>
-                <FormHelperText>{formErrors.role}</FormHelperText>
+                <FormHelperText>
+                  {formErrors.role || (userData?.role === 'admin' ? 'Admin account type cannot be changed' : '')}
+                </FormHelperText>
               </FormControl>
             </Grid>
             
