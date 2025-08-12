@@ -180,6 +180,26 @@ function App() {
     setupAxios();
   }, []);
 
+  // CRITICAL FIX: Initialize push notification service worker when user is logged in
+  useEffect(() => {
+    if (user && user.token && configInitialized) {
+      console.log('[App] User is logged in, initializing push notifications');
+      
+      // Initialize push notifications with proper error handling
+      setupPushNotifications()
+        .then((result) => {
+          if (result.success) {
+            console.log('[App] Push notifications initialized successfully');
+          } else {
+            console.log('[App] Push notifications initialization failed:', result.error);
+          }
+        })
+        .catch((error) => {
+          console.error('[App] Push notifications initialization error:', error);
+        });
+    }
+  }, [user, configInitialized]);
+
   // Add service worker update handling
   useEffect(() => {
     // This effect handles service worker updates for PWA

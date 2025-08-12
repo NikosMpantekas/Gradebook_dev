@@ -338,6 +338,10 @@ export const initializePushNotifications = async () => {
     console.log('[Push Service] Sending subscription to server...');
     await sendSubscriptionToServer(subscription);
     
+    // CRITICAL FIX: Set the pushWorkerRegistered flag so PushNotificationManager can initialize
+    sessionStorage.setItem('pushWorkerRegistered', 'true');
+    console.log('[Push Service] Push worker registered flag set in sessionStorage');
+    
     console.log('[Push Service] Push notifications initialized successfully');
     return { success: true, subscription };
 
