@@ -188,8 +188,14 @@ export const RecentGradesPanel = ({ grades = [], loading = false, onViewAll, use
                         {safeGrade.subject?.name || 
                           safeGrade.subjectName || 
                           safeGrade.classInfo?.subject?.name ||
+                          safeGrade.classInfo?.subject ||
+                          safeGrade.class?.subject?.name ||
+                          safeGrade.class?.subject ||
+                          safeGrade.subject ||
                           safeGrade.className ||
-                          'Subject Not Available'}
+                          safeGrade.class?.name ||
+                          (safeGrade.class && typeof safeGrade.class === 'string' ? safeGrade.class : null) ||
+                          'Subject Name Not Available'}
                         {userRole !== 'student' && safeGrade.student && (
                         <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                             - {safeGrade.student.name}
