@@ -228,16 +228,33 @@ export const initializePushNotifications = async () => {
       });
     }
     
-    // Get VAPID public key from server
+    // Get VAPID public key from server with authentication
     console.log('[Push Service] Fetching VAPID public key...');
-    const response = await fetch(`${API_URL}/api/notifications/vapid-public-key`);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      const error = 'No authentication token found for VAPID key fetch';
+      if (isIOS) {
+        console.error('[Push Service] iOS Auth Error:', error);
+      }
+      throw new Error(error);
+    }
+
+    const response = await fetch(`${API_URL}/api/notifications/vapid-public-key`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
     if (!response.ok) {
-      const error = 'Failed to fetch VAPID public key';
+      const error = `Failed to fetch VAPID public key (${response.status}: ${response.statusText})`;
       if (isIOS) {
         console.error('[Push Service] iOS VAPID Fetch Error:', {
           status: response.status,
           statusText: response.statusText,
-          url: response.url
+          url: response.url,
+          hasAuthHeader: true
         });
       }
       throw new Error(error);
