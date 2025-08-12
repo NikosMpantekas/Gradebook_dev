@@ -111,15 +111,40 @@ const PushNotificationManager = () => {
       
       console.log('[Push] Step 1 SUCCESS: VAPID response received', {
         status: vapidResponse.status,
-        hasPublicKey: !!vapidResponse.data.publicKey,
-        dataKeys: Object.keys(vapidResponse.data)
+        hasData: !!vapidResponse.data,
+        hasPublicKey: !!(vapidResponse.data && vapidResponse.data.publicKey),
+        dataKeys: vapidResponse.data ? Object.keys(vapidResponse.data) : 'no data'
       });
       
-      const publicKey = vapidResponse.data.publicKey;
+      // Handle HTTP 304 (Not Modified) responses - data might be cached
+      let publicKey = null;
+      if (vapidResponse.data && vapidResponse.data.publicKey) {
+        publicKey = vapidResponse.data.publicKey;
+      } else if (vapidResponse.status === 304) {
+        // For 304 responses, try to get cached VAPID key from localStorage
+        const cachedKey = localStorage.getItem('vapidPublicKey');
+        if (cachedKey) {
+          console.log('[Push] Using cached VAPID public key for 304 response');
+          publicKey = cachedKey;
+        } else {
+          // If no cached key, force a fresh request
+          console.log('[Push] No cached VAPID key found, forcing fresh request');
+          const freshResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
+            headers: { 
+              'Authorization': `Bearer ${user.token}`,
+              'Cache-Control': 'no-cache'
+            }
+          });
+          publicKey = freshResponse.data.publicKey;
+        }
+      }
       
       if (!publicKey) {
         throw new Error('Failed to get VAPID public key');
       }
+      
+      // Cache the VAPID public key for future 304 responses
+      localStorage.setItem('vapidPublicKey', publicKey);
       
       console.log('[Push] Step 2: Converting VAPID key to Uint8Array');
       // Convert base64 public key to Uint8Array
