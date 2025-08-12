@@ -265,7 +265,7 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
-      const pushPromises = subscriptions.map(subscription => {
+      const pushPromises = subscriptions.map(async (subscription) => {
         const payload = JSON.stringify({
           title: newNotification.title,
           body: newNotification.message.substring(0, 100),
@@ -284,53 +284,52 @@ const createNotification = asyncHandler(async (req, res) => {
           payloadLength: payload.length
         });
 
-        return webpush.sendNotification(subscription, payload)
-          .then(result => {
-            console.log('NOTIFICATION_CREATE', `Push notification SUCCESS for subscription ${subscription._id}:`, {
-              statusCode: result?.statusCode,
-              headers: result?.headers,
-              body: result?.body?.substring(0, 100)
-            });
-            return result;
-          })
-          .catch(error => {
-            // iOS DEBUGGING: Comprehensive error logging
-            console.error('NOTIFICATION_CREATE', `Push notification FAILED for subscription ${subscription._id}:`, {
-              errorMessage: error.message,
-              errorName: error.name,
-              statusCode: error.statusCode,
-              headers: error.headers,
-              body: error.body,
-              endpoint: subscription.endpoint?.substring(0, 50) + '...',
-              subscriptionKeys: {
-                hasP256dh: !!(subscription.keys && subscription.keys.p256dh),
-                hasAuth: !!(subscription.keys && subscription.keys.auth),
-                p256dhLength: subscription.keys?.p256dh?.length,
-                authLength: subscription.keys?.auth?.length
-              },
-              stack: error.stack
-            });
-            
-            // Check for specific iOS/Safari push notification errors
-            if (error.statusCode === 410 || error.statusCode === 404) {
-              console.warn('NOTIFICATION_CREATE', `Subscription ${subscription._id} is expired/invalid, removing from database`);
-              // Remove invalid subscription from database
-              try {
-                await Subscription.findByIdAndDelete(subscription._id);
-                console.log('NOTIFICATION_CREATE', `Successfully removed invalid subscription ${subscription._id}`);
-              } catch (deleteError) {
-                console.error('NOTIFICATION_CREATE', `Failed to remove invalid subscription ${subscription._id}:`, deleteError.message);
-              }
-            } else if (error.statusCode === 400) {
-              console.error('NOTIFICATION_CREATE', `Bad request - payload or subscription format issue for ${subscription._id}`);
-            } else if (error.statusCode === 413) {
-              console.error('NOTIFICATION_CREATE', `Payload too large for subscription ${subscription._id}`);
-            } else if (error.message && error.message.includes('Received unexpected response code')) {
-              console.error('NOTIFICATION_CREATE', `iOS/Safari specific error - likely subscription format or APNs connectivity issue for ${subscription._id}`);
-            }
-            
-            return null; // Don't rethrow, just log and continue
+        try {
+          const result = await webpush.sendNotification(subscription, payload);
+          console.log('NOTIFICATION_CREATE', `Push notification SUCCESS for subscription ${subscription._id}:`, {
+            statusCode: result?.statusCode,
+            headers: result?.headers,
+            body: result?.body?.substring(0, 100)
           });
+          return result;
+        } catch (error) {
+          // iOS DEBUGGING: Comprehensive error logging
+          console.error('NOTIFICATION_CREATE', `Push notification FAILED for subscription ${subscription._id}:`, {
+            errorMessage: error.message,
+            errorName: error.name,
+            statusCode: error.statusCode,
+            headers: error.headers,
+            body: error.body,
+            endpoint: subscription.endpoint?.substring(0, 50) + '...',
+            subscriptionKeys: {
+              hasP256dh: !!(subscription.keys && subscription.keys.p256dh),
+              hasAuth: !!(subscription.keys && subscription.keys.auth),
+              p256dhLength: subscription.keys?.p256dh?.length,
+              authLength: subscription.keys?.auth?.length
+            },
+            stack: error.stack
+          });
+          
+          // Check for specific iOS/Safari push notification errors
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            console.warn('NOTIFICATION_CREATE', `Subscription ${subscription._id} is expired/invalid, removing from database`);
+            // Remove invalid subscription from database
+            try {
+              await Subscription.findByIdAndDelete(subscription._id);
+              console.log('NOTIFICATION_CREATE', `Successfully removed invalid subscription ${subscription._id}`);
+            } catch (deleteError) {
+              console.error('NOTIFICATION_CREATE', `Failed to remove invalid subscription ${subscription._id}:`, deleteError.message);
+            }
+          } else if (error.statusCode === 400) {
+            console.error('NOTIFICATION_CREATE', `Bad request - payload or subscription format issue for ${subscription._id}`);
+          } else if (error.statusCode === 413) {
+            console.error('NOTIFICATION_CREATE', `Payload too large for subscription ${subscription._id}`);
+          } else if (error.message && error.message.includes('Received unexpected response code')) {
+            console.error('NOTIFICATION_CREATE', `iOS/Safari specific error - likely subscription format or APNs connectivity issue for ${subscription._id}`);
+          }
+          
+          return null; // Don't rethrow, just log and continue
+        }
       });
 
       const pushResults = await Promise.allSettled(pushPromises);
