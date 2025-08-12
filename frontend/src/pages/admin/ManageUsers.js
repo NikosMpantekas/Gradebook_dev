@@ -232,15 +232,26 @@ const ManageUsers = () => {
       });
     }
 
-    // Filter by class
+    // Filter by class - check if user is associated with the selected class
     if (classFilter) {
       filtered = filtered.filter(user => {
-        // Check if user has classes array
-        if (user.classes && Array.isArray(user.classes)) {
+        // For teachers: check if they teach in this class
+        if (user.role === 'teacher' && user.classes && Array.isArray(user.classes)) {
           return user.classes.some(cls => 
             (typeof cls === 'object' ? cls._id : cls) === classFilter
           );
         }
+        
+        // For students: check if they are enrolled in this class
+        // We need to check if this user appears in the selected class's students array
+        const selectedClass = classes.find(cls => cls._id === classFilter);
+        if (selectedClass && selectedClass.students && Array.isArray(selectedClass.students)) {
+          return selectedClass.students.some(student => 
+            (typeof student === 'object' ? student._id : student) === user._id
+          );
+        }
+        
+        // For admins and others, no class association
         return false;
       });
     }
@@ -554,7 +565,6 @@ const ManageUsers = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
-                <TableCell>Class</TableCell>
                 <TableCell>Created</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
@@ -580,39 +590,6 @@ const ManageUsers = () => {
                           color={getRoleColor(user.role)}
                           size="small"
                         />
-                      </TableCell>
-                      <TableCell>
-                        {/* Class information */}
-                        {user.classes && user.classes.length > 0 ? (
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {user.classes.slice(0, 2).map((cls, idx) => {
-                              // Find class details from classes array
-                              const classDetails = classes.find(c => c._id === (typeof cls === 'object' ? cls._id : cls));
-                              const displayName = classDetails ? 
-                                `${classDetails.className} - ${classDetails.subject?.name || classDetails.subject}` : 
-                                (cls.className || cls);
-                              
-                              return (
-                                <Chip
-                                  key={idx}
-                                  label={displayName}
-                                  size="small"
-                                  variant="outlined"
-                                  color="primary"
-                                />
-                              );
-                            })}
-                            {user.classes.length > 2 && (
-                              <Chip
-                                label={`+${user.classes.length - 2} more`}
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </Box>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">No classes</Typography>
-                        )}
                       </TableCell>
                       <TableCell>
                         {user.createdAt ? format(new Date(user.createdAt), 'PP') : 'Unknown'}
@@ -647,7 +624,7 @@ const ManageUsers = () => {
                   ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={5} align="center">
                     {isLoading ? (
                       <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                         <CircularProgress size={24} />
