@@ -12,7 +12,8 @@ import {
   Tooltip,
   ListItemIcon,
   ListItemText,
-  Divider
+  Divider,
+  useTheme
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -28,6 +29,40 @@ import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { getMyNotifications } from '../../features/notifications/notificationSlice';
 
+// Custom hook to fetch latest version from patch notes
+const useLatestVersion = () => {
+  const [version, setVersion] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLatestVersion = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/patch-notes/public`, {
+          timeout: 10000
+        });
+        
+        if (response.data && response.data.length > 0) {
+          // Sort patch notes by creation date (newest first) and get the latest version
+          const sortedPatchNotes = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          const latestPatchNote = sortedPatchNotes[0];
+          
+          if (latestPatchNote.version) {
+            setVersion(latestPatchNote.version);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest version:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLatestVersion();
+  }, []);
+
+  return { version, isLoading };
+};
+
 const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
   const [contactUnreadCount, setContactUnreadCount] = useState(0);
@@ -35,10 +70,17 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
   const { notifications } = useSelector((state) => state.notifications);
+  
+  // Get latest version from patch notes
+  const { version: latestVersion } = useLatestVersion();
+  
+  // Check if version contains "beta"
+  const isBetaVersion = latestVersion && latestVersion.toLowerCase().includes('beta');
   
   // Count unread notifications
   const notifUnreadCount = notifications?.filter(n => !n.isRead).length || 0;
@@ -195,29 +237,62 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
       }}
     >
       <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={handleDrawerToggle}
-          sx={{ mr: 2, display: { sm: 'none' } }}
-        >
+                            <IconButton
+                      color="inherit"
+                      aria-label="open drawer"
+                      edge="start"
+                      onClick={handleDrawerToggle}
+                      sx={{ mr: { xs: 1, sm: 2 }, display: { sm: 'none' } }}
+                    >
           <MenuIcon />
         </IconButton>
-        <Typography
-          variant="h6"
-          noWrap
-          component={RouterLink}
-          to="/"
-          sx={{
-            flexGrow: 1,
-            textDecoration: 'none',
-            color: 'inherit',
-            fontWeight: 'bold',
-          }}
-        >
-          GradeBook
-        </Typography>
+                            <Box
+                      sx={{
+                        flexGrow: 1,
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                                <Typography
+                        variant="h6"
+                        noWrap
+                        component={RouterLink}
+                        to="/"
+                                                  sx={{
+                            textDecoration: 'none',
+                            color: 'inherit',
+                            fontWeight: 100,
+                            fontSize: { xs: 24, sm: 28, md: 32, lg: 36 },
+                            letterSpacing: 1,
+                            fontFamily: 'Roboto, Arial, sans-serif',
+                            position: 'relative',
+                            display: 'inline-block',
+                            '&:hover': {
+                              color: theme.palette.primary.dark,
+                            },
+                          }}
+                      >
+                        GradeBook
+                        {isBetaVersion && (
+                          <Typography
+                            component="span"
+                            sx={{
+                              position: 'relative',
+                              bottom: '-0.2em',
+                              right: '-0.1em',
+                              color: theme.palette.primary.main,
+                              fontSize: { xs: '0.7em', sm: '0.6em' },
+                              fontWeight: 100,
+                              lineHeight: 1,
+                              verticalAlign: 'sub',
+                            }}
+                          >
+                            β
+                          </Typography>
+                        )}
+                      </Typography>
+        </Box>
 
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
