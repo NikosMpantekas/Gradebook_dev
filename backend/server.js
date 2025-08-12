@@ -139,6 +139,7 @@ const corsOptions = {
     "x-client-origin",
     "x-frontend-url",
     "x-request-id",
+    "cache-control",
     "Access-Control-Allow-Origin",
     "Access-Control-Allow-Methods",
     "Access-Control-Allow-Headers"

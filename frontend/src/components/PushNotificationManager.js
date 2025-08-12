@@ -104,8 +104,8 @@ const PushNotificationManager = () => {
       
       const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
         headers: { 
-          'Authorization': `Bearer ${user.token}`,
-          'Cache-Control': 'no-cache'
+          'Authorization': `Bearer ${user.token}`
+          // REMOVED Cache-Control header to fix CORS error
         }
       });
       

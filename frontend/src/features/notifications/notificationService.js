@@ -235,7 +235,7 @@ const subscribeToPushNotifications = async (subscription, token) => {
 
 // Get VAPID public key
 const getVapidPublicKey = async () => {
-  const response = await axiosInstance.get(API_SUBSCRIPTIONS + 'vapidPublicKey');
+  const response = await axiosInstance.get(API_NOTIFICATIONS + 'vapid-public-key');
 
   return response.data;
 };
