@@ -211,23 +211,47 @@ const ManageUsers = () => {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
 
-    // Filter by school
+    // Filter by school branch - show users assigned to classes within the selected school branch
     if (schoolFilter) {
       filtered = filtered.filter(user => {
-        // Check both old and new field formats
-        if (user.schools && Array.isArray(user.schools)) {
-          return user.schools.some(school => 
-            (typeof school === 'object' ? school._id : school) === schoolFilter
-          );
-        }
+        // Direct school assignment check (for admin/secretaries)
         if (user.school) {
           if (Array.isArray(user.school)) {
-            return user.school.some(school => 
+            const directMatch = user.school.some(school => 
               (typeof school === 'object' ? school._id : school) === schoolFilter
             );
+            if (directMatch) return true;
+          } else {
+            const directMatch = (typeof user.school === 'object' ? user.school._id : user.school) === schoolFilter;
+            if (directMatch) return true;
           }
-          return (typeof user.school === 'object' ? user.school._id : user.school) === schoolFilter;
         }
+        
+        // For students and teachers: check if they belong to classes within this school branch
+        const userClassesInBranch = classes.filter(cls => 
+          cls.schoolBranch === schoolFilter || cls.schoolId === schoolFilter
+        );
+        
+        if (userClassesInBranch.length === 0) return false;
+        
+        // Check if user is a student in any class within this school branch
+        if (user.role === 'student') {
+          return userClassesInBranch.some(cls => 
+            cls.students && cls.students.some(student => 
+              (typeof student === 'object' ? student._id : student) === user._id
+            )
+          );
+        }
+        
+        // Check if user is a teacher in any class within this school branch
+        if (user.role === 'teacher') {
+          return userClassesInBranch.some(cls => 
+            cls.teachers && cls.teachers.some(teacher => 
+              (typeof teacher === 'object' ? teacher._id : teacher) === user._id
+            )
+          );
+        }
+        
         return false;
       });
     }
