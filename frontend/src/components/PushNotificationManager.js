@@ -96,12 +96,23 @@ const PushNotificationManager = () => {
       }
       
       // Get VAPID public key from backend - use API_URL for secure HTTPS in production
-      console.log('Fetching VAPID public key using API_URL:', API_URL);
+      console.log('[Push] Step 1: Fetching VAPID public key using API_URL:', API_URL);
+      console.log('[Push] Request headers:', {
+        hasToken: !!user.token,
+        tokenPreview: user.token ? user.token.substring(0, 20) + '...' : 'none'
+      });
+      
       const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
         headers: { 
           'Authorization': `Bearer ${user.token}`,
           'Cache-Control': 'no-cache'
         }
+      });
+      
+      console.log('[Push] Step 1 SUCCESS: VAPID response received', {
+        status: vapidResponse.status,
+        hasPublicKey: !!vapidResponse.data.publicKey,
+        dataKeys: Object.keys(vapidResponse.data)
       });
       
       const publicKey = vapidResponse.data.publicKey;
@@ -110,22 +121,42 @@ const PushNotificationManager = () => {
         throw new Error('Failed to get VAPID public key');
       }
       
+      console.log('[Push] Step 2: Converting VAPID key to Uint8Array');
       // Convert base64 public key to Uint8Array
       const convertedPublicKey = urlBase64ToUint8Array(publicKey);
+      console.log('[Push] Step 2 SUCCESS: VAPID key converted', {
+        originalLength: publicKey.length,
+        convertedLength: convertedPublicKey.length
+      });
       
+      console.log('[Push] Step 3: Getting service worker registration');
       // Get service worker registration and subscribe
       const registration = await navigator.serviceWorker.ready;
+      console.log('[Push] Step 3 SUCCESS: Service worker ready', {
+        scope: registration.scope,
+        hasPushManager: !!registration.pushManager
+      });
       
+      console.log('[Push] Step 4: Checking for existing subscription');
       // Unsubscribe from any existing subscription first to ensure a clean state
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
+        console.log('[Push] Step 4: Found existing subscription, unsubscribing');
         await existingSubscription.unsubscribe();
+        console.log('[Push] Step 4 SUCCESS: Existing subscription removed');
+      } else {
+        console.log('[Push] Step 4: No existing subscription found');
       }
       
+      console.log('[Push] Step 5: Creating new push subscription');
       // Create new subscription
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedPublicKey
+      });
+      console.log('[Push] Step 5 SUCCESS: New subscription created', {
+        endpoint: newSubscription.endpoint?.substring(0, 50) + '...',
+        hasGetKey: !!newSubscription.getKey
       });
       
       console.log('[Push] Successfully created subscription');
@@ -190,10 +221,16 @@ const PushNotificationManager = () => {
           hasAuth: !!subscriptionData.keys.auth
         });
         
-        console.log('[Push] Sending properly formatted subscription data to server');
+        console.log('[Push] Step 6: Sending subscription data to server');
+        console.log('[Push] Server request details:', {
+          url: `${API_URL}/api/notifications/subscription`,
+          hasEndpoint: !!subscriptionData.endpoint,
+          hasKeys: !!(subscriptionData.keys.p256dh && subscriptionData.keys.auth),
+          hasToken: !!user.token
+        });
         
         // Send subscription to server
-        await axios.post(`${API_URL}/api/notifications/subscription`, 
+        const serverResponse = await axios.post(`${API_URL}/api/notifications/subscription`, 
           subscriptionData,
           { 
             headers: { 
@@ -202,6 +239,11 @@ const PushNotificationManager = () => {
             } 
           }
         );
+        
+        console.log('[Push] Step 6 SUCCESS: Subscription sent to server', {
+          status: serverResponse.status,
+          responseData: serverResponse.data
+        });
         
         setNotification({
           open: true,
@@ -215,11 +257,33 @@ const PushNotificationManager = () => {
         throw new Error('Failed to process subscription: ' + innerError.message);
       }
     } catch (err) {
-      console.error('[Push] Error subscribing to push notifications:', err);
+      console.error('[Push] Error subscribing to push notifications:', {
+        errorName: err.name,
+        errorMessage: err.message,
+        errorStack: err.stack,
+        errorCode: err.code,
+        networkError: err.response?.status || 'No response',
+        responseData: err.response?.data || 'No response data'
+      });
+      
+      // More specific error messages
+      let userMessage = 'Failed to subscribe to push notifications';
+      if (err.name === 'NetworkError' || err.code === 'NETWORK_ERROR') {
+        userMessage = 'Network error - please check your connection and try again';
+      } else if (err.response?.status === 401) {
+        userMessage = 'Authentication error - please log in again';
+      } else if (err.response?.status === 403) {
+        userMessage = 'Permission denied - contact administrator';
+      } else if (err.message.includes('VAPID')) {
+        userMessage = 'Server configuration error - contact support';
+      } else if (err.message.includes('permission')) {
+        userMessage = 'Please allow notifications in your browser settings';
+      }
+      
       setError('Failed to subscribe to push notifications');
       setNotification({
         open: true,
-        message: `Failed to subscribe to push notifications: ${err.message}`,
+        message: `${userMessage}: ${err.message}`,
         severity: 'error'
       });
     } finally {
