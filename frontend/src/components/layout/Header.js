@@ -280,10 +280,11 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                             sx={{
                               position: 'relative',
                               bottom: '-0.2em',
-                              right: '-0.1em',
+                              right: '-0.05em',
                               color: theme.palette.primary.main,
                               fontSize: { xs: '0.7em', sm: '0.6em' },
                               fontWeight: 100,
+                              fontStyle: 'italic',
                               lineHeight: 1,
                               verticalAlign: 'sub',
                             }}

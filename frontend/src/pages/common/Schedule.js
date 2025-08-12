@@ -468,12 +468,10 @@ const Schedule = () => {
     setDialogOpen(true);
   };
 
-  // Format time to 12-hour format
+  // Format time to 24-hour format
   const formatTime = (time24) => {
     const [hours, minutes] = time24.split(':');
-    const hour12 = parseInt(hours) % 12 || 12;
-    const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
-    return `${hour12}:${minutes} ${ampm}`;
+    return `${hours}:${minutes}`;
   };
 
   // Get events for a specific day and time slot - UPDATED to prevent splitting
