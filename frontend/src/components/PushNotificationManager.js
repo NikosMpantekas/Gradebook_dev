@@ -116,31 +116,63 @@ const PushNotificationManager = () => {
         dataKeys: vapidResponse.data ? Object.keys(vapidResponse.data) : 'no data'
       });
       
-      // Handle HTTP 304 (Not Modified) responses - data might be cached
+      // Handle VAPID public key extraction - BULLETPROOF for all HTTP status codes
       let publicKey = null;
+      
+      console.log('[Push] VAPID Response Analysis:', {
+        status: vapidResponse.status,
+        hasData: !!vapidResponse.data,
+        dataType: typeof vapidResponse.data,
+        dataContent: vapidResponse.data,
+        hasPublicKey: !!(vapidResponse.data && vapidResponse.data.publicKey)
+      });
+      
+      // Try to get public key from response first
       if (vapidResponse.data && vapidResponse.data.publicKey) {
+        console.log('[Push] SUCCESS: Got VAPID key from response data');
         publicKey = vapidResponse.data.publicKey;
-      } else if (vapidResponse.status === 304) {
-        // For 304 responses, try to get cached VAPID key from localStorage
+      }
+      // If no data (common with 304), try localStorage cache
+      else if (!publicKey) {
+        console.log('[Push] No VAPID key in response, checking localStorage cache...');
         const cachedKey = localStorage.getItem('vapidPublicKey');
         if (cachedKey) {
-          console.log('[Push] Using cached VAPID public key for 304 response');
+          console.log('[Push] SUCCESS: Using cached VAPID key from localStorage');
           publicKey = cachedKey;
-        } else {
-          // If no cached key, force a fresh request
-          console.log('[Push] No cached VAPID key found, forcing fresh request');
+        }
+      }
+      
+      // If still no key, force a fresh uncached request
+      if (!publicKey) {
+        console.log('[Push] FORCING fresh VAPID request with no-cache headers...');
+        try {
           const freshResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
             headers: { 
               'Authorization': `Bearer ${user.token}`,
-              'Cache-Control': 'no-cache'
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
             }
           });
-          publicKey = freshResponse.data.publicKey;
+          
+          console.log('[Push] Fresh VAPID response:', {
+            status: freshResponse.status,
+            hasData: !!freshResponse.data,
+            hasPublicKey: !!(freshResponse.data && freshResponse.data.publicKey)
+          });
+          
+          if (freshResponse.data && freshResponse.data.publicKey) {
+            publicKey = freshResponse.data.publicKey;
+            console.log('[Push] SUCCESS: Got VAPID key from fresh request');
+          }
+        } catch (freshError) {
+          console.error('[Push] Fresh VAPID request failed:', freshError);
         }
       }
       
       if (!publicKey) {
-        throw new Error('Failed to get VAPID public key');
+        console.error('[Push] CRITICAL: No VAPID public key available after all attempts');
+        throw new Error('VAPID public key unavailable - tried response, cache, and fresh request');
       }
       
       // Cache the VAPID public key for future 304 responses
