@@ -65,7 +65,7 @@ const sendSubscriptionToServer = async (subscription) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_URL}/api/subscriptions`, {
+    const response = await fetch(`${API_URL}/api/notifications/subscription`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
