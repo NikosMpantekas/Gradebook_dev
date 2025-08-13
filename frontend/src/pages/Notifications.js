@@ -123,7 +123,9 @@ const Notifications = () => {
       .unwrap()
       .then(() => {
         toast.success('Notification marked as read');
-        dispatch(getMyNotifications());
+        // CRITICAL FIX: Don't immediately refresh - Redux state already updated
+        // dispatch(getMyNotifications()); // REMOVED: Causes race condition with stale cache
+        
         // Dispatch custom event to refresh header counts
         window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
       })

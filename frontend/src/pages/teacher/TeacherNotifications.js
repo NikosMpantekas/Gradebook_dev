@@ -369,15 +369,18 @@ const TeacherNotifications = () => {
         console.log(`Notification ${id} marked as read successfully`);
         toast.success('Notification marked as read');
         
-        // Refresh notifications to ensure consistency
-        if (user?.role === 'teacher') {
-          // Re-fetch both received and sent notifications for teachers
-          fetchTeacherNotifications();
-        } else if (user?.role === 'admin') {
-          dispatch(getMyNotifications());
-        } else {
-          dispatch(getMyNotifications());
-        }
+        // CRITICAL FIX: Don't immediately refresh - optimistic update already correct
+        // Immediate refresh causes race condition with stale 304 cache responses
+        // if (user?.role === 'teacher') {
+        //   fetchTeacherNotifications(); // REMOVED: Causes race condition
+        // } else if (user?.role === 'admin') {
+        //   dispatch(getMyNotifications()); // REMOVED: Causes race condition
+        // } else {
+        //   dispatch(getMyNotifications()); // REMOVED: Causes race condition
+        // }
+        
+        // Dispatch custom event to refresh header counts only
+        window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
       })
       .catch(error => {
         console.error('Failed to mark notification as read:', error);
