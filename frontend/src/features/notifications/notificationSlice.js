@@ -137,7 +137,14 @@ export const markNotificationAsRead = createAsyncThunk(
   async (id, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.user.token;
-      return await notificationService.markNotificationAsRead(id, token);
+      const response = await notificationService.markNotificationAsRead(id, token);
+      // CRITICAL FIX: Include the notification ID in the returned payload
+      // so the reducer can properly update the state
+      return {
+        ...response,
+        _id: id,
+        notificationId: id
+      };
     } catch (error) {
       const message =
         (error.response &&
