@@ -549,6 +549,66 @@ const NotificationsList = ({
                   </Box>
                 }
               />
+              <ListItemSecondaryAction>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {/* Mark as Read button - only show for unread notifications */}
+                  {!safeNotification.isRead && tabValue === 0 && (
+                    <Tooltip title="Mark as read">
+                      <IconButton 
+                        edge="end" 
+                        aria-label="mark as read"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof onMarkAsRead === 'function') {
+                            onMarkAsRead(safeNotification._id);
+                            // Dispatch custom event to refresh header counts
+                            window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+                          }
+                        }}
+                        sx={{ color: 'success.main' }}
+                      >
+                        <MarkEmailReadIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {/* Edit button - only for sent notifications or admin */}
+                  {canEdit(safeNotification) && (
+                    <Tooltip title="Edit notification">
+                      <IconButton 
+                        edge="end" 
+                        aria-label="edit" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof onEdit === 'function') {
+                            onEdit(e, safeNotification);
+                          }
+                        }}
+                        sx={{ ml: 1, color: 'primary.main' }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {/* Delete button - only for sent notifications or admin */}
+                  {(tabValue === 1 || user?.role === 'admin') && (
+                    <Tooltip title="Delete notification">
+                      <IconButton 
+                        edge="end" 
+                        aria-label="delete" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof onDelete === 'function') {
+                            onDelete(safeNotification._id);
+                          }
+                        }}
+                        sx={{ ml: 1, color: 'error.main' }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
+              </ListItemSecondaryAction>
             </ListItem>
             <Divider variant="inset" component="li" />
           </Box>

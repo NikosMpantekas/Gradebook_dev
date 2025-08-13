@@ -266,14 +266,20 @@ const createNotification = asyncHandler(async (req, res) => {
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
       const pushPromises = subscriptions.map(async (subscription) => {
+        // CRITICAL FIX: Include important flag in push notification
+        const isImportant = newNotification.urgent || newNotification.isImportant;
+        const importantPrefix = isImportant ? "🔥 IMPORTANT: " : "";
+        
         const payload = JSON.stringify({
-          title: newNotification.title,
+          title: `${importantPrefix}${newNotification.title}`,
           body: newNotification.message.substring(0, 100),
           icon: '/icon-192x192.png',
           badge: '/icon-192x192.png',
           data: {
             notificationId: newNotification._id.toString(),
-            url: `/notifications/${newNotification._id}`
+            url: `/notifications/${newNotification._id}`,
+            isImportant: isImportant,
+            urgent: newNotification.urgent || false
           }
         });
 
