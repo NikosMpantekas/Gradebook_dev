@@ -179,14 +179,8 @@ const getAllSchoolPermissions = asyncHandler(async (req, res) => {
   try {
     console.log('🔍 [SchoolPermissions] Getting all schools with permissions for superadmin...');
     
-    // CRITICAL: Get ONLY main schools, NOT branches 
-    // Main schools have non-empty dbConfig.dbName, branches have empty or missing dbName
-    const schools = await School.find({
-      $and: [
-        { dbConfig: { $exists: true } },
-        { 'dbConfig.dbName': { $exists: true, $ne: '', $ne: null, $regex: /.+/ } }
-      ]
-    }).lean();
+    // Get all schools - simplified approach for superadmin
+    const schools = await School.find({}).lean();
     
     // ADDITIONAL FILTERING: Remove any schools with empty dbName that slipped through
     const mainSchools = schools.filter(school => {
