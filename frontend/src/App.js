@@ -766,7 +766,7 @@ function App() {
             } />
             <Route path="/superadmin/school-permissions" element={
               <SuperAdminRoute>
-                <SchoolPermissionsManager />
+                <ManageSchoolFeatures />
               </SuperAdminRoute>
             } />
 
