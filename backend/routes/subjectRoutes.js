@@ -9,7 +9,7 @@ const {
   getSubjectsByDirection,
   getSubjectsByTeacher
 } = require('../controllers/subjectController');
-const { protect, admin, teacher, canManageSubjects, adminCanManageSubjects } = require('../middleware/authMiddleware');
+const { protect, admin, teacher, canManageSubjects } = require('../middleware/authMiddleware');
 
 // Public routes that don't have parameters
 router.get('/', getSubjects);
@@ -22,8 +22,8 @@ router.get('/teacher', protect, teacher, getSubjectsByTeacher);
 router.get('/:id', getSubjectById);
 
 // Admin routes (with secretary support where appropriate)
-router.post('/', protect, adminCanManageSubjects, createSubject); // Only admins with subject management permission can create subjects
-router.put('/:id', protect, adminCanManageSubjects, updateSubject); // Only admins with subject management permission can update subjects
-router.delete('/:id', protect, adminCanManageSubjects, deleteSubject); // Only admins with subject management permission can delete subjects
+router.post('/', protect, canManageSubjects, createSubject); // Only admins with subject management permission can create subjects
+router.put('/:id', protect, canManageSubjects, updateSubject); // Only admins with subject management permission can update subjects
+router.delete('/:id', protect, canManageSubjects, deleteSubject); // Only admins with subject management permission can delete subjects
 
 module.exports = router;
