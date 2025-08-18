@@ -1,667 +1,577 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Paper,
-  CircularProgress,
-  Alert,
-  Container,
-  Avatar,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
-  Button,
-  CardHeader,
-  CardActions,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  ListItemButton,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  Person as PersonIcon,
-  School as SchoolIcon,
-  MenuBook as SubjectIcon,
-  Grade as GradeIcon,
-  Schedule as ScheduleIcon,
-  Notifications as NotificationsIcon,
-  TrendingUp as TrendingUpIcon,
-  Group as GroupIcon,
-  PeopleAlt as PeopleAltIcon,
-  SupervisorAccount as SupervisorAccountIcon,
-  Face as FaceIcon,
-  Assessment as AssessmentIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Send as SendIcon,
-  Class as ClassIcon,
-  Search as SearchIcon,
-  ArrowForward as ArrowForwardIcon,
-  AssignmentTurnedIn as AssignmentIcon,
-  AdminPanelSettings as AdminIcon,
-  BarChart as BarChartIcon
-} from '@mui/icons-material';
-import { useSelector } from 'react-redux';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../config/appConfig';
+import { useTranslation } from 'react-i18next';
+import { 
+  User, 
+  School, 
+  BookOpen, 
+  Award, 
+  Bell, 
+  Calendar, 
+  TrendingUp, 
+  BarChart3,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  Plus,
+  Eye,
+  Clock,
+  Mail,
+  Phone,
+  MapPin,
+  Zap,
+  CalendarDays,
+  MessageSquare
+} from 'lucide-react';
+import { getUserData } from '../features/auth/authSlice';
+import { getMyNotifications } from '../features/notifications/notificationSlice';
+import { getStudentGrades } from '../features/grades/gradeSlice';
+import { getSchools } from '../features/schools/schoolSlice';
+import { getDirections } from '../features/directions/directionSlice';
+import { getSubjects } from '../features/subjects/subjectSlice';
+import logger from '../services/loggerService';
+import ErrorBoundary from '../components/common/ErrorBoundary';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
+import { Label } from '../components/ui/label';
 
 const UnifiedDashboard = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [recentGrades, setRecentGrades] = useState([]);
+  const [recentNotifications, setRecentNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [dashboardData, setDashboardData] = useState({
-    userInfo: null,
-    grades: [],
-    notifications: [],
-    subjects: [],
-    upcomingClasses: [],
-    stats: {},
-    users: [],
-    quickActions: []
-  });
-  
-  const { user } = useSelector((state) => state.auth);
-  const token = user?.token; // Token is INSIDE user object, not separate field
-  const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [error, setError] = useState('');
 
-  // Debug logging
-  console.log('UNIFIED DASHBOARD - Component mounted');
-  console.log('UNIFIED DASHBOARD - User:', user);
-  console.log('UNIFIED DASHBOARD - Token from user object:', token ? 'Present' : 'Missing');
-  console.log('UNIFIED DASHBOARD - User role:', user?.role);
-  console.log('UNIFIED DASHBOARD - Current URL:', window.location.href);
-  console.log('UNIFIED DASHBOARD - Current pathname:', window.location.pathname);
+  const { user } = useSelector((state) => state.auth);
+  const { schools } = useSelector((state) => state.schools);
+  const { directions } = useSelector((state) => state.directions);
+  const { subjects } = useSelector((state) => state.subjects);
+  const { notifications } = useSelector((state) => state.notifications);
+  const { grades } = useSelector((state) => state.grades);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // Get token from user object or localStorage as fallback
+  const authToken = user?.token || localStorage.getItem('token');
 
   useEffect(() => {
-    console.log('=== UNIFIED DASHBOARD useEffect START ===');
-    console.log('UNIFIED DASHBOARD - useEffect triggered at:', new Date().toISOString());
-    console.log('UNIFIED DASHBOARD - User in useEffect:', user);
-    console.log('UNIFIED DASHBOARD - Token from user object:', token ? 'Present' : 'Missing');
-    console.log('UNIFIED DASHBOARD - Current location:', window.location.href);
-    
-    // Emergency check for authentication state
-    const localUser = localStorage.getItem('user');
-    const sessionUser = sessionStorage.getItem('user');
-    console.log('UNIFIED DASHBOARD - localStorage user exists:', !!localUser);
-    console.log('UNIFIED DASHBOARD - sessionStorage user exists:', !!sessionUser);
-    
-    if (!user || !token) {
-      console.error('=== EMERGENCY: NO USER OR TOKEN DETECTED ===');
-      console.error('User object:', user);
-      console.error('Token value (from user.token):', token);
-      console.error('About to redirect to /login from:', window.location.pathname);
-      console.error('Redux auth state might be corrupted or not hydrated');
-      
-      // Don't navigate if we're already at login to prevent loops
-      if (window.location.pathname !== '/login') {
-        console.error('NAVIGATING TO LOGIN...');
-        navigate('/login');
-      } else {
-        console.error('ALREADY AT LOGIN - NOT NAVIGATING');
-      }
-      return;
+    if (authToken && user) {
+      fetchDashboardData();
     }
-    
-    console.log('=== AUTH CHECK PASSED - FETCHING DATA ===');
-    console.log('User role confirmed:', user.role);
-    console.log('Token confirmed present from user object');
-    
-    fetchDashboardData();
-    console.log('=== UNIFIED DASHBOARD useEffect END ===');
-  }, [user, token]);
+  }, [authToken, user]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
-      console.log('UNIFIED DASHBOARD - Starting fetchDashboardData');
-      console.log('UNIFIED DASHBOARD - API_URL:', API_URL);
-      
       setLoading(true);
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
+      setError('');
 
-      console.log('UNIFIED DASHBOARD - Request config:', config);
-      console.log('Fetching dashboard data for role:', user?.role);
-      
-      const notificationsEndpoint = user?.role === 'student'
-        ? `${API_URL}/api/notifications?limit=5`
-        : `${API_URL}/api/notifications?limit=5`;
-
-      // Common data for all roles
-      console.log('UNIFIED DASHBOARD - Making common API calls...');
-      const commonPromises = [
-        axios.get(`${API_URL}/api/users/profile`, config),
-        axios.get(notificationsEndpoint, config),
-        axios.get(`${API_URL}/api/schedule`, config)
-      ];
-
-      // Role-specific data
-      let roleSpecificPromises = [];
-      
-      console.log('UNIFIED DASHBOARD - Setting up role-specific calls for:', user?.role);
-      if (user?.role === 'student') {
-        console.log('UNIFIED DASHBOARD - Adding student-specific API calls');
-        roleSpecificPromises = [
-          axios.get(`${API_URL}/api/grades/student`, config),
-          axios.get(`${API_URL}/api/classes/my-classes`, config)
-        ];
-      } else if (user?.role === 'teacher') {
-        console.log('UNIFIED DASHBOARD - Adding teacher-specific API calls');
-        roleSpecificPromises = [
-          axios.get(`${API_URL}/api/grades/teacher`, config),
-          axios.get(`${API_URL}/api/classes/my-teaching-classes`, config)
-        ];
-      } else if (user?.role === 'admin') {
-        console.log('UNIFIED DASHBOARD - Adding admin-specific API calls');
-        roleSpecificPromises = [
-          axios.get(`${API_URL}/api/users`, config),
-          axios.get(`${API_URL}/api/stats/overview`, config).catch(() => ({ data: {} }))
-        ];
+      // Fetch user data if not already loaded
+      if (!user.schools || !user.directions || !user.subjects) {
+        await dispatch(getUserData()).unwrap();
       }
 
-      console.log('UNIFIED DASHBOARD - Making all API calls...');
-      const [profileResponse, notificationsResponse, scheduleResponse, ...roleData] = await Promise.all([
-        ...commonPromises,
-        ...roleSpecificPromises
-      ]);
-
-      console.log('UNIFIED DASHBOARD - API responses received');
-      console.log('Profile data:', profileResponse.data);
-      console.log('Notifications data:', notificationsResponse.data);
-      console.log('Schedule data:', scheduleResponse.data);
-      console.log('Role-specific data count:', roleData.length);
-
-      // Process schedule data (robust to both possible API shapes)
-      const weekDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-      let scheduleObj = null;
-      if (scheduleResponse.data && scheduleResponse.data.schedule) {
-        scheduleObj = scheduleResponse.data.schedule;
-      } else if (scheduleResponse.data && scheduleResponse.data.success && typeof scheduleResponse.data === 'object') {
-        // If top-level keys are weekdays, extract them
-        scheduleObj = Object.fromEntries(Object.entries(scheduleResponse.data).filter(([k]) => weekDays.includes(k)));
+      // Fetch schools, directions, and subjects if not already loaded
+      if (!schools.length) {
+        await dispatch(getSchools()).unwrap();
       }
-      const upcomingClasses = scheduleObj
-        ? Object.values(scheduleObj).flat().slice(0, 3)
-        : [];
-
-      let processedData = {
-        userInfo: profileResponse.data,
-        notifications: notificationsResponse.data?.notifications?.slice(0, 3) || [],
-        upcomingClasses,
-        grades: [],
-        subjects: [],
-        users: [],
-        stats: {}
-      };
-
-      // Process role-specific data
-      if (user?.role === 'student' && roleData.length >= 2) {
-        const [gradesResponse, classesResponse] = roleData;
-        processedData.grades = gradesResponse.data?.grades?.slice(0, 5) || [];
-        processedData.subjects = classesResponse.data?.map(cls => cls.subject).filter((subject, index, self) => 
-          self.findIndex(s => s._id === subject._id) === index
-        ) || [];
-        console.log('Student classes data:', classesResponse.data);
-        console.log('Student subjects:', processedData.subjects);
-      } else if (user?.role === 'teacher' && roleData.length >= 2) {
-        const [gradesResponse, classesResponse] = roleData;
-        processedData.grades = gradesResponse.data?.grades?.slice(0, 5) || [];
-        processedData.subjects = classesResponse.data?.map(cls => cls.subject).filter((subject, index, self) => 
-          self.findIndex(s => s._id === subject._id) === index
-        ) || [];
-      } else if (user?.role === 'admin' && roleData.length >= 1) {
-        const [usersResponse, statsResponse] = roleData;
-        processedData.users = usersResponse.data?.slice(0, 5) || [];
-        processedData.stats = statsResponse?.data || {};
+      if (!directions.length) {
+        await dispatch(getDirections()).unwrap();
+      }
+      if (!subjects.length) {
+        await dispatch(getSubjects()).unwrap();
       }
 
-      setDashboardData(processedData);
+      // Fetch recent notifications and grades
+      await dispatch(getMyNotifications()).unwrap();
+      if (user.role === 'student') {
+        await dispatch(getStudentGrades()).unwrap();
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please try again later.');
+      setError('Failed to load dashboard data');
+      logger.error('Dashboard data fetch error:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch, user, schools.length, directions.length, subjects.length]);
 
-  const getGradeAverage = () => {
-    if (dashboardData.grades.length === 0) return 'N/A';
-    const sum = dashboardData.grades.reduce((acc, grade) => acc + grade.value, 0);
-    return (sum / dashboardData.grades.length).toFixed(1);
-  };
-
-  const getWelcomeMessage = () => {
-    const role = user?.role;
-    const name = user?.name || 'User';
-    
-    switch (role) {
-      case 'student':
-        return `Welcome back, ${name}! Ready to learn?`;
-      case 'teacher':
-        return `Welcome back, ${name}! Ready to teach?`;
-      case 'admin':
-        return `Welcome back, ${name}! School management at your fingertips.`;
-      default:
-        return `Welcome back, ${name}!`;
+  useEffect(() => {
+    // Process recent grades
+    if (grades && grades.length > 0) {
+      const sortedGrades = [...grades]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+      setRecentGrades(sortedGrades);
     }
+  }, [grades]);
+
+  useEffect(() => {
+    // Process recent notifications
+    if (notifications && notifications.length > 0) {
+      const sortedNotifications = [...notifications]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+      setRecentNotifications(sortedNotifications);
+    }
+  }, [notifications]);
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
   };
 
-  const getQuickActions = () => {
-    const role = user?.role;
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
+  const navigateTo = (path) => {
+    navigate(path);
+    closeSidebar();
+  };
+
+  const handleLogout = () => {
+    // Implement logout logic
+    navigate('/login');
+  };
+
+  const getUserSchools = () => {
+    if (!user.schools || !schools.length) return [];
     
-    switch (role) {
-      case 'student':
-        return [
-          { label: 'View My Grades', icon: <GradeIcon />, path: '/app/grades' },
-          { label: 'My Schedule', icon: <ScheduleIcon />, path: '/app/schedule' },
-          { label: 'Submit Rating', icon: <AssignmentIcon />, path: '/app/ratings' },
-          { label: 'View Notifications', icon: <NotificationsIcon />, path: '/app/notifications' }
-        ];
-      case 'teacher':
-        return [
-          { label: 'Manage Grades', icon: <GradeIcon />, path: '/app/teacher/grades/manage' },
-          { label: 'Create Grade', icon: <AssignmentIcon />, path: '/app/teacher/grades/create' },
-          { label: 'Send Notification', icon: <NotificationsIcon />, path: '/app/teacher/notifications/create' },
-          { label: 'View Schedule', icon: <ScheduleIcon />, path: '/app/schedule' }
-        ];
-      case 'admin':
-        return [
-          { label: 'Manage Users', icon: <GroupIcon />, path: '/app/admin/users' },
-          { label: 'Manage Classes', icon: <ClassIcon />, path: '/app/admin/classes' },
-          { label: 'Send Notification', icon: <NotificationsIcon />, path: '/app/admin/notifications/create' },
-          { label: 'View Statistics', icon: <BarChartIcon />, path: '/app/admin/student-stats' }
-        ];
-      default:
-        return [];
-    }
+    return user.schools.map(schoolId => {
+      const school = schools.find(s => s._id === schoolId);
+      return school || { _id: schoolId, name: 'Unknown School' };
+    });
+  };
+
+  const getUserDirections = () => {
+    if (!user.directions || !directions.length) return [];
+    
+    return user.directions.map(directionId => {
+      const direction = directions.find(d => d._id === directionId);
+      return direction || { _id: directionId, name: 'Unknown Direction' };
+    });
+  };
+
+  const getUserSubjects = () => {
+    if (!user.subjects || !subjects.length) return [];
+    
+    return user.subjects.map(subjectId => {
+      const subject = subjects.find(s => s._id === subjectId);
+      return subject || { _id: subjectId, name: 'Unknown Subject' };
+    });
   };
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 2, mb: 2, px: { xs: 1, sm: 2, md: 3 } }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <CircularProgress />
-        </Box>
-      </Container>
+      <div className="flex flex-col items-center justify-center min-h-screen p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading your dashboard...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 2, mb: 2, px: { xs: 1, sm: 2, md: 3 } }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
+      <div className="flex flex-col items-center justify-center min-h-screen p-8">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-destructive mb-2">Error Loading Dashboard</h3>
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={fetchDashboardData} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
-      {/* Header Section */}
-      <Box sx={{ mb: { xs: 2, sm: 4 }, width: '100%' }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ 
-          fontSize: { xs: '1.5rem', sm: '2.125rem' },
-          textAlign: { xs: 'center', sm: 'left' }
-        }}>
-          <DashboardIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
-          Dashboard
-        </Typography>
-        <Typography variant="h6" color="text.secondary" gutterBottom sx={{ 
-          fontSize: { xs: '1rem', sm: '1.25rem' },
-          textAlign: { xs: 'center', sm: 'left' }
-        }}>
-          {getWelcomeMessage()}
-        </Typography>
-      </Box>
-
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ width: '100%' }}>
-        {/* User Info Card */}
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardHeader
-              avatar={
-                <Avatar sx={{ bgcolor: 'primary.main' }}>
-                  <PersonIcon />
-                </Avatar>
-              }
-              title="Profile Information"
-              subheader={`${user?.role?.charAt(0).toUpperCase()}${user?.role?.slice(1)} Account`}
-              sx={{ 
-                textAlign: { xs: 'center', sm: 'left' },
-                '& .MuiCardHeader-content': {
-                  textAlign: { xs: 'center', sm: 'left' }
-                }
-              }}
-            />
-            <CardContent>
-              <Typography variant="body1" gutterBottom>
-                <strong>Name:</strong> {dashboardData.userInfo?.name || user?.name}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Email:</strong> {dashboardData.userInfo?.email || user?.email}
-              </Typography>
-              {dashboardData.userInfo?.schoolBranch && (
-                <Typography variant="body1" gutterBottom>
-                  <strong>School Branch:</strong> {dashboardData.userInfo.schoolBranch.name}
-                </Typography>
-              )}
-              {user?.role === 'student' && (
-                <Typography variant="body1" gutterBottom>
-                  <strong>Grade Average:</strong> {getGradeAverage()}
-                </Typography>
-              )}
-            </CardContent>
-            <CardActions sx={{ justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-              <Button size="small" onClick={() => navigate('/app/profile')}>
-                View Full Profile
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-background border-b border-border">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebar}
+                className="lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
               </Button>
-            </CardActions>
-          </Card>
-        </Grid>
+              <h1 className="text-2xl font-bold text-foreground">GradeBook</h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-2">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">{user.name}</span>
+                <Badge variant="outline">{user.role}</Badge>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-        {/* Quick Actions */}
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardHeader title="Quick Actions" sx={{ 
-              pb: { xs: 1, sm: 2 },
-              textAlign: { xs: 'center', sm: 'left' }
-            }} />
-            <CardContent>
-              <Grid container spacing={{ xs: 1, sm: 2 }}>
-                {getQuickActions().map((action, index) => (
-                  <Grid item xs={12} sm={6} key={index}>
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <h2 className="text-lg font-semibold">Navigation</h2>
+            <Button variant="ghost" size="sm" onClick={closeSidebar} className="lg:hidden">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <nav className="p-4 space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigateTo('/dashboard')}
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigateTo('/grades')}
+            >
+              <Award className="mr-2 h-4 w-4" />
+              Grades
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigateTo('/notifications')}
+            >
+              <Bell className="mr-2 h-4 w-4" />
+              Notifications
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigateTo('/calendar')}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Calendar
+            </Button>
+            
                     <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={action.icon}
-                      onClick={() => navigate(action.path)}
-                      sx={{ 
-                        py: { xs: 1, sm: 1.5 },
-                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                        minHeight: { xs: '40px', sm: '48px' }
-                      }}
-                    >
-                      {action.label}
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigateTo('/profile')}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
                     </Button>
-                  </Grid>
-                ))}
-              </Grid>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-0">
+          <div className="container mx-auto px-4 py-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="academics">Academics</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6">
+                {/* Welcome Section */}
+                <Card className="panel-slide-in">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <User className="h-6 w-6 text-primary" />
+                      <span>Welcome, {user.name}!</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      Here's an overview of your academic information and recent activity.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card className="fade-in-up stagger-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Schools</CardTitle>
+                      <School className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{getUserSchools().length}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="fade-in-up stagger-2">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Directions</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{getUserDirections().length}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="fade-in-up stagger-3">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Subjects</CardTitle>
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{getUserSubjects().length}</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="fade-in-up stagger-4">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Notifications</CardTitle>
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{recentNotifications.length}</div>
             </CardContent>
           </Card>
-        </Grid>
+                </div>
 
-        {/* Recent Notifications */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader 
-              title="Recent Notifications" 
-              sx={{ pb: { xs: 1, sm: 2 } }}
-              action={
-                <Button 
-                  size="small" 
-                  onClick={() => navigate('/app/notifications')}
-                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                >
-                  View All
-                </Button>
-              }
-            />
-            <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-              {dashboardData.notifications.length > 0 ? (
-                <List>
-                  {dashboardData.notifications.map((notification, index) => (
-                    <React.Fragment key={notification._id}>
-                      <ListItem sx={{ px: { xs: 1, sm: 2 } }}>
-                        <ListItemIcon>
-                          <NotificationsIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={notification.title}
-                          primaryTypographyProps={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-                          secondary={new Date(notification.createdAt).toLocaleDateString()}
-                          secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        />
-                      </ListItem>
-                      {index < dashboardData.notifications.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No recent notifications
-                </Typography>
+                {/* Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Grades */}
+                  <Card className="panel-slide-in">
+                    <CardHeader>
+                      <CardTitle>Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {recentGrades.length > 0 ? (
+                        <div className="space-y-3">
+                          {recentGrades.map((grade, index) => (
+                            <div 
+                              key={index} 
+                              className="flex items-center justify-between p-3 border rounded-lg fade-in-up"
+                              style={{
+                                animationDelay: `${(index + 1) * 0.1}s`
+                              }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Award className="h-5 w-5 text-primary" />
+                                <div>
+                                  <p className="font-medium">{grade.subject}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(grade.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant="default">{grade.value}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4 fade-in-up">
+                          No recent grades available
+                        </p>
               )}
             </CardContent>
           </Card>
-        </Grid>
 
-        {/* Role-specific content */}
-        {user?.role === 'student' && (
-          <>
-            {/* Student Subjects */}
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardHeader title="My Subjects" sx={{ pb: { xs: 1, sm: 2 } }} />
-                <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-                  {dashboardData.subjects.length > 0 ? (
-                    <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} flexWrap="wrap" gap={{ xs: 0.5, sm: 1 }}>
-                      {dashboardData.subjects.map((subject) => (
-                        <Chip
-                          key={subject._id}
-                          label={subject.name}
-                          icon={<SubjectIcon />}
-                          variant="outlined"
-                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        />
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No subjects found
-                    </Typography>
+                  {/* Recent Notifications */}
+                  <Card className="panel-slide-in">
+                    <CardHeader>
+                      <CardTitle>Recent Notifications</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {recentNotifications.length > 0 ? (
+                        <div className="space-y-3">
+                          {recentNotifications.map((notification, index) => (
+                            <div 
+                              key={index} 
+                              className="flex items-center justify-between p-3 border rounded-lg fade-in-up"
+                              style={{
+                                animationDelay: `${(index + 1) * 0.1}s`
+                              }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Bell className="h-5 w-5 text-primary" />
+                                <div>
+                                  <p className="font-medium">{notification.title}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(notification.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4 fade-in-up">
+                          No recent notifications available
+                        </p>
                   )}
                 </CardContent>
               </Card>
-            </Grid>
+                </div>
+              </TabsContent>
 
-            {/* Recent Grades */}
-            <Grid item xs={12}>
+              <TabsContent value="profile" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Profile Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Name</Label>
+                        <p className="text-sm text-muted-foreground">{user.name}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Email</Label>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Role</Label>
+                        <Badge variant="outline">{user.role}</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Status</Label>
+                        <Badge variant={user.active ? "default" : "secondary"}>
+                          {user.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="academics" className="space-y-6">
+                {/* Schools */}
               <Card>
-                <CardHeader 
-                  title="Recent Grades" 
-                  sx={{ pb: { xs: 1, sm: 2 } }}
-                  action={
-                    <Button 
-                      size="small" 
-                      onClick={() => navigate('/app/grades')}
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      View All
-                    </Button>
-                  }
-                />
-                <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-                  {dashboardData.grades.length > 0 ? (
-                    <List>
-                      {dashboardData.grades.map((grade, index) => (
-                        <React.Fragment key={grade._id}>
-                          <ListItem sx={{ px: { xs: 1, sm: 2 } }}>
-                            <ListItemIcon>
-                              <GradeIcon />
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={`${grade.subject?.name} - ${grade.value}/10`}
-                              primaryTypographyProps={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-                              secondary={`${grade.category} - ${new Date(grade.createdAt).toLocaleDateString()}`}
-                              secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                            />
-                          </ListItem>
-                          {index < dashboardData.grades.length - 1 && <Divider />}
-                        </React.Fragment>
-                      ))}
-                    </List>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No grades available
-                    </Typography>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <School className="h-5 w-5 text-primary" />
+                      <span>Schools</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {getUserSchools().length > 0 ? (
+                      <div className="space-y-2">
+                        {getUserSchools().map((school) => (
+                          <div key={school._id} className="flex items-center space-x-2 p-2 border rounded">
+                            <School className="h-4 w-4 text-muted-foreground" />
+                            <span>{school.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">
+                        No schools assigned
+                      </p>
                   )}
                 </CardContent>
               </Card>
-            </Grid>
-          </>
-        )}
 
-        {user?.role === 'teacher' && (
-          <>
-            {/* Teacher Subjects */}
-            <Grid item xs={12} md={6}>
+                {/* Directions */}
               <Card>
-                <CardHeader title="Teaching Subjects" sx={{ pb: { xs: 1, sm: 2 } }} />
-                <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-                  {dashboardData.subjects.length > 0 ? (
-                    <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} flexWrap="wrap" gap={{ xs: 0.5, sm: 1 }}>
-                      {dashboardData.subjects.map((subject) => (
-                        <Chip
-                          key={subject._id}
-                          label={subject.name}
-                          icon={<SubjectIcon />}
-                          variant="outlined"
-                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        />
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No assigned subjects
-                    </Typography>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <span>Directions</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {getUserDirections().length > 0 ? (
+                      <div className="space-y-2">
+                        {getUserDirections().map((direction) => (
+                          <div key={direction._id} className="flex items-center space-x-2 p-2 border rounded">
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            <span>{direction.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">
+                        No directions assigned
+                      </p>
                   )}
                 </CardContent>
               </Card>
-            </Grid>
-          </>
-        )}
 
-        {user?.role === 'admin' && (
-          <>
-            {/* User Overview */}
-            <Grid item xs={12} md={6}>
+                {/* Subjects */}
               <Card>
-                <CardHeader 
-                  title="User Overview" 
-                  sx={{ pb: { xs: 1, sm: 2 } }}
-                  action={
-                    <Button 
-                      size="small" 
-                      onClick={() => navigate('/app/admin/users')}
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      Manage Users
-                    </Button>
-                  }
-                />
-                <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-                  {dashboardData.users.length > 0 ? (
-                    <List>
-                      {dashboardData.users.map((user, index) => (
-                        <React.Fragment key={user._id}>
-                          <ListItem sx={{ px: { xs: 1, sm: 2 } }}>
-                            <ListItemIcon>
-                              {user.role === 'student' ? <FaceIcon /> : 
-                               user.role === 'teacher' ? <SupervisorAccountIcon /> : <AdminIcon />}
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={user.name}
-                              primaryTypographyProps={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-                              secondary={`${user.role} - ${user.email}`}
-                              secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                            />
-                          </ListItem>
-                          {index < dashboardData.users.length - 1 && <Divider />}
-                        </React.Fragment>
-                      ))}
-                    </List>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No users found
-                    </Typography>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <span>Subjects</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {getUserSubjects().length > 0 ? (
+                      <div className="space-y-2">
+                        {getUserSubjects().map((subject) => (
+                          <div key={subject._id} className="flex items-center space-x-2 p-2 border rounded">
+                            <BookOpen className="h-4 w-4 text-muted-foreground" />
+                            <span>{subject.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">
+                        No subjects assigned
+                      </p>
                   )}
                 </CardContent>
               </Card>
-            </Grid>
-          </>
-        )}
+              </TabsContent>
 
-        {/* Upcoming Classes */}
-        <Grid item xs={12}>
+              <TabsContent value="activity" className="space-y-6">
           <Card>
-            <CardHeader 
-              title="Upcoming Classes" 
-              sx={{ pb: { xs: 1, sm: 2 } }}
-              action={
-                <Button 
-                  size="small" 
-                  onClick={() => navigate('/app/schedule')}
-                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                >
-                  View Schedule
-                </Button>
-              }
-            />
-            <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-              {dashboardData.upcomingClasses.length > 0 ? (
-                <List>
-                  {dashboardData.upcomingClasses.map((classItem, index) => (
-                    <React.Fragment key={index}>
-                      <ListItem sx={{ px: { xs: 1, sm: 2 } }}>
-                        <ListItemIcon>
-                          <ScheduleIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={classItem.subject}
-                          primaryTypographyProps={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-                          secondary={`${classItem.startTime} - ${classItem.endTime} | ${classItem.day}`}
-                          secondaryTypographyProps={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                        />
-                      </ListItem>
-                      {index < dashboardData.upcomingClasses.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-              ) : (
-                <Alert 
-                  severity="info" 
-                  sx={{ 
-                    mt: 1,
-                    backgroundColor: theme => `${theme.palette.primary.main}20`,
-                    color: theme => theme.palette.mode === 'dark' ? 'white' : 'black',
-                    '& .MuiAlert-icon': {
-                      color: theme => theme.palette.mode === 'dark' ? 'white' : 'black',
-                    },
-                    border: theme => `1px solid ${theme.palette.primary.main}40`,
-                  }}
-                >
-                  No upcoming classes
-                </Alert>
-              )}
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground text-center py-8">
+                      Activity tracking coming soon...
+                    </p>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
-    </Container>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </main>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={closeSidebar}
+        />
+      )}
+    </div>
   );
 };
 

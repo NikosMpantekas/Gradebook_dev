@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ThemeProvider } from './components/theme-provider';
+import { Toaster } from './components/ui/sonner';
 import { useSelector, useDispatch } from 'react-redux';
+import './globals.css';
 
 // Initialize i18n
 import './i18n/i18n';
@@ -66,7 +65,7 @@ import ParentGrades from './pages/parent/ParentGrades';
 // Teacher Pages
 import ManageGrades from './pages/teacher/ManageGrades';
 import CreateGradeSimple from './pages/teacher/CreateGradeSimple';
-import TeacherNotifications from './pages/teacher/TeacherNotifications';
+import NotificationsManager from './pages/teacher/TeacherNotifications';
 import CreateNotification from './pages/teacher/CreateNotification';
 
 // Admin Pages
@@ -112,7 +111,7 @@ import AndroidInstallPrompt from './components/AndroidInstallPrompt';
 function App() {
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
-  const { darkMode, themeColor } = useSelector((state) => state.ui);
+  const { darkMode } = useSelector((state) => state.ui);
   const [configInitialized, setConfigInitialized] = useState(false);
   
   // Log important application state on mount and auth changes
@@ -248,202 +247,7 @@ function App() {
     }
   }, [user, dispatch]);
 
-  // Get the primary color based on the selected theme
-  const getThemeColors = () => {
-    switch(themeColor) {
-      case 'green':
-        return {
-          primary: '#4CAF50',      // fresh medium green
-          secondary: '#357A38'     // deep forest green accent
-        };
-      case 'purple':
-        return {
-          primary: '#9C27B0',      // bright medium purple
-          secondary: '#6A1B9A'     // deep violet accent
-        };
-      case 'pink':
-        return {
-          primary: '#E91E63',      // vibrant pink
-          secondary: '#B01242'     // rich magenta accent
-        };
-      case 'blue':
-      default:
-        return {
-          primary: '#4A90E2',      // vibrant medium blue
-          secondary: '#1164B4'     // deep bold blue accent
-        };
-    }
-  };
-  
-  
-  const themeColors = getThemeColors();
-  
-  // Create theme based on dark mode preference and selected color theme
-  const theme = createTheme({
-    palette: {
-      mode: darkMode ? 'dark' : 'light',
-      primary: {
-        main: themeColors.primary,
-      },
-      secondary: {
-        main: themeColors.secondary,
-      },
-    },
-    typography: {
-      fontFamily: 'Roboto, Arial, sans-serif',
-    },
-    components: {
-      MuiCssBaseline: {
-        styleOverrides: {
-          // Reset base layout; no reserved scrollbar gutter to avoid right-side gap
-          html: {
-            margin: 0,
-            padding: 0,
-            width: '100%',
-          },
-          body: {
-            margin: 0,
-            padding: 0,
-            width: '100%',
-            overflowX: 'hidden',
-          },
-          '#root': {
-            margin: 0,
-            padding: 0,
-            width: '100%',
-            maxWidth: '100%',
-          },
-          main: {
-            margin: 0,
-            padding: 0,
-            width: '100%',
-          },
-        },
-      },
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            borderRadius: 8,
-            transition: 'background-color 0.1s, color 0.1s, border-color 0.1s, box-shadow 0.1s',
-          },
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            borderRadius: 8,
-            transition: 'background-color 0.1s, color 0.1s, border-color 0.1s, box-shadow 0.1s',
-          },
-        },
-      },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s, border-color 0.1s, box-shadow 0.1s',
-          },
-        },
-      },
-      MuiAppBar: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, border-bottom-color 0.1s',
-          },
-        },
-      },
-      MuiToolbar: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s',
-          },
-        },
-      },
-      MuiListItem: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s',
-          },
-        },
-      },
-      MuiTypography: {
-        styleOverrides: {
-          root: {
-            transition: 'color 0.1s',
-          },
-        },
-      },
-      MuiAvatar: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s',
-          },
-        },
-      },
-      MuiChip: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s, border-color 0.1s',
-          },
-        },
-      },
-      MuiDivider: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, border-color 0.1s',
-          },
-        },
-      },
-      MuiIconButton: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s',
-          },
-        },
-      },
-      MuiSvgIcon: {
-        styleOverrides: {
-          root: {
-            transition: 'fill 0.1s, stroke 0.1s',
-          },
-        },
-      },
-      MuiListItemButton: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s',
-          },
-        },
-      },
-      MuiButtonBase: {
-        styleOverrides: {
-          root: {
-            transition: 'background-color 0.1s, color 0.1s, border-color 0.1s',
-          },
-        },
-      },
-      MuiModal: {
-        styleOverrides: {
-          root: {
-            '& + .MuiBackdrop-root': {
-              marginRight: 0,
-            },
-          },
-        },
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-      MuiPopover: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-      MuiMenu: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-    },
-  });
+  // Theme colors are now handled by the ThemeProvider component
 
   // Set up push notifications if user is logged in
   useEffect(() => {
@@ -512,8 +316,7 @@ function App() {
 
   return (
     <ErrorBoundary fallback={<DiagnosticPage />} componentName="Application Root">
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ThemeProvider>
       <ScrollFix /> {/* Fix for Safari elastic scroll */}
       <FeatureToggleProvider>
         <HomeScreenPrompt />
@@ -689,7 +492,7 @@ function App() {
             } />
             <Route path="/app/student/notifications/manage" element={
               <StudentProgressRoute>
-                <TeacherNotifications />
+                <NotificationsManager />
               </StudentProgressRoute>
             } />
             <Route path="/app/student/schools" element={
@@ -718,12 +521,17 @@ function App() {
             } />
             <Route path="/app/teacher/notifications" element={
               <TeacherRoute>
-                <TeacherNotifications />
+                <NotificationsManager />
               </TeacherRoute>
             } />
             <Route path="/app/teacher/notifications/create" element={
               <TeacherRoute>
                 <CreateNotification />
+              </TeacherRoute>
+            } />
+            <Route path="/app/teacher/notifications/:id" element={
+              <TeacherRoute>
+                <NotificationDetail />
               </TeacherRoute>
             } />
             {/* Add back the teacher student-stats route */}
@@ -766,7 +574,7 @@ function App() {
             {/* Admin notifications - add missing base route that redirects to manage */}
             <Route path="/app/admin/notifications" element={
               <AdminRoute>
-                <TeacherNotifications />
+                <NotificationsManager />
               </AdminRoute>
             } />
             <Route path="/app/admin/notifications/create" element={
@@ -776,7 +584,12 @@ function App() {
             } />
             <Route path="/app/admin/notifications/manage" element={
               <AdminRoute>
-                <TeacherNotifications />
+                <NotificationsManager />
+              </AdminRoute>
+            } />
+            <Route path="/app/admin/notifications/:id" element={
+              <AdminRoute>
+                <NotificationDetail />
               </AdminRoute>
             } />
             <Route path="/app/admin/grades/create" element={
@@ -838,10 +651,11 @@ function App() {
                 </ErrorBoundary>
               </AdminRoute>
             } />
+            {/* System Maintenance - SuperAdmin Only */}
             <Route path="/app/admin/system-maintenance" element={
-              <AdminRoute>
+              <SuperAdminRoute>
                 <SystemMaintenance />
-              </AdminRoute>
+              </SuperAdminRoute>
             } />
             <Route path="/app/admin/schedule" element={
               <AdminRoute>
@@ -940,6 +754,11 @@ function App() {
                 <SuperAdminNotifications />
               </SuperAdminRoute>
             } />
+            <Route path="/superadmin/notifications/:id" element={
+              <SuperAdminRoute>
+                <NotificationDetail />
+              </SuperAdminRoute>
+            } />
             <Route path="/superadmin/school-features" element={
               <SuperAdminRoute>
                 <ManageSchoolFeatures />
@@ -968,7 +787,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <Toaster position="top-right" />
       {/* Push notification manager */}
       <PushNotificationManager />
       {/* Android PWA Installation Prompt */}

@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  Typography, 
-  Box, 
-  IconButton,
-  useTheme
-} from '@mui/material';
-import { Close as CloseIcon, AddToHomeScreen, Download } from '@mui/icons-material';
+import { X, Smartphone, Download } from 'lucide-react';
+import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 
 const HomeScreenPrompt = () => {
   const [open, setOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
-  const theme = useTheme();
 
   // Check if the app is already installed
   const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches || 
@@ -99,76 +89,122 @@ const HomeScreenPrompt = () => {
   if (!open) return null;
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose}
-      sx={{
-        '& .MuiDialog-paper': {
-          borderRadius: 2,
-          width: '90%',
-          maxWidth: '400px'
-        }
-      }}
-    >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Add to Home Screen</Typography>
-        <IconButton onClick={handleClose} size="small">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
-          <AddToHomeScreen fontSize="large" color="primary" sx={{ fontSize: 60, mb: 2 }} />
-          
-          <Typography variant="body1" textAlign="center" gutterBottom>
-            Add GradeBook to your home screen for a better experience!
-          </Typography>
-          
-          {isIOS ? (
-            <Box sx={{ mt: 2, p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
-              <Typography variant="body2" textAlign="center">
-                1. Tap the <b>Share</b> button at the bottom of your browser
-              </Typography>
-              <Typography variant="body2" textAlign="center" sx={{ mt: 1 }}>
-                2. Scroll down and tap <b>"Add to Home Screen"</b>
-              </Typography>
-              <Typography variant="body2" textAlign="center" sx={{ mt: 1 }}>
-                3. Tap <b>"Add"</b> in the top right corner
-              </Typography>
-            </Box>
-          ) : (
-            <Typography variant="body2" textAlign="center" sx={{ mt: 1 }}>
-              Click the button below to add this app to your home screen for quick access.
-            </Typography>
-          )}
-        </Box>
-      </DialogContent>
-      
-      <DialogActions sx={{ justifyContent: 'center', pb: 3, px: 3 }}>
-        {!isIOS && (
-          <Button 
-            variant="contained" 
-            color="primary" 
-            fullWidth
-            onClick={handleAddToHomeScreen}
-            startIcon={<Download />}
-          >
-            Add to Home Screen
-          </Button>
-        )}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center space-x-2">
+              <Smartphone className="h-5 w-5" />
+              <span>Add to Home Screen</span>
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogDescription>
+            Install GradeBook on your device for a better experience
+          </DialogDescription>
+        </DialogHeader>
         
-        {isIOS && (
+        <div className="space-y-4 py-4">
+          {isIOS ? (
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  1
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Tap the Share button</p>
+                  <p className="text-xs text-muted-foreground">Look for the square with an arrow pointing up</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  2
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Scroll down and tap "Add to Home Screen"</p>
+                  <p className="text-xs text-muted-foreground">This will add GradeBook to your home screen</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  3
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Tap "Add" to confirm</p>
+                  <p className="text-xs text-muted-foreground">GradeBook will now appear on your home screen</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  1
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Tap the install button below</p>
+                  <p className="text-xs text-muted-foreground">This will start the installation process</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  2
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Follow your device prompts</p>
+                  <p className="text-xs text-muted-foreground">Your device will guide you through the installation</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  3
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Enjoy the app experience</p>
+                  <p className="text-xs text-muted-foreground">Access GradeBook from your home screen</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="bg-muted/50 p-3 rounded-lg">
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <Smartphone className="h-4 w-4" />
+              <span>Installation is free and takes just a few seconds</span>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
           <Button
-            variant="outlined"
-            color="primary"
-            fullWidth
+            variant="outline"
             onClick={handleClose}
+            className="w-full sm:w-auto"
           >
-            Got it
+            Maybe Later
           </Button>
-        )}
-      </DialogActions>
+          {!isIOS && deferredPrompt && (
+            <Button
+              onClick={handleAddToHomeScreen}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Install App
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 };

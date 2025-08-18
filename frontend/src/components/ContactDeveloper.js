@@ -1,23 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  TextField,
-  Grid,
-  Alert,
-  IconButton,
-  Typography,
-  Box,
-  FormControlLabel,
-  Checkbox
-} from '@mui/material';
-import { Close as CloseIcon, Send as SendIcon, BugReport as BugReportIcon } from '@mui/icons-material';
+import { X, Send, Bug } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Checkbox } from './ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 
 const ContactDeveloper = ({ open, onClose }) => {
   const [formData, setFormData] = useState({
@@ -95,107 +85,98 @@ const ContactDeveloper = ({ open, onClose }) => {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={!sending ? onClose : undefined}
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Contact Developer</Typography>
-          {!sending && (
-            <IconButton edge="end" color="inherit" onClick={onClose} aria-label="close">
-              <CloseIcon />
-            </IconButton>
-          )}
-        </Box>
-      </DialogTitle>
-      <form onSubmit={handleSubmit}>
-        <DialogContent dividers>
-          <DialogContentText gutterBottom>
-            Having trouble or want to suggest a new feature? Send us a message and we'll respond as soon as possible.
-          </DialogContentText>
-
-          {status && (
-            <Alert 
-              severity={status.type} 
-              sx={{ mb: 2 }}
-              onClose={() => setStatus(null)}
+    <Dialog open={open} onOpenChange={!sending ? onClose : undefined}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Contact Developer</DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              disabled={sending}
+              className="h-8 w-8 p-0"
             >
-              {status.message}
-            </Alert>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogDescription>
+            Send us a message, report a bug, or request a feature
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              name="subject"
+              value={formData.subject}
+              onChange={handleChange}
+              placeholder="Brief description of your message"
+              disabled={sending}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              placeholder="Please provide detailed information..."
+              rows={4}
+              disabled={sending}
+              required
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isBugReport"
+              name="isBugReport"
+              checked={formData.isBugReport}
+              onChange={handleChange}
+              disabled={sending}
+            />
+            <Label htmlFor="isBugReport" className="text-sm">
+              This is a bug report
+            </Label>
+          </div>
+          
+          {status && (
+            <div className={`p-3 rounded-lg ${
+              status.type === 'success' 
+                ? 'bg-green-100 border border-green-200 text-green-800' 
+                : 'bg-red-100 border border-red-200 text-red-800'
+            }`}>
+              <p className="text-sm">{status.message}</p>
+            </div>
           )}
           
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                name="subject"
-                label="Subject"
-                fullWidth
-                variant="outlined"
-                value={formData.subject}
-                onChange={handleChange}
-                disabled={sending}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                name="message"
-                label="Message"
-                fullWidth
-                multiline
-                rows={5}
-                variant="outlined"
-                value={formData.message}
-                onChange={handleChange}
-                disabled={sending}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    icon={<BugReportIcon color="disabled" />}
-                    checkedIcon={<BugReportIcon color="secondary" />}
-                    checked={formData.isBugReport}
-                    onChange={handleChange}
-                    name="isBugReport"
-                    disabled={sending}
-                  />
-                }
-                label="Mark as bug report"
-              />
-              {formData.isBugReport && (
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4, mt: -0.5 }}>
-                  Marking this as a bug report will help us prioritize fixing the issue.
-                </Typography>
-              )}
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          {!sending && (
-            <Button 
-              onClick={onClose} 
-              color="inherit"
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={sending}
+              className="w-full"
             >
-              Cancel
+              {sending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Message
+                </>
+              )}
             </Button>
-          )}
-          <Button 
-            type="submit"
-            variant="contained" 
-            color="primary"
-            disabled={sending}
-            startIcon={<SendIcon />}
-          >
-            {sending ? 'Sending...' : 'Send Message'}
-          </Button>
-        </DialogActions>
-      </form>
+          </DialogFooter>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 };

@@ -1,52 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Button,
-  CircularProgress,
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Divider,
-  TextField
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import {
-  Analytics as AnalyticsIcon,
-  School as SchoolIcon,
-  AdminPanelSettings as AdminIcon,
-  CalendarToday as CalendarIcon,
-  Print as PrintIcon
-} from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
+import { 
+  BarChart3, 
+  BookOpen, 
+  Calendar, 
+  Printer,
+  TrendingUp,
+  Users,
+  User,
+  School,
+  Shield
+} from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// shadcn/ui components
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Label } from '../../components/ui/label';
+import { Input } from '../../components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 
 const StudentStats = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [gradesData, setGradesData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -101,8 +87,8 @@ const StudentStats = () => {
       const response = await axios.get(`${API_URL}/api/grades/student-period-analysis`, {
         params: {
           studentId: selectedStudent,
-          startDate: startDate ? startDate.toISOString().split('T')[0] : null,
-          endDate: endDate ? endDate.toISOString().split('T')[0] : null
+          startDate: startDate,
+          endDate: endDate
         },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -121,13 +107,13 @@ const StudentStats = () => {
   const getRoleInfo = () => {
     if (user?.role === 'admin') {
       return {
-        icon: <AdminIcon fontSize="large" />,
+        icon: <Shield className="h-8 w-8" />,
         title: 'Admin Student Analysis',
         description: 'Detailed grade analysis and class comparison'
       };
     } else {
       return {
-        icon: <SchoolIcon fontSize="large" />,
+        icon: <School className="h-8 w-8" />,
         title: 'Student Grade Analysis',
         description: 'Detailed grade analysis and class comparison'
       };
@@ -155,8 +141,8 @@ const StudentStats = () => {
       state: {
         selectedStudent,
         selectedStudentData,
-        startDate: startDate?.toISOString(),
-        endDate: endDate?.toISOString()
+        startDate: startDate,
+        endDate: endDate
       }
     });
   };
@@ -165,321 +151,289 @@ const StudentStats = () => {
   const selectedStudentData = students.find(s => s._id === selectedStudent);
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={4} className="no-print">
-        <Box display="flex" alignItems="center">
-          <Box sx={{ 
-            bgcolor: 'primary.main', 
-            color: 'white',
-            borderRadius: '50%',
-            width: 56, 
-            height: 56,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mr: 2
-          }}>
-            {roleInfo.icon}
-          </Box>
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {roleInfo.title}
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              {roleInfo.description}
-            </Typography>
-          </Box>
-        </Box>
-
-      </Box>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary rounded-lg">
+                {roleInfo.icon}
+              </div>
+              <div>
+                <CardTitle className="text-3xl font-light">{roleInfo.title}</CardTitle>
+                <p className="text-muted-foreground">{roleInfo.description}</p>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Selection Controls */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }} className="no-print">
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Select Student</InputLabel>
-                <Select
-                  value={selectedStudent}
-                  onChange={(e) => setSelectedStudent(e.target.value)}
-                  label="Select Student"
-                  disabled={studentsLoading}
-                >
+      <Card>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="space-y-2">
+              <Label htmlFor="student">Select Student</Label>
+              <Select
+                value={selectedStudent}
+                onValueChange={setSelectedStudent}
+                disabled={studentsLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a student" />
+                </SelectTrigger>
+                <SelectContent>
                   {students.map((student) => (
-                    <MenuItem key={student._id} value={student._id}>
+                    <SelectItem key={student._id} value={student._id}>
                       {student.name} ({student.email})
-                    </MenuItem>
+                    </SelectItem>
                   ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <DatePicker
-                label="Start Date"
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                id="startDate"
+                type="date"
                 value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
+                onChange={(e) => setStartDate(e.target.value)}
                 disabled={!selectedStudent}
-                renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    fullWidth 
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: <CalendarIcon sx={{ mr: 1, color: 'action.active' }} />
-                    }}
-                  />
-                )}
-                maxDate={endDate || new Date()}
+                max={endDate || new Date().toISOString().split('T')[0]}
               />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <DatePicker
-                label="End Date"
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                id="endDate"
+                type="date"
                 value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
+                onChange={(e) => setEndDate(e.target.value)}
                 disabled={!selectedStudent || !startDate}
-                renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    fullWidth 
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: <CalendarIcon sx={{ mr: 1, color: 'action.active' }} />
-                    }}
-                  />
-                )}
-                minDate={startDate}
-                maxDate={new Date()}
+                min={startDate}
+                max={new Date().toISOString().split('T')[0]}
               />
-            </Grid>
-          </Grid>
-        </LocalizationProvider>
-        
-        {/* Print Report Button */}
-        {selectedStudent && startDate && endDate && (
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<PrintIcon />}
-              onClick={handlePrintReport}
-              sx={{ minWidth: 140 }}
-            >
-              Print Report
-            </Button>
-          </Box>
-        )}
-      </Paper>
+            </div>
+          </div>
+          
+          {/* Print Report Button */}
+          {selectedStudent && startDate && endDate && (
+            <div className="flex justify-center">
+              <Button
+                onClick={handlePrintReport}
+                className="min-w-[140px]"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Report
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Error display */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} className="no-print">
-          {error}
-        </Alert>
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
+          <div className="flex items-center space-x-2">
+            <span>⚠️ {error}</span>
+          </div>
+        </div>
       )}
 
       {/* Loading state */}
       {loading && (
-        <Box display="flex" justifyContent="center" my={4} className="no-print">
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center my-8">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+        </div>
       )}
 
       {/* Grades Analysis Content */}
       {gradesData && (
         <div id="printable-content">
           {/* Report Header */}
-          <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-            <Box className="header" textAlign="center" mb={3}>
-              <Typography variant="h3" component="h1" gutterBottom>
-                Student Grade Analysis Report
-              </Typography>
-              <Typography variant="h5" color="primary" gutterBottom>
-                {selectedStudentData?.name}
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                Date Range: {startDate ? startDate.toLocaleDateString() : 'N/A'} - {endDate ? endDate.toLocaleDateString() : 'N/A'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Generated on: {new Date().toLocaleDateString()}
-              </Typography>
-
-            </Box>
-          </Paper>
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <h1 className="text-4xl font-light mb-4">Student Grade Analysis Report</h1>
+                <h2 className="text-2xl text-primary mb-2">{selectedStudentData?.name}</h2>
+                <p className="text-muted-foreground">
+                  Date Range: {startDate ? new Date(startDate).toLocaleDateString() : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString() : 'N/A'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Generated on: {new Date().toLocaleDateString()}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Subject-wise Grades */}
           {gradesData.subjectAnalysis && Object.keys(gradesData.subjectAnalysis).length > 0 ? (
             Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData]) => (
-              <Paper key={subjectName} elevation={2} sx={{ p: 3, mb: 3 }} className="subject-section">
-                <Typography variant="h5" gutterBottom>
-                  📚 {subjectName}
-                </Typography>
-                
-                {/* Summary Cards */}
-                <Grid container spacing={2} mb={3}>
-                  <Grid item xs={12} sm={3}>
+              <Card key={subjectName} className="mb-6">
+                <CardContent className="p-6">
+                  <h3 className="text-2xl font-semibold mb-4">
+                    📚 {subjectName}
+                  </h3>
+                  
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
                     <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h6" color="primary">
+                      <CardContent className="text-center p-4">
+                        <div className="text-2xl font-bold text-primary">
                           {subjectData.studentAverage?.toFixed(1) || 'N/A'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Student Average
-                        </Typography>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Student Average</p>
                       </CardContent>
                     </Card>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
+                    
                     <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h6" color="secondary">
+                      <CardContent className="text-center p-4">
+                        <div className="text-2xl font-bold text-secondary">
                           {subjectData.classAverage?.toFixed(1) || 'N/A'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Class Average
-                        </Typography>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Class Average</p>
                       </CardContent>
                     </Card>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
+                    
                     <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography variant="h6">
+                      <CardContent className="text-center p-4">
+                        <div className="text-2xl font-bold">
                           {subjectData.grades?.length || 0}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Total Grades
-                        </Typography>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Total Grades</p>
                       </CardContent>
                     </Card>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
+                    
                     <Card>
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Chip 
-                          label={subjectData.studentAverage >= subjectData.classAverage ? 'Above Average' : 'Below Average'}
-                          color={subjectData.studentAverage >= subjectData.classAverage ? 'success' : 'warning'}
-                          size="small"
-                        />
+                      <CardContent className="text-center p-4">
+                        <Badge 
+                          variant={subjectData.studentAverage >= subjectData.classAverage ? 'default' : 'secondary'}
+                          className="text-sm"
+                        >
+                          {subjectData.studentAverage >= subjectData.classAverage ? 'Above Average' : 'Below Average'}
+                        </Badge>
                       </CardContent>
                     </Card>
-                  </Grid>
-                </Grid>
+                  </div>
 
-                {/* Progress Graph for multiple grades */}
-                {subjectData.grades && subjectData.grades.length > 1 && (
-                  <Box mb={3}>
-                    <Typography variant="h6" gutterBottom>
-                      📈 Grade Progress Over Time
-                    </Typography>
-                    <Box sx={{ width: '100%', height: 300 }}>
-                      <ResponsiveContainer>
-                        <LineChart data={prepareChartData(subjectData.grades)}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="date" 
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis 
-                            domain={[0, 20]}
-                            tick={{ fontSize: 12 }}
-                          />
-                          <Tooltip 
-                            formatter={(value) => [value, 'Grade']}
-                            labelFormatter={(label) => `Date: ${label}`}
-                          />
-                          <Legend />
-                          <Line 
-                            type="monotone" 
-                            dataKey="grade" 
-                            stroke="#1976d2" 
-                            strokeWidth={3}
-                            dot={{ fill: '#1976d2', strokeWidth: 2, r: 6 }}
-                            name="Grade"
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
-                )}
+                  {/* Progress Graph for multiple grades */}
+                  {subjectData.grades && subjectData.grades.length > 1 && (
+                    <div className="mb-6">
+                      <h4 className="text-lg font-semibold mb-4">
+                        📈 Grade Progress Over Time
+                      </h4>
+                      <div className="w-full h-[300px]">
+                        <ResponsiveContainer>
+                          <LineChart data={prepareChartData(subjectData.grades)}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="date" 
+                              tick={{ fontSize: 12 }}
+                            />
+                            <YAxis 
+                              domain={[0, 20]}
+                              tick={{ fontSize: 12 }}
+                            />
+                            <Tooltip 
+                              formatter={(value) => [value, 'Grade']}
+                              labelFormatter={(label) => `Date: ${label}`}
+                            />
+                            <Legend />
+                            <Line 
+                              type="monotone" 
+                              dataKey="grade" 
+                              stroke="hsl(var(--primary))" 
+                              strokeWidth={3}
+                              dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
+                              name="Grade"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Grades Table */}
-                <Typography variant="h6" gutterBottom>
-                  📋 All Grades
-                </Typography>
-                <TableContainer>
-                  <Table className="grade-table" size="small">
-                    <TableHead>
+                  {/* Grades Table */}
+                  <h4 className="text-lg font-semibold mb-4">
+                    📋 All Grades
+                  </h4>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell><strong>Date</strong></TableCell>
-                        <TableCell><strong>Grade</strong></TableCell>
-                        <TableCell><strong>Description</strong></TableCell>
-                        <TableCell><strong>Teacher</strong></TableCell>
-                        <TableCell><strong>vs Class Avg</strong></TableCell>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Grade</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Teacher</TableHead>
+                        <TableHead>vs Class Avg</TableHead>
                       </TableRow>
-                    </TableHead>
+                    </TableHeader>
                     <TableBody>
                       {subjectData.grades?.map((grade, index) => (
                         <TableRow key={index}>
                           <TableCell>{new Date(grade.date).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <Chip 
-                              label={grade.value}
-                              size="small"
-                              color={grade.value >= subjectData.classAverage ? 'success' : grade.value >= subjectData.classAverage * 0.8 ? 'warning' : 'error'}
-                            />
+                            <Badge 
+                              variant={grade.value >= subjectData.classAverage ? 'default' : grade.value >= subjectData.classAverage * 0.8 ? 'secondary' : 'destructive'}
+                            >
+                              {grade.value}
+                            </Badge>
                           </TableCell>
                           <TableCell>{grade.description || '-'}</TableCell>
                           <TableCell>{grade.teacher?.name || 'Unknown'}</TableCell>
                           <TableCell>
-                            <Chip 
-                              label={grade.value >= subjectData.classAverage ? '↗️ Above' : '↘️ Below'}
-                              size="small"
-                              variant="outlined"
-                              color={grade.value >= subjectData.classAverage ? 'success' : 'warning'}
-                            />
+                            <Badge 
+                              variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {grade.value >= subjectData.classAverage ? '↗️ Above' : '↘️ Below'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       )) || (
                         <TableRow>
-                          <TableCell colSpan={5} align="center">
+                          <TableCell colSpan={5} className="text-center">
                             No grades found for this period
                           </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
                   </Table>
-                </TableContainer>
-              </Paper>
+                </CardContent>
+              </Card>
             ))
           ) : (
-            <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary">
-                No grades found for the selected period
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Try selecting a different time period or check if grades have been recorded
-              </Typography>
-            </Paper>
+            <Card>
+              <CardContent className="p-8 text-center">
+                <h3 className="text-lg text-muted-foreground mb-2">
+                  No grades found for the selected period
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Try selecting a different time period or check if grades have been recorded
+                </p>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
       {/* Selection prompt */}
       {!selectedStudent || !startDate || !endDate ? (
-        <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
-          <AnalyticsIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Select a student and date range to view grade analysis
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Choose a student and select start/end dates above to generate a detailed grade report with class comparisons and progress charts
-          </Typography>
-        </Paper>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg text-muted-foreground mb-2">
+              Select a student and date range to view grade analysis
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Choose a student and select start/end dates above to generate a detailed grade report with class comparisons and progress charts
+            </p>
+          </CardContent>
+        </Card>
       ) : null}
-    </Container>
+    </div>
   );
 };
 

@@ -281,6 +281,16 @@ const CalendarEventDialog = ({ open, onClose, event, date, canEdit }) => {
       maxWidth="md" 
       fullWidth
       fullScreen={isMobile}
+      TransitionProps={{
+        enter: {
+          duration: 200,
+          easing: 'ease-out'
+        },
+        exit: {
+          duration: 150,
+          easing: 'ease-in'
+        }
+      }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>

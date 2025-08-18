@@ -1,6 +1,24 @@
 import axiosInstance from '../app/axios';
 
 /**
+ * Get student dashboard data (quick stats and recent grades)
+ * @returns {Promise} - Promise that resolves to student dashboard data
+ */
+export const getStudentDashboard = async () => {
+  try {
+    console.log('[StudentDashboardAPI] Fetching student dashboard data...');
+    
+    const response = await axiosInstance.get('/api/stats/student-dashboard');
+    
+    console.log('[StudentDashboardAPI] Dashboard response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('[StudentDashboardAPI] Error fetching dashboard data:', error);
+    throw error;
+  }
+};
+
+/**
  * Get student statistics with grade averages and counts
  * @param {string} search - Optional search term to filter students by name
  * @returns {Promise} - Promise that resolves to student stats data

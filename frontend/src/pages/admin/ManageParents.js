@@ -1,52 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Grid,
-  Paper,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Alert,
-  CircularProgress,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  FormControlLabel,
-  Checkbox,
-  OutlinedInput,
-  Autocomplete
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Person as PersonIcon,
-  School as SchoolIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  ExpandMore as ExpandMoreIcon,
-  Link as LinkIcon,
-  Unlink as UnlinkIcon
-} from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  User, 
+  School, 
+  Mail, 
+  Phone, 
+  ChevronDown, 
+  Link, 
+  Unlink 
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Badge } from '../../../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible';
 import { API_URL } from '../../config/appConfig';
 
 const ManageParents = () => {
@@ -139,52 +114,101 @@ const ManageParents = () => {
           parentName: formData.name,
           parentEmail: formData.email,
           parentPassword: formData.password,
-          parentMobilePhone: formData.mobilePhone,
-          parentPersonalEmail: formData.personalEmail,
+          mobilePhone: formData.mobilePhone,
+          personalEmail: formData.personalEmail,
           emailCredentials: formData.emailCredentials
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(`Parent account created successfully for ${selectedStudents.map(s => s.name).join(', ')}`);
+        toast.success('Parent created successfully');
         setDialogOpen(false);
         resetForm();
         fetchParents();
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create parent account');
+        throw new Error(errorData.message || 'Failed to create parent');
       }
     } catch (error) {
       console.error('Error creating parent:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to create parent');
     }
   };
 
-  const handleLinkStudents = async () => {
-    if (!selectedParent || !selectedStudents.length) {
-      toast.error('Please select a parent and at least one student');
+  const handleEditParent = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/users/${selectedParent._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        toast.success('Parent updated successfully');
+        setDialogOpen(false);
+        resetForm();
+        fetchParents();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update parent');
+      }
+    } catch (error) {
+      console.error('Error updating parent:', error);
+      toast.error(error.message || 'Failed to update parent');
+    }
+  };
+
+  const handleDeleteParent = async (parentId) => {
+    if (!window.confirm('Are you sure you want to delete this parent?')) {
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/users/create-parent`, {
+      const response = await fetch(`${API_URL}/api/users/${parentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Parent deleted successfully');
+        fetchParents();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete parent');
+      }
+    } catch (error) {
+      console.error('Error deleting parent:', error);
+      toast.error(error.message || 'Failed to delete parent');
+    }
+  };
+
+  const handleLinkStudents = async () => {
+    if (!selectedStudents.length) {
+      toast.error('Please select at least one student');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/${selectedParent._id}/link-students`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          studentIds: selectedStudents.map(s => s._id),
-          parentName: selectedParent.name,
-          parentEmail: selectedParent.email,
-          parentPassword: 'temp123', // Won't be used since parent exists
-          emailCredentials: false
+          studentIds: selectedStudents.map(s => s._id)
         })
       });
 
       if (response.ok) {
-        toast.success(`Students linked to parent successfully`);
+        toast.success('Students linked successfully');
         setDialogOpen(false);
         resetForm();
         fetchParents();
@@ -194,31 +218,7 @@ const ManageParents = () => {
       }
     } catch (error) {
       console.error('Error linking students:', error);
-      toast.error(error.message);
-    }
-  };
-
-  const handleUnlinkStudents = async (parentId, studentIds) => {
-    try {
-      const response = await fetch(`${API_URL}/api/users/parent/${parentId}/students`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ studentIds })
-      });
-
-      if (response.ok) {
-        toast.success('Students unlinked successfully');
-        fetchParents();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to unlink students');
-      }
-    } catch (error) {
-      console.error('Error unlinking students:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to link students');
     }
   };
 
@@ -235,314 +235,280 @@ const ManageParents = () => {
     setSelectedParent(null);
   };
 
-  const openCreateDialog = () => {
+  const openDialog = (type, parent = null) => {
+    setDialogType(type);
+    setSelectedParent(parent);
+    if (parent) {
+      setFormData({
+        name: parent.name || '',
+        email: parent.email || '',
+        password: '',
+        mobilePhone: parent.mobilePhone || '',
+        personalEmail: parent.personalEmail || '',
+        emailCredentials: parent.emailCredentials !== false
+      });
+    } else {
     resetForm();
-    setDialogType('create');
-    setDialogOpen(true);
-  };
-
-  const openLinkDialog = () => {
-    resetForm();
-    setDialogType('link');
-    setDialogOpen(true);
-  };
-
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    let password = '';
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    setFormData({ ...formData, password });
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    switch (dialogType) {
+      case 'create':
+        handleCreateParent();
+        break;
+      case 'edit':
+        handleEditParent();
+        break;
+      case 'link':
+        handleLinkStudents();
+        break;
+      default:
+        break;
+    }
   };
 
   const filteredParents = parents.filter(parent =>
-    parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    parent.email.toLowerCase().includes(searchTerm.toLowerCase())
+    parent.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    parent.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const getLinkedStudentNames = (parent) => {
-    if (!parent.linkedStudentIds || parent.linkedStudentIds.length === 0) {
-      return 'No students linked';
-    }
-    
-    const linkedStudents = students.filter(student => 
-      parent.linkedStudentIds.includes(student._id)
-    );
-    
-    return linkedStudents.map(s => s.name).join(', ');
-  };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading parents data...</p>
+      </div>
     );
   }
 
   return (
-    <Box p={3}>
-      {/* Header */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          👨‍👩‍👧‍👦 Manage Parent Accounts
-        </Typography>
-        <Typography variant="body1">
-          Create and manage parent accounts linked to students. Parents can view their children's grades, notifications, and academic progress.
-        </Typography>
-      </Paper>
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Manage Parents</h1>
+        <p className="text-muted-foreground">
+          Create, edit, and manage parent accounts and their student links
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <Button onClick={() => openDialog('create')} className="sm:w-auto">
+          <Plus className="mr-2 h-4 w-4" />
+          Create New Parent
+        </Button>
+        <div className="flex-1">
+          <Input
+            placeholder="Search parents by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+          <p className="text-destructive">{error}</p>
+        </div>
       )}
 
-      {/* Action Buttons */}
-      <Box display="flex" gap={2} mb={3}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredParents.map((parent) => (
+          <Card key={parent._id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <User className="h-8 w-8 text-primary" />
+                  <div>
+                    <CardTitle className="text-lg">{parent.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{parent.email}</p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDialog('edit', parent)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
         <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreateDialog}
-          sx={{ bgcolor: 'primary.main' }}
-        >
-          Create Parent Account
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDialog('link', parent)}
+                  >
+                    <Link className="h-4 w-4" />
         </Button>
         <Button
-          variant="outlined"
-          startIcon={<LinkIcon />}
-          onClick={openLinkDialog}
-        >
-          Link Students to Existing Parent
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteParent(parent._id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
         </Button>
-      </Box>
-
-      {/* Search */}
-      <TextField
-        fullWidth
-        variant="outlined"
-        placeholder="Search parents by name or email..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        sx={{ mb: 3 }}
-      />
-
-      {/* Parents List */}
-      <Grid container spacing={3}>
-        {filteredParents.length === 0 ? (
-          <Grid item xs={12}>
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <PersonIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">
-                {searchTerm ? 'No parents found matching your search' : 'No parent accounts created yet'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {!searchTerm && 'Create parent accounts to allow parents to monitor their children\'s academic progress'}
-              </Typography>
-            </Paper>
-          </Grid>
-        ) : (
-          filteredParents.map((parent) => (
-            <Grid item xs={12} key={parent._id}>
-              <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box display="flex" alignItems="center" gap={2} width="100%">
-                    <PersonIcon color="primary" />
-                    <Box>
-                      <Typography variant="h6" fontWeight="medium">
-                        {parent.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {parent.email} • {parent.linkedStudentIds?.length || 0} students linked
-                      </Typography>
-                    </Box>
-                    <Box ml="auto">
-                      <Chip
-                        label={parent.active ? 'Active' : 'Inactive'}
-                        color={parent.active ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </Box>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" fontWeight="bold" mb={1}>
-                        Contact Information
-                      </Typography>
-                      <Box display="flex" alignItems="center" gap={1} mb={1}>
-                        <EmailIcon fontSize="small" color="action" />
-                        <Typography variant="body2">{parent.email}</Typography>
-                      </Box>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
                       {parent.mobilePhone && (
-                        <Box display="flex" alignItems="center" gap={1} mb={1}>
-                          <PhoneIcon fontSize="small" color="action" />
-                          <Typography variant="body2">{parent.mobilePhone}</Typography>
-                        </Box>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span>{parent.mobilePhone}</span>
+                  </div>
                       )}
                       {parent.personalEmail && (
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <EmailIcon fontSize="small" color="action" />
-                          <Typography variant="body2">{parent.personalEmail} (Personal)</Typography>
-                        </Box>
-                      )}
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" fontWeight="bold" mb={1}>
-                        Linked Students
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {getLinkedStudentNames(parent)}
-                      </Typography>
-                      {parent.linkedStudentIds && parent.linkedStudentIds.length > 0 && (
-                        <Button
-                          size="small"
-                          startIcon={<UnlinkIcon />}
-                          onClick={() => handleUnlinkStudents(parent._id, parent.linkedStudentIds)}
-                          sx={{ mt: 1 }}
-                          color="warning"
-                        >
-                          Unlink All Students
-                        </Button>
-                      )}
-                    </Grid>
-                  </Grid>
-                </AccordionDetails>
-              </Accordion>
-            </Grid>
-          ))
-        )}
-      </Grid>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{parent.personalEmail}</span>
+                  </div>
+                )}
+                <div className="flex items-center space-x-2">
+                  <Badge variant={parent.emailCredentials ? "default" : "secondary"}>
+                    {parent.emailCredentials ? "Email Enabled" : "Email Disabled"}
+                  </Badge>
+                </div>
+                {parent.students && parent.students.length > 0 && (
+                  <div className="pt-3 border-t">
+                    <p className="text-sm font-medium mb-2">Linked Students:</p>
+                    <div className="space-y-1">
+                      {parent.students.map((student) => (
+                        <div key={student._id} className="flex items-center space-x-2 text-sm">
+                          <School className="h-3 w-3 text-muted-foreground" />
+                          <span>{student.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Create/Link Parent Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
         <DialogTitle>
-          {dialogType === 'create' ? 'Create Parent Account' : 'Link Students to Existing Parent'}
+              {dialogType === 'create' && 'Create New Parent'}
+              {dialogType === 'edit' && 'Edit Parent'}
+              {dialogType === 'link' && 'Link Students'}
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            {dialogType === 'create' ? (
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Parent Name"
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {dialogType !== 'link' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
+                    placeholder="Parent's full name"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Parent Email"
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
+                    placeholder="parent@example.com"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box display="flex" gap={1}>
-                    <TextField
-                      fullWidth
-                      label="Password"
+                </div>
+                
+                {dialogType === 'create' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password *</Label>
+                    <Input
+                      id="password"
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      required
+                      placeholder="Enter password"
                     />
-                    <Button onClick={generatePassword} variant="outlined">
-                      Generate
-                    </Button>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Mobile Phone"
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mobilePhone">Mobile Phone</Label>
+                  <Input
+                    id="mobilePhone"
                     value={formData.mobilePhone}
                     onChange={(e) => setFormData({ ...formData, mobilePhone: e.target.value })}
+                    placeholder="+1234567890"
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Personal Email (Optional)"
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="personalEmail">Personal Email</Label>
+                  <Input
+                    id="personalEmail"
                     type="email"
                     value={formData.personalEmail}
                     onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
+                    placeholder="personal@example.com"
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
+                </div>
+                
+                <div className="flex items-center space-x-2">
                       <Checkbox
+                    id="emailCredentials"
                         checked={formData.emailCredentials}
-                        onChange={(e) => setFormData({ ...formData, emailCredentials: e.target.checked })}
-                      />
-                    }
-                    label="Email login credentials to parent"
+                    onCheckedChange={(checked) => setFormData({ ...formData, emailCredentials: checked })}
                   />
-                </Grid>
-              </Grid>
-            ) : (
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Autocomplete
-                    options={parents}
-                    getOptionLabel={(option) => `${option.name} (${option.email})`}
-                    value={selectedParent}
-                    onChange={(event, newValue) => setSelectedParent(newValue)}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Select Parent" fullWidth required />
-                    )}
-                  />
-                </Grid>
-              </Grid>
+                  <Label htmlFor="emailCredentials" className="text-sm">
+                    Enable email notifications
+                  </Label>
+                </div>
+              </>
             )}
             
-            <Divider sx={{ my: 2 }} />
+            {(dialogType === 'create' || dialogType === 'link') && (
+              <div className="space-y-2">
+                <Label>Select Students *</Label>
+                <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
+                  {students.map((student) => (
+                    <div key={student._id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`student-${student._id}`}
+                        checked={selectedStudents.some(s => s._id === student._id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedStudents([...selectedStudents, student]);
+                          } else {
+                            setSelectedStudents(selectedStudents.filter(s => s._id !== student._id));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`student-${student._id}`} className="text-sm">
+                        {student.name} ({student.email})
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
-            <Typography variant="h6" gutterBottom>
-              Select Students to Link
-            </Typography>
-            <Autocomplete
-              multiple
-              options={students}
-              getOptionLabel={(option) => `${option.name} (${option.email})`}
-              value={selectedStudents}
-              onChange={(event, newValue) => setSelectedStudents(newValue)}
-              renderInput={(params) => (
-                <TextField {...params} label="Select Students" placeholder="Choose students" />
-              )}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={option.name}
-                    {...getTagProps({ index })}
-                    key={option._id}
-                  />
-                ))
-              }
-            />
-          </Box>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit}>
+                {dialogType === 'create' && 'Create Parent'}
+                {dialogType === 'edit' && 'Update Parent'}
+                {dialogType === 'link' && 'Link Students'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={dialogType === 'create' ? handleCreateParent : handleLinkStudents}
-            variant="contained"
-            disabled={!selectedStudents.length || (dialogType === 'create' && (!formData.name || !formData.email || !formData.password))}
-          >
-            {dialogType === 'create' ? 'Create Parent' : 'Link Students'}
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

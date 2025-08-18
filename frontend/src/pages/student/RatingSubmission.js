@@ -1,37 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  Box, 
-  Container, 
-  Typography, 
-  Button, 
-  Paper, 
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-  Stepper,
-  Step,
-  StepLabel,
-  Rating,
-  TextField,
-  CircularProgress,
-  Alert,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  ListItemButton
-} from '@mui/material';
-import { 
-  Person as PersonIcon,
-  School as SchoolIcon,
-  CheckCircleOutline as SuccessIcon,
-  AccessTime as TimeIcon
-} from '@mui/icons-material';
+  User,
+  Building,
+  CheckCircle,
+  Clock,
+  Star,
+  ChevronRight,
+  ChevronLeft,
+  Send
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 import { format, isAfter, parseISO } from 'date-fns';
 
@@ -49,6 +27,12 @@ import {
 import LoadingScreen from '../../components/common/LoadingScreen';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Textarea } from '../../components/ui/textarea';
+import { Label } from '../../components/ui/label';
 
 const RatingSubmission = () => {
   const dispatch = useDispatch();
@@ -98,466 +82,383 @@ const RatingSubmission = () => {
         q.targetType === 'both' || q.targetType === selectedTarget.type
       );
 
-      // Initialize answers
-      setAnswers(applicableQuestions.map(question => ({
-        question: question._id,
-        ratingValue: question.questionType === 'rating' ? 5 : null, // Default to middle value for ratings
-        textAnswer: question.questionType === 'text' ? '' : null
-      })));
+      const initialAnswers = applicableQuestions.map(q => ({
+        questionId: q._id,
+        questionText: q.text,
+        questionType: q.type,
+        targetId: selectedTarget._id,
+        targetType: selectedTarget.type,
+        answer: q.type === 'rating' ? 0 : '',
+        required: q.required
+      }));
+
+      setAnswers(initialAnswers);
     }
   }, [questions, selectedTarget]);
 
-  // Reset when submission is successful
-  useEffect(() => {
-    if (isSuccess && submitting) {
-      setSubmitting(false);
-      setSubmitted(true);
-      toast.success('Rating submitted successfully!');
-    }
-  }, [isSuccess, submitting]);
-
-  // Show error message
-  useEffect(() => {
-    if (isError && submitting) {
-      setSubmitting(false);
-      toast.error(message);
-    }
-  }, [isError, message, submitting]);
+  // Handle answer change
+  const handleAnswerChange = (questionId, value) => {
+    setAnswers(prev => 
+      prev.map(answer => 
+        answer.questionId === questionId 
+          ? { ...answer, answer: value }
+          : answer
+      )
+    );
+  };
 
   // Handle period selection
-  const handleSelectPeriod = (period) => {
+  const handlePeriodSelect = (period) => {
     setSelectedPeriod(period);
-    setActiveStep(1);
     setSelectedTarget(null);
-    setSubmitted(false);
+    setActiveStep(0);
+    setAnswers([]);
   };
 
   // Handle target selection
-  const handleSelectTarget = (target) => {
+  const handleTargetSelect = (target) => {
     setSelectedTarget(target);
-    setActiveStep(2);
+    setActiveStep(1);
   };
 
-  // Handle rating change
-  const handleRatingChange = (questionId, value) => {
-    setAnswers(prev => 
-      prev.map(answer => 
-        answer.question === questionId 
-          ? { ...answer, ratingValue: value } 
-          : answer
-      )
-    );
+  // Handle step navigation
+  const handleNext = () => {
+    if (activeStep === 0 && selectedPeriod) {
+      setActiveStep(1);
+    } else if (activeStep === 1 && selectedTarget) {
+      setActiveStep(2);
+    }
   };
 
-  // Handle text answer change
-  const handleTextChange = (questionId, value) => {
-    setAnswers(prev => 
-      prev.map(answer => 
-        answer.question === questionId 
-          ? { ...answer, textAnswer: value } 
-          : answer
-      )
-    );
-  };
-
-  // Go back to previous step
   const handleBack = () => {
-    setActiveStep(prev => prev - 1);
+    if (activeStep === 1) {
+      setActiveStep(0);
+    } else if (activeStep === 2) {
+      setActiveStep(1);
+    }
   };
 
-  // Submit rating
-  const handleSubmit = () => {
-    // Validation
-    const missingAnswers = answers.filter(answer => {
-      const question = questions.find(q => q._id === answer.question);
-      if (question.questionType === 'rating') {
-        return answer.ratingValue === null;
-      } else {
-        return !answer.textAnswer;
-      }
-    });
+  // Handle rating submission
+  const handleSubmit = async () => {
+    // Validate required answers
+    const requiredAnswers = answers.filter(a => a.required);
+    const missingAnswers = requiredAnswers.filter(a => 
+      a.questionType === 'rating' ? a.answer === 0 : !a.answer.trim()
+    );
 
     if (missingAnswers.length > 0) {
-      toast.error('Please answer all questions');
+      toast.error('Please answer all required questions');
       return;
     }
 
     setSubmitting(true);
 
-    // Create submission object
-    const submission = {
-      ratingPeriod: selectedPeriod._id,
-      targetType: selectedTarget.type,
-      targetId: selectedTarget.id,
-      answers,
-      school: user.school || user.schools?.[0],
-      direction: user.direction || user.directions?.[0]
-    };
+    try {
+      const ratingData = {
+        periodId: selectedPeriod._id,
+        targetId: selectedTarget._id,
+        targetType: selectedTarget.type,
+        answers: answers.filter(a => a.answer !== 0 && a.answer.trim() !== '')
+      };
 
-    // Submit rating
-    dispatch(submitRating(submission));
-  };
-
-  // Reset and start new rating
-  const handleNewRating = () => {
-    setActiveStep(0);
-    setSelectedPeriod(null);
-    setSelectedTarget(null);
-    setAnswers([]);
-    setSubmitted(false);
-    dispatch(getActiveRatingPeriods());
-  };
-
-  // If loading initial data
-  if (isLoading && activePeriods.length === 0) {
-    return <LoadingScreen />;
-  }
-
-  // If error loading initial data
-  if (isError && activePeriods.length === 0) {
-    return <ErrorState message={message} />;
-  }
-
-  // If no active rating periods
-  if (activePeriods.length === 0 && !isLoading) {
-    return (
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <EmptyState
-          title="No Active Rating Periods"
-          description="There are currently no active rating periods. Please check back later."
-          icon={<TimeIcon sx={{ fontSize: 60 }} />}
-        />
-      </Container>
-    );
-  }
-
-  // Render step content
-  const getStepContent = (step) => {
-    switch (step) {
-      case 0:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Select a Rating Period
-            </Typography>
-            <List sx={{ mt: 2 }}>
-              {activePeriods.map(period => (
-                <ListItem 
-                  key={period._id}
-                  disablePadding
-                  sx={{ mb: 2 }}
-                >
-                  <ListItemButton
-                    onClick={() => handleSelectPeriod(period)}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                      }
-                    }}
-                  >
-                    <ListItemText
-                      primary={period.title}
-                      secondary={
-                        <Box sx={{ mt: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Available until: {format(new Date(period.endDate), 'MMM d, yyyy')}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                            <Chip
-                              size="small"
-                              label={period.targetType === 'both' 
-                                ? 'Teachers & Subjects' 
-                                : period.targetType === 'teacher' ? 'Teachers Only' : 'Subjects Only'}
-                              sx={{ mr: 1 }}
-                            />
-                          </Box>
-                        </Box>
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        );
-      case 1:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Select What to Rate
-            </Typography>
-            {isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                {/* Show teachers section if applicable */}
-                {(currentPeriod?.targetType === 'both' || currentPeriod?.targetType === 'teacher') && (
-                  <Grid item xs={12} md={currentPeriod?.targetType === 'both' ? 6 : 12}>
-                    <Card variant="outlined" sx={{ height: '100%' }}>
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Teachers
-                        </Typography>
-                        {targets.teachers.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">
-                            You have already rated all available teachers for this period.
-                          </Typography>
-                        ) : (
-                          <List>
-                            {targets.teachers.map(teacher => (
-                              <ListItem 
-                                key={teacher._id}
-                                disablePadding
-                                sx={{ mb: 1 }}
-                              >
-                                <ListItemButton
-                                  onClick={() => handleSelectTarget({ 
-                                    type: 'teacher', 
-                                    id: teacher._id,
-                                    name: teacher.name
-                                  })}
-                                  sx={{
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    borderRadius: 1
-                                  }}
-                                >
-                                  <ListItemAvatar>
-                                    <Avatar>
-                                      <PersonIcon />
-                                    </Avatar>
-                                  </ListItemAvatar>
-                                  <ListItemText
-                                    primary={teacher.name}
-                                    secondary={teacher.email}
-                                  />
-                                </ListItemButton>
-                              </ListItem>
-                            ))}
-                          </List>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                )}
-                
-                {/* Show subjects section if applicable */}
-                {(currentPeriod?.targetType === 'both' || currentPeriod?.targetType === 'subject') && (
-                  <Grid item xs={12} md={currentPeriod?.targetType === 'both' ? 6 : 12}>
-                    <Card variant="outlined" sx={{ height: '100%' }}>
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Subjects
-                        </Typography>
-                        {targets.subjects.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">
-                            You have already rated all available subjects for this period.
-                          </Typography>
-                        ) : (
-                          <List>
-                            {targets.subjects.map(subject => (
-                              <ListItem 
-                                key={subject._id}
-                                disablePadding
-                                sx={{ mb: 1 }}
-                              >
-                                <ListItemButton
-                                  onClick={() => handleSelectTarget({ 
-                                    type: 'subject', 
-                                    id: subject._id,
-                                    name: subject.name
-                                  })}
-                                  sx={{
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    borderRadius: 1
-                                  }}
-                                >
-                                  <ListItemAvatar>
-                                    <Avatar>
-                                      <SchoolIcon />
-                                    </Avatar>
-                                  </ListItemAvatar>
-                                  <ListItemText
-                                    primary={subject.name}
-                                    secondary={subject.direction?.name}
-                                  />
-                                </ListItemButton>
-                              </ListItem>
-                            ))}
-                          </List>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                )}
-                
-                {/* Show message if no targets available */}
-                {targets.teachers.length === 0 && targets.subjects.length === 0 && (
-                  <Grid item xs={12}>
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      You have already rated all available teachers and subjects for this period.
-                    </Alert>
-                  </Grid>
-                )}
-              </Grid>
-            )}
-          </Box>
-        );
-      case 2:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Rate: {selectedTarget?.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Please provide your feedback by answering the questions below. All ratings are anonymous.
-            </Typography>
-            
-            {isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Box>
-                {questions
-                  .filter(question => question.targetType === 'both' || question.targetType === selectedTarget?.type)
-                  .sort((a, b) => a.order - b.order)
-                  .map((question, index) => {
-                    const answer = answers.find(a => a.question === question._id);
-                    
-                    return (
-                      <Card key={question._id} variant="outlined" sx={{ mb: 3 }}>
-                        <CardContent>
-                          <Typography variant="subtitle1" gutterBottom>
-                            {index + 1}. {question.text}
-                          </Typography>
-                          
-                          {question.questionType === 'rating' ? (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
-                                <Typography variant="body2" color="text.secondary">Poor</Typography>
-                                <Typography variant="body2" color="text.secondary">Excellent</Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
-                                <Typography variant="body1">1</Typography>
-                                <Box sx={{ mx: 'auto' }}>
-                                  <Rating 
-                                    name={`rating-${question._id}`}
-                                    value={answer?.ratingValue || 0}
-                                    onChange={(event, newValue) => {
-                                      handleRatingChange(question._id, newValue);
-                                    }}
-                                    max={5}
-                                    size="large"
-                                  />
-                                </Box>
-                                <Typography variant="body1">5</Typography>
-                              </Box>
-                              <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                                {answer?.ratingValue || 0}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <TextField
-                              fullWidth
-                              multiline
-                              rows={4}
-                              placeholder="Type your answer here..."
-                              value={answer?.textAnswer || ''}
-                              onChange={(e) => handleTextChange(question._id, e.target.value)}
-                              sx={{ mt: 2 }}
-                            />
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </Box>
-            )}
-          </Box>
-        );
-      default:
-        return 'Unknown step';
+      await dispatch(submitRating(ratingData)).unwrap();
+      
+      setSubmitted(true);
+      toast.success('Rating submitted successfully!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit rating');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // Render success message after submission
+  // Check if period is active
+  const isPeriodActive = (period) => {
+    const now = new Date();
+    const startDate = parseISO(period.startDate);
+    const endDate = parseISO(period.endDate);
+    return isAfter(startDate, now) && isAfter(endDate, now);
+  };
+
+  // Render loading state
+  if (isLoading) {
+    return <LoadingScreen message="Loading rating periods..." />;
+  }
+
+  // Render error state
+  if (isError) {
+    return (
+      <ErrorState 
+        message={message || "Failed to load rating periods"}
+        onRetry={() => dispatch(getActiveRatingPeriods())}
+      />
+    );
+  }
+
+  // Render empty state
+  if (!activePeriods || activePeriods.length === 0) {
+    return (
+      <EmptyState 
+        title="No Active Rating Periods"
+        description="There are currently no active rating periods. Please check back later."
+      />
+    );
+  }
+
+  // Render success state
   if (submitted) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Paper sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
-          <SuccessIcon color="success" sx={{ fontSize: 60, mb: 2 }} />
-          <Typography variant="h5" gutterBottom>
-            Thank You for Your Feedback!
-          </Typography>
-          <Typography variant="body1" paragraph>
-            Your rating has been submitted successfully.
-          </Typography>
-          <Button 
-            variant="contained" 
-            color="primary"
-            onClick={handleNewRating}
-            sx={{ mt: 2 }}
-          >
-            Submit Another Rating
-          </Button>
-        </Paper>
-      </Container>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="h-16 w-16 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl">Rating Submitted!</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Thank you for your feedback. Your rating has been submitted successfully.
+            </p>
+            <Button 
+              onClick={() => {
+                setSubmitted(false);
+                setSelectedPeriod(null);
+                setSelectedTarget(null);
+                setActiveStep(0);
+                setAnswers([]);
+              }}
+              className="w-full"
+            >
+              Submit Another Rating
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-          Submit Ratings
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Your feedback helps improve teaching quality and subject content. All ratings are anonymous.
-        </Typography>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Student Rating Submission
+          </h1>
+          <p className="text-muted-foreground">
+            Rate your teachers and subjects for the current period
+          </p>
+        </div>
 
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          <Step>
-            <StepLabel>Select Period</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>Select Target</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>Submit Rating</StepLabel>
-          </Step>
-        </Stepper>
+        {/* Stepper */}
+        <div className="flex items-center justify-center space-x-4">
+          <div className={`flex items-center space-x-2 ${activeStep >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              activeStep >= 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}>
+              1
+            </div>
+            <span>Select Period</span>
+          </div>
+          
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          
+          <div className={`flex items-center space-x-2 ${activeStep >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              activeStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}>
+              2
+            </div>
+            <span>Select Target</span>
+          </div>
+          
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          
+          <div className={`flex items-center space-x-2 ${activeStep >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              activeStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}>
+              3
+            </div>
+            <span>Submit Rating</span>
+          </div>
+        </div>
 
-        <Divider sx={{ mb: 3 }} />
+        {/* Step 1: Period Selection */}
+        {activeStep === 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">Select Rating Period</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activePeriods.map((period) => (
+                <Card 
+                  key={period._id} 
+                  className={`cursor-pointer hover:shadow-md transition-shadow ${
+                    selectedPeriod?._id === period._id ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => handlePeriodSelect(period)}
+                >
+                  <CardHeader>
+                    <CardTitle className="text-lg">{period.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        {format(parseISO(period.startDate), 'MMM dd, yyyy')} - {format(parseISO(period.endDate), 'MMM dd, yyyy')}
+                      </span>
+                    </div>
+                    <Badge variant={isPeriodActive(period) ? "default" : "secondary"}>
+                      {isPeriodActive(period) ? "Active" : "Inactive"}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {selectedPeriod && (
+              <div className="flex justify-end">
+                <Button onClick={handleNext}>
+                  Continue
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
-        {getStepContent(activeStep)}
+        {/* Step 2: Target Selection */}
+        {activeStep === 1 && selectedPeriod && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-foreground">Select Target to Rate</h2>
+              <Button variant="outline" onClick={handleBack}>
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {targets?.map((target) => (
+                <Card 
+                  key={target._id} 
+                  className={`cursor-pointer hover:shadow-md transition-shadow ${
+                    selectedTarget?._id === target._id ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => handleTargetSelect(target)}
+                >
+                  <CardHeader>
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarFallback>
+                          {target.type === 'teacher' ? <User className="h-4 w-4" /> : <Building className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-lg">{target.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground capitalize">{target.type}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+            
+            {selectedTarget && (
+              <div className="flex justify-end">
+                <Button onClick={handleNext}>
+                  Continue
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-          <Button
-            variant="outlined"
-            disabled={activeStep === 0}
-            onClick={handleBack}
-          >
-            Back
-          </Button>
-          {activeStep === 2 && (
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              disabled={isLoading || submitting}
-            >
-              {submitting ? <CircularProgress size={24} /> : 'Submit Rating'}
-            </Button>
-          )}
-        </Box>
-      </Paper>
-    </Container>
+        {/* Step 3: Rating Questions */}
+        {activeStep === 2 && selectedPeriod && selectedTarget && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-foreground">
+                Rate {selectedTarget.name}
+              </h2>
+              <Button variant="outline" onClick={handleBack}>
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              {answers.map((answer, index) => (
+                <Card key={answer.questionId}>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-medium">
+                        {answer.questionText}
+                        {answer.required && <span className="text-destructive ml-1">*</span>}
+                      </Label>
+                    </div>
+                    
+                    {answer.questionType === 'rating' ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <Button
+                              key={rating}
+                              variant={answer.answer === rating ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleAnswerChange(answer.questionId, rating)}
+                              className="w-12 h-12 p-0"
+                            >
+                              <Star className={`h-5 w-5 ${answer.answer === rating ? 'text-yellow-400' : ''}`} />
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Poor</span>
+                          <span>Excellent</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <Textarea
+                        placeholder="Enter your answer..."
+                        value={answer.answer}
+                        onChange={(e) => handleAnswerChange(answer.questionId, e.target.value)}
+                        rows={3}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={handleBack}>
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={submitting}
+                className="min-w-[120px]"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Submit Rating
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

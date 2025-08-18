@@ -1,48 +1,28 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Paper,
-  CircularProgress,
-  Alert,
-  Container,
-  useTheme,
-  useMediaQuery,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
-} from '@mui/material';
-import {
-  Schedule as ScheduleIcon,
-  Person as PersonIcon,
-  Group as GroupIcon,
-  Subject as SubjectIcon,
-  School as SchoolIcon,
-  AccessTime as TimeIcon,
-  CalendarMonth as CalendarIcon,
-  AdminPanelSettings as AdminIcon,
-  Close as CloseIcon,
-  ExpandMore as ExpandMoreIcon
-} from '@mui/icons-material';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
+import { 
+  Calendar, 
+  Clock, 
+  Users, 
+  User, 
+  BookOpen, 
+  Building2, 
+  X,
+  Filter
+} from 'lucide-react';
+import { Spinner } from '../../components/ui/spinner';
+// shadcn/ui components
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { Label } from '../../components/ui/label';
+
 
 const Schedule = () => {
   const [scheduleData, setScheduleData] = useState(null);
@@ -53,8 +33,8 @@ const Schedule = () => {
   
   // Filter states for admin and teacher
   const [filters, setFilters] = useState({
-    schoolBranch: '',
-    teacher: ''
+    schoolBranch: 'all',
+    teacher: 'all'
   });
   const [filterOptions, setFilterOptions] = useState({
     schoolBranches: [],
@@ -71,9 +51,11 @@ const Schedule = () => {
   // Event rendering reference to avoid duplicates
   const renderedEventsRef = React.useRef(new Set());
   
-  const { user, token } = useSelector((state) => state.auth);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  // Get token from user object or localStorage as fallback
+  const authToken = user?.token || localStorage.getItem('token');
   
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const timeSlots = [
@@ -84,7 +66,7 @@ const Schedule = () => {
   
   // Generate consistent color for a subject based on its name
   const getSubjectColor = (subjectName) => {
-    if (!subjectName) return theme.palette.primary.main;
+    if (!subjectName) return 'hsl(var(--primary))';
     
     if (subjectColors[subjectName]) {
       return subjectColors[subjectName];
@@ -92,9 +74,10 @@ const Schedule = () => {
     
     // Generate a consistent color based on subject name
     const colors = [
+      'hsl(var(--primary))', 'hsl(var(--destructive))', 'hsl(var(--secondary))', 
+      'hsl(var(--accent))', 'hsl(var(--muted))', 'hsl(var(--ring))',
       '#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2',
-      '#0288d1', '#c2185b', '#00796b', '#5d4037', '#455a64',
-      '#e64a19', '#512da8', '#00695c', '#6a1b9a', '#f9a825'
+      '#0288d1', '#c2185b', '#00796b', '#5d4037', '#455a64'
     ];
     
     // Simple hash function to get consistent color for same subject
@@ -190,7 +173,7 @@ const Schedule = () => {
     setLoadingFilters(true);
     try {
       const config = {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${authToken}` }
       };
       
       console.log('Loading filter options for role:', user?.role);
@@ -256,7 +239,7 @@ const Schedule = () => {
     
     try {
       const config = {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${authToken}` }
       };
       
       console.log('Fetching branch names for IDs:', branchIds);
@@ -294,13 +277,13 @@ const Schedule = () => {
     try {
       setLoading(true);
       const config = {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${authToken}` }
       };
       
       // Build query parameters for filters
       const queryParams = new URLSearchParams();
-      if (filters.schoolBranch) queryParams.append('schoolBranch', filters.schoolBranch);
-      if (filters.teacher) queryParams.append('teacherId', filters.teacher);
+      if (filters.schoolBranch !== 'all') queryParams.append('schoolBranch', filters.schoolBranch);
+      if (filters.teacher !== 'all') queryParams.append('teacherId', filters.teacher);
       
       const queryString = queryParams.toString();
       const url = `${API_URL}/api/schedule${queryString ? `?${queryString}` : ''}`;
@@ -381,6 +364,7 @@ const Schedule = () => {
 
   // Handle filter changes
   const handleFilterChange = (filterType, value) => {
+    console.log(`Filter change: ${filterType} = ${value}`);
     setFilters(prev => ({ ...prev, [filterType]: value }));
   };
 
@@ -526,31 +510,9 @@ const Schedule = () => {
     };
   };
 
-  // Utility function to determine if a color is light or dark
-  const isLightBackground = (color) => {
-    // For hex colors
-    if (color.startsWith('#')) {
-      const hex = color.replace('#', '');
-      const r = parseInt(hex.substr(0, 2), 16);
-      const g = parseInt(hex.substr(2, 2), 16);
-      const b = parseInt(hex.substr(4, 2), 16);
-      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-      return brightness > 128;
-    }
-    // For named colors or rgb/rgba format, default to assuming it's dark
-    return false;
-  };
-
-  // Utility function to get appropriate text color based on background
-  const getTextColor = (backgroundColor) => {
-    return isLightBackground(backgroundColor) ? '#000000' : '#ffffff';
-  };
-
   // Mobile-specific event rendering function to prevent floating classes
   const renderMobileEvent = (event, index) => {
     const backgroundColor = getSubjectColor(event.subject);
-    const textColor = getTextColor(backgroundColor);
-    const isLightColor = isLightBackground(backgroundColor);
     
     // Get teacher and student counts
     const teacherCount = event.teacherNames ? event.teacherNames.length : 0;
@@ -562,94 +524,40 @@ const Schedule = () => {
     return (
       <Card
         key={`mobile-${event._id}-${index}`}
-        sx={{
-          mb: 1.5,
-          bgcolor: backgroundColor,
-          color: textColor,
-          cursor: 'pointer',
-          '&:hover': { 
-            boxShadow: 3,
-            transform: 'translateY(-2px)',
-            transition: 'all 0.2s ease-in-out'
-          },
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: 2
-        }}
+        className="mb-3 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4"
+        style={{ borderLeftColor: backgroundColor }}
         onClick={() => handleEventClick(event)}
       >
-        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Typography 
-              variant="subtitle1" 
-              fontWeight="bold"
-              sx={{ 
-                color: textColor,
-                textShadow: isLightColor ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
-              }}
-            >
+        <CardContent className="p-4">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="font-semibold text-lg text-foreground">
               {event.subject}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: textColor,
-                opacity: 0.9,
-                textShadow: isLightColor ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
-              }}
-            >
+            </h3>
+            <span className="text-sm text-muted-foreground">
               {event.startTime} - {event.endTime}
-            </Typography>
-          </Box>
+            </span>
+          </div>
           
           {teacherDisplay && (
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: textColor,
-                opacity: 0.9,
-                mb: 1,
-                textShadow: isLightColor ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
-              }}
-            >
+            <p className="text-sm text-muted-foreground mb-2">
               👨‍🏫 {teacherDisplay}
-            </Typography>
+            </p>
           )}
           
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            flexWrap: 'wrap',
-            alignItems: 'center'
-          }}>
+          <div className="flex gap-2 flex-wrap items-center">
             {teacherCount > 0 && (
-              <Chip
-                size="small"
-                icon={<PersonIcon sx={{ fontSize: '14px !important' }} />}
-                label={`${teacherCount} Teacher${teacherCount > 1 ? 's' : ''}`}
-                sx={{
-                  height: '20px',
-                  '& .MuiChip-label': { fontSize: '0.75rem', px: 0.5 },
-                  '& .MuiChip-icon': { fontSize: '12px', ml: 0.5 },
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: textColor
-                }}
-              />
+              <Badge variant="secondary" className="text-xs">
+                <User className="w-3 h-3 mr-1" />
+                {teacherCount} Teacher{teacherCount > 1 ? 's' : ''}
+              </Badge>
             )}
             {studentCount > 0 && (
-              <Chip
-                size="small"
-                icon={<GroupIcon sx={{ fontSize: '14px !important' }} />}
-                label={`${studentCount} Student${studentCount > 1 ? 's' : ''}`}
-                sx={{
-                  height: '20px',
-                  '& .MuiChip-label': { fontSize: '0.75rem', px: 0.5 },
-                  '& .MuiChip-icon': { fontSize: '12px', ml: 0.5 },
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: textColor
-                }}
-              />
+              <Badge variant="secondary" className="text-xs">
+                <Users className="w-3 h-3 mr-1" />
+                {studentCount} Student{studentCount > 1 ? 's' : ''}
+              </Badge>
             )}
-          </Box>
+          </div>
         </CardContent>
       </Card>
     );
@@ -683,394 +591,185 @@ const Schedule = () => {
     // Determine color based on subject
     const backgroundColor = getSubjectColor(event.subject);
     
-    // Check if it's a light color for contrast
-    const isLightColor = ['#f9a825', '#ffc107', '#ffeb3b'].includes(backgroundColor);
-    
-    // Calculate contrast color for text based on background color
-    const getContrastText = (hexColor) => {
-      // Convert hex to RGB
-      const r = parseInt(hexColor.slice(1, 3), 16);
-      const g = parseInt(hexColor.slice(3, 5), 16);
-      const b = parseInt(hexColor.slice(5, 7), 16);
-      
-      // Calculate luminance - lighter colors need dark text
-      const luminance = (r * 299 + g * 587 + b * 114) / 255;
-      return luminance > 0.5 ? '#000000' : '#ffffff';
-    };
-    
-    const textColor = getContrastText(backgroundColor);
-    
     return (
       <Card
         key={event._id}
-        sx={{
-          position: 'absolute',
+        className="absolute cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] z-10 overflow-hidden border border-border/20 shadow-sm"
+        style={{
           top: `${topOffset}px`,
           left: '2px',
           right: '2px',
-          cursor: 'pointer',
-          bgcolor: backgroundColor,
-          color: textColor,
-          p: isCompact ? 0.5 : 1,
           height: `${height - 4}px`,
           minHeight: `${height - 4}px`,
-          zIndex: 3,
-          '&:hover': { 
-            boxShadow: 3,
-            transform: 'scale(1.02)',
-            transition: 'all 0.2s ease-in-out',
-            zIndex: 4
-          },
-          overflow: 'hidden',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          backgroundColor: backgroundColor,
         }}
         onClick={() => handleEventClick(event)}
       >
-        <CardContent sx={{ 
-          p: isCompact ? '4px !important' : '8px !important',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between'
-        }}>
-          <Typography 
-            variant={isCompact ? 'caption' : 'subtitle2'} 
-            noWrap 
-            fontWeight="bold"
-            sx={{ 
-              color: textColor,
-              textShadow: isLightColor ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
-            }}
-          >
-            {event.subject}
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontSize: '0.7rem',
-                opacity: 0.9,
-                color: textColor,
-                display: 'block',
-                lineHeight: 1.2
-              }}
-            >
+        <CardContent className={`h-full flex flex-col justify-between ${isCompact ? 'p-1' : 'p-2'}`}>
+          <div className="text-foreground">
+            <h4 className={`font-semibold ${isCompact ? 'text-xs' : 'text-sm'}`}>
+              {event.subject}
+            </h4>
+            <p className={`text-xs opacity-90 ${isCompact ? 'text-xs' : 'text-sm'}`}>
               {event.startTime} - {event.endTime}
-            </Typography>
-          </Typography>
+            </p>
+          </div>
           {!isCompact && teacherDisplay && (
-            <Typography 
-              variant="caption" 
-              noWrap
-              sx={{ 
-                color: textColor,
-                opacity: 0.9,
-                textShadow: isLightColor ? 'none' : '0 1px 2px rgba(0,0,0,0.3)'
-              }}
-            >
+            <p className="text-xs opacity-90 text-foreground">
               {teacherDisplay}
-            </Typography>
+            </p>
           )}
           {!isCompact && (teacherCount > 0 || studentCount > 0) && (
-            <Box sx={{ 
-              display: 'flex', 
-              gap: 0.5, 
-              mt: 0.5,
-              flexWrap: 'wrap'
-            }}>
+            <div className="flex gap-1 mt-1 flex-wrap">
               {teacherCount > 0 && (
-                <Chip
-                  size="small"
-                  icon={<PersonIcon sx={{ fontSize: '12px !important' }} />}
-                  label={teacherCount}
-                  sx={{
-                    height: '16px',
-                    '& .MuiChip-label': { fontSize: '0.65rem', px: 0.5 },
-                    '& .MuiChip-icon': { fontSize: '10px', ml: 0.5 },
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: textColor
-                  }}
-                />
+                <Badge variant="secondary" className="text-xs h-4">
+                  <User className="w-2 h-2 mr-1" />
+                  {teacherCount}
+                </Badge>
               )}
               {studentCount > 0 && (
-                <Chip
-                  size="small"
-                  icon={<GroupIcon sx={{ fontSize: '12px !important' }} />}
-                  label={studentCount}
-                  sx={{
-                    height: '16px',
-                    '& .MuiChip-label': { fontSize: '0.65rem', px: 0.5 },
-                    '& .MuiChip-icon': { fontSize: '10px', ml: 0.5 },
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: textColor
-                  }}
-                />
+                <Badge variant="secondary" className="text-xs h-4">
+                  <Users className="w-2 h-2 mr-1" />
+                  {studentCount}
+                </Badge>
               )}
-            </Box>
+            </div>
           )}
         </CardContent>
       </Card>
     );
   };
 
-  if (loading) {
-    return (
-      <Container maxWidth="xl" sx={{ my: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
+if (loading) {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Spinner variant="default" />
+      </div>
+    </div>
+  );
+}
 
   if (error) {
     return (
-      <Container maxWidth="xl" sx={{ my: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md mb-6">
+          <div className="flex items-center space-x-2">
+            <span>⚠️ {error}</span>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ my: 4 }}>
+    <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <CalendarIcon color="primary" sx={{ fontSize: 40 }} />
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Weekly Schedule
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {user?.role === 'student' && 'Your class timetable for the week'}
-              {user?.role === 'teacher' && 'Your teaching schedule and classes'}
-              {user?.role === 'admin' && 'School-wide class schedules and timetables'}
-            </Typography>
-          </Box>
-        </Box>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-primary rounded-lg">
+              <Calendar className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-3xl font-light">Weekly Schedule</CardTitle>
+              <p className="text-muted-foreground">
+                {user?.role === 'student' && 'Your class timetable for the week'}
+                {user?.role === 'teacher' && 'Your teaching schedule and classes'}
+                {user?.role === 'admin' && 'School-wide class schedules and timetables'}
+              </p>
+            </div>
+          </div>
 
-        {/* Filters for Admin and Teacher */}
-        {(user?.role === 'admin' || user?.role === 'teacher') && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Filter Schedule
-            </Typography>
-            <Grid container spacing={2}>
-              {/* School Branch Filter */}
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel>School Branch</InputLabel>
+          {/* Filters for Admin and Teacher */}
+          {(user?.role === 'admin' || user?.role === 'teacher') && (
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Filter Schedule</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* School Branch Filter */}
+                <div className="space-y-2">
+                  <Label htmlFor="schoolBranch">School Branch</Label>
                   <Select
                     value={filters.schoolBranch}
-                    onChange={(e) => handleFilterChange('schoolBranch', e.target.value)}
-                    label="School Branch"
+                    onValueChange={(value) => handleFilterChange('schoolBranch', value)}
                     disabled={loadingFilters}
                   >
-                    <MenuItem value="">
-                      <em>All Branches</em>
-                    </MenuItem>
-                    {filterOptions.schoolBranches.map((branch) => (
-                      <MenuItem key={branch.value} value={branch.value}>
-                        {/* Display branch name from mapping if available, otherwise use label */}
-                        {branchNames[branch.value] || branch.label}
-                      </MenuItem>
-                    ))}
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Branches" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Branches</SelectItem>
+                      {filterOptions.schoolBranches.map((branch) => (
+                        <SelectItem key={branch.value} value={branch.value}>
+                          {branchNames[branch.value] || branch.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
-                </FormControl>
-              </Grid>
-              
-              {/* Teacher Filter (Admin only) */}
-              {user?.role === 'admin' && (
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth variant="outlined">
-                    <InputLabel>Teacher</InputLabel>
+                </div>
+                
+                {/* Teacher Filter (Admin only) */}
+                {user?.role === 'admin' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="teacher">Teacher</Label>
                     <Select
                       value={filters.teacher}
-                      onChange={(e) => handleFilterChange('teacher', e.target.value)}
-                      label="Teacher"
+                      onValueChange={(value) => handleFilterChange('teacher', value)}
                       disabled={loadingFilters}
                     >
-                      <MenuItem value="">
-                        <em>All Teachers</em>
-                      </MenuItem>
-                      {filterOptions.teachers.map((teacher) => (
-                        <MenuItem key={teacher.value} value={teacher.value}>
-                          {teacher.label}
-                        </MenuItem>
-                      ))}
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Teachers" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Teachers</SelectItem>
+                        {filterOptions.teachers.map((teacher) => (
+                          <SelectItem key={teacher.value} value={teacher.value}>
+                            {teacher.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
-                  </FormControl>
-                </Grid>
-              )}
-            </Grid>
-          </Box>
-        )}
-      </Paper>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardHeader>
+      </Card>
 
       {/* Calendar Grid */}
-      <Paper sx={{ p: 2, borderRadius: 2, overflowX: 'auto' }}>
-        {isMobile ? (
-          // Mobile view - Improved day by day list
-          <Box>
-            {daysOfWeek.map((day) => (
-              <Accordion key={day} sx={{ mb: 1 }} defaultExpanded>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '&.Mui-expanded': {
-                      minHeight: 48,
-                    },
-                    '& .MuiAccordionSummary-content': {
-                      '&.Mui-expanded': {
-                        margin: '12px 0',
-                      },
-                    },
-                  }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {day}
-                  </Typography>
-                  {scheduleData && scheduleData[day] && scheduleData[day].length > 0 && (
-                    <Chip
-                      size="small"
-                      label={`${scheduleData[day].length} class${scheduleData[day].length > 1 ? 'es' : ''}`}
-                      sx={{ 
-                        ml: 2, 
-                        bgcolor: 'rgba(255,255,255,0.2)', 
-                        color: 'primary.contrastText',
-                        fontSize: '0.7rem'
-                      }}
-                    />
-                  )}
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                  {scheduleData && scheduleData[day] && scheduleData[day].length > 0 ? (
-                    <Box>
-                      {mergeConsecutiveClasses(scheduleData[day])
-                        .sort((a, b) => {
-                          // Sort by start time
-                          const timeA = parseInt(a.startTime.replace(':', ''));
-                          const timeB = parseInt(b.startTime.replace(':', ''));
-                          return timeA - timeB;
-                        })
-                        .map((event, index) => renderMobileEvent(event, index))
-                      }
-                    </Box>
-                  ) : (
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      py: 3,
-                      color: 'text.secondary'
-                    }}>
-                      <CalendarIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-                      <Typography variant="body1" color="text.secondary">
-                        No classes scheduled
-                      </Typography>
-                    </Box>
-                  )}
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Box>
-        ) : (
-          // Desktop view - Calendar grid
-          <Box sx={{ 
-            overflow: 'auto', 
-            minWidth: '100%',
-            maxWidth: '100%',
-            width: '100%'
-          }}>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: '80px repeat(7, minmax(120px, 1fr))', 
-              gap: 0,
-              minWidth: 'fit-content',
-              width: '100%'
-            }}>
+      <Card>
+        <CardContent className="p-4">
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-8 gap-0 min-w-[800px]">
               {/* Time column header */}
-              <Box sx={{ 
-                position: 'sticky', 
-                left: 0, 
-                backgroundColor: 'background.paper', 
-                zIndex: 2,
-                borderBottom: '2px solid',
-                borderColor: 'primary.main',
-                borderRight: '1px solid',
-                borderRightColor: 'divider'
-              }}>
-                <Typography variant="subtitle1" sx={{ 
-                  p: 1, 
-                  height: '50px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold'
-                }}>
+              <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border">
+                <div className="p-2 h-[50px] flex items-center justify-center text-sm font-semibold">
                   Time
-                </Typography>
-              </Box>
+                </div>
+              </div>
 
               {/* Day headers */}
               {daysOfWeek.map((day) => (
-                <Box key={`header-${day}`} sx={{
-                  borderBottom: '2px solid',
-                  borderColor: 'primary.main',
-                  borderRight: '1px solid',
-                  borderRightColor: 'divider',
-                  backgroundColor: theme.palette.mode === 'dark' ? 'background.default' : 'primary.main',
-                }}>
-                  <Typography 
-                    variant="subtitle1" 
-                    sx={{ 
-                      p: 1, 
-                      textAlign: 'center', 
-                      height: '50px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.9rem',
-                      fontWeight: 'bold',
-                      color: theme.palette.mode === 'dark' ? 'primary.contrastText' : 'primary.contrastText'
-                    }}
-                  >
+                <div key={`header-${day}`} className="border-b-2 border-primary border-r border-border bg-primary text-primary-foreground">
+                  <div className="p-2 text-center h-[50px] flex items-center justify-center text-sm font-semibold">
                     {day}
-                  </Typography>
-                </Box>
+                  </div>
+                </div>
               ))}
 
               {/* Time slots and events */}
               {timeSlots.map((timeSlot) => (
-                <React.Fragment key={timeSlot}>
+                <Fragment key={timeSlot}>
                   {/* Time label */}
-                  <Box sx={{
-                    borderRight: '1px solid',
-                    borderRightColor: 'divider',
-                    borderBottom: '1px solid',
-                    borderBottomColor: 'divider',
-                    backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : 'grey.50',
-                    color: theme.palette.text.primary,
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 1
-                  }}>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        p: 1, 
-                        textAlign: 'center',
-                        display: 'block',
-                        fontWeight: 500,
-                        minHeight: '60px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
+                  <div className="border-r border-border border-b border-border bg-muted/30 text-foreground sticky left-0 z-10">
+                    <div className="p-2 text-center text-xs font-medium min-h-[60px] flex items-center justify-center">
                       {formatTime(timeSlot)}
-                    </Typography>
-                  </Box>
+                    </div>
+                  </div>
 
                   {/* Day columns */}
                   {daysOfWeek.map((day) => {
@@ -1078,18 +777,9 @@ const Schedule = () => {
                     const mergedEvents = mergeConsecutiveClasses(events);
                     
                     return (
-                      <Box
+                      <div
                         key={`${day}-${timeSlot}`}
-                        sx={{
-                          borderRight: '1px solid',
-                          borderRightColor: 'divider',
-                          borderBottom: '1px solid',
-                          borderBottomColor: 'divider',
-                          minHeight: '60px',
-                          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper,
-                          position: 'relative',
-                          overflow: 'visible' // Changed from 'hidden' to allow absolute positioned events
-                        }}
+                        className="border-r border-border border-b border-border min-h-[60px] bg-background relative overflow-visible"
                       >
                         {mergedEvents.map((event) => {
                           const eventKey = `${event._id}-${timeSlot}`;
@@ -1097,99 +787,104 @@ const Schedule = () => {
                           renderedEventsRef.current.add(eventKey);
                           return renderEvent(event, true);
                         })}
-                      </Box>
+                      </div>
                     );
                   })}
-                </React.Fragment>
+                </Fragment>
               ))}
-            </Box>
-          </Box>
-        )}
-      </Paper>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Event Details Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={() => setDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Class Details</Typography>
-          <IconButton onClick={() => setDialogOpen(false)}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Class Details</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDialogOpen(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
           {selectedEvent && (
-            <Box>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    <SubjectIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Subject: {selectedEvent.subject}
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    <TimeIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Time: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    <SchoolIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    School Branch: {selectedEvent.schoolBranch ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Subject: {selectedEvent.subject}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>Time: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span>School Branch: {selectedEvent.schoolBranch ? (
                       branchNames[selectedEvent.schoolBranch] || selectedEvent.schoolBranchName || selectedEvent.schoolBranch
-                    ) : 'Unknown Branch'}
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    Direction: {selectedEvent.direction}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    <PersonIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Teachers ({selectedEvent.teacherCount || 0}):
-                  </Typography>
-                  {selectedEvent.teacherNames && selectedEvent.teacherNames.length > 0 ? (
-                    selectedEvent.teacherNames.map((teacher, index) => (
-                      <Chip key={index} label={teacher} sx={{ mr: 1, mb: 1 }} />
-                    ))
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No teachers assigned
-                    </Typography>
-                  )}
+                    ) : 'Unknown Branch'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>Direction: {selectedEvent.direction}</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium mb-2">
+                      <User className="h-4 w-4 inline mr-2" />
+                      Teachers ({selectedEvent.teacherCount || 0}):
+                    </h4>
+                    {selectedEvent.teacherNames && selectedEvent.teacherNames.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedEvent.teacherNames.map((teacher, index) => (
+                          <Badge key={index} variant="secondary">
+                            {teacher}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No teachers assigned</p>
+                    )}
+                  </div>
                   
-                  <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
-                    <GroupIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Students ({selectedEvent.studentCount || 0}):
-                  </Typography>
-                  {selectedEvent.studentNames && selectedEvent.studentNames.length > 0 ? (
-                    <Box sx={{ maxHeight: '200px', overflow: 'auto' }}>
-                      {selectedEvent.studentNames.slice(0, 10).map((student, index) => (
-                        <Chip key={index} label={student} sx={{ mr: 1, mb: 1 }} size="small" />
-                      ))}
-                      {selectedEvent.studentNames.length > 10 && (
-                        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                          and {selectedEvent.studentNames.length - 10} more students...
-                        </Typography>
-                      )}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No students enrolled
-                    </Typography>
-                  )}
-                </Grid>
-              </Grid>
-            </Box>
+                  <div>
+                    <h4 className="font-medium mb-2">
+                      <Users className="h-4 w-4 inline mr-2" />
+                      Students ({selectedEvent.studentCount || 0}):
+                    </h4>
+                    {selectedEvent.studentNames && selectedEvent.studentNames.length > 0 ? (
+                      <div className="max-h-[200px] overflow-auto">
+                        <div className="flex flex-wrap gap-2">
+                          {selectedEvent.studentNames.slice(0, 10).map((student, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {student}
+                            </Badge>
+                          ))}
+                        </div>
+                        {selectedEvent.studentNames.length > 10 && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            and {selectedEvent.studentNames.length - 10} more students...
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No students enrolled</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} variant="contained">
-            Close
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Container>
+    </div>
   );
 };
 

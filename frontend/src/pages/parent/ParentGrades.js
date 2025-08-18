@@ -1,118 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Grid,
-  Paper,
-  Typography,
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemText,
-  Chip,
-  CircularProgress,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Divider,
-  Avatar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
-  Tab,
-  Container,
-  Stack,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import {
-  Grade as GradeIcon,
-  Person as PersonIcon,
-  School as SchoolIcon,
-  Subject as SubjectIcon
-} from '@mui/icons-material';
 import { useSelector } from 'react-redux';
+import { ChevronDown, User, School, BookOpen, Award } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { API_URL } from '../../config/appConfig';
 
 const ParentGrades = () => {
   const [studentsData, setStudentsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState('overview');
   const { user, token } = useSelector((state) => state.auth);
-  
-  // Mobile-responsive design hooks
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Mobile/tablet view
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm')); // Small mobile view
 
   // Mobile-friendly grade card component
   const GradeCard = ({ grade, showStudentName = false }) => (
-    <Card 
-      sx={{ 
-        mb: 2, 
-        border: `1px solid ${theme.palette.divider}`,
-        '&:hover': {
-          boxShadow: theme.shadows[4],
-          transform: 'translateY(-2px)',
-          transition: 'all 0.2s ease-in-out'
-        }
-      }}
-    >
-      <CardContent sx={{ pb: 2 }}>
-        <Stack spacing={2}>
+    <Card className="mb-4 border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+      <CardContent className="pb-4">
+        <div className="space-y-4">
           {showStudentName && (
-            <Box display="flex" alignItems="center" gap={1}>
-              <PersonIcon color="primary" fontSize="small" />
-              <Typography variant="h6" color="primary" fontWeight="bold">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              <h3 className="text-lg font-bold text-primary">
                 {grade.studentName}
-              </Typography>
-            </Box>
+              </h3>
+            </div>
           )}
           
-          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap">
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: { xs: 1, sm: 0 } }}>
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h3 className="text-lg font-bold mb-2 sm:mb-0">
               {grade.subject}
-            </Typography>
-            <Chip 
-              label={`Grade: ${grade.value}`} 
-              color="primary" 
-              size={isSmallScreen ? "small" : "medium"}
-              sx={{ fontWeight: 'bold' }}
-            />
-          </Box>
+            </h3>
+            <Badge variant="default" className="font-bold">
+              Grade: {grade.value}
+            </Badge>
+          </div>
           
-          <Stack direction={isSmallScreen ? "column" : "row"} spacing={2}>
-            <Box display="flex" alignItems="center" gap={1} flex={1}>
-              <SubjectIcon fontSize="small" color="action" />
-              <Typography variant="body2" color="text.secondary">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex items-center gap-2 flex-1">
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
                 Teacher: {grade.teacher}
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
+              </span>
+            </div>
+            <span className="text-sm text-muted-foreground">
               {new Date(grade.createdAt).toLocaleDateString()}
-            </Typography>
-          </Stack>
+            </span>
+          </div>
           
           {grade.description && (
-            <Typography variant="body2" sx={{ 
-              fontStyle: 'italic', 
-              bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
-              color: theme.palette.mode === 'dark' ? 'grey.300' : 'text.secondary',
-              p: 1, 
-              borderRadius: 1,
-              border: `1px solid ${theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[200]}`
-            }}>
+            <div className="bg-muted/50 border border-border rounded-lg p-3">
+              <p className="text-sm italic text-muted-foreground">
               {grade.description}
-            </Typography>
+              </p>
+            </div>
           )}
-        </Stack>
+        </div>
       </CardContent>
     </Card>
   );
@@ -123,239 +69,217 @@ const ParentGrades = () => {
       hasUser: !!user,
       hasToken: !!token,
       userRole: user?.role,
-      userId: user?._id,
-      tokenLength: token?.length
+      tokenLength: token?.length || 0
     });
-    
-    // Fallback token retrieval from localStorage/sessionStorage
-    let authToken = token;
-    if (!authToken && user) {
-      try {
-        const localUser = localStorage.getItem('user');
-        const sessionUser = sessionStorage.getItem('user');
-        const userData = localUser ? JSON.parse(localUser) : sessionUser ? JSON.parse(sessionUser) : null;
-        authToken = userData?.token;
-        console.log('[ParentGrades] Fallback token from storage:', {
-          hasLocalUser: !!localUser,
-          hasSessionUser: !!sessionUser,
-          hasFallbackToken: !!authToken,
-          fallbackTokenLength: authToken?.length
-        });
-      } catch (error) {
-        console.error('[ParentGrades] Error parsing stored user data:', error);
-      }
-    }
-    
-    if (authToken && user) {
-      console.log('[ParentGrades] Token available, fetching students data...');
-      fetchStudentsData(authToken);
-    } else {
-      console.log('[ParentGrades] Token or user not available:', { 
-        hasAuthToken: !!authToken, 
-        hasUser: !!user,
-        userRole: user?.role 
-      });
-      setLoading(false);
-      setError('Authentication required. Please refresh the page.');
-    }
-  }, [token, user]);
 
-  const fetchStudentsData = async (authToken) => {
-    const tokenToUse = authToken || token;
-    
-    if (!tokenToUse) {
-      console.error('[ParentGrades] No token available for API request');
-      setError('Authentication token missing. Please login again.');
+    if (!token) {
+      console.error('[ParentGrades] No token available');
+      setError('Authentication token not found');
       setLoading(false);
       return;
     }
 
-    console.log('[ParentGrades] Making API request with token length:', tokenToUse.length);
-    
+    fetchStudentsData();
+  }, [token]);
+
+  const fetchStudentsData = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/users/parent/students-data`, {
-        method: 'GET',
+      console.log('[ParentGrades] Fetching students data...');
+      setLoading(true);
+      setError('');
+
+      const response = await fetch(`${API_URL}/api/users/my-students`, {
         headers: {
-          'Authorization': `Bearer ${tokenToUse}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
+      console.log('[ParentGrades] Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch students data');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('[ParentGrades] Students data received:', data);
-      setStudentsData(data);
-    } catch (err) {
-      console.error('Error fetching students data:', err);
-      setError(err.message);
+      console.log('[ParentGrades] Received data:', data);
+
+      if (data.success && data.students) {
+        setStudentsData(data.students);
+      } else {
+        throw new Error(data.message || 'Failed to fetch students data');
+      }
+    } catch (error) {
+      console.error('[ParentGrades] Error fetching students data:', error);
+      setError(error.message || 'Failed to fetch students data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTabChange = (event, newValue) => {
-    setSelectedTab(newValue);
+  const handleTabChange = (value) => {
+    setSelectedTab(value);
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading student grades...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box p={3}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-destructive mb-2">Error Loading Grades</h3>
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={fetchStudentsData} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
-  if (!studentsData || !studentsData.studentsData || studentsData.studentsData.length === 0) {
+  if (!studentsData || studentsData.length === 0) {
     return (
-      <Box p={3}>
-        <Alert severity="info">No students data available</Alert>
-      </Box>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+        <div className="text-center">
+          <School className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">No Students Found</h3>
+          <p className="text-muted-foreground">
+            You don't have any students linked to your account yet.
+          </p>
+        </div>
+      </div>
     );
   }
-
-  const { studentsData: students, combinedRecentGrades } = studentsData;
-  const studentNames = students.map(s => s.student.name).join(', ');
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
-      <Typography variant={isSmallScreen ? "h5" : "h4"} gutterBottom fontWeight="bold" textAlign="center">
-        📚 My Students' Grades
-      </Typography>
-      
-      {/* Tab Navigation - Mobile Optimized */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={selectedTab} 
-          onChange={handleTabChange} 
-          aria-label="student grades tabs"
-          variant={isMobile ? "scrollable" : "standard"}
-          scrollButtons={isMobile ? "auto" : false}
-          sx={{
-            '& .MuiTabs-flexContainer': {
-              flexDirection: 'row'
-            }
-          }}
-        >
-          <Tab 
-            label={
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <SchoolIcon fontSize="small" />
-                <Box textAlign="left">
-                  <Typography variant="caption" display="block">
-                    All Students
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    ({students?.length || 0} students)
-                  </Typography>
-                </Box>
-              </Stack>
-            } 
-            sx={{ minWidth: isMobile ? 120 : 160 }}
-          />
-          {students?.map((studentData, index) => (
-            <Tab 
-              key={studentData.student._id}
-              label={
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <PersonIcon fontSize="small" />
-                  <Box textAlign="left">
-                    <Typography variant="caption" display="block" noWrap>
-                      {isSmallScreen ? studentData.student.name.split(' ')[0] : studentData.student.name}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      ({studentData.recentGrades?.length || 0} grades)
-                    </Typography>
-                  </Box>
-                </Stack>
-              } 
-              sx={{ minWidth: isMobile ? 100 : 140 }}
-            />
-          ))}
-        </Tabs>
-      </Box>
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Student Grades</h1>
+        <p className="text-muted-foreground">
+          View and track your children's academic progress
+        </p>
+      </div>
 
-      {selectedTab === 0 ? (
-        // Combined grades view - Mobile Optimized
-        <Box>
-          <Paper sx={{ p: 2, mb: 2, bgcolor: 'primary.main', color: 'white' }}>
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <GradeIcon />
-              <Box>
-                <Typography variant={isSmallScreen ? "h6" : "h5"} fontWeight="bold">
-                  All Recent Grades
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {combinedRecentGrades?.length || 0} total grades across all students
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
+      <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="detailed">Detailed View</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
 
-          {combinedRecentGrades && combinedRecentGrades.length > 0 ? (
-            <Box>
-              {combinedRecentGrades.map((grade, index) => (
-                <GradeCard key={grade._id || index} grade={grade} showStudentName={true} />
-              ))}
-            </Box>
-          ) : (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Alert severity="info" sx={{ border: 'none', bgcolor: 'transparent' }}>
-                📚 No grades available for any of your students yet.
-              </Alert>
-            </Paper>
-          )}
-        </Box>
-      ) : (
-        // Individual student grades view
-        <Paper elevation={2} sx={{ p: 3 }}>
-          {(() => {
-            const studentIndex = selectedTab - 1;
-            const studentData = students[studentIndex];
-            if (!studentData) return <Alert severity="error">Student data not found</Alert>;
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {studentsData.map((student) => (
+              <Card key={student._id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <User className="h-8 w-8 text-primary" />
+                    <div>
+                      <CardTitle className="text-lg">{student.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{student.email}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Grades:</span>
+                      <Badge variant="secondary">{student.grades?.length || 0}</Badge>
+                    </div>
+                    {student.grades && student.grades.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Recent Grades:</p>
+                        {student.grades.slice(0, 3).map((grade, index) => (
+                          <div key={index} className="flex justify-between items-center text-sm">
+                            <span className="truncate">{grade.subject}</span>
+                            <Badge variant="outline">{grade.value}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-            return (
-              <Box>
-                <Box display="flex" alignItems="center" gap={2} mb={3}>
-                  <Avatar sx={{ bgcolor: 'primary.main', width: 50, height: 50 }}>
-                    <PersonIcon />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h5" fontWeight="bold">
-                      {studentData.student.name}'s Grades
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {studentData.recentGrades?.length || 0} recent grades
-                    </Typography>
-                  </Box>
-                </Box>
-                <Divider sx={{ mb: 3 }} />
-
-                {studentData.recentGrades && studentData.recentGrades.length > 0 ? (
-                  <Box>
-                    {studentData.recentGrades.map((grade, index) => (
-                      <GradeCard key={grade._id || index} grade={grade} showStudentName={false} />
+        <TabsContent value="detailed" className="space-y-6">
+          {studentsData.map((student) => (
+            <Card key={student._id} className="mb-6">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <User className="h-6 w-6 text-primary" />
+                  <CardTitle>{student.name}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {student.grades && student.grades.length > 0 ? (
+                  <div className="space-y-4">
+                    {student.grades.map((grade, index) => (
+                      <GradeCard key={index} grade={grade} showStudentName={false} />
                     ))}
-                  </Box>
+                  </div>
                 ) : (
-                  <Alert severity="info">No grades available for {studentData.student.name} yet.</Alert>
+                  <div className="text-center py-8">
+                    <Award className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No grades available for this student yet.</p>
+                  </div>
                 )}
-              </Box>
-            );
-          })()}
-        </Paper>
-      )}
-    </Container>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {studentsData.map((student) => {
+              const grades = student.grades || [];
+              const averageGrade = grades.length > 0 
+                ? grades.reduce((sum, grade) => sum + parseFloat(grade.value), 0) / grades.length 
+                : 0;
+
+              return (
+                <Card key={student._id}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{student.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-primary mb-2">
+                          {averageGrade.toFixed(1)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Average Grade</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                          <div className="text-xl font-semibold">{grades.length}</div>
+                          <p className="text-xs text-muted-foreground">Total Grades</p>
+                        </div>
+                        <div>
+                          <div className="text-xl font-semibold">
+                            {grades.filter(g => parseFloat(g.value) >= 7).length}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Passing Grades</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

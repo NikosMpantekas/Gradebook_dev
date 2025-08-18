@@ -1,503 +1,751 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Container, Typography, Box, Snackbar, Alert, Paper, Grid, CircularProgress, Chip } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 
 // Components
-import GradeTable from '../../components/grades/GradeTable';
-import { EditGradeDialog, DeleteGradeDialog } from '../../components/grades/GradeDialogs';
-import ClassBasedFilter from '../../components/grades/ClassBasedFilter';
-
-// Custom hooks
-import useGradeData from '../../hooks/useGradeData';
-import useGradeDialogs from '../../components/grades/GradeDialogHandlers';
-
-// Utils
-import { filterGrades } from '../../utils/gradeFilterUtils';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { Checkbox } from '../../components/ui/checkbox';
+import { EditGradeDialog } from '../../components/grades/GradeDialogs';
 
 // Icons
-import SchoolIcon from '@mui/icons-material/School';
-import DirectionsIcon from '@mui/icons-material/Directions';
-import BookIcon from '@mui/icons-material/Book';
-import PersonIcon from '@mui/icons-material/Person';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import { BookOpen, Plus, Trash2, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 
-/**
- * ManageGrades Component
- * Shows a paginated table of grades with class-based filtering options
- */
 const ManageGrades = () => {
-  console.log('[ManageGrades] Component rendering');
-  
-  // Redux state
-  const { grades, isLoading: isGradesLoading, isError: isGradesError } = useSelector(state => state.grades);
-  const { user } = useSelector(state => state.auth);
-
-  // Local state for class-based filtering
-  const [filterOptions, setFilterOptions] = useState({
-    schoolBranches: [],
-    directions: [],
-    subjects: []
-  });
-  const [filters, setFilters] = useState({
-    schoolBranch: '',
-    direction: '',
-    subject: '',
-    student: ''
-  });
+  const [grades, setGrades] = useState([]);
   const [students, setStudents] = useState([]);
-  const [loadingFilters, setLoadingFilters] = useState(false);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-
-  // Existing state
-  const [filteredGrades, setFilteredGrades] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Additional state for branch name lookup (like in CreateGradeSimple)
-  const [branchNames, setBranchNames] = useState({});
-
-  // Custom hooks
-  const {
-    isLoadingSubjects,
-    isLoadingStudents,
-    fetchStudentsBySubject,
-    fetchAllStudents
-  } = useGradeData(user);
-
-  // Dialog handlers
-  const dialogHandlers = useGradeDialogs({ students, subjects: filterOptions.subjects });
-  const {
-    alertState,
-    deleteDialogOpen, 
-    gradeToDelete,
-    editDialogOpen,
-    editGradeData,
-    handleDeleteClick,
-    handleDeleteConfirm,
-    handleDeleteCancel,
-    handleEditClick,
-    handleEditChange,
-    handleEditSave,
-    handleEditCancel,
-    handleAlertClose
-  } = dialogHandlers;
-
-  // Load filter options when component mounts
-  useEffect(() => {
-    if (user?.token) {
-      loadFilterOptions();
-    }
-  }, [user]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    student: 'all',
+    subject: 'all',
+    dateFrom: '',
+    dateTo: ''
+  });
+  const [sortConfig, setSortConfig] = useState({
+    field: 'createdAt',
+    direction: 'desc'
+  });
+  const [expandedFilters, setExpandedFilters] = useState(false);
+  const [selectedGrades, setSelectedGrades] = useState([]);
   
-  // Effect to load branch names when filter options change - same as in CreateGradeSimple
-  useEffect(() => {
-    if (filterOptions.schoolBranches && filterOptions.schoolBranches.length > 0 && user?.token) {
-      loadBranchNames();
-    }
-  }, [filterOptions.schoolBranches, user]);
+  // Edit grade dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editGradeData, setEditGradeData] = useState({
+    id: '',
+    value: 0,
+    description: '',
+    student: '',
+    subject: '',
+    date: new Date(),
+    studentName: '',
+    subjectName: ''
+  });
 
-  // Load students when filters change
+  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  // Get token from user object or localStorage as fallback
+  const authToken = user?.token || localStorage.getItem('token');
+
   useEffect(() => {
-    if (filters.schoolBranch && filters.direction && filters.subject && user?.token) {
-      loadFilteredStudents();
+    if (user && authToken) {
+      fetchGrades();
+      fetchStudents();
+      fetchSubjects();
     } else {
-      setStudents([]);
-      setFilters(prev => ({ ...prev, student: '' }));
+      toast.error('Authentication required. Please log in again.');
     }
-  }, [filters.schoolBranch, filters.direction, filters.subject, user]);
+  }, [user, authToken]);
 
-  // Set up filtered grades when source data changes
-  useEffect(() => {
-    console.log('[ManageGrades] Updating filtered grades with class-based filtering');
-    console.log('[ManageGrades] Current grades:', grades?.length || 0);
-    console.log('[ManageGrades] Current filters:', filters);
-    
-    if (!grades || !Array.isArray(grades)) {
-      console.log('[ManageGrades] No grades available, setting empty array');
-      setFilteredGrades([]);
-      return;
-    }
-    
-    // Debug: Log structure of first grade to understand data format
-    if (grades.length > 0) {
-      console.log('[ManageGrades] Sample grade structure:', grades[0]);
-    }
-    
-    // Use the existing filterGrades utility function instead of custom logic
-    // This function already handles both string and object forms properly
-    const filtered = filterGrades(grades, filters.subject, filters.student);
-    
-    // Additional filtering for school branch (not handled by filterGrades utility)
-    let finalFiltered = filtered;
-    
-    if (filters.schoolBranch) {
-      const beforeCount = finalFiltered.length;
-      finalFiltered = finalFiltered.filter(grade => {
-        // Check direct schoolId field (matches DB structure)
-        const hasMatchingBranch = grade.schoolId === filters.schoolBranch;
-        console.log(`[ManageGrades] Grade ${grade._id}: schoolId=${grade.schoolId}, filter=${filters.schoolBranch}, match=${hasMatchingBranch}`);
-        return hasMatchingBranch;
-      });
-      console.log(`[ManageGrades] After schoolBranch filter (${filters.schoolBranch}): ${beforeCount} -> ${finalFiltered.length}`);
-    }
-    
-    console.log(`[ManageGrades] Final filtered grades count: ${finalFiltered.length}`);
-    setFilteredGrades(finalFiltered);
-    
-    // Reset to first page when filters change
-    setPage(0);
-  }, [grades, filters]);
-
-  // Load available filter options (school branches, directions, subjects) for the teacher/admin
-  const loadFilterOptions = async () => {
-    setLoadingFilters(true);
+  const testBackendConnection = async () => {
     try {
-      const endpoint = `${API_URL}/api/students/teacher/filters`;
-      const config = {
-        headers: { Authorization: `Bearer ${user.token}` }
-      };
-      
-      const response = await axios.get(endpoint, config);
-      
-      // Enhanced logging to debug school branch data
-      console.log(`[ManageGrades] Raw filter options data:`, response.data);
-      
-      // Ensure school branches are properly formatted with value AND label
-      const processedOptions = {
-        ...response.data,
-        schoolBranches: (response.data?.schoolBranches || []).map(branch => {
-          // If the branch is already an object with value and label, use it as-is
-          if (branch && typeof branch === 'object' && branch.value && branch.label) {
-            return branch;
-          }
-          // If it's just a string or has only value without label, ensure both fields exist
-          const branchValue = branch?.value || branch;
-          const branchLabel = branch?.label || branch;
-          
-          return {
-            value: branchValue,
-            label: branchLabel
-          };
-        })
-      };
-      
-      console.log(`[ManageGrades] Processed filter options for ${user.role}:`, processedOptions);
-      setFilterOptions(processedOptions);
+      console.log('Testing backend connectivity...');
+      const response = await fetch(`${API_URL}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Backend health check response:', response.status);
     } catch (error) {
-      console.error('[ManageGrades] Error loading filter options:', error);
-      toast.error('Failed to load filter options');
-      setFilterOptions({ schoolBranches: [], directions: [], subjects: [] });
-    } finally {
-      setLoadingFilters(false);
+      console.error('Backend connectivity test failed:', error);
+      toast.error('Warning: Backend server may not be accessible');
     }
   };
-  
-  // Load school branch names - copied from CreateGradeSimple.js
-  const loadBranchNames = async () => {
-    console.log('[ManageGrades] Loading school branch names');
+
+  const fetchGrades = async () => {
     try {
-      const branchIds = filterOptions.schoolBranches.map(branch => branch.value);
-      
-      // Skip if there are no valid branch IDs
-      if (!branchIds.length) return;
-      
-      // Filter only valid MongoDB ObjectIds
-      const validBranchIds = branchIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id));
-      
-      // Skip if no valid IDs after filtering
-      if (!validBranchIds.length) {
-        console.log('[ManageGrades] No valid branch IDs found');
+      if (!authToken) {
+        console.error('No authentication token available');
         return;
       }
-      
-      const config = {
-        headers: { Authorization: `Bearer ${user.token}` }
-      };
-      
-      console.log('[ManageGrades] Fetching branch names for IDs:', validBranchIds);
-      console.log('[ManageGrades] Using API_URL for secure API call:', API_URL);
-      
-      const response = await axios.post(`${API_URL}/api/branches/batch`, {
-        branchIds: validBranchIds
-      }, config);
-      
-      // Create a mapping of branch ID to name
-      const nameMap = {};
-      if (response.data.branches) {
-        response.data.branches.forEach(branch => {
-          nameMap[branch._id] = branch.name;
-        });
-      }
-      
-      console.log('[ManageGrades] Loaded branch names:', nameMap);
-      setBranchNames(nameMap);
-    } catch (error) {
-      console.error('[ManageGrades] Error loading branch names:', error);
-    }
-  };
 
-  // Load students based on selected filters using class-based filtering
-  const loadFilteredStudents = async () => {
-    setLoadingStudents(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.schoolBranch) params.append('schoolBranch', filters.schoolBranch);
-      if (filters.direction) params.append('direction', filters.direction);
-      if (filters.subject) params.append('subject', filters.subject);
-      
-      console.log('Loading filtered students with params:', params.toString());
-      
-      const endpoint = `${API_URL}/api/students/teacher/filtered?${params}`;
-      const config = {
-        headers: { Authorization: `Bearer ${user.token}` }
-      };
-      
-      const response = await axios.get(endpoint, config);
-      setStudents(response.data);
-      console.log(`[ManageGrades] Loaded ${response.data.length} students for filters:`, filters);
+      // Use different endpoints based on user role
+      const endpoint = user.role === 'admin' 
+        ? `${API_URL}/api/grades`  // Admin gets all grades
+        : `${API_URL}/api/grades/teacher/${user._id}`; // Teacher gets their grades
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        console.error('Authentication failed for grades fetch');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setGrades(data.grades || data || []);
+      } else {
+        console.error('Failed to fetch grades:', response.status, response.statusText);
+      }
     } catch (error) {
-      console.error('[ManageGrades] Error loading filtered students:', error);
-      toast.error('Failed to load students');
-      setStudents([]);
+      console.error('Error fetching grades:', error);
     } finally {
-      setLoadingStudents(false);
+      setLoading(false);
     }
   };
 
-  // Handle filter changes
-  const handleFilterChange = (filterType, value) => {
-    console.log(`[ManageGrades] ${filterType} filter changed to: ${value}`);
-    
-    setFilters(prev => {
-      const newFilters = { ...prev, [filterType]: value };
-      
-      // Reset dependent filters when parent filter changes
-      if (filterType === 'schoolBranch') {
-        newFilters.direction = '';
-        newFilters.subject = '';
-        newFilters.student = '';
-      } else if (filterType === 'direction') {
-        newFilters.subject = '';
-        newFilters.student = '';
-      } else if (filterType === 'subject') {
-        newFilters.student = '';
+  const fetchStudents = async () => {
+    try {
+      if (!authToken) {
+        console.error('No authentication token available');
+        return;
       }
-      
-      return newFilters;
+
+      // Use different endpoints based on user role
+      const endpoint = user.role === 'admin' 
+        ? `${API_URL}/api/users/students`  // Admin gets all students
+        : `${API_URL}/api/users/teacher-students`; // Teacher gets their students
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        console.error('Authentication failed for students fetch');
+        toast.error('Authentication failed. Please log in again.');
+        return;
+      }
+
+      if (response.status === 403) {
+        const errorMessage = user.role === 'admin' 
+          ? 'Access denied. Admin privileges required.'
+          : 'Access denied. Teachers only.';
+        console.error(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(data || []);
+        
+        if (!data || data.length === 0) {
+          const message = user.role === 'admin' 
+            ? 'No students found in the system.'
+            : 'No students found. You may need to be assigned to classes first.';
+          toast.info(message);
+        }
+      } else {
+        console.error('Failed to fetch students:', response.status, response.statusText);
+        toast.error(`Failed to fetch students: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast.error('Error fetching students. Please try again.');
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      if (!authToken) {
+        console.error('No authentication token available');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/subjects`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        console.error('Authentication failed for subjects fetch');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setSubjects(data.subjects || data || []);
+      } else {
+        console.error('Failed to fetch subjects:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+    }
+  };
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleGradeSelection = (gradeId) => {
+    setSelectedGrades(prev => {
+      if (prev.includes(gradeId)) {
+        return prev.filter(id => id !== gradeId);
+      } else {
+        return [...prev, gradeId];
+      }
     });
   };
 
-  // Get available directions based on selected branch
-  const getAvailableDirections = () => {
-    if (!filters.schoolBranch || !filterOptions.directions) return [];
-    return filterOptions.directions.filter(direction => 
-      filterOptions.directions.some(dir => dir.value === direction.value)
+  const handleEditGrade = (grade) => {
+    setEditGradeData({
+      id: grade._id,
+      value: grade.value || 0,
+      description: grade.description || '',
+      student: grade.student?._id || '',
+      subject: grade.subject?._id || '',
+      date: grade.date ? new Date(grade.date) : new Date(grade.createdAt),
+      studentName: grade.student?.name || 'Unknown Student',
+      subjectName: grade.subject?.name || 'Unknown Subject'
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditDialogOpen(false);
+    setEditGradeData({
+      id: '',
+      value: 0,
+      description: '',
+      student: '',
+      subject: '',
+      date: new Date(),
+      studentName: '',
+      subjectName: ''
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    
+    let processedValue = value;
+    if (name === 'value') {
+      const numValue = value === '' ? '' : Math.min(Math.max(parseInt(value, 10) || 0, 0), 100);
+      processedValue = numValue;
+    } else if (name === 'date') {
+      processedValue = value ? new Date(value) : new Date();
+    }
+    
+    setEditGradeData({
+      ...editGradeData,
+      [name]: processedValue,
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editGradeData.id) {
+      toast.error('Cannot save edit - no grade ID provided');
+      return;
+    }
+
+    if (editGradeData.value === '' || editGradeData.value === null) {
+      toast.error('Grade value cannot be empty');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/grades/${editGradeData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          value: editGradeData.value,
+          description: editGradeData.description,
+          date: editGradeData.date
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Grade updated successfully');
+        handleEditClose();
+        fetchGrades(); // Refresh the grades list
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error updating grade:', error);
+      toast.error(error.message || 'Failed to update grade');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedGrades.length} grade(s)?`)) {
+      return;
+    }
+
+    try {
+      const promises = selectedGrades.map(gradeId =>
+        fetch(`${API_URL}/api/grades/${gradeId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      await Promise.all(promises);
+      toast.success(`${selectedGrades.length} grade(s) deleted successfully`);
+      setSelectedGrades([]);
+      fetchGrades();
+    } catch (error) {
+      console.error('Error deleting grades:', error);
+      toast.error('Failed to delete grades');
+    }
+  };
+
+  const handleDeleteGrade = async (gradeId) => {
+    if (!window.confirm('Are you sure you want to delete this grade?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/grades/${gradeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Grade deleted successfully');
+        fetchGrades(); // Refresh the list
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error deleting grade:', error);
+      toast.error(error.message || 'Failed to delete grade');
+    }
+  };
+
+  const getFilteredAndSortedGrades = () => {
+    let filtered = [...grades];
+
+    // Apply filters
+    if (filters.student !== 'all') {
+      filtered = filtered.filter(grade => grade.student._id === filters.student);
+    }
+    if (filters.subject !== 'all') {
+      filtered = filtered.filter(grade => grade.subject._id === filters.subject);
+    }
+    if (filters.dateFrom) {
+      filtered = filtered.filter(grade => new Date(grade.createdAt) >= new Date(filters.dateFrom));
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(grade => new Date(grade.createdAt) <= new Date(filters.dateTo));
+    }
+
+    // Apply search
+    if (searchTerm) {
+      filtered = filtered.filter(grade =>
+        grade.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grade.subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grade.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortConfig.field) {
+        case 'student':
+          aValue = a.student.name;
+          bValue = b.student.name;
+          break;
+        case 'subject':
+          aValue = a.subject.name;
+          bValue = b.subject.name;
+          break;
+        case 'value':
+          aValue = parseFloat(a.value);
+          bValue = parseFloat(b.value);
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        default:
+          aValue = a[sortConfig.field];
+          bValue = b[sortConfig.field];
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    return filtered;
+  };
+
+  const handleSort = (field) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      student: 'all',
+      subject: 'all',
+      dateFrom: '',
+      dateTo: ''
+    });
+    setSearchTerm('');
+  };
+
+  const filteredGrades = getFilteredAndSortedGrades();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading grades...</p>
+        </div>
+      </div>
     );
-  };
-
-  // Get available subjects based on selected direction  
-  const getAvailableSubjects = () => {
-    if (!filters.direction || !filterOptions.subjects) return [];
-    return filterOptions.subjects.filter(subject => 
-      filterOptions.subjects.some(subj => subj.value === subject.value)
-    );
-  };
-
-  // Pagination handlers
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  }
 
   return (
-    <Container maxWidth="lg" sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 4 }, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 } }}>
-          {user?.role === 'admin' ? (
-            <AdminPanelSettingsIcon color="primary" sx={{ fontSize: { xs: 32, sm: 40 } }} />
-          ) : (
-            <BookIcon color="primary" sx={{ fontSize: { xs: 32, sm: 40 } }} />
-          )}
-          <Box>
-            <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
-              Manage Grades
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-              {user?.role === 'admin' 
-                ? 'View, filter, edit, and delete all grades in your school'
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {user.role === 'admin' ? 'Admin Grade Management' : 'Manage Grades'}
+            </h1>
+            <p className="text-muted-foreground">
+              {user.role === 'admin' 
+                ? 'View, filter, edit, and delete grades across all classes and teachers'
                 : 'View, filter, edit, and delete grades for your assigned classes'
               }
-            </Typography>
-          </Box>
-        </Box>
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate(user.role === 'admin' ? '/app/admin/grades/create' : '/app/teacher/grades/create')}
+            className="flex items-center gap-2 text-foreground"
+          >
+            <Plus className="h-4 w-4" />
+            Create Grade
+          </Button>
+        </div>
+      </div>
 
-        {/* Filter Chips Display */}
-        {(filters.schoolBranch || filters.direction || filters.subject || filters.student) && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 0.5, sm: 1 }, mt: { xs: 1, sm: 2 } }}>
-            {filters.schoolBranch && (
-              <Chip
-                icon={<SchoolIcon />}
-                label={`Branch: ${branchNames[filters.schoolBranch] || filterOptions.schoolBranches?.find(branch => branch.value === filters.schoolBranch)?.label || 'Unknown'}`}
-                onDelete={() => handleFilterChange('schoolBranch', '')}
-                color="primary"
-                variant="outlined"
-                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-              />
-            )}
-            {filters.direction && (
-              <Chip
-                icon={<DirectionsIcon />}
-                label={`Direction: ${filterOptions.directions?.find(dir => dir.value === filters.direction)?.label || 'Unknown'}`}
-                onDelete={() => handleFilterChange('direction', '')}
-                color="secondary"
-                variant="outlined"
-                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-              />
-            )}
-            {filters.subject && (
-              <Chip
-                icon={<BookIcon />}
-                label={`Subject: ${filterOptions.subjects?.find(subj => subj.value === filters.subject)?.label || 'Unknown'}`}
-                onDelete={() => handleFilterChange('subject', '')}
-                color="info"
-                variant="outlined"
-                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-              />
-            )}
-            {filters.student && (
-              <Chip
-                icon={<PersonIcon />}
-                label={`Student: ${students.find(student => student._id === filters.student)?.name || 'Selected Student'}`}
-                onDelete={() => handleFilterChange('student', '')}
-                color="success"
-                variant="outlined"
-                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-              />
-            )}
-          </Box>
-        )}
-      </Paper>
-      
       {/* Filter Section */}
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 4 }, borderRadius: 2 }}>
-        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-          <SchoolIcon /> Class-Based Filters
-        </Typography>
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters & Search
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpandedFilters(!expandedFilters)}
+            >
+              {expandedFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {expandedFilters ? 'Hide' : 'Show'} Filters
+            </Button>
+          </div>
+        </CardHeader>
         
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
-          {/* School Branch Filter */}
-          <Grid item xs={12} md={6} lg={3}>
-            <ClassBasedFilter
-              filterType="schoolBranch"
-              value={filters.schoolBranch}
-              options={filterOptions.schoolBranches}
-              loading={loadingFilters}
-              onChange={(value) => handleFilterChange('schoolBranch', value)}
-              label="School Branch"
-              disabled={loadingFilters}
-              branchNames={branchNames} // Pass the branchNames mapping to display proper names
-            />
-          </Grid>
-          
-          {/* Direction Filter */}
-          <Grid item xs={12} md={6} lg={3}>
-            <ClassBasedFilter
-              filterType="direction"
-              value={filters.direction}
-              options={getAvailableDirections()}
-              loading={loadingFilters}
-              onChange={(value) => handleFilterChange('direction', value)}
-              label="Direction"
-              disabled={!filters.schoolBranch || loadingFilters}
-            />
-          </Grid>
-          
-          {/* Subject Filter */}
-          <Grid item xs={12} md={6} lg={3}>
-            <ClassBasedFilter
-              filterType="subject"
-              value={filters.subject}
-              options={getAvailableSubjects()}
-              loading={loadingFilters}
-              onChange={(value) => handleFilterChange('subject', value)}
-              label="Subject"
-              disabled={!filters.direction || loadingFilters}
-            />
-          </Grid>
-          
-          {/* Student Filter */}
-          <Grid item xs={12} md={6} lg={3}>
-            <ClassBasedFilter
-              filterType="student"
-              value={filters.student}
-              options={students.map(student => ({ value: student._id, label: student.name }))}
-              loading={loadingStudents}
-              onChange={(value) => handleFilterChange('student', value)}
-              label="Student"
-              disabled={!filters.subject || loadingStudents}
-            />
-          </Grid>
-        </Grid>
-      </Paper>
+        <Collapsible open={expandedFilters}>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* Search */}
+                <div className="space-y-2">
+                  <Label>Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search grades..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Student Filter */}
+                <div className="space-y-2">
+                  <Label>Student</Label>
+                  <Select
+                    value={filters.student}
+                    onValueChange={(value) => handleFilterChange('student', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Students" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Students</SelectItem>
+                      {students.map((student) => (
+                        <SelectItem key={student._id} value={student._id}>
+                          {student.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Subject Filter */}
+                <div className="space-y-2">
+                  <Label>Subject</Label>
+                  <Select
+                    value={filters.subject}
+                    onValueChange={(value) => handleFilterChange('subject', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Subjects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Subjects</SelectItem>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject._id} value={subject._id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Date From */}
+                <div className="space-y-2">
+                  <Label>Date From</Label>
+                  <Input
+                    type="date"
+                    value={filters.dateFrom}
+                    onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  />
+                </div>
+
+                {/* Date To */}
+                <div className="space-y-2">
+                  <Label>Date To</Label>
+                  <Input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-4">
+                <Button variant="outline" onClick={clearFilters}>
+                  Clear All Filters
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {filteredGrades.length} of {grades.length} grades
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Bulk Actions */}
+      {selectedGrades.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {selectedGrades.length} grade(s) selected
+              </span>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setSelectedGrades([])}>
+                  Deselect All
+                </Button>
+                <Button variant="destructive" onClick={handleBulkDelete}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Grades Table */}
-      <Box sx={{ width: '100%', mb: 4 }}>
-        <GradeTable
-          filteredGrades={filteredGrades}
-          isLoading={isGradesLoading}
-          isError={isGradesError}
-          grades={grades}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          handleChangePage={handleChangePage}
-          handleChangeRowsPerPage={handleChangeRowsPerPage}
-          handleEditClick={handleEditClick}
-          handleDeleteClick={handleDeleteClick}
-        />
-      </Box>
-      
-      {/* Dialogs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Grades ({filteredGrades.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredGrades.length === 0 ? (
+            <div className="text-center py-8">
+              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Grades Found</h3>
+              <p className="text-muted-foreground">
+                {grades.length === 0 ? 'No grades have been created yet.' : 'No grades match the current filters.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">
+                      <Checkbox 
+                        checked={selectedGrades.length === filteredGrades.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedGrades(filteredGrades.map(grade => grade._id));
+                          } else {
+                            setSelectedGrades([]);
+                          }
+                        }}
+                      />
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('student')}
+                    >
+                      Student
+                      {sortConfig.field === 'student' && (
+                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('subject')}
+                    >
+                      Subject
+                      {sortConfig.field === 'subject' && (
+                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('value')}
+                    >
+                      Grade
+                      {sortConfig.field === 'value' && (
+                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </th>
+                    <th 
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('createdAt')}
+                    >
+                      Date
+                      {sortConfig.field === 'createdAt' && (
+                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </th>
+                    <th className="text-left p-2">Description</th>
+                    <th className="text-left p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredGrades.map((grade) => (
+                    <tr key={grade._id} className="border-b hover:bg-muted/50">
+                      <td className="p-2">
+                        <Checkbox 
+                          checked={selectedGrades.includes(grade._id)}
+                          onCheckedChange={() => handleGradeSelection(grade._id)}
+                        />
+                      </td>
+                      <td className="p-2 font-medium">{grade.student?.name || 'Unknown Student'}</td>
+                      <td className="p-2">{grade.subject?.name || 'Unknown Subject'}</td>
+                      <td className="p-2">
+                        <Badge variant={grade.value >= 5 ? 'default' : 'destructive'}>
+                          {grade.value}
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-sm text-muted-foreground">
+                        {new Date(grade.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="p-2 text-sm text-muted-foreground max-w-xs truncate">
+                        {grade.description || '-'}
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditGrade(grade)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteGrade(grade._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Grade Dialog */}
       <EditGradeDialog
         open={editDialogOpen}
-        handleClose={handleEditCancel}
+        handleClose={handleEditClose}
         editGradeData={editGradeData}
         handleEditChange={handleEditChange}
         handleEditSave={handleEditSave}
-        subjects={filterOptions.subjects}
+        subjects={subjects}
         user={user}
       />
-      
-      <DeleteGradeDialog
-        open={deleteDialogOpen}
-        handleClose={handleDeleteCancel}
-        handleConfirm={handleDeleteConfirm}
-        gradeToDelete={gradeToDelete}
-      />
-      
-      {/* Alert Snackbar */}
-      <Snackbar
-        open={alertState.open}
-        autoHideDuration={6000}
-        onClose={handleAlertClose}
-      >
-        <Alert 
-          onClose={handleAlertClose} 
-          severity={alertState.severity} 
-          elevation={6} 
-          variant="filled"
-        >
-          {alertState.message}
-        </Alert>
-      </Snackbar>
-    </Container>
+    </div>
   );
 };
 
-export default ManageGrades;
+export default ManageGrades; 

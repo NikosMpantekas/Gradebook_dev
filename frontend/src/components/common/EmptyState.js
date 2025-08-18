@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Typography, Paper, Button } from '@mui/material';
-import { SentimentDissatisfied as SadIcon } from '@mui/icons-material';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import { Frown } from 'lucide-react';
 
 /**
  * EmptyState component to display when there's no data available
@@ -19,39 +20,29 @@ const EmptyState = ({
   onAction 
 }) => {
   return (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        p: 4, 
-        textAlign: 'center',
-        borderRadius: 2,
-        backgroundColor: 'background.default',
-        border: '1px dashed',
-        borderColor: 'divider'
-      }}
-    >
-      <Box sx={{ mb: 2 }}>
-        {icon || <SadIcon sx={{ fontSize: 60, color: 'text.secondary' }} />}
-      </Box>
+    <Card className="p-8 text-center border-dashed border-border bg-background">
+      <div className="mb-4">
+        {icon || <Frown className="h-16 w-16 text-muted-foreground mx-auto" />}
+      </div>
       
-      <Typography variant="h6" gutterBottom>
+      <h3 className="text-lg font-semibold mb-2 text-foreground">
         {title}
-      </Typography>
+      </h3>
       
-      <Typography variant="body2" color="text.secondary" paragraph>
+      <p className="text-sm text-muted-foreground mb-4">
         {description}
-      </Typography>
+      </p>
       
       {actionText && onAction && (
         <Button 
-          variant="outlined" 
+          variant="outline" 
           onClick={onAction}
-          sx={{ mt: 2 }}
+          className="mt-2"
         >
           {actionText}
         </Button>
       )}
-    </Paper>
+    </Card>
   );
 };
 

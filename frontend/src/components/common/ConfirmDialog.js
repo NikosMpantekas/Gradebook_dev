@@ -1,12 +1,13 @@
 import React from 'react';
 import {
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogContentText,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
-  Button
-} from '@mui/material';
+} from '../ui/dialog';
+import { Button } from '../ui/button';
 
 /**
  * A reusable confirmation dialog component
@@ -30,26 +31,23 @@ const ConfirmDialog = ({
   onCancel
 }) => {
   return (
-    <Dialog
-      open={open}
-      onClose={onCancel}
-      aria-labelledby="confirm-dialog-title"
-      aria-describedby="confirm-dialog-description"
-    >
-      <DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
+    <Dialog open={open} onOpenChange={onCancel}>
       <DialogContent>
-        <DialogContentText id="confirm-dialog-description">
-          {content}
-        </DialogContentText>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {content}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
+            {cancelText}
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            {confirmText}
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel} color="primary">
-          {cancelText}
-        </Button>
-        <Button onClick={onConfirm} color="error" variant="contained" autoFocus>
-          {confirmText}
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

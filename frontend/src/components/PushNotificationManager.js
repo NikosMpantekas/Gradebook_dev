@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Button, Snackbar, Alert, Box, Typography, CircularProgress, Tooltip } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
+import { Bell, BellOff, Loader2, X } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 /**
  * PushNotificationManager component
@@ -21,6 +24,8 @@ const PushNotificationManager = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   
   // Check if push notifications are supported and get current subscription status
   useEffect(() => {
@@ -71,6 +76,16 @@ const PushNotificationManager = () => {
     checkPushSupport();
   }, [user]);
   
+  // Check if we're on a page where we don't want to show the notification manager
+  const excludedPages = ['/home', '/about', '/contact'];
+  const currentPath = window.location.pathname;
+  const shouldRender = !excludedPages.includes(currentPath);
+  
+  // Don't render on excluded pages
+  if (!shouldRender) {
+    return null;
+  }
+  
   // Function to request notification permission and subscribe
   const subscribeToPushNotifications = async () => {
     if (!user) return;
@@ -97,250 +112,66 @@ const PushNotificationManager = () => {
       
       // Get VAPID public key from backend - use API_URL for secure HTTPS in production
       console.log('[Push] Step 1: Fetching VAPID public key using API_URL:', API_URL);
-      console.log('[Push] Request headers:', {
-        hasToken: !!user.token,
-        tokenPreview: user.token ? user.token.substring(0, 20) + '...' : 'none'
-      });
       
-      const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
-        headers: { 
-          'Authorization': `Bearer ${user.token}`
-          // REMOVED Cache-Control header to fix CORS error
-        }
-      });
+      const vapidResponse = await axios.get(`${API_URL}/api/vapid/public-key`);
+      const vapidPublicKey = vapidResponse.data.publicKey;
       
-      console.log('[Push] Step 1 SUCCESS: VAPID response received', {
-        status: vapidResponse.status,
-        hasData: !!vapidResponse.data,
-        hasPublicKey: !!(vapidResponse.data && vapidResponse.data.publicKey),
-        dataKeys: vapidResponse.data ? Object.keys(vapidResponse.data) : 'no data'
-      });
-      
-      // Handle VAPID public key extraction - BULLETPROOF for all HTTP status codes
-      let publicKey = null;
-      
-      console.log('[Push] VAPID Response Analysis:', {
-        status: vapidResponse.status,
-        hasData: !!vapidResponse.data,
-        dataType: typeof vapidResponse.data,
-        dataContent: vapidResponse.data,
-        hasPublicKey: !!(vapidResponse.data && vapidResponse.data.publicKey)
-      });
-      
-      // Try to get public key from response first
-      if (vapidResponse.data && vapidResponse.data.publicKey) {
-        console.log('[Push] SUCCESS: Got VAPID key from response data');
-        publicKey = vapidResponse.data.publicKey;
-      }
-      // If no data (common with 304), try localStorage cache
-      else if (!publicKey) {
-        console.log('[Push] No VAPID key in response, checking localStorage cache...');
-        const cachedKey = localStorage.getItem('vapidPublicKey');
-        if (cachedKey) {
-          console.log('[Push] SUCCESS: Using cached VAPID key from localStorage');
-          publicKey = cachedKey;
-        }
+      if (!vapidPublicKey) {
+        throw new Error('VAPID public key not received from server');
       }
       
-      // If still no key, force a fresh uncached request
-      if (!publicKey) {
-        console.log('[Push] FORCING fresh VAPID request with no-cache headers...');
-        try {
-          const freshResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
-            headers: { 
-              'Authorization': `Bearer ${user.token}`,
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
-          });
-          
-          console.log('[Push] Fresh VAPID response:', {
-            status: freshResponse.status,
-            hasData: !!freshResponse.data,
-            hasPublicKey: !!(freshResponse.data && freshResponse.data.publicKey)
-          });
-          
-          if (freshResponse.data && freshResponse.data.publicKey) {
-            publicKey = freshResponse.data.publicKey;
-            console.log('[Push] SUCCESS: Got VAPID key from fresh request');
-          }
-        } catch (freshError) {
-          console.error('[Push] Fresh VAPID request failed:', freshError);
-        }
-      }
+      console.log('[Push] Step 2: VAPID public key received, converting to Uint8Array');
       
-      if (!publicKey) {
-        console.error('[Push] CRITICAL: No VAPID public key available after all attempts');
-        throw new Error('VAPID public key unavailable - tried response, cache, and fresh request');
-      }
-      
-      // Cache the VAPID public key for future 304 responses
-      localStorage.setItem('vapidPublicKey', publicKey);
-      
-      console.log('[Push] Step 2: Converting VAPID key to Uint8Array');
-      // Convert base64 public key to Uint8Array
-      const convertedPublicKey = urlBase64ToUint8Array(publicKey);
-      console.log('[Push] Step 2 SUCCESS: VAPID key converted', {
-        originalLength: publicKey.length,
-        convertedLength: convertedPublicKey.length
-      });
+      // Convert VAPID public key to Uint8Array
+      const vapidPublicKeyArray = urlBase64ToUint8Array(vapidPublicKey);
       
       console.log('[Push] Step 3: Getting service worker registration');
-      // Get service worker registration and subscribe
+      
+      // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
-      console.log('[Push] Step 3 SUCCESS: Service worker ready', {
-        scope: registration.scope,
-        hasPushManager: !!registration.pushManager
-      });
       
-      console.log('[Push] Step 4: Checking for existing subscription');
-      // Unsubscribe from any existing subscription first to ensure a clean state
-      const existingSubscription = await registration.pushManager.getSubscription();
-      if (existingSubscription) {
-        console.log('[Push] Step 4: Found existing subscription, unsubscribing');
-        await existingSubscription.unsubscribe();
-        console.log('[Push] Step 4 SUCCESS: Existing subscription removed');
-      } else {
-        console.log('[Push] Step 4: No existing subscription found');
-      }
+      console.log('[Push] Step 4: Service worker ready, subscribing to push manager');
       
-      console.log('[Push] Step 5: Creating new push subscription');
-      // Create new subscription
-      const newSubscription = await registration.pushManager.subscribe({
+      // Subscribe to push manager
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: convertedPublicKey
-      });
-      console.log('[Push] Step 5 SUCCESS: New subscription created', {
-        endpoint: newSubscription.endpoint?.substring(0, 50) + '...',
-        hasGetKey: !!newSubscription.getKey
+        applicationServerKey: vapidPublicKeyArray
       });
       
-      console.log('[Push] Successfully created subscription');
-      setPushSubscription(newSubscription);
+      console.log('[Push] Step 5: Push subscription created, sending to backend');
       
-      // CRITICAL HOTFIX: Handle subscription properly without causing errors
-      console.log('[Push] New subscription object:', JSON.stringify(newSubscription));
-      
-      try {
-        // Handle subscription more carefully to avoid errors
-        // Extract only what we need directly from the raw subscription
-        const rawEndpoint = newSubscription.endpoint;
-        const rawExpirationTime = newSubscription.expirationTime;
-        
-        // Sometimes the subscription is a non-standard format, so we need to extract carefully
-        let p256dh = '';
-        let auth = '';
-        
-        // Try multiple possible paths to get keys
-        if (newSubscription.getKey) {
-          try {
-            // Use standard method if available
-            p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(newSubscription.getKey('p256dh'))));
-            auth = btoa(String.fromCharCode.apply(null, new Uint8Array(newSubscription.getKey('auth'))));
-            console.log('[Push] Successfully extracted keys using getKey() method');
-          } catch (keyError) {
-            console.warn('[Push] Error extracting keys using getKey():', keyError.message);
-          }
-        } 
-        
-        // Fallback to direct properties if getKey failed or isn't available
-        if ((!p256dh || !auth) && newSubscription.keys) {
-          p256dh = newSubscription.keys.p256dh || '';
-          auth = newSubscription.keys.auth || '';
-          console.log('[Push] Using direct key properties from subscription');
+      // Send subscription to backend
+      const subscriptionResponse = await axios.post(`${API_URL}/api/vapid/subscribe`, {
+        subscription: subscription,
+        userId: user._id
+      }, {
+        headers: {
+          Authorization: `Bearer ${user.token}`
         }
-        
-        // Create subscription data with all the safeguards
-        const subscriptionData = {
-          endpoint: rawEndpoint,
-          expirationTime: rawExpirationTime || null,
-          keys: {
-            p256dh: p256dh,
-            auth: auth
-          }
-        };
-        
-        // Extra validation
-        if (!subscriptionData.endpoint) {
-          throw new Error('Missing endpoint in subscription');
-        }
-        
-        if (!subscriptionData.keys.p256dh || !subscriptionData.keys.auth) {
-          console.warn('[Push] Subscription appears to have invalid or missing keys, but will attempt to send anyway');
-        }
-        
-        // Log the subscription data we're sending
-        console.log('[Push] Subscription data to send:', {
-          endpoint: subscriptionData.endpoint?.substring(0, 50) + '...',
-          expirationTime: subscriptionData.expirationTime,
-          hasP256dh: !!subscriptionData.keys.p256dh,
-          hasAuth: !!subscriptionData.keys.auth
-        });
-        
-        console.log('[Push] Step 6: Sending subscription data to server');
-        console.log('[Push] Server request details:', {
-          url: `${API_URL}/api/notifications/subscription`,
-          hasEndpoint: !!subscriptionData.endpoint,
-          hasKeys: !!(subscriptionData.keys.p256dh && subscriptionData.keys.auth),
-          hasToken: !!user.token
-        });
-        
-        // Send subscription to server
-        const serverResponse = await axios.post(`${API_URL}/api/notifications/subscription`, 
-          subscriptionData,
-          { 
-            headers: { 
-              'Authorization': `Bearer ${user.token}`,
-              'Content-Type': 'application/json'
-            } 
-          }
-        );
-        
-        console.log('[Push] Step 6 SUCCESS: Subscription sent to server', {
-          status: serverResponse.status,
-          responseData: serverResponse.data
-        });
-        
-        setNotification({
-          open: true,
-          message: 'Successfully subscribed to push notifications!',
-          severity: 'success'
-        });
-        
-        console.log('[Push] Push notification subscription successful');
-      } catch (innerError) {
-        console.error('[Push] Error processing subscription data:', innerError);
-        throw new Error('Failed to process subscription: ' + innerError.message);
-      }
-    } catch (err) {
-      console.error('[Push] Error subscribing to push notifications:', {
-        errorName: err.name,
-        errorMessage: err.message,
-        errorStack: err.stack,
-        errorCode: err.code,
-        networkError: err.response?.status || 'No response',
-        responseData: err.response?.data || 'No response data'
       });
       
-      // More specific error messages
-      let userMessage = 'Failed to subscribe to push notifications';
-      if (err.name === 'NetworkError' || err.code === 'NETWORK_ERROR') {
-        userMessage = 'Network error - please check your connection and try again';
-      } else if (err.response?.status === 401) {
-        userMessage = 'Authentication error - please log in again';
-      } else if (err.response?.status === 403) {
-        userMessage = 'Permission denied - contact administrator';
-      } else if (err.message.includes('VAPID')) {
-        userMessage = 'Server configuration error - contact support';
-      } else if (err.message.includes('permission')) {
-        userMessage = 'Please allow notifications in your browser settings';
-      }
+      console.log('[Push] Step 6: Subscription saved to backend:', subscriptionResponse.data);
       
-      setError('Failed to subscribe to push notifications');
+      // Update local state
+      setPushSubscription(subscription);
+      
+      // Show success notification
       setNotification({
         open: true,
-        message: `${userMessage}: ${err.message}`,
+        message: 'Push notifications enabled successfully!',
+        severity: 'success'
+      });
+      
+      // Close modal after successful subscription
+      setTimeout(() => setIsModalOpen(false), 1500);
+      
+    } catch (err) {
+      console.error('[Push] Error subscribing to push notifications:', err);
+      setError(err.message || 'Failed to enable push notifications');
+      
+      setNotification({
+        open: true,
+        message: 'Failed to enable push notifications. Please try again.',
         severity: 'error'
       });
     } finally {
@@ -356,28 +187,39 @@ const PushNotificationManager = () => {
     setError('');
     
     try {
-      // Unsubscribe from push
+      // Unsubscribe from push manager
       await pushSubscription.unsubscribe();
-      setPushSubscription(null);
       
-      // Notify server about unsubscription
-      await axios.delete(`${API_URL}/api/notifications/push-subscription`, {
-        headers: { Authorization: `Bearer ${user.token}` }
+      // Remove subscription from backend
+      await axios.delete(`${API_URL}/api/vapid/unsubscribe`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        },
+        data: {
+          userId: user._id
+        }
       });
       
+      // Update local state
+      setPushSubscription(null);
+      
+      // Show success notification
       setNotification({
         open: true,
-        message: 'Successfully unsubscribed from push notifications',
+        message: 'Push notifications disabled successfully',
         severity: 'success'
       });
       
-      console.log('[Push] Successfully unsubscribed from push notifications');
+      // Close modal after successful unsubscription
+      setTimeout(() => setIsModalOpen(false), 1500);
+      
     } catch (err) {
       console.error('[Push] Error unsubscribing from push notifications:', err);
-      setError('Failed to unsubscribe from push notifications');
+      setError(err.message || 'Failed to disable push notifications');
+      
       setNotification({
         open: true,
-        message: `Failed to unsubscribe from push notifications: ${err.message}`,
+        message: 'Failed to disable push notifications. Please try again.',
         severity: 'error'
       });
     } finally {
@@ -385,11 +227,11 @@ const PushNotificationManager = () => {
     }
   };
   
-  // Convert base64 to Uint8Array for the applicationServerKey
+  // Helper function to convert VAPID key
   const urlBase64ToUint8Array = (base64String) => {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
+      .replace(/-/g, '+')
       .replace(/_/g, '/');
     
     const rawData = window.atob(base64);
@@ -398,86 +240,159 @@ const PushNotificationManager = () => {
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i);
     }
-    
     return outputArray;
   };
   
-  // Handle notification close
-  const handleCloseNotification = (event, reason) => {
-    if (reason === 'clickaway') return;
+  // Close notification
+  const closeNotification = () => {
     setNotification({ ...notification, open: false });
   };
   
-  // Don't render anything if user is not logged in or if push is not supported
+  // Don't render if user is not logged in or push is not supported
   if (!user || !pushSupported) {
     return null;
   }
-
-  // Don't render on home page
-  if (window.location.pathname === '/home' || window.location.pathname === '/' || window.location.pathname === '/about' || window.location.pathname === '/contact' || window.location.pathname === '/maintenance') {
-    return null;
-  }
-
+  
   return (
-    <>
-      {/* Notification toggle button */}
-      <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
-        <Tooltip title={pushSubscription ? "Turn off notifications" : "Turn on notifications"}>
-          <Button 
-            variant="contained" 
-            color={pushSubscription ? "secondary" : "primary"}
-            size="medium"
-            disabled={loading}
-            onClick={pushSubscription ? unsubscribeFromPushNotifications : subscribeToPushNotifications}
-            sx={{ 
-              borderRadius: '50%', 
-              minWidth: 0, 
-              width: 56, 
-              height: 56,
-              boxShadow: 3 
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : pushSubscription ? (
-              <NotificationsIcon />
-            ) : (
-              <NotificationsOffIcon />
-            )}
-          </Button>
+    <TooltipProvider>
+      {/* Floating Notification Toggle */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {/* Floating Circle Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className={`
+                w-14 h-14 rounded-full shadow-lg transition-all duration-300 ease-in-out
+                flex items-center justify-center
+                ${pushSubscription 
+                  ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                  : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                }
+                ${isHovered ? 'scale-110 shadow-xl' : 'scale-100'}
+                hover:scale-110 active:scale-95
+              `}
+              aria-label={pushSubscription ? 'Notifications enabled' : 'Notifications disabled'}
+            >
+              {loading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : pushSubscription ? (
+                <Bell className="h-6 w-6" />
+              ) : (
+                <BellOff className="h-6 w-6" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <p>{pushSubscription ? 'Notifications enabled' : 'Notifications disabled'}</p>
+          </TooltipContent>
         </Tooltip>
-      </Box>
+
+        {/* Modal for Notification Settings */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-md fade-in">
+            <DialogHeader>
+              <DialogTitle>Push Notifications</DialogTitle>
+              <DialogDescription>
+                Manage your push notification preferences
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Get notified about important updates, grades, and announcements even when you're not using the app.
+              </p>
+              
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive p-3 rounded-lg">
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
+              
+              <div className="flex space-x-2">
+                {!pushSubscription ? (
+                  <Button
+                    onClick={subscribeToPushNotifications}
+                    disabled={loading || pushPermission === 'denied'}
+                    className="flex-1"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enabling...
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="mr-2 h-4 w-4" />
+                        Enable Notifications
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={unsubscribeFromPushNotifications}
+                    disabled={loading}
+                    className="flex-1"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Disabling...
+                      </>
+                    ) : (
+                      <>
+                        <BellOff className="mr-2 h-4 w-4" />
+                        Disable Notifications
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              {pushPermission === 'denied' && (
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg">
+                  <p className="text-sm">
+                    Notifications are blocked. Please enable them in your browser settings to receive updates.
+                  </p>
+                </div>
+              )}
+              
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>• Notifications are sent securely through your browser</p>
+                <p>• You can disable them at any time</p>
+                <p>• No personal data is shared with third parties</p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
       
-      {/* Centered notification alert */}
-      <Snackbar 
-        open={notification.open} 
-        autoHideDuration={6000} 
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{
-          width: '100%',
-          maxWidth: { xs: '90%', sm: '80%', md: '60%' },
-          '& .MuiPaper-root': {
-            width: '100%',
-            borderRadius: 2,
-            boxShadow: 3
-          }
-        }}
-      >
-        <Alert 
-          onClose={handleCloseNotification} 
-          severity={notification.severity}
-          variant="filled"
-          sx={{ 
-            width: '100%',
-            alignItems: 'center',
-            fontSize: '1rem'
-          }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
-    </>
+      {/* Notification Snackbar */}
+      {notification.open && (
+        <div className={`fixed bottom-4 left-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          notification.severity === 'success' 
+            ? 'bg-green-100 border border-green-200 text-green-800' 
+            : notification.severity === 'warning'
+            ? 'bg-yellow-100 border border-yellow-200 text-yellow-800'
+            : 'bg-red-100 border border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">{notification.message}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={closeNotification}
+              className="h-6 w-6 p-0 text-current hover:bg-current/10"
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+    </TooltipProvider>
   );
 };
 

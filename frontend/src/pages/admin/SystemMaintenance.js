@@ -36,6 +36,17 @@ import { useSelector } from 'react-redux';
 const SystemMaintenance = () => {
   const { user, token } = useSelector((state) => state.auth);
   
+  // Additional security check - ensure only superadmins can access
+  if (!user || user.role !== 'superadmin') {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          Access denied. Superadmin privileges required to access system maintenance.
+        </Alert>
+      </Box>
+    );
+  }
+  
   // State management
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

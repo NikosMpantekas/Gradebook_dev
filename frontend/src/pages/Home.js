@@ -1,97 +1,63 @@
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
 import React, { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleDarkMode } from "../features/ui/uiSlice";
 import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Grid,
-  Card,
   AppBar,
   Toolbar,
+  Typography,
+  Button,
   IconButton,
+  Box,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
   Stack,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import GradeIcon from "@mui/icons-material/Grade";
-import ForumIcon from "@mui/icons-material/Forum";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import Drawer from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
+import {
+  Menu as MenuIcon,
+  Brightness4 as Brightness4Icon,
+  Brightness7 as Brightness7Icon,
+  CheckCircle as CheckCircleIcon,
+  Star as StarIcon,
+  Message as MessageIcon,
+  BarChart as BarChartIcon,
+} from "@mui/icons-material";
 
-const Logo = () => {
-  return (
-    <Button
-      href="/home"
+const Logo = () => (
+  <Button
+    href="/home"
+    sx={{
+      textTransform: "none",
+      p: 0,
+      minWidth: 0,
+      "&:hover": {
+        bgcolor: "transparent",
+        color: "#337ab7",
+      },
+    }}
+  >
+    <Box
       sx={{
-        textTransform: "none",
-        p: 0,
-        minWidth: 0,
-        "&:hover": {
-          bgcolor: "transparent",
-          color: "#337ab7",
-        },
+        fontWeight: 100,
+        fontSize: { xs: 28, sm: 32, md: 34, lg: 36 },
+        color: "#337ab7",
+        letterSpacing: 1,
+        mr: 2,
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
-      <Box
-        sx={{
-          fontWeight: 100,
-          fontSize: { xs: 28, sm: 32, md: 34, lg: 36 },
-          color: "#337ab7",
-          letterSpacing: 1,
-          mr: 2,
-          fontFamily: "Roboto, Arial, sans-serif",
-        }}
-      >
-        GradeBook
-      </Box>
-    </Button>
-  );
-};
-
-const features = [
-  {
-    icon: (
-      <CheckCircleIcon
-        sx={{ fontSize: 32, color: "#337ab7" }}
-        aria-hidden="true"
-      />
-    ),
-    title: "Παρουσίες",
-    desc: "Εύκολη καταγραφή παρουσιών μαθητών.",
-  },
-  {
-    icon: (
-      <GradeIcon sx={{ fontSize: 32, color: "#337ab7" }} aria-hidden="true" />
-    ),
-    title: "Βαθμολογίες",
-    desc: "Άμεση διαχείριση και ανάλυση βαθμών.",
-  },
-  {
-    icon: (
-      <ForumIcon sx={{ fontSize: 32, color: "#337ab7" }} aria-hidden="true" />
-    ),
-    title: "Επικοινωνία",
-    desc: "Γρήγορη ενημέρωση γονέων & μαθητών.",
-  },
-  {
-    icon: (
-      <AssessmentIcon
-        sx={{ fontSize: 32, color: "#337ab7" }}
-        aria-hidden="true"
-      />
-    ),
-    title: "Αναφορές",
-    desc: "Αναλυτικές αναφορές προόδου.",
-  },
-];
+      GradeBook
+    </Box>
+  </Button>
+);
 
 const navLinks = [
   { label: "Πίνακας Ελέγχου", href: "/login" },
@@ -108,7 +74,7 @@ const DashboardMockup = () => (
       mx: "auto",
       mt: { xs: 4, md: 0 },
       borderRadius: 4,
-      bgcolor: "#181b20",
+      bgcolor: "#23262b",
       boxShadow: "0 4px 24px 0 rgba(51,122,183,0.10)",
       display: "flex",
       alignItems: "stretch",
@@ -123,21 +89,21 @@ const DashboardMockup = () => (
       sx={{
         width: 110,
         height: "100%",
-        bgcolor: "#181b20",
+        bgcolor: "#23262b",
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
         pt: 3,
         px: 2,
         gap: 2,
-        borderRight: "1px solid #23262b",
+        borderRight: "1px solid #337ab7",
       }}
     >
       <Box
         sx={{
           width: "100%",
           height: 36,
-          bgcolor: "#353942",
+          bgcolor: "#4a4a4a",
           borderRadius: 2,
           mb: 2,
         }}
@@ -146,7 +112,7 @@ const DashboardMockup = () => (
         sx={{
           width: "100%",
           height: 36,
-          bgcolor: "#353942",
+          bgcolor: "#4a4a4a",
           borderRadius: 2,
           mb: 1.5,
         }}
@@ -190,14 +156,14 @@ const DashboardMockup = () => (
           }}
         />
         <Box
-          sx={{ width: 120, height: 16, bgcolor: "grey.800", borderRadius: 2 }}
+          sx={{ width: 120, height: 16, bgcolor: "#4a4a4a", borderRadius: 2 }}
         />
         <Box sx={{ flex: 1 }} />
         <Box
           sx={{
             width: 22,
             height: 22,
-            bgcolor: "grey.800",
+            bgcolor: "#4a4a4a",
             borderRadius: "50%",
           }}
         />
@@ -205,7 +171,7 @@ const DashboardMockup = () => (
           sx={{
             width: 22,
             height: 22,
-            bgcolor: "grey.800",
+            bgcolor: "#4a4a4a",
             borderRadius: "50%",
           }}
         />
@@ -213,7 +179,7 @@ const DashboardMockup = () => (
           sx={{
             width: 22,
             height: 22,
-            bgcolor: "grey.800",
+            bgcolor: "#4a4a4a",
             borderRadius: "50%",
           }}
         />
@@ -222,7 +188,7 @@ const DashboardMockup = () => (
         sx={{
           width: 120,
           height: 18,
-          bgcolor: "grey.700",
+          bgcolor: "#4a4a4a",
           borderRadius: 2,
           mb: 1,
         }}
@@ -231,7 +197,7 @@ const DashboardMockup = () => (
         sx={{
           width: 180,
           height: 14,
-          bgcolor: "grey.800",
+          bgcolor: "#4a4a4a",
           borderRadius: 2,
           mb: 2,
         }}
@@ -286,16 +252,16 @@ const DashboardMockup = () => (
   </Box>
 );
 
-const Home = () => {
+export default function Home() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true); // dark mode default
+  const { darkMode } = useSelector((state) => state.ui);
+  const dispatch = useDispatch();
 
   const handleDrawerToggle = () => setDrawerOpen((prev) => !prev);
-  const handleToggleDarkMode = () => setDarkMode((prev) => !prev);
+  const handleToggleDarkMode = () => dispatch(toggleDarkMode());
 
-  // Color palette for dark and light mode
   const colors = darkMode
     ? {
         background: "#181b20",
@@ -322,6 +288,29 @@ const Home = () => {
         icon: "#337ab7",
       };
 
+  const features = [
+    {
+      icon: <CheckCircleIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      title: "Παρουσίες",
+      description: "Εύκολη καταγραφή παρουσιών μαθητών.",
+    },
+    {
+      icon: <StarIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      title: "Βαθμολογίες",
+      description: "Άμεση διαχείριση και ανάλυση βαθμών.",
+    },
+    {
+      icon: <MessageIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      title: "Επικοινωνία",
+      description: "Γρήγορη ενημέρωση γονέων & μαθητών.",
+    },
+    {
+      icon: <BarChartIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      title: "Αναφορές",
+      description: "Αναλυτικές αναφορές προόδου.",
+    },
+  ];
+
   return (
     <Box
       sx={{
@@ -334,19 +323,6 @@ const Home = () => {
         transition: 'background-color 0.1s',
         overscrollBehavior: 'none',
         overscrollColor: colors.icon,
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          backgroundColor: colors.background,
-        },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: colors.icon,
-          borderRadius: '4px',
-        },
-        '&::-webkit-scrollbar-thumb:hover': {
-          backgroundColor: colors.buttonHover,
-        },
       }}
     >
       <AppBar
@@ -403,12 +379,13 @@ const Home = () => {
           </IconButton>
         </Toolbar>
       </AppBar>
+
       <Drawer
         anchor="left"
         open={drawerOpen}
         onClose={handleDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better open performance on mobile
+          keepMounted: true,
         }}
         PaperProps={{
           sx: {
@@ -451,6 +428,7 @@ const Home = () => {
           </List>
         </Box>
       </Drawer>
+
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
         <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
           <Grid
@@ -522,8 +500,8 @@ const Home = () => {
                         gap: 2,
                         p: 2,
                         borderRadius: 4,
-                    bgcolor: colors.card,
-                    transition: 'background-color 0.1s, color 0.1s',
+                        bgcolor: colors.card,
+                        transition: 'background-color 0.1s, color 0.1s',
                         boxShadow: "0 1px 6px 0 rgba(51,122,183,0.04)",
                         mb: 1,
                         transition: "box-shadow 0.2s",
@@ -537,12 +515,12 @@ const Home = () => {
                         <Typography
                           variant="subtitle1"
                           fontWeight="bold"
-                        sx={{ color: colors.text, transition: 'color 0.1s' }}
+                          sx={{ color: colors.text, transition: 'color 0.1s' }}
                         >
                           {feature.title}
                         </Typography>
                         <Typography variant="body2" sx={{ color: colors.subText, transition: 'color 0.1s' }}>
-                          {feature.desc}
+                          {feature.description}
                         </Typography>
                       </Box>
                     </Card>
@@ -564,6 +542,7 @@ const Home = () => {
           </Grid>
         </Container>
       </Box>
+
       <Box
         sx={{
           mt: "auto",
@@ -580,6 +559,4 @@ const Home = () => {
       </Box>
     </Box>
   );
-};
-
-export default Home;
+}

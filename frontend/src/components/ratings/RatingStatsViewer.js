@@ -1,33 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  CircularProgress,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Card,
-  CardContent,
-  Rating,
-  List,
-  ListItem,
-  ListItemText,
-  Chip,
-  LinearProgress,
-  Tab,
-  Tabs
-} from '@mui/material';
-// Simple charting alternative to recharts using MUI components
-
+import { Star, TrendingUp, Users, BarChart3, Loader2 } from 'lucide-react';
 import { getRatingStats, getRatingPeriods } from '../../features/ratings/ratingSlice';
 import { getSubjects } from '../../features/subjects/subjectSlice';
 import { getUsers } from '../../features/users/userSlice';
 import ErrorState from '../common/ErrorState';
+import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Progress } from '../ui/progress';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#8DD1E1', '#A4DE6C'];
 
@@ -38,7 +21,7 @@ const RatingStatsViewer = ({ targetType, targetId, periodId }) => {
   const { users } = useSelector((state) => state.users);
   
   const [selectedPeriodId, setSelectedPeriodId] = useState(periodId || 'all');
-  const [currentTab, setCurrentTab] = useState(0);
+  const [currentTab, setCurrentTab] = useState('overview');
 
   // Fetch data
   useEffect(() => {
@@ -63,13 +46,8 @@ const RatingStatsViewer = ({ targetType, targetId, periodId }) => {
   }, [dispatch, targetType, targetId, selectedPeriodId]);
 
   // Handle period change
-  const handlePeriodChange = (event) => {
-    setSelectedPeriodId(event.target.value);
-  };
-
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
+  const handlePeriodChange = (value) => {
+    setSelectedPeriodId(value);
   };
 
   // Get target name
@@ -97,333 +75,234 @@ const RatingStatsViewer = ({ targetType, targetId, periodId }) => {
   // Render loading state
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4 }}>
-        <CircularProgress size={40} />
-        <Typography sx={{ mt: 2 }}>Loading rating statistics...</Typography>
-      </Box>
+      <div className="flex flex-col items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading rating statistics...</p>
+      </div>
     );
   }
 
-  // Render error state if no stats
-  if (!stats && !isLoading) {
+  // Render error state
+  if (!stats || !stats.data) {
     return (
-      <ErrorState message="Could not load rating statistics" />
+      <ErrorState 
+        message="Failed to load rating statistics"
+        onRetry={() => dispatch(getRatingStats({ targetType, targetId, periodId: selectedPeriodId }))}
+      />
     );
   }
+
+  const ratingData = stats.data;
+  const distribution = formatDistributionData(ratingData.distribution);
 
   return (
-    <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" component="h2">
-          Rating Statistics for {getTargetName()}
-        </Typography>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">
+            Rating Statistics for {getTargetName()}
+          </h2>
+          <p className="text-muted-foreground">
+            {targetType === 'teacher' ? 'Teacher' : 'Subject'} performance ratings
+          </p>
+        </div>
         
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Rating Period</InputLabel>
-          <Select
-            value={selectedPeriodId}
-            label="Rating Period"
-            onChange={handlePeriodChange}
-          >
-            <MenuItem value="all">All Periods</MenuItem>
-            {periods?.map((period) => (
-              <MenuItem key={period._id} value={period._id}>
-                {period.title}
-              </MenuItem>
-            ))}
+        <div className="flex items-center space-x-2">
+          <Select value={selectedPeriodId} onValueChange={handlePeriodChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              {periods?.map((period) => (
+                <SelectItem key={period._id} value={period._id}>
+                  {period.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-        </FormControl>
-      </Box>
+        </div>
+      </div>
 
-      {stats && (
-        <>
-          {/* Summary Card */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="overline" display="block">
-                      Total Ratings
-                    </Typography>
-                    <Typography variant="h4" color="primary">
-                      {stats.totalRatings}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="overline" display="block">
-                      Average Rating
-                    </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                      <Typography variant="h4" color="primary" sx={{ mr: 1 }}>
-                        {stats.averageRating.toFixed(1)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        / 10
-                      </Typography>
-                    </Box>
-                    <Rating 
-                      value={stats.averageRating / 2} 
-                      precision={0.1} 
-                      readOnly 
-                      sx={{ mt: 1 }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="overline" display="block">
-                      Periods
-                    </Typography>
-                    <Typography variant="h4" color="primary">
-                      {Object.keys(stats.periods).length}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Rating
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Star className="h-5 w-5 text-yellow-500" />
+              <span className="text-2xl font-bold text-foreground">
+                {ratingData.averageRating?.toFixed(1) || 'N/A'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Ratings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              <span className="text-2xl font-bold text-foreground">
+                {ratingData.totalRatings || 0}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Highest Rating
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+              <span className="text-2xl font-bold text-foreground">
+                {ratingData.highestRating || 'N/A'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Lowest Rating
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5 text-red-500" />
+              <span className="text-2xl font-bold text-foreground">
+                {ratingData.lowestRating || 'N/A'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="distribution">Distribution</TabsTrigger>
+          <TabsTrigger value="trends">Trends</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Rating Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Rating Breakdown</h4>
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map((rating) => {
+                      const count = ratingData.distribution?.[rating] || 0;
+                      const percentage = ratingData.totalRatings ? (count / ratingData.totalRatings * 100) : 0;
+                      
+                      return (
+                        <div key={rating} className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1 w-16">
+                            <span className="text-sm">{rating}</span>
+                            <Star className="h-3 w-3 text-yellow-500" />
+                          </div>
+                          <Progress value={percentage} className="flex-1" />
+                          <span className="text-sm text-muted-foreground w-12 text-right">
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Quick Stats</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Standard Deviation:</span>
+                      <span className="font-medium">
+                        {ratingData.standardDeviation?.toFixed(2) || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Median Rating:</span>
+                      <span className="font-medium">
+                        {ratingData.medianRating || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Mode Rating:</span>
+                      <span className="font-medium">
+                        {ratingData.modeRating || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Tabs for different types of data */}
-          <Box sx={{ mb: 3 }}>
-            <Tabs
-              value={currentTab}
-              onChange={handleTabChange}
-              indicatorColor="primary"
-              textColor="primary"
-              variant="fullWidth"
-            >
-              <Tab label="Questions" />
-              <Tab label="Distribution" />
-              <Tab label="Text Responses" />
-            </Tabs>
-          </Box>
+        <TabsContent value="distribution" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Rating Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {distribution.map((item, index) => {
+                  const percentage = ratingData.totalRatings ? (item.count / ratingData.totalRatings * 100) : 0;
+                  
+                  return (
+                    <div key={item.value} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{item.value}</span>
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <Badge variant="secondary">{item.count} ratings</Badge>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                      <Progress value={percentage} className="h-2" />
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          {/* Questions Tab */}
-          {currentTab === 0 && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                Rating by Question
-              </Typography>
-              <Grid container spacing={2}>
-                {Object.values(stats.questions)
-                  .filter(q => q.type === 'rating')
-                  .map((question) => (
-                    <Grid item xs={12} md={6} key={question.id}>
-                      <Card variant="outlined" sx={{ height: '100%' }}>
-                        <CardContent>
-                          <Typography variant="subtitle2" gutterBottom>
-                            {question.text}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <Typography variant="h5" color="primary" sx={{ mr: 1 }}>
-                              {question.average.toFixed(1)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              / 10 ({question.count} ratings)
-                            </Typography>
-                          </Box>
-                          <Box sx={{ height: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', p: 2 }}>
-                            {formatDistributionData(question.distribution).map((item) => (
-                              <Box key={item.value} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                                <Box 
-                                  sx={{ 
-                                    width: '80%', 
-                                    bgcolor: '#8884d8', 
-                                    height: `${(item.count / Math.max(...formatDistributionData(question.distribution).map(d => d.count || 1)) * 150)}px`,
-                                    minHeight: '5px',
-                                    borderRadius: '4px 4px 0 0',
-                                  }} 
-                                />
-                                <Typography variant="caption">{item.value}</Typography>
-                                <Typography variant="caption" color="text.secondary">{item.count}</Typography>
-                              </Box>
-                            ))}
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-              </Grid>
-            </Box>
-          )}
-
-          {/* Distribution Tab */}
-          {currentTab === 1 && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                Overall Rating Distribution
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Distribution Chart
-                      </Typography>
-                      <Box sx={{ height: 300, display: 'flex', flexDirection: 'column', p: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom>Rating Distribution</Typography>
-                        {formatDistributionData(
-                          Object.values(stats.questions)
-                            .filter(q => q.type === 'rating')
-                            .reduce((acc, q) => {
-                              Object.entries(q.distribution).forEach(([value, count]) => {
-                                acc[value] = (acc[value] || 0) + count;
-                              });
-                              return acc;
-                            }, {})
-                        ).map((entry, index) => {
-                          const total = formatDistributionData(
-                            Object.values(stats.questions)
-                              .filter(q => q.type === 'rating')
-                              .reduce((acc, q) => {
-                                Object.entries(q.distribution).forEach(([value, count]) => {
-                                  acc[value] = (acc[value] || 0) + count;
-                                });
-                                return acc;
-                              }, {})
-                          ).reduce((sum, item) => sum + item.count, 0);
-                          
-                          const percent = total > 0 ? (entry.count / total * 100).toFixed(1) : 0;
-                          
-                          return (
-                            <Box key={entry.value} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-                              <Typography variant="body2" sx={{ width: 40 }}>{entry.value}</Typography>
-                              <Box sx={{ 
-                                flex: 1, 
-                                mx: 1,
-                                height: 20, 
-                                bgcolor: COLORS[index % COLORS.length],
-                                width: `${percent}%`,
-                                minWidth: '5px',
-                                borderRadius: 1,
-                                transition: 'width 0.5s'
-                              }} />
-                              <Typography variant="caption">
-                                {entry.count} ({percent}%)
-                              </Typography>
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ height: '100%' }}>
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Rating Breakdown
-                      </Typography>
-                      <List>
-                        {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(value => {
-                          const totalCount = Object.values(stats.questions)
-                            .filter(q => q.type === 'rating')
-                            .reduce((acc, q) => acc + (q.distribution[value] || 0), 0);
-                          
-                          const totalRatings = Object.values(stats.questions)
-                            .filter(q => q.type === 'rating')
-                            .reduce((acc, q) => acc + q.count, 0);
-                          
-                          const percentage = totalRatings > 0 ? (totalCount / totalRatings) * 100 : 0;
-                          
-                          return (
-                            <ListItem key={value}>
-                              <ListItemText 
-                                primary={
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Typography variant="body1" sx={{ width: 30 }}>
-                                      {value}
-                                    </Typography>
-                                    <LinearProgress 
-                                      variant="determinate" 
-                                      value={percentage} 
-                                      sx={{ 
-                                        flexGrow: 1, 
-                                        mx: 2, 
-                                        height: 10, 
-                                        borderRadius: 5 
-                                      }} 
-                                    />
-                                    <Typography variant="body2" color="text.secondary">
-                                      {totalCount} ({percentage.toFixed(1)}%)
-                                    </Typography>
-                                  </Box>
-                                }
-                              />
-                            </ListItem>
-                          );
-                        })}
-                      </List>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-
-          {/* Text Responses Tab */}
-          {currentTab === 2 && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                Text Responses
-              </Typography>
-              {stats.textResponses.length === 0 ? (
-                <Typography variant="body1" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-                  No text responses available
-                </Typography>
-              ) : (
-                <List>
-                  {stats.textResponses.map((response, index) => (
-                    <ListItem 
-                      key={index}
-                      sx={{ 
-                        mb: 1, 
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: 'divider'
-                      }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="subtitle2">
-                              {response.question}
-                            </Typography>
-                            <Chip 
-                              size="small"
-                              label={response.periodTitle}
-                              variant="outlined"
-                              sx={{ ml: 2 }}
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Typography 
-                            variant="body1" 
-                            color="text.primary" 
-                            sx={{ 
-                              mt: 1, 
-                              p: 1, 
-                              backgroundColor: 'action.hover', 
-                              borderRadius: 1 
-                            }}
-                          >
-                            "{response.response}"
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Box>
-          )}
-        </>
-      )}
-    </Box>
+        <TabsContent value="trends" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Rating Trends</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Trend analysis and time-based statistics will be displayed here.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

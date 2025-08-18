@@ -1,51 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
-  Container,
-  Grid,
-  Box,
-  Typography,
-  Alert,
-  CircularProgress,
-  Fade
-} from '@mui/material';
-import { keyframes } from '@mui/system';
-import {
-  WelcomePanel,
-  ProfileInfoPanel,
-  RecentNotificationsPanel,
-  RecentGradesPanel,
-  UpcomingClassesPanel,
-  GradesOverTimePanel
-} from '../../components/dashboard';
+  BookOpen,
+  Bell,
+  BarChart3,
+  Calendar,
+  Target,
+  Award,
+  CheckCircle,
+  XCircle,
+  Info,
+  Zap,
+  AlertTriangle,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
-import { toast } from 'react-toastify';
+import { Spinner } from '../../components/ui/spinner';
+import { GradesGraph } from "../../components/GradesGraph";
+import { MonthlyCalendar } from '../../components/MonthlyCalendar';
 
-/**
- * StudentDashboard Component
- * Rebuilt to match AdminDashboard design exactly
- * Shows: Welcome, Profile, Recent Notifications, Recent Grades, Upcoming Classes
- */
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { isFeatureEnabled, loading: featuresLoading } = useFeatureToggles();
   
-  // Component state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     notifications: [],
     grades: [],
     classes: [],
-    stats: {}
+    stats: {
+      totalSubjects: 0,
+      averageGrade: 0,
+      gradesReceived: 0,
+      pendingGrades: 0
+    }
   });
   
-  // Loading states for individual panels
   const [panelLoading, setPanelLoading] = useState({
     notifications: false,
     grades: false,
@@ -60,8 +59,8 @@ const StudentDashboard = () => {
       return;
     }
     
-    if (user.role !== 'student' && user.role !== 'admin') {
-      console.log('StudentDashboard: User is not student or admin, redirecting');
+    if (user.role !== 'student') {
+      console.log('StudentDashboard: User is not student, redirecting');
       toast.error('Access denied. Student privileges required.');
       navigate('/app/dashboard');
       return;
@@ -72,7 +71,7 @@ const StudentDashboard = () => {
 
   // Fetch dashboard data
   useEffect(() => {
-    if (user && (user.role === 'student' || user.role === 'admin') && !featuresLoading) {
+    if (user && user.role === 'student' && !featuresLoading) {
       fetchDashboardData();
     }
   }, [user, featuresLoading]);
@@ -130,6 +129,21 @@ const StudentDashboard = () => {
         }
       });
       
+      // Calculate stats from grades data
+      if (newData.grades && newData.grades.length > 0) {
+        const gradeValues = newData.grades.map(g => g.value);
+        const averageGrade = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
+        
+        // Get unique subjects
+        const subjects = [...new Set(newData.grades.map(g => g.subject?.name).filter(Boolean))];
+        
+        newData.stats = {
+          totalSubjects: subjects.length,
+          averageGrade: Math.round(averageGrade * 100) / 100,
+          gradesReceived: newData.grades.length
+        };
+      }
+      
       setDashboardData(newData);
       console.log('StudentDashboard: Dashboard data loaded successfully');
       
@@ -144,7 +158,6 @@ const StudentDashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      // For student, get their received notifications
       const response = await axios.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
       return response.data || [];
     } catch (error) {
@@ -218,124 +231,240 @@ const StudentDashboard = () => {
   };
 
   // Navigation handlers
-  const handleViewAllNotifications = () => {
-    navigate('/app/student/notifications');
-  };
-
-  const handleViewAllGrades = () => {
-    navigate('/app/student/grades');
-  };
-
-  const handleViewAllClasses = () => {
-    navigate('/app/student/schedule');
-  };
-
-  // Simple fade-in-up animation for dashboard cards
-  const fadeInUp = keyframes`
-    0% { opacity: 0; transform: translateY(8px); }
-    100% { opacity: 1; transform: translateY(0); }
-  `;
-
-  // Trigger for coordinating animations
-  const [animationReady, setAnimationReady] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setAnimationReady(true), 150); // wait briefly so cards start animating
-    return () => clearTimeout(t);
-  }, []);
+  const handleViewGrades = () => navigate('/app/grades');
+  const handleSubmitRatings = () => navigate('/app/ratings');
+  const handleViewSchedule = () => navigate('/app/schedule');
+  const handleViewCalendar = () => navigate('/app/calendar');
+  const handleViewAllNotifications = () => navigate('/app/notifications');
 
   // Show loading state
   if (featuresLoading || loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <CircularProgress size={60} />
-        </Box>
-      </Container>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner className="text-primary" />
+        </div>
+      </div>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      </Container>
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md mb-6">
+          <div className="flex items-center space-x-2">
+            <XCircle className="h-5 w-5" />
+            <span>{error}</span>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // Show access denied if not student or admin
-  if (!user || (user.role !== 'student' && user.role !== 'admin')) {
+  // Show access denied if not student
+  if (!user || user.role !== 'student') {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Access denied. Student privileges required.
-        </Alert>
-      </Container>
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md mb-6">
+          <div className="flex items-center space-x-2">
+            <XCircle className="h-5 w-5" />
+            <span>Access denied. Student privileges required.</span>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Fade in={true} timeout={800}>
-        <Box>
-          {/* Welcome Panel - Always shown */}
-          <Box sx={{ animation: `${fadeInUp} 500ms ease-out both` }}>
-            <WelcomePanel user={user} />
-          </Box>
-          
-          <Grid container spacing={3}>
-            {/* Grades Overview Graph - Left half on desktop, full width on mobile */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ animation: `${fadeInUp} 600ms ease-out both`, animationDelay: '80ms' }}>
-                <GradesOverTimePanel 
-                  grades={dashboardData.grades}
-                  loading={panelLoading.grades}
-                  onViewAll={handleViewAllGrades}
-                  animationDelayMs={animationReady ? 120 : 300}
-                />
-              </Box>
-            </Grid>
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Welcome Section */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-light tracking-wide">Welcome back, {user?.name}!</h1>
+        <p className="text-muted-foreground">Track your academic progress and stay updated with your studies.</p>
+      </div>
 
-            {/* Right column: Notifications on top, Upcoming Classes below (desktop) */}
-            <Grid item xs={12} md={6}>
-              <Grid container spacing={3} direction="column">
-                <Grid item xs={12}>
-                  <Box sx={{ animation: `${fadeInUp} 650ms ease-out both`, animationDelay: '120ms' }}>
-                    <RecentNotificationsPanel 
-                      notifications={dashboardData.notifications}
-                      loading={panelLoading.notifications}
-                      onViewAll={handleViewAllNotifications}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12}>
-                  <Box sx={{ animation: `${fadeInUp} 700ms ease-out both`, animationDelay: '160ms' }}>
-                    <UpcomingClassesPanel 
-                      classes={dashboardData.classes}
-                      loading={panelLoading.classes}
-                      onViewAll={handleViewAllClasses}
-                      userRole="student"
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-          
-          {/* Show message if no features are enabled */}
-          {!isFeatureEnabled('enableNotifications') && 
-           !isFeatureEnabled('enableGrades') && 
-           !isFeatureEnabled('enableClasses') && 
-           !isFeatureEnabled('enableSchedule') && (
-            <Alert severity="info" sx={{ mt: 3 }}>
-              Some dashboard features are currently disabled. Contact your system administrator to enable additional features.
-            </Alert>
-          )}
-        </Box>
-      </Fade>
-    </Container>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData.stats.totalSubjects}</div>
+            <p className="text-xs text-muted-foreground">Enrolled subjects</p>
+          </CardContent>
+        </Card>
+
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData.stats.averageGrade.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">Current average</p>
+          </CardContent>
+        </Card>
+
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Grades Received</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData.stats.gradesReceived}</div>
+            <p className="text-xs text-muted-foreground">This semester</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="panel-slide-in overflow-hidden">
+          <GradesGraph recentGrades={dashboardData.grades} />
+        </Card>
+        {/* Quick Actions */}
+        <Card className="panel-slide-in flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Zap className="h-5 w-5 text-primary" />
+              <span>Quick Actions</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={() => navigate('/app/grades')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <BookOpen className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">View My Grades</span>
+              </Button>
+
+              <Button
+                onClick={() => navigate('/app/schedule')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">My Schedule</span>
+              </Button>
+
+              <Button
+                onClick={() => navigate('/app/notifications')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">Notifications</span>
+              </Button>
+              <Button
+                onClick={() => navigate('/app/student-stats')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">My Stats</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {/* Recent Notifications and Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Monthly Calendar Widget */}
+        <Card className="panel-slide-in">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>Monthly Calendar</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <MonthlyCalendar classes={dashboardData.classes} />
+          </CardContent>
+        </Card>
+
+        {/* Recent Notifications */}
+        <Card className="panel-slide-in lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Bell className="h-5 w-5 text-primary" />
+              <span>Recent Notifications</span>
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/app/notifications')}
+              className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
+            >
+              View All
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {panelLoading.notifications ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : dashboardData.notifications.length > 0 ? (
+              <div className="space-y-4">
+                {dashboardData.notifications.slice(0, 5).map((notification, index) => (
+                  <div
+                    key={notification._id}
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-card/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                    style={{
+                      borderColor: notification.type === 'info' ? '#3b82f6' :
+                                  notification.type === 'success' ? '#10b981' :
+                                  notification.type === 'warning' ? '#f59e0b' :
+                                  notification.type === 'error' ? '#ef4444' : 'hsl(var(--background))',
+                      animationDelay: `${(index + 1) * 0.1}s`
+                    }}
+                  >
+                    <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+                      {notification.type === 'info' && <Info className="h-5 w-5 text-blue-500" />}
+                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                      {notification.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+                      {notification.type === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
+                    </div>
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
+                    >
+                      {new Date(notification.createdAt).toLocaleDateString()}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground fade-in-up">
+                <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No recent notifications</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Feature Disabled Message */}
+      {!isFeatureEnabled('enableNotifications') && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+              <Info className="h-5 w-5" />
+              <span className="text-sm">
+                Some dashboard features are currently disabled. Contact your system administrator to enable additional features.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

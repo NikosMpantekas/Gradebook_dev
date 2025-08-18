@@ -1,52 +1,49 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Container, Paper } from '@mui/material';
-import { Home as HomeIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { Home, ArrowLeft } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 const NotFound = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="md">
-      <Paper
-        sx={{
-          mt: 10,
-          p: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          borderRadius: 2,
-        }}
-        elevation={3}
-      >
-        <Typography variant="h1" sx={{ fontSize: '6rem', fontWeight: 'bold', color: 'primary.main' }}>
-          404
-        </Typography>
-        <Typography variant="h4" sx={{ mb: 3 }}>
-          Page Not Found
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          The page you are looking for doesn't exist or has been moved.
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<HomeIcon />}
-            onClick={() => navigate('/')}
-          >
-            Go Home
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
-          >
-            Go Back
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <h1 className="text-6xl font-bold text-primary">
+            404
+          </h1>
+          <CardTitle className="text-2xl">
+            Page Not Found
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          <p className="text-muted-foreground">
+            The page you are looking for doesn't exist or has been moved.
+          </p>
+          
+          <div className="flex gap-3">
+            <Button
+              onClick={() => navigate('/')}
+              className="flex-1"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Go Home
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(-1)}
+              className="flex-1"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

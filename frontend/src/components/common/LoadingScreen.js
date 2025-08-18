@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Spinner } from '../ui/spinner';
 
 /**
  * A full-screen loading component
@@ -8,21 +8,12 @@ import { Box, CircularProgress, Typography } from '@mui/material';
  */
 const LoadingScreen = ({ message = 'Loading...' }) => {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '70vh',
-        width: '100%',
-      }}
-    >
-      <CircularProgress size={60} thickness={4} />
-      <Typography variant="h6" sx={{ mt: 2 }}>
+    <div className="flex flex-col items-center justify-center h-[70vh] w-full">
+      <Spinner className="text-primary" />
+      <h3 className="text-lg font-semibold mt-4 text-foreground">
         {message}
-      </Typography>
-    </Box>
+      </h3>
+    </div>
   );
 };
 

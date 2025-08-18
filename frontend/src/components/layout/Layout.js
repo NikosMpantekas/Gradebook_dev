@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Box, Container, Drawer, useTheme, useMediaQuery } from '@mui/material';
 import { useSelector } from 'react-redux';
+import { cn } from '../../lib/utils';
 
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -10,14 +10,12 @@ import OfflineDetector from '../OfflineDetector';
 
 const Layout = () => {
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   // Retrieve previous mobileOpen state from localStorage to prevent it from resetting on navigation
   const [mobileOpen, setMobileOpen] = useState(() => {
     const savedState = localStorage.getItem('sidebarOpen');
-    // Always default to false for mobile, true for desktop
-    return window.innerWidth < 600 ? false : (savedState ? savedState === 'true' : true);
+    // Always default to false for mobile, false for desktop (mobile sidebar should never be open on desktop)
+    return window.innerWidth < 600 ? false : false;
   });
 
   const { darkMode } = useSelector((state) => state.ui);
@@ -44,7 +42,7 @@ const Layout = () => {
   };
 
   // Sidebar width for layout spacing
-  const drawerWidth = 240;
+  const drawerWidth = 256; // Fixed: 256px = 64 * 4 (lg:w-64)
 
   // Store the current section in localStorage to maintain context across refreshes
   useEffect(() => {
@@ -71,8 +69,25 @@ const Layout = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [mobileOpen, location.pathname]);
 
+  // Handle window resize to properly manage mobile sidebar state
+  useEffect(() => {
+    const handleResize = () => {
+      // If window is resized to desktop size, close mobile sidebar
+      if (window.innerWidth >= 1024 && mobileOpen) {
+        setMobileOpen(false);
+        localStorage.setItem('sidebarOpen', 'false');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileOpen]);
+
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: darkMode ? 'background.default' : '#f5f5f5' }}>
+    <div className={cn(
+      "flex min-h-screen layout-stable",
+      "bg-background"
+    )}>
       <Header 
         drawerWidth={drawerWidth} 
         handleDrawerToggle={handleDrawerToggle} 
@@ -82,44 +97,27 @@ const Layout = () => {
         mobileOpen={mobileOpen}
         handleDrawerToggle={handleDrawerToggle}
       />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-          overflowX: 'hidden', // Prevent horizontal scrolling
-          overflowY: { xs: 'hidden', sm: 'auto' }, // Hide scrollbar on mobile, show on desktop
-        }}
-      >
+      <main className={cn(
+        "flex-1 flex flex-col min-h-screen overflow-x-hidden layout-stable",
+        "lg:ml-64" // Fixed: Account for sidebar width on desktop (64 * 4 = 256px)
+      )}>
         {/* Main content area */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            mt: { xs: 7, sm: 8 }, // Account for header height
-            p: { xs: 1, sm: 2, md: 3 },
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%',
-            // Ensure MUI Container (used across pages) spans full available width
-            '& .MuiContainer-root': {
-              maxWidth: '100% !important',
-              paddingLeft: { xs: 2, sm: 3, md: 4 },
-              paddingRight: { xs: 2, sm: 3, md: 4 },
-            },
-          }}
-        >
+        <div className={cn(
+          "flex-1 flex flex-col w-full",
+          "mt-14 sm:mt-16", // Account for header height
+          "p-1 sm:p-2 md:p-3"
+        )}>
           <OfflineDetector>
             <Outlet />
           </OfflineDetector>
-        </Box>
+        </div>
         
-        {/* Footer - positioned outside main content */}
-        <Footer />
-      </Box>
-    </Box>
+        {/* Footer - positioned at bottom of main content */}
+        <div className="mt-auto pt-4">
+          <Footer />
+        </div>
+      </main>
+    </div>
   );
 };
 

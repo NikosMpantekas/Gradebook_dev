@@ -1,19 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  Typography, 
-  Paper, 
-  Box, 
-  CircularProgress,
-  Tabs,
-  Tab,
-  Badge,
-  Button,
-} from '@mui/material';
-import {
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { 
   getMyNotifications, 
@@ -25,6 +12,11 @@ import {
 } from '../features/notifications/notificationSlice';
 import NotificationsList from '../components/notifications/NotificationsList';
 import NotificationEditDialog from '../components/notifications/NotificationEditDialog';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { RefreshCw } from 'lucide-react';
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -34,7 +26,7 @@ const Notifications = () => {
     (state) => state.notifications
   );
 
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState('received');
   const [displayedNotifications, setDisplayedNotifications] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentNotification, setCurrentNotification] = useState(null);
@@ -46,7 +38,7 @@ const Notifications = () => {
 
   // Calculate unread notifications count
   const unreadCount = Array.isArray(displayedNotifications) 
-    ? displayedNotifications.filter(n => !n.isRead && tabValue === 0).length 
+    ? displayedNotifications.filter(n => !n.isRead && tabValue === 'received').length 
     : 0;
 
   // Load notifications when component mounts
@@ -59,7 +51,7 @@ const Notifications = () => {
       userRole: user?.role
     });
 
-    if (tabValue === 0 && notifications && notifications.length > 0) {
+    if (tabValue === 'received' && notifications && notifications.length > 0) {
       console.log('Using existing notifications from store:', notifications.length);
       setDisplayedNotifications(notifications);
     }
@@ -67,8 +59,8 @@ const Notifications = () => {
 
   // Load notifications when tab changes
   useEffect(() => {
-    console.log(`Loading notifications, tab: ${tabValue === 0 ? 'Received' : 'Sent'}`);
-    if (tabValue === 0) {
+    console.log(`Loading notifications, tab: ${tabValue === 'received' ? 'Received' : 'Sent'}`);
+    if (tabValue === 'received') {
       console.log('Dispatching getMyNotifications for tab: Received');
       dispatch(getMyNotifications())
         .unwrap()
@@ -102,14 +94,14 @@ const Notifications = () => {
   }, [notifications]);
 
   // Handle tab change
-  const handleChangeTab = useCallback((event, newValue) => {
-    console.log(`Switching to tab ${newValue === 0 ? 'Received' : 'Sent'}`);
+  const handleChangeTab = useCallback((newValue) => {
+    console.log(`Switching to tab ${newValue === 'received' ? 'Received' : 'Sent'}`);
     setTabValue(newValue);
   }, []);
 
   // Handle refresh
   const handleRefresh = useCallback(() => {
-    if (tabValue === 0) {
+    if (tabValue === 'received') {
       dispatch(getMyNotifications());
     } else {
       dispatch(getSentNotifications());
@@ -202,74 +194,81 @@ const Notifications = () => {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: { xs: 1, sm: 2 } }}>
-      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 } }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: { xs: 1, sm: 2 },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 1, sm: 0 }
-        }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-            Notifications
-          </Typography>
-          
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<RefreshIcon />}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-            onClick={() => {
-              console.log('Manually refreshing notifications');
-              handleRefresh();
-              toast.info('Refreshing notifications...');
-            }}
-          >
-            Refresh
-          </Button>
-        </Box>
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="text-xl sm:text-2xl font-bold">
+              Notifications
+            </CardTitle>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                console.log('Manually refreshing notifications');
+                handleRefresh();
+                toast.info('Refreshing notifications...');
+              }}
+              className="w-full sm:w-auto"
+            >
+              <RefreshCw className="mr-2 w-4 h-4" />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
         
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleChangeTab} 
-            aria-label="notification tabs"
-            variant="fullWidth"
-            centered
-          >
-            <Tab 
-              label={
-                <Badge color="error" badgeContent={unreadCount} max={99}>
-                  Received
-                </Badge>
-              } 
-              id="tab-0" 
-            />
+        <CardContent>
+          <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="received" className="relative">
+                Received
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              {(user?.role === 'teacher' || user?.role === 'admin') && (
+                <TabsTrigger value="sent">Sent</TabsTrigger>
+              )}
+            </TabsList>
+            
+            <TabsContent value="received" className="mt-4">
+              <NotificationsList
+                notifications={displayedNotifications}
+                tabValue="received"
+                user={user}
+                onMarkAsRead={handleMarkAsRead}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onNavigate={handleNavigate}
+              />
+            </TabsContent>
+            
             {(user?.role === 'teacher' || user?.role === 'admin') && (
-              <Tab label="Sent" id="tab-1" />
+              <TabsContent value="sent" className="mt-4">
+                <NotificationsList
+                  notifications={displayedNotifications}
+                  tabValue="sent"
+                  user={user}
+                  onMarkAsRead={handleMarkAsRead}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onNavigate={handleNavigate}
+                />
+              </TabsContent>
             )}
           </Tabs>
-        </Box>
-        
-        <NotificationsList
-          notifications={displayedNotifications}
-          tabValue={tabValue}
-          user={user}
-          onMarkAsRead={handleMarkAsRead}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onNavigate={handleNavigate}
-        />
-      </Paper>
+        </CardContent>
+      </Card>
 
       <NotificationEditDialog
         open={editDialogOpen}
@@ -280,7 +279,7 @@ const Notifications = () => {
         onSave={handleSaveEdit}
         isLoading={isLoading}
       />
-    </Box>
+    </div>
   );
 };
 

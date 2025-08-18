@@ -1,61 +1,63 @@
 import React, { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleDarkMode } from "../features/ui/uiSlice";
 import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
   Box,
   Container,
-  Typography,
   Grid,
   Card,
   CardContent,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Stack,
   useTheme,
   useMediaQuery,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Button,
-  Stack,
 } from "@mui/material";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
-import MenuIcon from "@mui/icons-material/Menu";
-import Drawer from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import SchoolIcon from "@mui/icons-material/School";
-import SecurityIcon from "@mui/icons-material/Security";
-import SpeedIcon from "@mui/icons-material/Speed";
-import SupportIcon from "@mui/icons-material/Support";
+import {
+  Menu as MenuIcon,
+  Brightness4 as Brightness4Icon,
+  Brightness7 as Brightness7Icon,
+  School as SchoolIcon,
+  Security as SecurityIcon,
+  Speed as SpeedIcon,
+  Support as SupportIcon,
+} from "@mui/icons-material";
 
-const Logo = () => {
-  return (
-    <Button
-      href="/home"
+const Logo = () => (
+  <Button
+    href="/home"
+    sx={{
+      textTransform: "none",
+      p: 0,
+      minWidth: 0,
+      "&:hover": {
+        bgcolor: "transparent",
+        color: "#337ab7",
+      },
+    }}
+  >
+    <Box
       sx={{
-        textTransform: "none",
-        p: 0,
-        minWidth: 0,
-        "&:hover": {
-          bgcolor: "transparent",
-          color: "#337ab7",
-        },
+        fontWeight: 100,
+        fontSize: { xs: 28, sm: 32, md: 34, lg: 36 },
+        color: "#337ab7",
+        letterSpacing: 1,
+        mr: 2,
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
-      <Box
-        sx={{
-          fontWeight: 100,
-          fontSize: { xs: 28, sm: 32, md: 34, lg: 36 },
-          color: "#337ab7",
-          letterSpacing: 1,
-          mr: 2,
-          fontFamily: "Roboto, Arial, sans-serif",
-        }}
-      >
-        GradeBook
-      </Box>
-    </Button>
-  );
-};
+      GradeBook
+    </Box>
+  </Button>
+);
 
 const navLinks = [
   { label: "Πίνακας Ελέγχου", href: "/login" },
@@ -63,14 +65,15 @@ const navLinks = [
   { label: "Επικοινωνία", href: "/contact" },
 ];
 
-const About = () => {
+export default function About() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const { darkMode } = useSelector((state) => state.ui);
+  const dispatch = useDispatch();
 
   const handleDrawerToggle = () => setDrawerOpen((prev) => !prev);
-  const handleToggleDarkMode = () => setDarkMode((prev) => !prev);
+  const handleToggleDarkMode = () => dispatch(toggleDarkMode());
 
   const colors = darkMode
     ? {
@@ -393,6 +396,4 @@ const About = () => {
       </Box>
     </Box>
   );
-};
-
-export default About; 
+} 

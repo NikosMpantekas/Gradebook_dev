@@ -1,34 +1,36 @@
 import React from 'react';
-import { Box, Typography, Paper } from '@mui/material';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 
 const FeatureDebug = () => {
   // Get the features from the context
   const { features, loading, error } = useFeatureToggles();
 
   return (
-    <Paper elevation={3} sx={{ p: 2, m: 2, maxWidth: 500 }}>
-      <Typography variant="h6" gutterBottom>Feature Toggle Debug</Typography>
+    <Card className="m-4 max-w-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <span>Feature Toggle Debug</span>
+          <Badge variant="outline">Debug</Badge>
+        </CardTitle>
+      </CardHeader>
       
-      {loading ? (
-        <Typography>Loading features...</Typography>
-      ) : error ? (
-        <Typography color="error">Error loading features: {error}</Typography>
-      ) : (
-        <>
-          <Typography variant="subtitle1">Available Features:</Typography>
-          <Box component="pre" sx={{ 
-            p: 2, 
-            bgcolor: 'grey.100', 
-            borderRadius: 1,
-            overflow: 'auto',
-            maxHeight: 300
-          }}>
-            {JSON.stringify(features, null, 2)}
-          </Box>
-        </>
-      )}
-    </Paper>
+      <CardContent>
+        {loading ? (
+          <p className="text-muted-foreground">Loading features...</p>
+        ) : error ? (
+          <p className="text-destructive">Error loading features: {error}</p>
+        ) : (
+          <div className="space-y-3">
+            <p className="font-medium">Available Features:</p>
+            <pre className="p-3 bg-muted rounded-lg overflow-auto max-h-80 text-xs font-mono">
+              {JSON.stringify(features, null, 2)}
+            </pre>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

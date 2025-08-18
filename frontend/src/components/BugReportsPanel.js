@@ -3,29 +3,18 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
 import { 
-  Box,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  Chip,
-  Badge,
-  CircularProgress,
-  Collapse,
-  IconButton,
-  Alert,
-  Button
-} from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  BugReport as BugReportIcon,
-  Reply as ReplyIcon,
-  Email as EmailIcon
-} from '@mui/icons-material';
+  ChevronDown,
+  ChevronUp,
+  Bug,
+  Reply,
+  Mail,
+  Loader2
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 const BugReportsPanel = ({ openContactForm }) => {
   const [messages, setMessages] = useState([]);
@@ -99,206 +88,194 @@ const BugReportsPanel = ({ openContactForm }) => {
       setExpandedId(null);
     } else {
       setExpandedId(messageId);
-      
-      // If this message has an unread reply, mark it as read when expanded
-      const message = messages.find(msg => msg._id === messageId);
-      if (message && message.adminReply && !message.replyRead) {
-        markReplyAsRead(messageId);
-      }
     }
   };
-  
-  const getStatusChip = (message) => {
-    if (message.status === 'replied') {
-      return (
-        <Badge 
-          color="success" 
-          variant={message.replyRead ? "standard" : "dot"}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-        >
-          <Chip 
-            label="Replied" 
-            color="success" 
-            size="small" 
-            icon={<ReplyIcon fontSize="small" />} 
-          />
-        </Badge>
-      );
-    } else if (message.status === 'read') {
-      return <Chip label="Under Review" color="primary" size="small" />;
-    } else {
-      return <Chip label="New" color="secondary" size="small" />;
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'new':
+        return 'bg-blue-100 text-blue-800';
+      case 'in-progress':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'replied':
+        return 'bg-green-100 text-green-800';
+      case 'closed':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
-  
-  // Filter only bug reports to display in this panel
-  const bugReports = messages.filter(msg => msg.isBugReport);
-  const hasUnreadReplies = bugReports.some(msg => 
-    msg.adminReply && msg.adminReply.trim() !== '' && !msg.replyRead
-  );
-  
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'new':
+        return 'New';
+      case 'in-progress':
+        return 'In Progress';
+      case 'replied':
+        return 'Replied';
+      case 'closed':
+        return 'Closed';
+      default:
+        return status;
+    }
+  };
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-        <CircularProgress />
-      </Box>
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
     );
   }
-  
+
   if (error) {
     return (
-      <Alert severity="error" sx={{ mt: 2 }}>
-        {error}
-      </Alert>
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
-  
+
+  if (messages.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Bug className="h-5 w-5" />
+            <span>Bug Reports & Messages</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <p className="text-muted-foreground mb-4">
+            You haven't sent any messages yet.
+          </p>
+          <Button onClick={openContactForm}>
+            <Mail className="mr-2 h-4 w-4" />
+            Send First Message
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Paper variant="outlined" sx={{ mb: 3, p: 2 }}>
-      <Box display="flex" alignItems="center" mb={2} justifyContent="space-between">
-        <Box display="flex" alignItems="center">
-          <BugReportIcon color="secondary" sx={{ mr: 1 }} />
-          <Typography variant="h6">
-            Bug Reports
-            {hasUnreadReplies && (
-              <Badge 
-                color="error" 
-                variant="dot"
-                sx={{ ml: 1 }}
-              />
-            )}
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined" 
-          color="secondary" 
-          size="small"
-          startIcon={<EmailIcon />}
-          onClick={openContactForm}
-        >
-          New Report
-        </Button>
-      </Box>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Bug className="h-5 w-5" />
+          <span>Bug Reports & Messages</span>
+          <Badge variant="secondary">{messages.length}</Badge>
+        </CardTitle>
+      </CardHeader>
       
-      {bugReports.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-          You haven't submitted any bug reports yet.
-        </Typography>
-      ) : (
-        <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-          {bugReports.map((report, index) => (
-            <React.Fragment key={report._id}>
-              {index > 0 && <Divider component="li" />}
-              <ListItem
-                alignItems="flex-start"
-                secondaryAction={
-                  <IconButton 
-                    edge="end" 
-                    onClick={() => toggleExpanded(report._id)}
-                    aria-label="expand"
+      <CardContent>
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <div key={message._id} className="border rounded-lg overflow-hidden">
+              <Collapsible open={expandedId === message._id}>
+                <CollapsibleTrigger asChild>
+                  <div 
+                    className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => toggleExpanded(message._id)}
                   >
-                    {expandedId === report._id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </IconButton>
-                }
-                sx={{ 
-                  cursor: 'pointer',
-                  bgcolor: !report.replyRead && report.adminReply ? 'rgba(0, 128, 0, 0.05)' : 'transparent'  
-                }}
-                onClick={() => toggleExpanded(report._id)}
-              >
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography
-                        component="span"
-                        variant="subtitle1"
-                        color="text.primary"
-                        fontWeight={500}
-                      >
-                        {report.subject}
-                      </Typography>
-                      {getStatusChip(report)}
-                    </Box>
-                  }
-                  secondary={
-                    <Box>
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.primary"
-                        sx={{ 
-                          display: 'inline',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: '80%'
-                        }}
-                      >
-                        {report.message.length > 60 
-                          ? `${report.message.substring(0, 60)}...` 
-                          : report.message}
-                      </Typography>
-                      <Typography
-                        component="div"
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mt: 0.5 }}
-                      >
-                        Submitted {formatDistanceToNow(new Date(report.createdAt))} ago
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </ListItem>
-              <Collapse 
-                in={expandedId === report._id} 
-                timeout="auto" 
-                unmountOnExit 
-                sx={{ px: 2, pb: 2 }}
-              >
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Your report:
-                </Typography>
-                <Typography variant="body2" paragraph sx={{ whiteSpace: 'pre-wrap' }}>
-                  {report.message}
-                </Typography>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {message.isBugReport ? (
+                          <Bug className="h-5 w-5 text-destructive" />
+                        ) : (
+                          <Mail className="h-5 w-5 text-primary" />
+                        )}
+                        <div className="flex flex-col items-start">
+                          <h4 className="font-semibold text-foreground">
+                            {message.subject}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getStatusColor(message.status)}>
+                          {getStatusLabel(message.status)}
+                        </Badge>
+                        {message.adminReply && !message.replyRead && (
+                          <Badge variant="destructive">New Reply</Badge>
+                        )}
+                        {expandedId === message._id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
                 
-                {report.adminReply && (
-                  <>
-                    <Typography 
-                      variant="subtitle2" 
-                      color="success.main" 
-                      gutterBottom 
-                      sx={{ mt: 2, display: 'flex', alignItems: 'center' }}
-                    >
-                      <ReplyIcon fontSize="small" sx={{ mr: 0.5 }} />
-                      Admin response:
-                      {!report.replyRead && (
-                        <Chip 
-                          label="New" 
-                          color="success" 
-                          size="small" 
-                          sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} 
-                        />
-                      )}
-                    </Typography>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', bgcolor: 'rgba(0, 128, 0, 0.05)', p: 1, borderRadius: 1 }}>
-                      {report.adminReply}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                      Replied {formatDistanceToNow(new Date(report.adminReplyDate))} ago
-                    </Typography>
-                  </>
-                )}
-              </Collapse>
-            </React.Fragment>
+                <CollapsibleContent>
+                  <div className="px-4 pb-4 space-y-4">
+                    <div>
+                      <h5 className="font-medium text-foreground mb-2">Your Message</h5>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {message.message}
+                      </p>
+                    </div>
+                    
+                    {message.adminReply && (
+                      <div>
+                        <h5 className="font-medium text-foreground mb-2 flex items-center space-x-2">
+                          <Reply className="h-4 w-4" />
+                          <span>Admin Reply</span>
+                          {!message.replyRead && (
+                            <Badge variant="outline" className="text-xs">
+                              Unread
+                            </Badge>
+                          )}
+                        </h5>
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <p className="text-sm text-foreground whitespace-pre-wrap">
+                            {message.adminReply}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Replied {formatDistanceToNow(new Date(message.adminReplyDate || message.updatedAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                        
+                        {!message.replyRead && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markReplyAsRead(message._id)}
+                            className="mt-2"
+                          >
+                            Mark as Read
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
           ))}
-        </List>
-      )}
-    </Paper>
+        </div>
+        
+        <div className="mt-6 text-center">
+          <Button onClick={openContactForm}>
+            <Mail className="mr-2 h-4 w-4" />
+            Send New Message
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

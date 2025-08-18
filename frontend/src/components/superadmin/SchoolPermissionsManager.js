@@ -1,611 +1,389 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { toast } from 'react-toastify';
 import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardHeader,
-  Switch,
-  FormControlLabel,
-  FormGroup,
-  Button,
-  Alert,
-  CircularProgress,
-  Divider,
-  Chip,
-  IconButton,
-  Collapse,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  TextField,
-  InputAdornment,
-  Tooltip
-} from '@mui/material';
-import {
-  School as SchoolIcon,
-  Settings as SettingsIcon,
-  Save as SaveIcon,
-  Refresh as RefreshIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  Search as SearchIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Info as InfoIcon
-} from '@mui/icons-material';
-import { green, red, orange, blue } from '@mui/material/colors';
-import axios from 'axios';
+  Settings, 
+  Check, 
+  X, 
+  Save, 
+  RefreshCw, 
+  School, 
+  Shield, 
+  Users, 
+  Eye, 
+  EyeOff,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
+import { Separator } from '../ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { API_URL } from '../../config/appConfig';
-import { useSelector } from 'react-redux';
 
-/**
- * School Permissions Management Components
- * Comprehensive interface for superadmins to manage school feature permissions
- */
 const SchoolPermissionsManager = () => {
-  const { user } = useSelector((state) => state.auth);
-  const token = user?.token; // Token is INSIDE the user object
-  
-  // DEBUG: Log auth state to troubleshoot
-  console.log('🔍 [SchoolPermissionsManager] Auth state:', { user, token: token ? 'Present' : 'Missing', userRole: user?.role });
-  
-  // State management
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [expandedSchools, setExpandedSchools] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [availableFeatures, setAvailableFeatures] = useState({});
-  const [pendingChanges, setPendingChanges] = useState({});
-  const [saving, setSaving] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [expandedSchools, setExpandedSchools] = useState(new Set());
+  const [permissions, setPermissions] = useState({});
+  const [error, setError] = useState('');
 
-  // Fetch schools and their permissions
-  const fetchSchoolsWithPermissions = async () => {
+  const { token } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    fetchSchools();
+  }, []);
+
+  const fetchSchools = async () => {
     try {
-      console.log('🔄 [SchoolPermissions] Starting to fetch schools with permissions...');
       setLoading(true);
-      setError(null);
-      
-      const config = {
+      const response = await fetch(`${API_URL}/api/schools`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      };
-
-      console.log('📡 [SchoolPermissions] Making API request to:', `${API_URL}/api/school-permissions/all`);
-      console.log('🔑 [SchoolPermissions] Using token:', token ? 'Present' : 'Missing');
-      
-      // Fetch all schools with permissions
-      const response = await axios.get(`${API_URL}/api/school-permissions/all`, config);
-      
-      console.log('📋 [SchoolPermissions] API Response:', response.data);
-      
-      if (response.data && response.data.success) {
-        // DEFENSIVE: Filter out schools with invalid data to prevent crashes
-        const validSchools = (response.data.data.schools || []).filter(schoolData => {
-          if (!schoolData?.school) {
-            console.warn('⚠️ [SchoolPermissions] Skipping school data without school object:', schoolData);
-            return false;
-          }
-          
-          if (!schoolData.school.name || typeof schoolData.school.name !== 'string') {
-            console.warn('⚠️ [SchoolPermissions] Skipping school with invalid name:', {
-              schoolId: schoolData.school._id,
-              name: schoolData.school.name,
-              nameType: typeof schoolData.school.name
-            });
-            return false;
-          }
-          
-          return true;
-        });
-        
-        // CRITICAL FIX: Map the nested school data structure to flat structure expected by UI
-        const mappedSchools = validSchools.map(schoolData => ({
-          // School basic info (flattened from nested structure)
-          _id: schoolData.school._id,
-          name: schoolData.school.name,
-          emailDomain: schoolData.school.emailDomain,
-          address: schoolData.school.address,
-          active: schoolData.school.active,
-          
-          // Permissions data
-          permissions: schoolData.permissions,
-          
-          // Original nested data for reference
-          originalData: schoolData
-        }));
-        
-        console.log(`✅ [SchoolPermissions] Loaded ${mappedSchools.length} valid schools (filtered from ${response.data.data.schools?.length || 0} total)`);
-        console.log('🔍 [SchoolPermissions] Sample mapped school:', mappedSchools[0]);
-        
-        setSchools(mappedSchools);
-      } else {
-        console.error('❌ [SchoolPermissions] API returned unsuccessful response:', response.data);
-        setError('Failed to load schools - API returned unsuccessful response');
-      }
-      
-    } catch (error) {
-      console.error('💥 [SchoolPermissions] Error fetching schools:', error);
-      console.error('💥 [SchoolPermissions] Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        url: error.config?.url
       });
-      setError(error.response?.data?.message || `Failed to load schools: ${error.message}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setSchools(data.schools || []);
+        
+        // Initialize permissions state
+        const initialPermissions = {};
+        data.schools.forEach(school => {
+          initialPermissions[school._id] = {
+            features: school.features || {},
+            permissions: school.permissions || {}
+          };
+        });
+        setPermissions(initialPermissions);
+      } else {
+        throw new Error('Failed to fetch schools');
+      }
+    } catch (error) {
+      console.error('Error fetching schools:', error);
+      setError('Failed to fetch schools');
+      toast.error('Failed to fetch schools');
     } finally {
       setLoading(false);
-      console.log('🏁 [SchoolPermissions] Finished loading schools');
     }
   };
 
-  // Fetch available features
-  const fetchAvailableFeatures = async () => {
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      };
-
-      console.log('🔍 [SchoolPermissions] Fetching available features...');
-      const response = await axios.get(`${API_URL}/api/school-permissions/features`, config);
-      
-      console.log('📋 [SchoolPermissions] Features API response:', response.data);
-      
-      if (response.data && response.data.success) {
-        const features = response.data.data.features || {};
-        console.log('✅ [SchoolPermissions] Available features loaded:', features);
-        setAvailableFeatures(features);
-      } else {
-        console.warn('⚠️ [SchoolPermissions] Features API unsuccessful, using fallback');
-        // Fallback feature names if API fails
-        setAvailableFeatures(getDefaultFeatureNames());
-      }
-      
-    } catch (error) {
-      console.error('💥 [SchoolPermissions] Error fetching features:', error);
-      // Use fallback on error
-      setAvailableFeatures(getDefaultFeatureNames());
-    }
-  };
-  
-  // Fallback feature names in case API fails
-  const getDefaultFeatureNames = () => ({
-    enableGrades: 'Grade Management',
-    enableClasses: 'Class Management', 
-    enableSubjects: 'Subject Management',
-    enableStudents: 'Student Management',
-    enableTeachers: 'Teacher Management',
-    enableNotifications: 'Notifications',
-    enableContactDeveloper: 'Contact Developer',
-    enableCalendar: 'Calendar',
-    enableSchedule: 'Schedule',
-    enableRatingSystem: 'Rating System',
-    enableAnalytics: 'Analytics',
-    enableUserManagement: 'User Management',
-    enableSchoolSettings: 'School Settings',
-    enableSystemMaintenance: 'System Maintenance',
-    enableBugReports: 'Bug Reports',
-    enableDirections: 'Directions',
-    enablePatchNotes: 'Patch Notes',
-    enableStudentProgress: 'Student Progress'
-  });
-
-  // Initial data load
-  useEffect(() => {
-    console.log('🔄 [SchoolPermissionsManager] useEffect triggered with:', {
-      userRole: user?.role,
-      hasToken: !!token,
-      tokenLength: token?.length,
-      userId: user?._id || user?.id
-    });
-    
-    if (user?.role === 'superadmin' && token) {
-      console.log('✅ [SchoolPermissionsManager] Conditions met, calling fetchSchoolsWithPermissions');
-      fetchSchoolsWithPermissions();
-      fetchAvailableFeatures();
-    } else {
-      console.log('❌ [SchoolPermissionsManager] Conditions not met:', {
-        isSuperadmin: user?.role === 'superadmin',
-        hasToken: !!token,
-        actualRole: user?.role
-      });
-    }
-  }, [user, token]);
-
-  // Handle feature toggle
-  const handleFeatureToggle = (schoolId, featureKey, newValue) => {
-    console.log(`🔄 [SchoolPermissions] Toggle triggered:`, {
-      schoolId,
-      featureKey,
-      newValue,
-      schoolIdType: typeof schoolId,
-      currentPendingChanges: pendingChanges
-    });
-    
-    // DEFENSIVE: Ensure schoolId is valid
-    if (!schoolId || schoolId === 'undefined') {
-      console.error('🚨 [SchoolPermissions] Invalid school ID in toggle:', schoolId);
-      setError('Invalid school ID - cannot update permissions');
-      return;
-    }
-    
-    setPendingChanges(prev => {
-      const updated = {
-        ...prev,
-        [schoolId]: {
-          ...prev[schoolId],
-          [featureKey]: newValue
-        }
-      };
-      
-      console.log(`✅ [SchoolPermissions] Updated pending changes:`, {
-        schoolId,
-        featureKey,
-        newValue,
-        updatedState: updated
-      });
-      
-      return updated;
-    });
-  };
-
-  // Save changes for a school
-  const saveSchoolPermissions = async (schoolId) => {
-    try {
-      setSaving(prev => ({ ...prev, [schoolId]: true }));
-      setError(null);
-      setSuccess(null);
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      };
-
-      const features = pendingChanges[schoolId] || {};
-      
-      const response = await axios.put(
-        `${API_URL}/api/school-permissions/${schoolId}`,
-        { features },
-        config
-      );
-
-      if (response.data && response.data.success) {
-        // Update the local state with the saved permissions
-        setSchools(prev => 
-          prev.map(school => 
-            school._id === schoolId 
-              ? { ...school, permissions: response.data.data.permissions }
-              : school
-          )
-        );
-        
-        // Clear pending changes for this school
-        setPendingChanges(prev => {
-          const newPending = { ...prev };
-          delete newPending[schoolId];
-          return newPending;
-        });
-        
-        setSuccess(`Permissions updated successfully for ${response.data.data.school.name}`);
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(null), 3000);
-        
-      } else {
-        setError('Failed to save permissions');
-      }
-      
-    } catch (error) {
-      console.error('Error saving permissions:', error);
-      setError(error.response?.data?.message || 'Failed to save permissions');
-    } finally {
-      setSaving(prev => ({ ...prev, [schoolId]: false }));
-    }
-  };
-
-  // Toggle school expansion
   const toggleSchoolExpansion = (schoolId) => {
-    setExpandedSchools(prev => ({
+    const newExpanded = new Set(expandedSchools);
+    if (newExpanded.has(schoolId)) {
+      newExpanded.delete(schoolId);
+    } else {
+      newExpanded.add(schoolId);
+    }
+    setExpandedSchools(newExpanded);
+  };
+
+  const handleFeatureToggle = (schoolId, featureKey, enabled) => {
+    setPermissions(prev => ({
       ...prev,
-      [schoolId]: !prev[schoolId]
+      [schoolId]: {
+        ...prev[schoolId],
+        features: {
+          ...prev[schoolId]?.features,
+          [featureKey]: enabled
+        }
+      }
     }));
   };
 
-  // Get current feature value (including pending changes)
-  const getFeatureValue = (school, featureKey) => {
-    const pendingValue = pendingChanges[school._id]?.[featureKey];
-    if (pendingValue !== undefined) {
-      return pendingValue;
+  const handlePermissionToggle = (schoolId, permissionKey, enabled) => {
+    setPermissions(prev => ({
+      ...prev,
+      [schoolId]: {
+        ...prev[schoolId],
+        permissions: {
+          ...prev[schoolId]?.permissions,
+          [permissionKey]: enabled
+        }
+      }
+    }));
+  };
+
+  const saveSchoolPermissions = async (schoolId) => {
+    try {
+      setSaving(true);
+      const schoolPermissions = permissions[schoolId];
+      
+      const response = await fetch(`${API_URL}/api/schools/${schoolId}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          features: schoolPermissions.features,
+          permissions: schoolPermissions.permissions
+        })
+      });
+
+      if (response.ok) {
+        toast.success('School permissions updated successfully');
+        
+        // Update the schools state with new permissions
+        setSchools(prev => prev.map(school => 
+          school._id === schoolId 
+            ? { 
+                ...school, 
+                features: schoolPermissions.features,
+                permissions: schoolPermissions.permissions
+              }
+            : school
+        ));
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update permissions');
+      }
+    } catch (error) {
+      console.error('Error saving permissions:', error);
+      toast.error(error.message || 'Failed to save permissions');
+    } finally {
+      setSaving(false);
     }
-    return school.permissions?.features?.[featureKey] || false;
   };
 
-  // Check if there are pending changes for a school
-  const hasPendingChanges = (schoolId) => {
-    return pendingChanges[schoolId] && Object.keys(pendingChanges[schoolId]).length > 0;
+  const saveAllPermissions = async () => {
+    try {
+      setSaving(true);
+      const promises = Object.keys(permissions).map(schoolId => 
+        saveSchoolPermissions(schoolId)
+      );
+      
+      await Promise.all(promises);
+      toast.success('All school permissions updated successfully');
+    } catch (error) {
+      console.error('Error saving all permissions:', error);
+      toast.error('Failed to save all permissions');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Get feature statistics
-  const getFeatureStats = (featureKey) => {
-    const total = schools.length;
-    const enabled = schools.filter(school => 
-      getFeatureValue(school, featureKey)
-    ).length;
+  const resetToDefaults = async () => {
+    if (!window.confirm('Are you sure you want to reset all permissions to defaults? This action cannot be undone.')) {
+      return;
+    }
     
-    return { enabled, total, percentage: total > 0 ? (enabled / total * 100).toFixed(1) : 0 };
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_URL}/api/schools/reset-permissions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success('All permissions reset to defaults');
+        fetchSchools(); // Refresh the data
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reset permissions');
+      }
+    } catch (error) {
+      console.error('Error resetting permissions:', error);
+      toast.error(error.message || 'Failed to reset permissions');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Filter schools based on search term
-  const filteredSchools = schools.filter(school => {
-    // DEFENSIVE: Ensure school.name exists before calling toLowerCase
-    const schoolName = school.name || school.school?.name || '';
-    const searchLower = searchTerm.toLowerCase();
-    
-    return (
-      schoolName.toLowerCase().includes(searchLower) ||
-      school.emailDomain?.toLowerCase().includes(searchLower)
-    );
-  });
+  const getFeatureIcon = (featureKey) => {
+    const icons = {
+      grades: '📊',
+      notifications: '🔔',
+      calendar: '📅',
+      reports: '📈',
+      analytics: '📊',
+      messaging: '💬',
+      attendance: '✅',
+      assignments: '📝',
+      exams: '📋',
+      parentPortal: '👨‍👩‍👧‍👦'
+    };
+    return icons[featureKey] || '⚙️';
+  };
 
-  // Feature categories - FIXED to use valid backend feature names from schoolPermissionsModel
-  const featureCategories = {
-    'Core Management': [
-      'enableUserManagement', 'enableClasses'
-    ],
-    'Grade Management': [
-      'enableGrades', 'enableAnalytics'
-    ],
-    'Notification Management': [
-      'enableNotifications'
-    ],
-    'School Administration': [
-      'enableSchedule', 'enableSchoolSettings'
-    ],
-    'Communication': [
-      'enableContact'
-    ]
+  const getPermissionIcon = (permissionKey) => {
+    const icons = {
+      create: '➕',
+      read: '👁️',
+      update: '✏️',
+      delete: '🗑️',
+      manage: '⚙️',
+      approve: '✅',
+      export: '📤',
+      import: '📥'
+    };
+    return icons[permissionKey] || '🔐';
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-        <Typography variant="h6" sx={{ ml: 2 }}>
-          Loading school permissions...
-        </Typography>
-      </Box>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading school permissions...</p>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          School Permissions Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage feature permissions for all schools in the system
-        </Typography>
-      </Box>
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="mb-6">
+        <div className="flex items-center space-x-3 mb-2">
+          <Shield className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground">School Permissions Manager</h1>
+        </div>
+        <p className="text-muted-foreground">
+          Manage feature access and permissions for all schools in the system
+        </p>
+      </div>
 
-      {/* Controls */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Search Schools"
-              variant="outlined"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Box display="flex" gap={2} justifyContent="flex-end">
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={fetchSchoolsWithPermissions}
-              >
-                Refresh
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <Button onClick={saveAllPermissions} disabled={saving} className="sm:w-auto">
+          <Save className="mr-2 h-4 w-4" />
+          {saving ? 'Saving...' : 'Save All Changes'}
+        </Button>
+        <Button onClick={resetToDefaults} variant="outline" disabled={saving} className="sm:w-auto">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Reset to Defaults
               </Button>
-              <Chip
-                label={`${filteredSchools.length} Schools`}
-                color="primary"
-                variant="outlined"
-              />
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+      </div>
 
-      {/* Alerts */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+          <p className="text-destructive">{error}</p>
+        </div>
       )}
 
-      {/* Feature Statistics */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Feature Usage Statistics
-        </Typography>
-        <Grid container spacing={2}>
-          {Object.keys(availableFeatures).map(featureKey => {
-            const stats = getFeatureStats(featureKey);
-            return (
-              <Grid item xs={12} sm={6} md={4} key={featureKey}>
-                <Card variant="outlined">
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {availableFeatures[featureKey]}
-                    </Typography>
-                    <Box display="flex" alignItems="center" gap={1} mt={1}>
-                      <Typography variant="h6">
-                        {stats.enabled}/{stats.total}
-                      </Typography>
-                      <Chip 
-                        label={`${stats.percentage}%`} 
-                        size="small"
-                        color={stats.percentage >= 80 ? 'success' : stats.percentage >= 50 ? 'warning' : 'error'}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-      </Paper>
-
-      {/* Schools List */}
-      <Grid container spacing={3}>
-        {filteredSchools.map((school) => (
-          <Grid item xs={12} key={school._id}>
-            <Card>
-              <CardHeader
-                avatar={<SchoolIcon color="primary" />}
-                title={school.name}
-                subheader={
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {school.emailDomain} • {school.address}
-                    </Typography>
-                    {school.permissions && (
-                      <Box sx={{ mt: 1 }}>
-                        <Chip
-                          label={school.active ? 'Active' : 'Inactive'}
-                          color={school.active ? 'success' : 'error'}
-                          size="small"
-                          sx={{ mr: 1 }}
-                        />
-                        {hasPendingChanges(school._id) && (
-                          <Chip
-                            label="Unsaved Changes"
-                            color="warning"
-                            size="small"
-                            sx={{ mr: 1 }}
-                          />
-                        )}
-                      </Box>
-                    )}
-                  </Box>
-                }
-                action={
-                  <Box>
-                    {hasPendingChanges(school._id) && (
-                      <Button
-                        variant="contained"
-                        startIcon={<SaveIcon />}
-                        onClick={() => saveSchoolPermissions(school._id)}
-                        disabled={saving[school._id]}
-                        sx={{ mr: 1 }}
-                      >
-                        {saving[school._id] ? <CircularProgress size={20} /> : 'Save'}
-                      </Button>
-                    )}
-                    <IconButton
+      <div className="space-y-4">
+        {schools.map((school) => (
+          <Card key={school._id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <School className="h-6 w-6 text-primary" />
+                  <div>
+                    <CardTitle className="text-lg">{school.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {school.location} • {school.students?.length || 0} students
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={school.active ? "default" : "secondary"}>
+                    {school.active ? "Active" : "Inactive"}
+                  </Badge>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => toggleSchoolExpansion(school._id)}
                     >
-                      {expandedSchools[school._id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                    </IconButton>
-                  </Box>
-                }
-              />
-              
-              <Collapse in={expandedSchools[school._id]}>
-                <CardContent>
-                  {school.permissions ? (
-                    <Box>
-                      {Object.entries(featureCategories).map(([categoryName, features]) => (
-                        <Box key={categoryName} sx={{ mb: 3 }}>
-                          <Typography variant="h6" gutterBottom>
-                            {categoryName}
-                          </Typography>
-                          <FormGroup>
-                            <Grid container spacing={2}>
-                              {features.map((featureKey) => (
-                                <Grid item xs={12} sm={6} md={4} key={featureKey}>
-                                  <FormControlLabel
-                                    control={
-                                      <Switch
-                                        checked={getFeatureValue(school, featureKey)}
-                                        onChange={(e) => handleFeatureToggle(school._id, featureKey, e.target.checked)}
-                                        color="primary"
-                                      />
-                                    }
-                                    label={
-                                      <Box>
-                                        <Typography variant="body2">
-                                          {availableFeatures[featureKey] || featureKey}
-                                        </Typography>
-                                        {pendingChanges[school._id]?.[featureKey] !== undefined && (
-                                          <Typography variant="caption" color="warning.main">
-                                            Changed
-                                          </Typography>
-                                        )}
-                                      </Box>
-                                    }
-                                  />
-                                </Grid>
-                              ))}
-                            </Grid>
-                          </FormGroup>
-                          <Divider sx={{ mt: 2 }} />
-                        </Box>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Alert severity="error">
-                      Failed to load permissions for this school
-                    </Alert>
-                  )}
-                </CardContent>
-              </Collapse>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                      {expandedSchools.has(school._id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+            </CardHeader>
 
-      {filteredSchools.length === 0 && !loading && (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary">
-            No schools found
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {searchTerm ? 'Try adjusting your search criteria' : 'No schools are available'}
-          </Typography>
-        </Paper>
+            <Collapsible open={expandedSchools.has(school._id)}>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="space-y-6">
+                    {/* Features Section */}
+                    <div>
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Settings className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold">Features</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(permissions[school._id]?.features || {}).map(([featureKey, enabled]) => (
+                          <div key={featureKey} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{getFeatureIcon(featureKey)}</span>
+                              <Label className="text-sm font-medium capitalize">
+                                {featureKey.replace(/([A-Z])/g, ' $1').trim()}
+                              </Label>
+                            </div>
+                            <Switch
+                              checked={enabled}
+                              onCheckedChange={(checked) => handleFeatureToggle(school._id, featureKey, checked)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Permissions Section */}
+                    <div>
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Shield className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold">Permissions</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(permissions[school._id]?.permissions || {}).map(([permissionKey, enabled]) => (
+                          <div key={permissionKey} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{getPermissionIcon(permissionKey)}</span>
+                              <Label className="text-sm font-medium capitalize">
+                                {permissionKey.replace(/([A-Z])/g, ' $1').trim()}
+                              </Label>
+                            </div>
+                            <Switch
+                              checked={enabled}
+                              onCheckedChange={(checked) => handlePermissionToggle(school._id, permissionKey, checked)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end pt-4 border-t">
+                      <Button
+                        onClick={() => saveSchoolPermissions(school._id)}
+                        disabled={saving}
+                        size="sm"
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+            </Card>
+        ))}
+      </div>
+
+      {schools.length === 0 && (
+        <div className="text-center py-12">
+          <School className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">No Schools Found</h3>
+          <p className="text-muted-foreground">
+            There are no schools in the system to manage permissions for.
+          </p>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

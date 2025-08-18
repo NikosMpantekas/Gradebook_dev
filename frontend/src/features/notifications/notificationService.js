@@ -99,26 +99,13 @@ const getMyNotifications = async (token) => {
       if (response.data?.length === 0) {
         console.log('Received empty array from server - this is normal if user has no notifications');
       }
-      
-      // Log the first few notifications to help with debugging
-      if (response.data && response.data.length > 0) {
-        console.log('Sample notifications:', response.data.slice(0, 2).map(n => ({
-          id: n._id,
-          title: n.title,
-          sender: n.sender?.name || 'Unknown'
-        })));
-      }
+      return response.data || [];
     } else {
-      console.warn(`Unexpected response status: ${response.status}`);
+      console.error(`Unexpected status ${response.status} when fetching my notifications`);
+      return [];
     }
-    
-    // Ensure we always return an array, even if the API returns null/undefined
-    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    console.error('Error getting my notifications:', error?.response?.status || 'No status', 
-      error?.response?.data?.message || error.message);
-    // Instead of throwing, return an empty array with error logging
-    // This prevents the UI from crashing
+    console.error('Error fetching my notifications:', error);
     return [];
   }
 };
