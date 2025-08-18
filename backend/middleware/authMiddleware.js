@@ -508,6 +508,34 @@ const canAccessContact = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Legacy function mappings for backward compatibility
+const canManageSubjects = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+    return requireSchoolFeature('enableClasses')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canManageDirections = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+    return requireSchoolFeature('enableClasses')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canAccessStudentProgress = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin' || req.user.role === 'teacher')) {
+    return requireSchoolFeature('enableAnalytics')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
 // Middleware to check if user is a student
 const student = asyncHandler(async (req, res, next) => {
   if (!req.user) {
@@ -588,5 +616,10 @@ module.exports = {
   canAccessAnalytics,
   canManageSchedule,
   canAccessRatings,
-  canAccessContact
+  canAccessContact,
+  // Legacy compatibility functions
+  canManageSubjects,
+  canManageDirections,
+  canAccessStudentProgress,
+  canManageStudents
 };
