@@ -32,7 +32,8 @@ const SchoolPermissionsManager = () => {
   const [permissions, setPermissions] = useState({});
   const [error, setError] = useState('');
 
-  const { token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  const token = user?.token;
 
   useEffect(() => {
     fetchSchools();
@@ -41,7 +42,7 @@ const SchoolPermissionsManager = () => {
   const fetchSchools = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/schools`, {
+      const response = await fetch(`${API_URL}/api/school-permissions/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -50,11 +51,12 @@ const SchoolPermissionsManager = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setSchools(data.schools || []);
+        const schools = data.schools || data || [];
+        setSchools(schools);
         
         // Initialize permissions state
         const initialPermissions = {};
-        data.schools.forEach(school => {
+        schools.forEach(school => {
           initialPermissions[school._id] = {
             features: school.features || {},
             permissions: school.permissions || {}
@@ -114,7 +116,7 @@ const SchoolPermissionsManager = () => {
       setSaving(true);
       const schoolPermissions = permissions[schoolId];
       
-      const response = await fetch(`${API_URL}/api/schools/${schoolId}/permissions`, {
+      const response = await fetch(`${API_URL}/api/school-permissions/${schoolId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
