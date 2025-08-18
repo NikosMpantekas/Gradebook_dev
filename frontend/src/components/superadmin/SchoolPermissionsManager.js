@@ -285,40 +285,40 @@ const SchoolPermissionsManager = () => {
         {Array.isArray(schools) && schools.map((schoolData) => {
           const school = schoolData.school || schoolData;
           return (
-          <Card key={school._id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <School className="h-6 w-6 text-primary" />
-                  <div>
-                    <CardTitle className="text-lg">{school.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {school.location} • {school.students?.length || 0} students
-                    </p>
+          <Collapsible key={school._id} open={expandedSchools.has(school._id)}>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <School className="h-6 w-6 text-primary" />
+                    <div>
+                      <CardTitle className="text-lg">{school.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {school.location} • {school.students?.length || 0} students
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={school.active ? "default" : "secondary"}>
+                      {school.active ? "Active" : "Inactive"}
+                    </Badge>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSchoolExpansion(school._id)}
+                      >
+                        {expandedSchools.has(school._id) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={school.active ? "default" : "secondary"}>
-                    {school.active ? "Active" : "Inactive"}
-                  </Badge>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleSchoolExpansion(school._id)}
-                    >
-                      {expandedSchools.has(school._id) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
-                </div>
-              </div>
-            </CardHeader>
+              </CardHeader>
 
-            <Collapsible open={expandedSchools.has(school._id)}>
               <CollapsibleContent>
                 <CardContent className="pt-0">
                   <div className="space-y-6">
@@ -386,8 +386,8 @@ const SchoolPermissionsManager = () => {
                   </div>
                 </CardContent>
               </CollapsibleContent>
-            </Collapsible>
             </Card>
+          </Collapsible>
           );
         })}
       </div>
