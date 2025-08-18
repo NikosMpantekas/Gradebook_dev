@@ -458,29 +458,34 @@ const Schedule = () => {
     return `${hours}:${minutes}`;
   };
 
-  // Get events for a specific day and time slot - UPDATED to prevent splitting
+  // Get events for a specific time slot and day
   const getEventsForTimeSlot = (day, timeSlot) => {
-    if (!scheduleData || !scheduleData[day]) {
-      console.log(`Schedule - No data for day: ${day}`);
-      return [];
-    }
+    if (!scheduleData || !scheduleData[day]) return [];
     
-    // Only return events that START at this time slot (not events that span through it)
-    const timeSlotHour = parseInt(timeSlot.split(':')[0]);
-    const events = scheduleData[day].filter(event => {
-      const startHour = parseInt(event.startTime.split(':')[0]);
-      const startMinute = parseInt(event.startTime.split(':')[1]);
+    const events = scheduleData[day];
+    if (!Array.isArray(events)) return [];
+    
+    return events.filter(event => {
+      const eventStartTime = event.startTime;
       
-      // Only include events that start exactly at this hour (regardless of minutes)
-      return startHour === timeSlotHour;
+      // Check if time slot matches (exact match or within the hour)
+      if (eventStartTime === timeSlot) return true;
+      
+      // Handle time slots that might be within the hour
+      const [eventHour] = eventStartTime.split(':');
+      const [slotHour] = timeSlot.split(':');
+      return eventHour === slotHour;
     });
+  };
+
+  // Get all events for a specific day (for mobile display)
+  const getAllEventsForDay = (day) => {
+    if (!scheduleData || !scheduleData[day]) return [];
     
-    if (events.length > 0) {
-      console.log(`Schedule - Day: ${day}, TimeSlot: ${timeSlot}, Events starting at this hour: ${events.length}`);
-      console.log('Schedule - Event subjects:', events.map(e => `${e.subject} (${e.startTime}-${e.endTime})`).join(', '));
-    }
+    const events = scheduleData[day];
+    if (!Array.isArray(events)) return [];
     
-    return events;
+    return events.sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
   // Calculate how many time slots an event spans and its exact positioning
@@ -740,8 +745,8 @@ if (loading) {
         </CardHeader>
       </Card>
 
-      {/* Calendar Grid */}
-      <Card>
+      {/* Calendar Grid - Desktop Only */}
+      <Card className="hidden lg:block">
         <CardContent className="p-4">
           <div className="overflow-x-auto">
             <div className="grid grid-cols-1 lg:grid-cols-8 gap-0 min-w-[800px]">
@@ -779,14 +784,9 @@ if (loading) {
                     return (
                       <div
                         key={`${day}-${timeSlot}`}
-                        className="border-r border-border border-b border-border min-h-[60px] bg-background relative overflow-visible"
+                        className="border-r border-border border-b border-border bg-background relative min-h-[60px]"
                       >
-                        {mergedEvents.map((event) => {
-                          const eventKey = `${event._id}-${timeSlot}`;
-                          if (renderedEventsRef.current.has(eventKey)) return null;
-                          renderedEventsRef.current.add(eventKey);
-                          return renderEvent(event, true);
-                        })}
+                        {mergedEvents.map((event, index) => renderEvent(event, false))}
                       </div>
                     );
                   })}
@@ -797,20 +797,41 @@ if (loading) {
         </CardContent>
       </Card>
 
+      {/* Mobile Schedule Display */}
+      <Card className="lg:hidden">
+        <CardContent className="p-4">
+          <div className="space-y-4">
+            {daysOfWeek.map((day) => {
+              const dayEvents = getAllEventsForDay(day);
+              if (dayEvents.length === 0) return null;
+              
+              return (
+                <div key={day} className="space-y-3">
+                  <h3 className="text-lg font-semibold text-primary border-b border-border pb-2">
+                    {day}
+                  </h3>
+                  {dayEvents.map((event, index) => renderMobileEvent(event, index))}
+                </div>
+              );
+            })}
+            
+            {/* Show message if no events */}
+            {daysOfWeek.every(day => getAllEventsForDay(day).length === 0) && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No classes scheduled for this week</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Event Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex justify-between items-center">
-              <span>Class Details</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDialogOpen(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+            <DialogTitle>
+              Class Details
             </DialogTitle>
           </DialogHeader>
           {selectedEvent && (

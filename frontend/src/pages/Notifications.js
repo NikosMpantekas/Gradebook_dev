@@ -201,7 +201,7 @@ const Notifications = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="w-full mx-auto p-4 sm:p-6">
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -227,11 +227,11 @@ const Notifications = () => {
         
         <CardContent>
           <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="received" className="relative">
-                Received
+            <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <TabsTrigger value="received" className="relative flex items-center justify-center">
+                <span>Received</span>
                 {unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs">
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Badge>
                 )}

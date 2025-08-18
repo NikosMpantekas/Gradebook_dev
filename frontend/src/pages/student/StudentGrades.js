@@ -1,49 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
-  Typography, 
-  Paper, 
-  Box, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow,
-  TablePagination,
-  Chip,
-  CircularProgress,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Card,
-  CardContent,
-  IconButton,
-  Tooltip,
-  Grid,
-  useMediaQuery,
-  useTheme,
-  Button,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+  Search,
+  Eye,
+  TrendingUp,
+  Award,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  BookOpen,
+  Calendar,
+  User
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title } from 'chart.js';
-import { Pie, Line } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
 import { getStudentGrades } from '../../features/grades/gradeSlice';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Badge } from '../../components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
+import { TooltipProvider } from '../../components/ui/tooltip';
 
 // Register ChartJS components
-ChartJS.register(ArcElement, ChartTooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
+ChartJS.register(ArcElement, ChartTooltip, Legend);
 
 const StudentGrades = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const { user } = useSelector((state) => state.auth);
   const { grades, isLoading } = useSelector((state) => state.grades);
@@ -59,7 +47,6 @@ const StudentGrades = () => {
     lowestGrade: 0,
     passingRate: 0,
     gradeDistribution: {},
-    progressOverTime: [],
   });
 
   useEffect(() => {
@@ -116,51 +103,22 @@ const StudentGrades = () => {
       'E (50-59)': grades.filter(grade => grade.value >= 50 && grade.value < 60).length,
       'F (0-49)': grades.filter(grade => grade.value < 50).length,
     };
-    
-    // Calculate progress over time
-    // Group grades by month and calculate average
-    const sortedGrades = [...grades].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const progressData = [];
-    
-    // Group grades by month for the chart
-    const monthlyData = {};
-    sortedGrades.forEach(grade => {
-      const monthYear = format(new Date(grade.date), 'MMM yyyy');
-      if (!monthlyData[monthYear]) {
-        monthlyData[monthYear] = {
-          total: grade.value,
-          count: 1
-        };
-      } else {
-        monthlyData[monthYear].total += grade.value;
-        monthlyData[monthYear].count += 1;
-      }
-    });
-    
-    // Calculate monthly averages
-    Object.keys(monthlyData).forEach(month => {
-      progressData.push({
-        month,
-        average: monthlyData[month].total / monthlyData[month].count
-      });
-    });
-    
+
     setGradeStats({
       average: average.toFixed(2),
       highestGrade,
       lowestGrade,
       passingRate: passingRate.toFixed(2),
       gradeDistribution: distribution,
-      progressOverTime: progressData,
     });
   };
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (newPage) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+  const handleChangeRowsPerPage = (newRowsPerPage) => {
+    setRowsPerPage(parseInt(newRowsPerPage, 10));
     setPage(0);
   };
 
@@ -201,449 +159,227 @@ const StudentGrades = () => {
     ],
   };
 
-  // Prepare data for Line chart
-  const lineData = {
-    labels: gradeStats.progressOverTime ? gradeStats.progressOverTime.map(item => item.month) : [],
-    datasets: [
-      {
-        label: 'Average Grade',
-        data: gradeStats.progressOverTime ? gradeStats.progressOverTime.map(item => item.average) : [],
-        fill: false,
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        tension: 0.4,
-      },
-    ],
+  const getGradeColor = (grade) => {
+    if (grade >= 80) return 'bg-green-500 text-white';
+    if (grade >= 60) return 'bg-blue-500 text-white';
+    if (grade >= 50) return 'bg-yellow-500 text-white';
+    return 'bg-red-500 text-white';
   };
 
-  const lineOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: false,
-      },
-    },
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-      },
-    },
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <Box sx={{ flexGrow: 1, px: { xs: 1, sm: 2, md: 3 } }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold', textAlign: { xs: 'center', sm: 'left' } }}>
-        My Grades
-      </Typography>
-      
-      {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-          <CircularProgress />
-        </Box>
-      ) : displayedGrades.length === 0 ? (
-        <Paper sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
-          <Typography variant="h6" color="textSecondary">
-            No grades found
-          </Typography>
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-            There are no grades available for your account or with the current filters.
-          </Typography>
-        </Paper>
-      ) : (
-        <>
-          {/* Grade Stats Summary Cards - MOBILE OPTIMIZED */}
-          {grades && grades.length > 0 && (
-            <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'center' }}>
-              <Grid item xs={6} sm={3}>
-                <Card sx={{ 
-                  height: '100%',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  borderRadius: 2,
-                  p: { xs: 1, sm: 2 }, // Smaller padding on mobile
-                }}>
-                  <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
-                    <Typography 
-                      color="text.secondary" 
-                      gutterBottom
-                      sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, textAlign: 'center' }}
-                    >
-                      Average
-                    </Typography>
-                    <Typography 
-                      variant="h5" 
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'primary.main',
-                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                        textAlign: 'center'
-                      }}
-                    >
-                      {gradeStats.average}
-                    </Typography>
+    <TooltipProvider>
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">My Grades</h1>
+            <p className="text-muted-foreground mt-2">
+              View and track your academic performance
+            </p>
+          </div>
+        </div>
+
+        {grades && grades.length > 0 ? (
+          <>
+            {/* Stats Cards and Grade Distribution Chart - Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Average Grade */}
+                <Card>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <div className="flex items-center justify-center mb-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">Average</p>
+                    <p className="text-2xl font-bold text-primary">{gradeStats.average}</p>
                   </CardContent>
                 </Card>
-              </Grid>
-              
-              <Grid item xs={6} sm={3}>
-                <Card sx={{ 
-                  height: '100%', 
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  borderRadius: 2,
-                  p: { xs: 1, sm: 2 }, // Smaller padding on mobile
-                }}>
-                  <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
-                    <Typography 
-                      color="text.secondary" 
-                      gutterBottom
-                      sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, textAlign: 'center' }}
-                    >
-                      Highest
-                    </Typography>
-                    <Typography 
-                      variant="h5" 
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'success.main',
-                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                        textAlign: 'center'
-                      }}
-                    >
-                      {gradeStats.highestGrade}
-                    </Typography>
+
+                {/* Highest Grade */}
+                <Card>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <div className="flex items-center justify-center mb-2">
+                      <Award className="h-5 w-5 text-green-500" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">Highest</p>
+                    <p className="text-2xl font-bold text-green-500">{gradeStats.highestGrade}</p>
                   </CardContent>
                 </Card>
-              </Grid>
-              
-              <Grid item xs={6} sm={3}>
-                <Card sx={{ 
-                  height: '100%',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  borderRadius: 2,
-                  p: { xs: 1, sm: 2 }, // Smaller padding on mobile
-                }}>
-                  <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
-                    <Typography 
-                      color="text.secondary" 
-                      gutterBottom
-                      sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, textAlign: 'center' }}
-                    >
-                      Lowest
-                    </Typography>
-                    <Typography 
-                      variant="h5" 
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'error.main',
-                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                        textAlign: 'center'
-                      }}
-                    >
-                      {gradeStats.lowestGrade}
-                    </Typography>
+
+                {/* Lowest Grade */}
+                <Card>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <div className="flex items-center justify-center mb-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">Lowest</p>
+                    <p className="text-2xl font-bold text-red-500">{gradeStats.lowestGrade}</p>
                   </CardContent>
                 </Card>
-              </Grid>
-              
-              <Grid item xs={6} sm={3}>
-                <Card sx={{ 
-                  height: '100%',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  borderRadius: 2,
-                  p: { xs: 1, sm: 2 }, // Smaller padding on mobile
-                }}>
-                  <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
-                    <Typography 
-                      color="text.secondary" 
-                      gutterBottom
-                      sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, textAlign: 'center' }}
-                    >
-                      Passing Rate
-                    </Typography>
-                    <Typography 
-                      variant="h5" 
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        color: 'info.main',
-                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                        textAlign: 'center'
-                      }}
-                    >
-                      {gradeStats.passingRate}%
-                    </Typography>
+
+                {/* Passing Rate */}
+                <Card>
+                  <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                    <div className="flex items-center justify-center mb-2">
+                      <CheckCircle className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">Passing Rate</p>
+                    <p className="text-2xl font-bold text-blue-500">{gradeStats.passingRate}%</p>
                   </CardContent>
                 </Card>
-              </Grid>
-            </Grid>
-          )}
-          
-          {/* Charts Section - MOBILE OPTIMIZED with better centering */}
-          <Grid container spacing={3} sx={{ mb: 3, justifyContent: 'center' }}>
-            {/* Grade Distribution Chart */}
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ 
-                p: { xs: 2, sm: 3 }, 
-                borderRadius: 2, 
-                height: '100%',
-                mx: 'auto', // Center horizontally
-                width: '100%',
-                maxWidth: { xs: '100%', sm: '100%' }
-              }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', textAlign: { xs: 'center', sm: 'left' } }}>
-                  Grade Distribution
-                </Typography>
-                <Box sx={{ 
-                  height: 280, 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '100%'
-                }}>
-                  <Pie data={pieData} />
-                </Box>
-              </Paper>
-            </Grid>
-            
-            {/* Progress Over Time Chart */}
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ 
-                p: { xs: 2, sm: 3 }, 
-                borderRadius: 2, 
-                height: '100%',
-                mx: 'auto', // Center horizontally
-                width: '100%',
-                maxWidth: { xs: '100%', sm: '100%' }
-              }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', textAlign: { xs: 'center', sm: 'left' } }}>
-                  Progress Over Time
-                </Typography>
-                <Box sx={{ 
-                  height: 280, 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '100%'
-                }}>
-                  {gradeStats.progressOverTime && gradeStats.progressOverTime.length > 1 ? (
-                    <Line data={lineData} options={lineOptions} />
-                  ) : (
-                    <Typography variant="body2" color="textSecondary" sx={{ alignSelf: 'center', textAlign: 'center' }}>
-                      Not enough data to show progress over time.
-                    </Typography>
-                  )}
-                </Box>
-              </Paper>
-            </Grid>
-          </Grid>
-          
-          {/* Filter Controls - Mobile Optimized */}
-          <Box sx={{ 
-            mb: 3, 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' }, 
-            gap: 2,
-            width: '100%',
-            maxWidth: { xs: '100%', sm: '100%' },
-            mx: 'auto' // Center on all screen sizes
-          }}>
-            <TextField
-              label="Search"
-              variant="outlined"
-              size="small"
-              fullWidth
-              value={searchTerm}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ flexGrow: 1 }}
-            />
-          </Box>
-          
-          {/* Responsive Grades Table - MOBILE FIRST APPROACH */}
-          {isMobile ? (
-            // Mobile card-based layout
-            <Box sx={{ mb: 3 }}>
-              {filteredGrades
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((grade) => (
-                  <Card 
-                    key={grade._id} 
-                    sx={{ 
-                      mb: 2, 
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Box sx={{ 
-                      bgcolor: 'primary.main', 
-                      py: 1, 
-                      px: 2, 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center' 
-                    }}>
-                      <Typography sx={{ color: 'white', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        {grade.subject?.name || 'N/A'}
-                      </Typography>
-                      <Chip
-                        label={grade.value}
-                        color={
-                          grade.value >= 80 ? 'success' :
-                          grade.value >= 60 ? 'primary' :
-                          grade.value >= 50 ? 'warning' : 'error'
-                        }
-                        size="small"
-                        sx={{ 
-                          fontWeight: 'bold',
-                          color: 'white',
-                          bgcolor: grade.value >= 80 ? 'success.main' :
-                                 grade.value >= 60 ? 'primary.main' :
-                                 grade.value >= 50 ? 'warning.main' : 'error.main',
-                        }}
-                      />
-                    </Box>
-                    <CardContent sx={{ p: 1.5 }}>
-                      <Grid container spacing={1}>
-                        <Grid item xs={12}>
-                          <Typography variant="body2" sx={{ mb: 1, fontSize: '0.8rem' }}>
-                            <strong>Description:</strong> {grade.description || 'N/A'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                            <strong>Teacher:</strong> {grade.teacher?.name || 'N/A'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                            <strong>Date:</strong> {grade.date ? format(new Date(grade.date), 'MM/dd/yyyy') : 'N/A'}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <Box sx={{ 
-                      borderTop: '1px solid',
-                      borderColor: 'divider',
-                      p: 1,
-                      display: 'flex',
-                      justifyContent: 'center'
-                    }}>
-                      <Button 
-                        size="small" 
-                        startIcon={<VisibilityIcon />}
-                        onClick={() => handleViewGrade(grade._id)}
-                      >
-                        View Details
-                      </Button>
-                    </Box>
-                  </Card>
-                ))}
-            </Box>
-          ) : (
-            // Desktop table layout
-            <TableContainer 
-              component={Paper} 
-              sx={{ 
-                mb: 3, 
-                borderRadius: 2, 
-                overflow: 'hidden',
-                width: '100%',
-                mx: 'auto' // Center the table container
-              }}
-            >
-              <Table 
-                sx={{ 
-                  minWidth: { sm: 650 },
-                  width: '100%'
-                }} 
-                aria-label="grades table"
-              >
-                <TableHead sx={{ bgcolor: 'primary.main' }}>
-                  <TableRow>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Subject</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>Grade</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Description</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Teacher</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Date</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredGrades
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((grade) => (
-                      <TableRow key={grade._id}>
-                        <TableCell component="th" scope="row">
-                          {grade.subject?.name || 'N/A'}
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Chip
-                            label={grade.value}
-                            color={
-                              grade.value >= 80 ? 'success' :
-                              grade.value >= 60 ? 'primary' :
-                              grade.value >= 50 ? 'warning' : 'error'
-                            }
-                            variant="outlined"
-                            sx={{ fontWeight: 'bold' }}
-                          />
-                        </TableCell>
-                        <TableCell>{grade.description || 'N/A'}</TableCell>
-                        <TableCell>{grade.teacher?.name || 'N/A'}</TableCell>
-                        <TableCell>
-                          {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Tooltip title="View Details">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleViewGrade(grade._id)}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
+              </div>
+
+              {/* Grade Distribution Chart */}
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      Grade Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="h-80 flex justify-center items-center">
+                      <Pie data={pieData} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search grades..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Grades Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Grades</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Subject</TableHead>
+                        <TableHead className="text-center">Grade</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Teacher</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-          
-          {/* Pagination Component - Separated out */}
-          <Paper sx={{ borderRadius: 2, overflow: 'hidden', mb: 3 }}>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={filteredGrades.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{
-                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                  margin: { xs: 0, sm: 'auto' },
-                  textAlign: { xs: 'center', sm: 'left' }
-                },
-                '.MuiTablePagination-toolbar': {
-                  flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                  justifyContent: 'center'
-                }
-              }}
-            />
-          </Paper>
-        </>
-      )}
-    </Box>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredGrades
+                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                        .map((grade) => (
+                          <TableRow key={grade._id}>
+                            <TableCell className="font-medium">
+                              {grade.subject?.name || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge className={getGradeColor(grade.value)}>
+                                {grade.value}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{grade.description || 'N/A'}</TableCell>
+                            <TableCell>{grade.teacher?.name || 'N/A'}</TableCell>
+                            <TableCell>
+                              {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewGrade(grade._id)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>View Details</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between space-x-2 py-4">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">Rows per page</p>
+                    <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filteredGrades.length)} of {filteredGrades.length}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleChangePage(page - 1)}
+                      disabled={page === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleChangePage(page + 1)}
+                      disabled={(page + 1) * rowsPerPage >= filteredGrades.length}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Grades Available</h3>
+              <p className="text-muted-foreground text-center">
+                You don't have any grades yet. Check back later or contact your teachers.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 

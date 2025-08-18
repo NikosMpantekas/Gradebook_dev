@@ -161,15 +161,15 @@ const NotificationsList = ({
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <Avatar className="h-10 w-10">
+                  <div className="flex items-start space-x-4 flex-1">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarFallback className="text-sm">
                         {safeNotification.sender.name?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-semibold text-foreground truncate">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h4 className="font-semibold text-foreground text-base">
                           {safeNotification.title}
                         </h4>
                         {safeNotification.isImportant && (
@@ -183,9 +183,15 @@ const NotificationsList = ({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {safeNotification.message}
                       </p>
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span>{safeNotification.sender.name}</span>
+                        <span>•</span>
+                        <span>{formatNotificationDate(safeNotification.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
                   
