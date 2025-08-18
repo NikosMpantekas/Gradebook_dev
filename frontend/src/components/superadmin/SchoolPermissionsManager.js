@@ -51,15 +51,28 @@ const SchoolPermissionsManager = () => {
 
       if (response.ok) {
         const data = await response.json();
-        const schools = data.schools || data || [];
-        setSchools(schools);
+        console.log('📋 [SchoolPermissions] API Response:', data);
+        
+        // Handle the nested structure from backend
+        const schoolsArray = data?.data?.schools || data?.schools || [];
+        console.log('✅ [SchoolPermissions] Extracted schools array:', schoolsArray);
+        
+        // Ensure we have an array
+        if (!Array.isArray(schoolsArray)) {
+          console.error('❌ [SchoolPermissions] Schools data is not an array:', schoolsArray);
+          setSchools([]);
+          return;
+        }
+        
+        setSchools(schoolsArray);
         
         // Initialize permissions state
         const initialPermissions = {};
-        schools.forEach(school => {
+        schoolsArray.forEach(schoolData => {
+          const school = schoolData.school || schoolData;
           initialPermissions[school._id] = {
-            features: school.features || {},
-            permissions: school.permissions || {}
+            features: schoolData.permissions?.features || school.features || {},
+            permissions: schoolData.permissions?.permissions || school.permissions || {}
           };
         });
         setPermissions(initialPermissions);
@@ -269,7 +282,9 @@ const SchoolPermissionsManager = () => {
       )}
 
       <div className="space-y-4">
-        {schools.map((school) => (
+        {Array.isArray(schools) && schools.map((schoolData) => {
+          const school = schoolData.school || schoolData;
+          return (
           <Card key={school._id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -373,7 +388,8 @@ const SchoolPermissionsManager = () => {
               </CollapsibleContent>
             </Collapsible>
             </Card>
-        ))}
+          );
+        })}
       </div>
 
       {schools.length === 0 && (
