@@ -346,14 +346,15 @@ export const initializePushNotifications = async () => {
     return { success: true, subscription };
 
   } catch (error) {
-    console.error('[Push Service] Failed to initialize push notifications:', error);
+    // Don't log this as an error since it's expected in some cases
+    // Just return a failure status without throwing
+    console.warn('[Push Service] Push notifications not available:', error.message);
     
     // iOS DEBUGGING: Enhanced error logging for iOS
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      console.error('[Push Service] iOS Initialization Error Details:', {
+      console.warn('[Push Service] iOS Initialization Details:', {
         error: error.message,
         name: error.name,
-        stack: error.stack,
         notificationPermission: Notification.permission,
         timestamp: new Date().toISOString()
       });

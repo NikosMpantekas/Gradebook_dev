@@ -2,21 +2,13 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
-  Typography, 
-  Paper, 
-  Box, 
-  Button, 
-  CircularProgress,
-  Chip,
-  Divider,
-  Avatar,
-  IconButton,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  Delete as DeleteIcon,
-  NotificationsActive as NotificationsActiveIcon,
-} from '@mui/icons-material';
+  ArrowLeft,
+  Delete,
+  Bell,
+  User,
+  Calendar,
+  AlertCircle
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { 
@@ -25,6 +17,11 @@ import {
   deleteNotification,
   reset,
 } from '../features/notifications/notificationSlice';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { Separator } from '../components/ui/separator';
 
 const NotificationDetail = () => {
   const { id } = useParams();
@@ -48,7 +45,7 @@ const NotificationDetail = () => {
 
   useEffect(() => {
     if (isError) {
-      toast.error(message);
+      toast.error(message || 'Failed to load notification');
       // Navigate to role-specific notifications page on error
       if (user?.role === 'admin') {
         navigate('/app/admin/notifications/manage');
@@ -56,6 +53,8 @@ const NotificationDetail = () => {
         navigate('/app/teacher/notifications');
       } else if (user?.role === 'student') {
         navigate('/app/student/notifications');
+      } else if (user?.role === 'superadmin') {
+        navigate('/superadmin/notifications');
       } else {
         navigate('/app/notifications');
       }
@@ -69,9 +68,13 @@ const NotificationDetail = () => {
           window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
         });
     }
-  }, [notification, isError, isSuccess, message, id, dispatch, navigate]);
+  }, [notification, isError, isSuccess, message, id, dispatch, navigate, user?.role]);
 
   const handleDelete = () => {
+    if (!window.confirm('Are you sure you want to delete this notification?')) {
+      return;
+    }
+
     dispatch(deleteNotification(id)).then(() => {
       // Navigate to role-specific notifications page after delete
       if (user?.role === 'admin') {
@@ -80,6 +83,8 @@ const NotificationDetail = () => {
         navigate('/app/teacher/notifications');
       } else if (user?.role === 'student') {
         navigate('/app/student/notifications');
+      } else if (user?.role === 'superadmin') {
+        navigate('/superadmin/notifications');
       } else {
         navigate('/app/notifications');
       }
@@ -89,8 +94,12 @@ const NotificationDetail = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return format(date, 'PPpp'); // Example: 'Apr 29, 2021, 5:34 PM'
+    try {
+      const date = new Date(dateString);
+      return format(date, 'PPpp'); // Example: 'Apr 29, 2021, 5:34 PM'
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   const goBack = () => {
@@ -101,137 +110,167 @@ const NotificationDetail = () => {
       navigate('/app/teacher/notifications');
     } else if (user?.role === 'student') {
       navigate('/app/student/notifications');
+    } else if (user?.role === 'superadmin') {
+      navigate('/superadmin/notifications');
     } else {
-      // Fallback for other roles
       navigate('/app/notifications');
     }
   };
 
-  // Check if user can delete this notification
-  const canDelete = () => {
-    if (!notification || !user) return false;
-    return user.role === 'admin' || (notification.sender && notification.sender._id === user._id);
-  };
-
-  if (isLoading || !notification) {
+  if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading notification...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !notification) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-destructive mb-2">
+              Failed to load notification
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {message || 'The notification could not be loaded.'}
+            </p>
+            <Button onClick={goBack} variant="outline">
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={goBack}
-        sx={{ mb: 2 }}
-      >
-        Back to Notifications
-      </Button>
-      
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-              {notification.title}
-            </Typography>
-            {notification.isImportant && (
-              <Chip 
-                icon={<NotificationsActiveIcon />} 
-                label="Important" 
-                color="error" 
-                size="small" 
-              />
-            )}
-          </Box>
-          
-          {canDelete() && (
-            <IconButton
-              aria-label="delete"
-              onClick={handleDelete}
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          )}
-        </Box>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button onClick={goBack} variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Notification Details</h1>
+            <p className="text-muted-foreground">
+              View and manage notification information
+            </p>
+          </div>
+        </div>
         
-        <Divider sx={{ mb: 3 }} />
+        <div className="flex items-center space-x-2">
+          <Button 
+            onClick={handleDelete} 
+            variant="destructive" 
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Delete className="h-4 w-4" />
+            Delete
+          </Button>
+        </div>
+      </div>
+
+      {/* Notification Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback className="text-lg">
+                  <Bell className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-xl">{notification.title}</CardTitle>
+                <div className="flex items-center space-x-2 mt-2">
+                  {notification.urgent && (
+                    <Badge variant="destructive">Important</Badge>
+                  )}
+                  {!notification.isRead && (
+                    <Badge variant="secondary">New</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
         
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Avatar sx={{ mr: 2 }}>
-            {notification.sender && notification.sender.name ? notification.sender.name.charAt(0).toUpperCase() : 'U'}
-          </Avatar>
-          <Box>
-            <Typography variant="subtitle1">
-              {notification.sender ? notification.sender.name : 'Unknown User'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
+        <CardContent className="space-y-6">
+          {/* Message */}
+          <div>
+            <h3 className="font-semibold mb-2">Message</h3>
+            <p className="text-muted-foreground whitespace-pre-wrap">
+              {notification.message}
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* Sender Information */}
+          <div className="flex items-center space-x-3">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">From:</span>
+            <span className="font-medium">
+              {notification.senderName || notification.sender?.name || 'Unknown Sender'}
+            </span>
+          </div>
+
+          {/* Date */}
+          <div className="flex items-center space-x-3">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Sent:</span>
+            <span className="font-medium">
               {formatDate(notification.createdAt)}
-            </Typography>
-          </Box>
-        </Box>
-        
-        <Typography variant="body1" sx={{ mb: 4, whiteSpace: 'pre-line' }}>
-          {notification.message}
-        </Typography>
-        
-        <Box sx={{ mt: 3 }}>
-          {notification.school && (
-            <Chip 
-              label={`School: ${notification.school.name}`} 
-              size="small" 
-              sx={{ mr: 1, mb: 1 }} 
-            />
+            </span>
+          </div>
+
+          {/* Additional Details */}
+          {notification.targetRole && (
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-muted-foreground">Target Role:</span>
+              <Badge variant="outline">{notification.targetRole}</Badge>
+            </div>
           )}
-          {notification.direction && (
-            <Chip 
-              label={`Direction: ${notification.direction.name}`} 
-              size="small" 
-              sx={{ mr: 1, mb: 1 }} 
-            />
+
+          {notification.classes && notification.classes.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-2">Target Classes</h4>
+              <div className="flex flex-wrap gap-2">
+                {notification.classes.map((cls, index) => (
+                  <Badge key={index} variant="outline">
+                    {cls.name || `Class ${index + 1}`}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           )}
-          {notification.subject && (
-            <Chip 
-              label={`Subject: ${notification.subject.name}`} 
-              size="small" 
-              sx={{ mr: 1, mb: 1 }} 
-            />
+
+          {notification.recipients && notification.recipients.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-2">Recipients</h4>
+              <div className="flex flex-wrap gap-2">
+                {notification.recipients.map((recipient, index) => (
+                  <Badge key={index} variant="outline">
+                    {recipient.name || recipient.email || `Recipient ${index + 1}`}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           )}
-          {/* Display recipients more accurately based on actual data */}
-          {notification.sendToAll ? (
-            <Chip 
-              label={notification.targetRole === 'all' ? 'Recipients: All Users' : `Recipients: All ${notification.targetRole.charAt(0).toUpperCase() + notification.targetRole.slice(1)}s`}
-              size="small" 
-              sx={{ mr: 1, mb: 1 }}
-              color="primary" 
-            />
-          ) : notification.recipients && notification.recipients.length > 0 ? (
-            <Chip 
-              label={`Recipients: ${notification.recipients.length} specific user${notification.recipients.length > 1 ? 's' : ''}`}
-              size="small" 
-              sx={{ mr: 1, mb: 1 }}
-              color="success" 
-            />
-          ) : notification.schools || notification.directions || notification.subjects ? (
-            <Chip 
-              label="Recipients: Filtered group"
-              size="small" 
-              sx={{ mr: 1, mb: 1 }}
-              color="info" 
-            />
-          ) : (
-            <Chip 
-              label="Recipients: Unknown"
-              size="small" 
-              sx={{ mr: 1, mb: 1 }} 
-            />
-          )}
-        </Box>
-      </Paper>
-    </Box>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -1,36 +1,27 @@
 import React, { useState } from 'react';
 import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Grid, 
-  Chip, 
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails,
-  TextField,
-  Button,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  Tooltip
-} from '@mui/material';
-import { 
-  ExpandMore as ExpandMoreIcon,
-  BugReport as BugReportIcon,
-  Email as EmailIcon,
-  Send as SendIcon,
-  MarkEmailRead as MarkReadIcon,
-  Person as PersonIcon,
-  School as SchoolIcon
-} from '@mui/icons-material';
+  ExpandMore,
+  Bug,
+  Mail,
+  Send,
+  MailOpen,
+  User,
+  Building,
+  ChevronDown
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { API_URL } from '../config/appConfig';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import { Separator } from './ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
   const [replyText, setReplyText] = useState({});
@@ -39,11 +30,11 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
 
   if (!messages || messages.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="body1" color="text.secondary">
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
           No messages available.
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
@@ -54,22 +45,22 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
     });
   };
 
-  const handleAccordionChange = (panel) => (event, isExpanded) => {
-    setExpandedPanel(isExpanded ? panel : null);
+  const handleAccordionChange = (panel) => {
+    setExpandedPanel(expandedPanel === panel ? null : panel);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'new':
-        return 'primary';
+        return 'bg-blue-100 text-blue-800';
       case 'in-progress':
-        return 'warning';
+        return 'bg-yellow-100 text-yellow-800';
       case 'replied':
-        return 'success';
+        return 'bg-green-100 text-green-800';
       case 'closed':
-        return 'error';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'default';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -99,18 +90,52 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
         }
       };
 
-      await axios.put(`${API_URL}/api/contact/${messageId}`, { status: newStatus }, config);
+      await axios.patch(`${API_URL}/api/contact/${messageId}/status`, {
+        status: newStatus
+      }, config);
 
-      toast.success(`Message status updated to ${getStatusLabel(newStatus)}`);
+      toast.success('Status updated successfully');
+      if (onMessagesChanged) {
+        onMessagesChanged();
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleReply = async (messageId) => {
+    if (!user || !user.token) return;
+    if (!replyText[messageId] || replyText[messageId].trim() === '') return;
+
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        }
+      };
+
+      await axios.post(`${API_URL}/api/contact/${messageId}/reply`, {
+        adminReply: replyText[message._id].trim()
+      }, config);
+
+      toast.success('Reply sent successfully');
+      setReplyText({
+        ...replyText,
+        [messageId]: ''
+      });
+      setReplying({
+        ...replying,
+        [messageId]: false
+      });
       
       if (onMessagesChanged) {
         onMessagesChanged();
       }
-      // Dispatch custom event to refresh header counts
-      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
     } catch (error) {
-      console.error('Error updating message status:', error);
-      toast.error('Failed to update message status');
+      console.error('Error sending reply:', error);
+      toast.error('Failed to send reply');
     }
   };
 
@@ -125,278 +150,155 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
         }
       };
 
-      await axios.put(`${API_URL}/api/contact/${messageId}`, { read: true }, config);
+      await axios.patch(`${API_URL}/api/contact/${messageId}/read`, {}, config);
 
       toast.success('Message marked as read');
-      
       if (onMessagesChanged) {
         onMessagesChanged();
       }
-      // Dispatch custom event to refresh header counts
-      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
     } catch (error) {
-      console.error('Error marking message as read:', error);
-      toast.error('Failed to mark message as read');
-    }
-  };
-
-  const handleSendReply = async (messageId) => {
-    if (!user || !user.token) return;
-    
-    const reply = replyText[messageId];
-    
-    if (!reply || reply.trim() === '') {
-      toast.error('Please enter a reply message');
-      return;
-    }
-    
-    setReplying({
-      ...replying,
-      [messageId]: true
-    });
-
-    try {
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.token}`
-        }
-      };
-
-      await axios.put(
-        `${API_URL}/api/contact/${messageId}`, 
-        { 
-          adminReply: reply,
-          status: 'replied'
-        }, 
-        config
-      );
-
-      toast.success('Reply sent successfully');
-      
-      // Clear reply text
-      setReplyText({
-        ...replyText,
-        [messageId]: ''
-      });
-      
-      if (onMessagesChanged) {
-        onMessagesChanged();
-      }
-      // Dispatch custom event to refresh header counts
-      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
-    } catch (error) {
-      console.error('Error sending reply:', error);
-      toast.error('Failed to send reply');
-    } finally {
-      setReplying({
-        ...replying,
-        [messageId]: false
-      });
-    }
-  };
-
-  const handleDenyPasswordReset = async (messageId) => {
-    if (!user || !user.token) return;
-
-    try {
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.token}`
-        }
-      };
-
-      // Delete the password reset request
-      await axios.delete(`${API_URL}/api/contact/${messageId}`, config);
-
-      toast.success('Password reset request denied and removed');
-      
-      if (onMessagesChanged) {
-        onMessagesChanged();
-      }
-      // Dispatch custom event to refresh header counts
-      window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
-    } catch (error) {
-      console.error('Error denying password reset request:', error);
-      toast.error('Failed to deny password reset request');
+      console.error('Error marking as read:', error);
+      toast.error('Failed to mark as read');
     }
   };
 
   return (
-    <Box sx={{ mt: 2 }}>
-      {messages.map((message) => (
-        <Accordion 
-          key={message._id} 
-          sx={{ 
-            mb: 2,
-            border: message.read ? 'none' : '1px solid',
-            borderColor: 'primary.main'
-          }}
-          expanded={expandedPanel === message._id}
-          onChange={handleAccordionChange(message._id)}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls={`message-${message._id}-content`}
-            id={`message-${message._id}-header`}
-          >
-            <Grid container alignItems="center" spacing={1}>
-              <Grid item>
-                {message.isBugReport ? (
-                  <BugReportIcon color="error" />
-                ) : (
-                  <EmailIcon color="primary" />
-                )}
-              </Grid>
-              <Grid item xs>
-                <Typography variant="subtitle1">{message.subject}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  From: {message.userName} ({message.userEmail}) • {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                </Typography>
-              </Grid>
-              <Grid item>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {!message.read && (
-                    <Tooltip title="Mark as read">
-                      <IconButton 
-                        size="small" 
-                        color="primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkAsRead(message._id);
-                        }}
-                      >
-                        <MarkReadIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  <Chip 
-                    label={getStatusLabel(message.status)} 
-                    color={getStatusColor(message.status)} 
-                    size="small" 
-                    variant="outlined"
-                  />
-                </Box>
-              </Grid>
-            </Grid>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ px: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PersonIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {message.userName} ({message.userRole})
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <SchoolIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      School ID: {message.schoolId}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
+    <TooltipProvider>
+      <div className="space-y-4">
+        {messages.map((message) => (
+          <Card key={message._id} className="overflow-hidden">
+            <Collapsible open={expandedPanel === message._id}>
+              <CollapsibleTrigger asChild>
+                <CardHeader 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleAccordionChange(message._id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        {message.type === 'bug' ? (
+                          <Bug className="h-5 w-5 text-destructive" />
+                        ) : (
+                          <Mail className="h-5 w-5 text-primary" />
+                        )}
+                        <span className="font-semibold text-foreground">
+                          {message.subject || 'No Subject'}
+                        </span>
+                      </div>
+                      <Badge className={getStatusColor(message.status)}>
+                        {getStatusLabel(message.status)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${
+                        expandedPanel === message._id ? 'rotate-180' : ''
+                      }`} />
+                    </div>
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
               
-              <Divider sx={{ my: 1 }} />
-              
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mt: 2 }}>
-                {message.message}
-              </Typography>
-              
-              {message.adminReply && (
-                <Box sx={{ mt: 3 }}>
-                  <Divider sx={{ mb: 2 }} />
-                  <Paper variant="outlined" sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
-                    <Typography variant="subtitle2">
-                      Admin Response:
-                    </Typography>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-                      {message.adminReply}
-                    </Typography>
-                    {message.adminReplyDate && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        Replied {formatDistanceToNow(new Date(message.adminReplyDate), { addSuffix: true })}
-                      </Typography>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <Label className="text-muted-foreground">From:</Label>
+                        <p className="font-medium">{message.userName || 'Unknown User'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">School:</Label>
+                        <p className="font-medium">{message.schoolName || 'Unknown School'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Email:</Label>
+                        <p className="font-medium">{message.userEmail || 'No email'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Date:</Label>
+                        <p className="font-medium">
+                          {new Date(message.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <Label className="text-muted-foreground">Message:</Label>
+                      <p className="mt-1 text-foreground">{message.message}</p>
+                    </div>
+                    
+                    {message.adminReply && (
+                      <>
+                        <Separator />
+                        <div>
+                          <Label className="text-muted-foreground">Admin Reply:</Label>
+                          <p className="mt-1 text-foreground">{message.adminReply}</p>
+                        </div>
+                      </>
                     )}
-                  </Paper>
-                </Box>
-              )}
-              
-              <Box sx={{ mt: 3 }}>
-                <Divider sx={{ mb: 2 }} />
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth size="small" variant="outlined">
-                      <InputLabel id={`status-label-${message._id}`}>Status</InputLabel>
+                    
+                    <div className="flex items-center space-x-2">
                       <Select
-                        labelId={`status-label-${message._id}`}
                         value={message.status}
-                        onChange={(e) => handleStatusChange(message._id, e.target.value)}
-                        label="Status"
+                        onValueChange={(value) => handleStatusChange(message._id, value)}
                       >
-                        <MenuItem value="new">New</MenuItem>
-                        <MenuItem value="in-progress">In Progress</MenuItem>
-                        <MenuItem value="replied">Replied</MenuItem>
-                        <MenuItem value="closed">Closed</MenuItem>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
+                          <SelectItem value="replied">Replied</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
                       </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-                
-                {/* For password reset requests, show Approve/Deny buttons instead of reply box */}
-                {message.subject?.startsWith('[Password Reset]') ? (
-                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      onClick={() => { /* no-op for now */ }}
-                    >
-                      Approve Reset
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDenyPasswordReset(message._id)}
-                    >
-                      Deny
-                    </Button>
-                  </Box>
-                ) : (
-                  <Box sx={{ mt: 2 }}>
-                    <TextField
-                      fullWidth
-                      label="Reply to user"
-                      multiline
-                      rows={4}
-                      variant="outlined"
-                      value={replyText[message._id] || ''}
-                      onChange={(e) => handleReplyChange(message._id, e.target.value)}
-                      placeholder="Enter your reply here..."
-                    />
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<SendIcon />}
-                        onClick={() => handleSendReply(message._id)}
-                        disabled={replying[message._id] || !replyText[message._id]}
-                      >
-                        {replying[message._id] ? 'Sending...' : 'Send Reply'}
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      ))}
-    </Box>
+                      
+                      {!message.read && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkAsRead(message._id)}
+                        >
+                          <MailOpen className="mr-2 h-4 w-4" />
+                          Mark as Read
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {!message.adminReply && (
+                      <div className="space-y-2">
+                        <Label htmlFor={`reply-${message._id}`}>Reply:</Label>
+                        <div className="flex space-x-2">
+                          <Input
+                            id={`reply-${message._id}`}
+                            value={replyText[message._id] || ''}
+                            onChange={(e) => handleReplyChange(message._id, e.target.value)}
+                            placeholder="Type your reply..."
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={() => handleReply(message._id)}
+                            disabled={!replyText[message._id] || replyText[message._id].trim() === ''}
+                          >
+                            <Send className="mr-2 h-4 w-4" />
+                            Send
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 };
 

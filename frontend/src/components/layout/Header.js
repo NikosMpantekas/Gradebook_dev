@@ -1,33 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  AppBar, 
-  Box, 
-  Toolbar, 
-  IconButton, 
-  Typography, 
-  Menu, 
-  Badge,
-  MenuItem, 
-  Tooltip,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  useTheme
-} from '@mui/material';
+  Bell, 
+  Moon, 
+  Sun, 
+  Mail,
+  Menu as MenuIcon
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
 import {
-  Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-  Brightness4 as DarkModeIcon,
-  Brightness7 as LightModeIcon,
-  Email as EmailIcon
-} from '@mui/icons-material';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { cn } from '../../lib/utils';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleDarkMode } from '../../features/ui/uiSlice';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
-import { getMyNotifications } from '../../features/notifications/notificationSlice';
+import { getMyNotifications, markNotificationAsRead } from '../../features/notifications/notificationSlice';
 
 // Custom hook to fetch latest version from patch notes
 const useLatestVersion = () => {
@@ -70,7 +67,6 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
   
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
@@ -103,103 +99,51 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         setContactUnreadCount(unread.length);
         setContactUnreadPreview(unread.slice(0, 5));
       } else {
-        // Others: unread are replies not yet read by the user
+        // Regular users: unread are admin replies they haven't read
         const res = await axios.get(`${API_URL}/api/contact/user`, config);
-        const unread = (res.data || []).filter(m => m && m.status === 'replied' && m.adminReply && m.replyRead === false);
+        const unread = (res.data || []).filter(m => m && m.status === 'replied' && m.adminReply && !m.replyRead);
         setContactUnreadCount(unread.length);
         setContactUnreadPreview(unread.slice(0, 5));
       }
-    } catch (err) {
-      console.error('[Header] Failed to fetch contact unread:', err?.response?.data || err.message);
-      setContactUnreadCount(0);
-      setContactUnreadPreview([]);
+    } catch (error) {
+      console.error('Failed to fetch contact unread:', error);
     }
   }, [user]);
 
-  // Fetch both notifications and contact unread on mount and when user changes
   useEffect(() => {
-    if (!user) return;
-    // Ensure notifications are fetched
-    dispatch(getMyNotifications());
     fetchContactUnread();
-  }, [user, dispatch, fetchContactUnread]);
+  }, [fetchContactUnread]);
 
-  // Refresh counts when route changes (e.g., after marking notifications as read)
+  // Fetch notifications on page load
   useEffect(() => {
-    if (user) {
-      fetchContactUnread();
+    if (user?.token) {
+      dispatch(getMyNotifications());
     }
-  }, [location.pathname, fetchContactUnread, user]);
+  }, [dispatch, user?.token]);
 
-  // Listen for custom events to refresh counts
-  useEffect(() => {
-    const handleRefreshCounts = () => {
-      if (user) {
-        fetchContactUnread();
-        dispatch(getMyNotifications());
-      }
-    };
+  const handleDarkModeToggle = () => dispatch(toggleDarkMode());
 
-    // Listen for custom event to refresh counts
-    window.addEventListener('refreshHeaderCounts', handleRefreshCounts);
+  const handleNotificationsClose = () => setNotifAnchorEl(null);
+
+  const handleViewNotification = async (id) => {
+    handleNotificationsClose();
     
-    return () => {
-      window.removeEventListener('refreshHeaderCounts', handleRefreshCounts);
-    };
-  }, [user, dispatch, fetchContactUnread]);
-  
-/*   const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const onLogout = () => {
-    dispatch(logout());
-    dispatch(reset());
-    navigate('/login');
-  }; */
-
-  const handleDarkModeToggle = () => {
-    dispatch(toggleDarkMode());
-  };
-
-  const handleNotificationsClick = (event) => {
-    setNotifAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationsClose = () => {
-    setNotifAnchorEl(null);
-  };
-
-  const handleViewAllNotifications = () => {
-    handleNotificationsClose();
-    if (user?.role === 'student') {
-      navigate('/app/student/notifications');
-    } else if (user?.role === 'teacher') {
-      navigate('/app/admin/notifications/manage');
-    } else if (user?.role === 'admin') {
-      navigate('/app/admin/notifications/manage');
-    } else if (user?.role === 'superadmin') {
-      navigate('/app/admin/notifications/manage');
-    } else if (user?.role === 'parent') {
-      navigate('/app/parent/notifications');
-    } else {
-      navigate('/app/notifications');
+    // Mark notification as read when clicked
+    try {
+      await dispatch(markNotificationAsRead(id)).unwrap();
+      // Refresh notifications to update the count
+      dispatch(getMyNotifications());
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
     }
-  };
-
-  const handleViewNotification = (id) => {
-    handleNotificationsClose();
-    if (!id) return handleViewAllNotifications();
-    if (user?.role === 'student') {
-      navigate(`/app/student/notifications/${id}`);
-    } else if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'superadmin') {
-      navigate(`/app/notifications/${id}`);
-    } else if (user?.role === 'parent') {
-      navigate(`/app/parent/notifications/${id}`);
+    
+    // Navigate to the appropriate notification detail page
+    if (user?.role === 'superadmin') {
+      navigate(`/superadmin/notifications/${id}`);
+    } else if (user?.role === 'admin') {
+      navigate(`/app/admin/notifications/${id}`);
+    } else if (user?.role === 'teacher') {
+      navigate(`/app/teacher/notifications/${id}`);
     } else {
       navigate(`/app/notifications/${id}`);
     }
@@ -224,191 +168,167 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     // There may not be a dedicated detail route; open the contact list filtered.
     handleViewContactMessages();
   };
+
+  const handleViewAllNotifications = () => {
+    handleNotificationsClose();
+    if (user?.role === 'student') {
+      navigate('/app/student/notifications');
+    } else if (user?.role === 'teacher') {
+      navigate('/app/teacher/notifications');
+    } else if (user?.role === 'admin') {
+      navigate('/app/admin/notifications/manage');
+    } else if (user?.role === 'superadmin') {
+      navigate('/app/admin/notifications/manage');
+    } else if (user?.role === 'parent') {
+      navigate('/app/parent/notifications');
+    } else {
+      navigate('/app/notifications');
+    }
+  };
   
   // Prepare notification preview
   const notifPreview = (notifications || []).filter(n => !n.isRead).slice(0, 5);
 
   return (
-    <AppBar
-      position="fixed"
-      sx={{
-        width: { sm: `calc(100% - ${drawerWidth}px)` },
-        ml: { sm: `${drawerWidth}px` },
-      }}
-    >
-      <Toolbar>
-                            <IconButton
-                      color="inherit"
-                      aria-label="open drawer"
-                      edge="start"
-                      onClick={handleDrawerToggle}
-                      sx={{ mr: { xs: 1, sm: 2 }, display: { sm: 'none' } }}
-                    >
-          <MenuIcon />
-        </IconButton>
-                            <Box
-                      sx={{
-                        flexGrow: 1,
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                                <Typography
-                        variant="h6"
-                        noWrap
-                        component={RouterLink}
-                        to="/"
-                                                  sx={{
-                            textDecoration: 'none',
-                            color: 'inherit',
-                            fontWeight: 100,
-                            fontSize: { xs: 24, sm: 28, md: 32, lg: 36 },
-                            letterSpacing: 1,
-                            fontFamily: 'Roboto, Arial, sans-serif',
-                            position: 'relative',
-                            display: 'inline-block',
-                            '&:hover': {
-                              color: theme.palette.primary.dark,
-                            },
-                          }}
-                      >
-                        GradeBook
-                        {isBetaVersion && (
-                          <Typography
-                            component="span"
-                            sx={{
-                              position: 'relative',
-                              bottom: '-0.2em',
-                              right: '-0.05em',
-                              color: theme.palette.primary.main,
-                              fontSize: { xs: '0.7em', sm: '0.6em' },
-                              fontWeight: 100,
-                              fontStyle: 'italic',
-                              lineHeight: 1,
-                              verticalAlign: 'sub',
-                            }}
-                          >
-                            β
-                          </Typography>
-                        )}
-                      </Typography>
-        </Box>
-
-        {user && (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <LanguageSwitcher variant="icon" />
-            
-            <Tooltip title="Toggle dark mode">
-              <IconButton 
-                size="large" 
-                color="inherit"
-                onClick={handleDarkModeToggle}
-              >
-                {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-              </IconButton>
-            </Tooltip>
-            
-            <Tooltip title={`Notifications & Messages (${notifUnreadCount} unread, ${contactUnreadCount} contact)`}>
-              <IconButton
-                size="large"
-                color="inherit"
-                onClick={handleNotificationsClick}
-              >
-                <Badge badgeContent={combinedUnreadCount} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-
-            {/* Dropdown with unread notifications and contact messages */}
-            <Menu
-              anchorEl={notifAnchorEl}
-              open={Boolean(notifAnchorEl)}
-              onClose={handleNotificationsClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{ sx: { width: { xs: 280, sm: 360 }, maxWidth: '90vw' } }}
-            >
-              <MenuItem disabled>
-                <ListItemIcon>
-                  <NotificationsIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={`Unread Notifications (${notifUnreadCount})`} />
-              </MenuItem>
-              {notifPreview.length === 0 ? (
-                <MenuItem disabled>
-                  <ListItemText primary="No unread notifications" />
-                </MenuItem>
-              ) : (
-                notifPreview.map(n => (
-                  <MenuItem key={n._id} onClick={() => handleViewNotification(n._id)}>
-                    <ListItemIcon>
-                      <NotificationsIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={n.title || 'Notification'} 
-                      secondary={new Date(n.createdAt).toLocaleString()} 
-                      primaryTypographyProps={{ 
-                        noWrap: true, 
-                        sx: { overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: { xs: 180, sm: 260 } } 
-                      }}
-                      secondaryTypographyProps={{ 
-                        noWrap: true, 
-                        sx: { overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: { xs: 180, sm: 260 } } 
-                      }}
-                    />
-                  </MenuItem>
-                ))
-              )}
-
-              <Divider sx={{ my: 0.5 }} />
-
-              <MenuItem disabled>
-                <ListItemIcon>
-                  <EmailIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary={`Unread Contact Messages (${contactUnreadCount})`} />
-              </MenuItem>
-              {contactUnreadPreview.length === 0 ? (
-                <MenuItem disabled>
-                  <ListItemText primary="No unread contact messages" />
-                </MenuItem>
-              ) : (
-                contactUnreadPreview.map(m => (
-                  <MenuItem key={m._id} onClick={() => handleViewContactMessage(m._id)}>
-                    <ListItemIcon>
-                      <EmailIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={m.subject || 'Contact Message'} 
-                      secondary={m.userName ? `From: ${m.userName}` : undefined}
-                      primaryTypographyProps={{ 
-                        noWrap: true, 
-                        sx: { overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: { xs: 180, sm: 260 } } 
-                      }}
-                      secondaryTypographyProps={{ 
-                        noWrap: true, 
-                        sx: { overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: { xs: 180, sm: 260 } } 
-                      }}
-                    />
-                  </MenuItem>
-                ))
-              )}
-
-              <Divider sx={{ my: 0.5 }} />
-
-              <MenuItem onClick={handleViewAllNotifications}>
-                <ListItemText primary="View all notifications" />
-              </MenuItem>
-              <MenuItem onClick={handleViewContactMessages}>
-                <ListItemText primary="Open contact messages" />
-              </MenuItem>
-            </Menu>
-          </Box>
+    <TooltipProvider>
+      <header 
+        className={cn(
+          "fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+          "lg:ml-64 lg:w-[calc(100%-256px)]", // Fixed: 256px = 64 * 4 (lg:w-64 from sidebar)
+          "shadow-lg" // Add shadow for better visual separation
         )}
-      </Toolbar>
-    </AppBar>
+      >
+        <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
+          {/* Mobile menu button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-3 sm:hidden"
+            onClick={handleDrawerToggle}
+            aria-label="open drawer"
+          >
+            <MenuIcon className="h-6 w-6" />
+          </Button>
+
+          {/* Logo */}
+          <div className="flex flex-1 items-center">
+            <RouterLink 
+              to="/"
+              className={cn(
+                "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
+                "no-underline text-foreground hover:text-primary transition-colors",
+                "relative inline-block"
+              )}
+            >
+              GradeBook
+              {isBetaVersion && (
+                <span className="relative -bottom-1 -right-0.5 text-primary text-xs font-light italic leading-none">
+                  β
+                </span>
+              )}
+            </RouterLink>
+          </div>
+
+          {/* User actions */}
+          {user && (
+            <div className="flex items-center space-x-3">
+              <LanguageSwitcher variant="icon" />
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDarkModeToggle}
+                  >
+                    {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle dark mode</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="relative">
+                    <Bell className="h-5 w-5" />
+                    {combinedUnreadCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                      >
+                        {combinedUnreadCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-80 dropdown-slide-in"
+                  sideOffset={8}
+                >
+                  <DropdownMenuLabel className="flex items-center">
+                    <Bell className="mr-2 h-4 w-4" />
+                    Unread Notifications ({notifUnreadCount})
+                  </DropdownMenuLabel>
+                  
+                  {notifPreview.length === 0 ? (
+                    <DropdownMenuItem disabled>
+                      No unread notifications
+                    </DropdownMenuItem>
+                  ) : (
+                    notifPreview.map(n => (
+                      <DropdownMenuItem key={n._id} onClick={() => handleViewNotification(n._id)}>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium truncate">{n.title || 'Notification'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(n.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel className="flex items-center">
+                    <Mail className="mr-2 h-4 w-4" />
+                    Unread Contact Messages ({contactUnreadCount})
+                  </DropdownMenuLabel>
+                  
+                  {contactUnreadPreview.length === 0 ? (
+                    <DropdownMenuItem disabled>
+                      No unread contact messages
+                    </DropdownMenuItem>
+                  ) : (
+                    contactUnreadPreview.map(m => (
+                      <DropdownMenuItem key={m._id} onClick={() => handleViewContactMessage(m._id)}>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium truncate">{m.subject || 'Contact Message'}</p>
+                          {m.userName && (
+                            <p className="text-xs text-muted-foreground">From: {m.userName}</p>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={handleViewAllNotifications}>
+                    View all notifications
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleViewContactMessages}>
+                    Open contact messages
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </div>
+      </header>
+    </TooltipProvider>
   );
 };
 

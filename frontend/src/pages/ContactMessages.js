@@ -3,27 +3,11 @@ import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_URL } from '../config/appConfig';
 import { 
-  Box, 
-  Typography, 
-  Tabs, 
-  Tab, 
-  Paper,
-  Divider,
-  Button,
-  CircularProgress,
-  Badge,
-  useMediaQuery,
-  useTheme,
-  FormControl,
-  Select,
-  MenuItem
-} from '@mui/material';
-import { 
-  Email as EmailIcon,
-  BugReport as BugReportIcon,
-  Announcement as AnnouncementIcon,
-  ExpandMore as ExpandMoreIcon
-} from '@mui/icons-material';
+  Mail as EmailIcon,
+  Bug as BugIcon,
+  Megaphone as AnnouncementIcon,
+  ChevronDown as ExpandMoreIcon
+} from 'lucide-react';
 import ContactDeveloper from '../components/ContactDeveloper';
 import UserMessagesList from '../components/UserMessagesList';
 import PatchNotesList from '../components/PatchNotesList';
@@ -31,38 +15,24 @@ import PatchNoteEditor from '../components/PatchNoteEditor';
 import AdminMessagesList from '../components/AdminMessagesList';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
-// Custom Tab Panel Component
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-      {...other}
-      style={{ padding: '20px 0' }}
-    >
-      {value === index && (
-        <Box>{children}</Box>
-      )}
-    </div>
-  );
-}
+import { Spinner } from '../components/ui/spinner';
+// shadcn components
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Separator } from '../components/ui/separator';
 
 const ContactMessages = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Check if this is the superadmin patch notes route
   const isSuperadminPatchNotesRoute = location.pathname === '/superadmin/patch-notes';
   
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState('my');
   const [loading, setLoading] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [userMessages, setUserMessages] = useState([]);
@@ -110,7 +80,7 @@ const ContactMessages = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate, isAdminRole, isSuperadminPatchNotesRoute]);
 
-  const handleTabChange = (event, newValue) => setTabValue(newValue);
+  const handleTabChange = (value) => setTabValue(value);
 
   const handleOpenContact = () => setContactOpen(true);
   const handleCloseContact = () => { setContactOpen(false); fetchUserMessages(); };
@@ -161,114 +131,127 @@ const ContactMessages = () => {
   };
 
   const renderLabel = (text, count) => (
-    <Badge color="error" badgeContent={count} invisible={count === 0} max={99}>
-      <Box component="span" sx={{ maxWidth: { xs: 120, sm: 'unset' }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
-        {text}
-      </Box>
-    </Badge>
+    <div className="flex items-center gap-2">
+      <span>{text}</span>
+      {count > 0 && (
+        <Badge variant="destructive" className="ml-1">
+          {count > 99 ? '99+' : count}
+        </Badge>
+      )}
+    </div>
   );
 
   // If this is the superadmin patch notes route, show only patch notes
   if (isSuperadminPatchNotesRoute) {
     return (
-      <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
-        <Paper elevation={3} sx={{ p: { xs: 1.5, sm: 3, md: 4 }, display: 'flex', flexDirection: 'column', borderRadius: 2, mt: { xs: 1.5, sm: 3 }, mb: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
-          <Typography component="h1" variant="h6" sx={{ mb: { xs: 1.5, sm: 3 }, fontWeight: 'bold', fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>Patch Notes Management</Typography>
-          
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              {user?.role === 'superadmin' && (
-                <PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />
-              )}
-              <PatchNotesList 
-                patchNotes={patchNotes} 
-                user={user} 
-                onEdit={handleEditPatchNote} 
-                onDelete={handleDeletePatchNote} 
-              />
-            </>
-          )}
-        </Paper>
-      </Box>
+      <div className="w-full max-w-full overflow-x-hidden">
+        <Card className="p-4 md:p-6 lg:p-8 mt-4 md:mt-6 mb-4 md:mb-6 overflow-x-hidden">
+          <CardHeader>
+            <CardTitle className="text-xl md:text-2xl font-bold">Patch Notes Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center my-8">
+                <Spinner className="text-primary" />
+              </div>
+            ) : (
+              <>
+                {user?.role === 'superadmin' && (
+                  <PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />
+                )}
+                <PatchNotesList 
+                  patchNotes={patchNotes} 
+                  user={user} 
+                  onEdit={handleEditPatchNote} 
+                  onDelete={handleDeletePatchNote} 
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   const tabDefs = isAdminRole
     ? [
-        { key: 'all', label: 'All Messages', icon: <BugReportIcon />, panel: (loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : <AdminMessagesList messages={allMessages} user={user} onMessagesChanged={fetchAllMessages} />) },
-        { key: 'my', label: 'My Messages', icon: <EmailIcon />, panel: (<><Box sx={{ mb: { xs: 1.5, sm: 3 } }}><Button variant="contained" color="primary" startIcon={<EmailIcon />} onClick={handleOpenContact} size={isMobile ? 'small' : 'medium'} sx={{ width: { xs: '100%', sm: 'auto' }, fontSize: { xs: '0.8rem', sm: '1rem' } }}>Contact Support</Button></Box>{loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : <UserMessagesList messages={userMessages} />}</>) },
-        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon />, panel: (loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+        { key: 'all', label: 'All Messages', icon: <BugIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <AdminMessagesList messages={allMessages} user={user} onMessagesChanged={fetchAllMessages} />) },
+        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<><div className="mb-4 md:mb-6"><Button onClick={handleOpenContact} className="w-full sm:w-auto"><EmailIcon className="mr-2 h-4 w-4" />Contact Support</Button></div>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
       ]
     : [
-        { key: 'my', label: 'My Messages', icon: <EmailIcon />, panel: (<><Box sx={{ mb: { xs: 1.5, sm: 3 } }}><Button variant="contained" color="primary" startIcon={<EmailIcon />} onClick={handleOpenContact} size={isMobile ? 'small' : 'medium'} sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }}>Contact Support</Button></Box>{loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : <UserMessagesList messages={userMessages} />}</>) },
-        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon />, panel: (loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<><div className="mb-4 md:mb-6"><Button onClick={handleOpenContact} className="w-full sm:w-auto"><EmailIcon className="mr-2 h-4 w-4" />Contact Support</Button></div>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
       ];
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
-      <Paper elevation={3} sx={{ p: { xs: 1.5, sm: 3, md: 4 }, display: 'flex', flexDirection: 'column', borderRadius: 2, mt: { xs: 1.5, sm: 3 }, mb: { xs: 1.5, sm: 3 }, overflowX: 'hidden' }}>
-        <Typography component="h1" variant="h6" sx={{ mb: { xs: 1.5, sm: 3 }, fontWeight: 'bold', fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>Support & Announcements</Typography>
-        
-        {/* Mobile: Dropdown Selector */}
-        {isMobile ? (
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <Select
-              value={tabValue}
-              onChange={(e) => setTabValue(e.target.value)}
-              displayEmpty
-              IconComponent={ExpandMoreIcon}
-              sx={{
-                '& .MuiSelect-select': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  fontSize: '0.9rem'
-                }
-              }}
-            >
-              {tabDefs.map((tab, index) => (
-                <MenuItem key={tab.key} value={index}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    {tab.icon}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span>{tab.label}</span>
-                      {tab.key === 'all' && allUnreadCount > 0 && (
-                        <Badge color="error" badgeContent={allUnreadCount} max={99} />
-                      )}
-                      {tab.key === 'my' && myUnreadCount > 0 && (
-                        <Badge color="error" badgeContent={myUnreadCount} max={99} />
-                      )}
-                    </Box>
-                  </Box>
-                </MenuItem>
-              ))}
+    <div className="w-full max-w-full overflow-x-hidden">
+      <Card className="p-4 md:p-6 lg:p-8 mt-4 md:mt-6 mb-4 md:mb-6 overflow-x-hidden">
+        <CardHeader>
+          <CardTitle className="text-xl md:text-2xl font-bold">Support & Announcements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Mobile: Dropdown Selector */}
+          <div className="block md:hidden mb-4">
+            <Select value={tabValue} onValueChange={handleTabChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select tab" />
+              </SelectTrigger>
+              <SelectContent>
+                {tabDefs.map((tab) => (
+                  <SelectItem key={tab.key} value={tab.key}>
+                    <div className="flex items-center gap-2 w-full">
+                      {tab.icon}
+                      <div className="flex items-center gap-2">
+                        <span>{tab.label}</span>
+                        {tab.key === 'all' && allUnreadCount > 0 && (
+                          <Badge variant="destructive">{allUnreadCount > 99 ? '99+' : allUnreadCount}</Badge>
+                        )}
+                        {tab.key === 'my' && myUnreadCount > 0 && (
+                          <Badge variant="destructive">{myUnreadCount > 99 ? '99+' : myUnreadCount}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </FormControl>
-        ) : (
-          /* Desktop: Tabs */
-          <>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="support tabs" variant="fullWidth" sx={{ '& .MuiTab-root': { fontSize: '1rem', minHeight: '56px', textTransform: 'none' } }}>
-              {tabDefs.map((t, i) => (
-                <Tab key={t.key} label={renderLabel(t.label, t.key === 'all' ? allUnreadCount : t.key === 'my' ? myUnreadCount : 0)} icon={t.icon} iconPosition="start" id={`tab-${i}`} aria-controls={`tabpanel-${i}`} />
+          </div>
+
+          {/* Desktop: Tabs */}
+          <div className="hidden md:block">
+            <Tabs value={tabValue} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                {tabDefs.map((tab) => (
+                  <TabsTrigger key={tab.key} value={tab.key} className="flex items-center gap-2">
+                    {tab.icon}
+                    {renderLabel(tab.label, tab.key === 'all' ? allUnreadCount : tab.key === 'my' ? myUnreadCount : 0)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <Separator className="mt-4 mb-6" />
+              
+              {/* Content Panels */}
+              {tabDefs.map((tab) => (
+                <TabsContent key={tab.key} value={tab.key}>
+                  {tab.panel}
+                </TabsContent>
               ))}
             </Tabs>
-            <Divider sx={{ mt: 1, mb: 2 }} />
-          </>
-        )}
-        
-        {/* Content Panels */}
-        {tabDefs.map((t, i) => (
-          <TabPanel key={t.key} value={tabValue} index={i}>
-            {t.panel}
-          </TabPanel>
-        ))}
-      </Paper>
+          </div>
+          
+          {/* Mobile Content Panels */}
+          <div className="md:hidden">
+            {tabDefs.map((tab) => (
+              <div key={tab.key} className={tabValue === tab.key ? 'block' : 'hidden'}>
+                {tab.panel}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
       <ContactDeveloper open={contactOpen} onClose={handleCloseContact} />
-    </Box>
+    </div>
   );
 };
 

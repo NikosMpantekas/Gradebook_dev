@@ -1,6 +1,10 @@
 import React from 'react';
-import { Box, Typography, Button, Paper, Accordion, AccordionSummary, AccordionDetails, Alert } from '@mui/material';
-import { ErrorOutline, ExpandMore, BugReport, FindInPage, RestartAlt } from '@mui/icons-material';
+import { AlertTriangle, ChevronDown, Bug, Search, RotateCcw, Home, Copy, RefreshCw } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
 /**
  * ENHANCED ERROR BOUNDARY
@@ -97,236 +101,204 @@ class ErrorBoundary extends React.Component {
     // Get current time for the error
     const errorTime = new Date().toISOString();
     
-    // Parse the stack trace for better debugging
-    const parsedError = this.parseMinifiedStack(error, errorInfo);
+    // Parse the error stack for better debugging
+    const errorDetails = this.parseMinifiedStack(error, errorInfo);
     
-    // Capture the error details
+    // Log the error with detailed information
+    console.error('🚨 ERROR BOUNDARY CAUGHT AN ERROR:', {
+      error: error.toString(),
+      errorInfo: errorInfo.componentStack,
+      errorDetails,
+      errorTime,
+      componentName: this.props.componentName || 'Unknown Component',
+      location: window.location.href,
+      userAgent: navigator.userAgent
+    });
+    
+    // Update state with error information
     this.setState({
       error,
       errorInfo,
+      errorDetails,
       errorTime,
-      errorType: parsedError.errorType,
-      errorLocation: parsedError.errorLocation,
-      errorDetails: parsedError,
       stackParsed: true
     });
     
-    // Create a clean error ID for easier tracking
-    const errorId = `ERR_${Date.now().toString(36)}_${Math.floor(Math.random() * 1000)}`;
-    
-    // Log the error with a distinctive pattern that's easy to find in logs
-    console.error(`\n🔴 ====== ERROR BOUNDARY CAUGHT ERROR (${errorId}) ====== 🔴`);
-    console.error(`⏰ Time: ${errorTime}`);
-    console.error(`🏷️ Type: ${parsedError.errorType}`);
-    console.error(`📍 Location: ${parsedError.errorLocation}`);
-    console.error(`⚛️ Component: ${this.props.componentName || 'Unknown'}`);
-    console.error(`⚛️ Component Path: ${parsedError.componentPath}`);
-    
-    if (parsedError.possibleUndefinedCall) {
-      console.error(`❓ Possible undefined call: ${parsedError.possibleUndefinedCall}`);
-    }
-    
-    if (parsedError.isReduxError) {
-      console.error(`🔄 REDUX ERROR DETECTED - Likely a missing action or selector`);
-    }
-    
-    // Technical details for developers
-    console.error('\n📋 Technical Details:');
-    console.error(`Message: ${error.message}`);
-    console.error('Full Error Object:', error);
-    console.error('Component Stack:', errorInfo.componentStack);
-    
-    // Suggestions based on error type
-    console.error('\n🔧 Potential Fixes:');
-    if (parsedError.isReduxError) {
-      console.error('1. Check if all actions are properly exported from their slice files');
-      console.error('2. Ensure all reducers in createSlice have matching exports');
-      console.error('3. Verify no direct imports from slice.actions are being used in component body');
-      console.error('4. Look for dynamic imports or requires that might fail in production');
-    } else if (parsedError.errorType.includes('Undefined')) {
-      console.error('1. Check for null/undefined objects before accessing their properties');
-      console.error('2. Verify that all imported functions exist and are exported correctly');
-      console.error('3. Check for typos in function or variable names');
-    }
-    
-    console.error(`🔴 ====== END OF ERROR ${errorId} ====== 🔴\n`);
-    
-    // Save error to localStorage for debugging across refreshes
-    try {
-      const existingErrors = JSON.parse(localStorage.getItem('gradebook_errors') || '[]');
-      existingErrors.push({
-        id: errorId,
-        time: errorTime,
-        type: parsedError.errorType,
-        location: parsedError.errorLocation,
-        component: this.props.componentName || 'Unknown',
-        message: error.message,
-        isReduxError: parsedError.isReduxError,
-        componentPath: parsedError.componentPath
-      });
-      // Keep only the last 10 errors
-      if (existingErrors.length > 10) {
-        existingErrors.shift();
+    // Log to external service if available (e.g., Sentry, LogRocket)
+    if (window.logErrorToService) {
+      try {
+        window.logErrorToService(error, errorInfo, errorDetails);
+      } catch (loggingError) {
+        console.error('Failed to log error to external service:', loggingError);
       }
-      localStorage.setItem('gradebook_errors', JSON.stringify(existingErrors));
-    } catch (e) {
-      console.error('Failed to save error to localStorage:', e);
     }
   }
 
-  // Add method to copy error details to clipboard for support
   copyErrorDetailsToClipboard = () => {
-    try {
-      const { error, errorInfo, errorType, errorLocation, errorTime, errorDetails } = this.state;
-      
-      // Create a formatted text report
-      const errorReport = [
-        `ERROR REPORT - ${errorTime}`,
-        `Type: ${errorType || error?.name || 'Unknown Error'}`,
-        `Location: ${errorLocation || 'Unknown'}`,
-        `Component: ${this.props.componentName || 'Unknown'}`,
-        errorDetails?.componentPath ? `Component Path: ${errorDetails.componentPath}` : '',
-        `Message: ${error?.message || 'No message available'}`,
-        '',
-        'Technical Details:',
-        errorInfo?.componentStack || 'No stack trace available',
-        '',
-        'Browser Info:',
-        `User Agent: ${navigator.userAgent}`,
-        `App Version: ${localStorage.getItem('app_version') || 'Unknown'}`,
-      ].filter(Boolean).join('\n');
-      
-      navigator.clipboard.writeText(errorReport);
-      alert('Error details copied to clipboard!');
-    } catch (e) {
-      console.error('Failed to copy error details:', e);
-      alert('Failed to copy error details. Please check console logs.');
+    const errorDetails = {
+      error: this.state.error?.toString(),
+      errorInfo: this.state.errorInfo?.componentStack,
+      errorDetails: this.state.errorDetails,
+      errorTime: this.state.errorTime,
+      componentName: this.props.componentName,
+      location: window.location.href,
+      userAgent: navigator.userAgent
+    };
+    
+    const errorText = JSON.stringify(errorDetails, null, 2);
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(errorText).then(() => {
+        // You could add a toast notification here
+        console.log('Error details copied to clipboard');
+      }).catch(err => {
+        console.error('Failed to copy error details:', err);
+      });
+    } else {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = errorText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      console.log('Error details copied to clipboard (fallback method)');
     }
   };
   
   render() {
     if (this.state.hasError) {
-      const { errorType, errorLocation, errorDetails } = this.state;
-      const isReduxError = errorDetails?.isReduxError;
-      const errorId = `ERR_${Date.now().toString(36)}`;
+      const { errorDetails, isReduxError } = this.state;
       
-      // Enhanced fallback UI with debugging tools
       return (
-        <Box sx={{ p: 2, maxWidth: '800px', mx: 'auto', mt: 2 }}>
-          <Paper elevation={3} sx={{ p: 3 }}>
-            {/* Error Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <ErrorOutline color="error" sx={{ fontSize: 40, mr: 2 }} />
-              <Typography variant="h5" component="h2" color="error">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <Card className="max-w-4xl w-full">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-red-600 mb-2">
                 Something went wrong
-              </Typography>
-            </Box>
+              </CardTitle>
+              <p className="text-gray-600">
+                {this.props.componentName ? 
+                  `An error occurred in the ${this.props.componentName} component.` : 
+                  'An unexpected error occurred.'
+                }
+              </p>
+            </CardHeader>
             
-            <Alert severity="error" sx={{ mb: 3 }}>
-              An error occurred in the App Root.
-              {errorType && <strong> Error: {errorType}</strong>}
-            </Alert>
-            
+            <CardContent className="space-y-6">
             {/* Error Summary */}
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" paragraph>
-                <strong>Error ID:</strong> {errorId}
-              </Typography>
-              
-              {errorLocation && (
-                <Typography variant="body1" paragraph>
-                  <strong>Error Location:</strong> {errorLocation}
-                </Typography>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-red-800 mb-2">Error Summary</h3>
+                {errorDetails?.errorType && (
+                  <p className="text-sm text-red-700 mb-2">
+                    <strong>Error Type:</strong> {errorDetails.errorType}
+                  </p>
+                )}
+                
+                {errorDetails?.errorLocation && (
+                  <p className="text-sm text-red-700 mb-2">
+                    <strong>Error Location:</strong> {errorDetails.errorLocation}
+                  </p>
               )}
               
               {errorDetails?.componentPath && (
-                <Typography variant="body1" paragraph>
+                  <p className="text-sm text-red-700 mb-2">
                   <strong>Component Path:</strong> {errorDetails.componentPath}
-                </Typography>
+                  </p>
               )}
               
               {isReduxError && (
-                <Alert severity="warning" sx={{ my: 2 }}>
-                  <Typography variant="body2">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-3">
+                    <p className="text-sm text-yellow-800">
                     <strong>Redux Error Detected:</strong> This appears to be an issue with Redux state management.
                     Likely causes include missing action exports or selectors.
-                  </Typography>
-                </Alert>
+                    </p>
+                  </div>
               )}
-            </Box>
+              </div>
             
             {/* Technical Details (collapsible) */}
-            <Accordion sx={{ mb: 2 }}>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <BugReport sx={{ mr: 1 }} />
-                  <Typography>Technical Details</Typography>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <div className="flex items-center">
+                      <Bug className="mr-2 w-4 h-4" />
+                      Technical Details
+                    </div>
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
                 {this.state.error && (
-                  <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" color="error">
+                    <div className="p-4 bg-gray-100 rounded-lg">
+                      <p className="text-sm font-medium text-red-600 mb-2">
                       Error: {this.state.error.toString()}
-                    </Typography>
+                      </p>
                     {this.state.errorInfo && (
-                      <Typography variant="body2" component="pre" sx={{ mt: 2, overflow: 'auto', maxHeight: '200px', fontSize: '0.75rem' }}>
+                        <pre className="text-xs text-gray-700 mt-2 overflow-auto max-h-48 bg-white p-2 rounded border">
                         {this.state.errorInfo.componentStack}
-                      </Typography>
+                        </pre>
                     )}
-                  </Box>
+                    </div>
                 )}
-              </AccordionDetails>
-            </Accordion>
+                </CollapsibleContent>
+              </Collapsible>
             
             {/* Suggestions for fixing */}
             {isReduxError && (
-              <Accordion sx={{ mb: 2 }}>
-                <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <FindInPage sx={{ mr: 1 }} />
-                    <Typography>Suggested Fixes</Typography>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography variant="body2" component="div">
-                    <ol>
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <div className="flex items-center">
+                        <Search className="mr-2 w-4 h-4" />
+                        Suggested Fixes
+                      </div>
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                       <li>Check if all reducers in Redux slices are properly exported</li>
                       <li>Verify that <code>ensureValidData</code> action is exported from directionSlice.js</li>
                       <li>Ensure no dynamic imports or requires are used in component code</li>
                       <li>Look for typos in imported action names</li>
                     </ol>
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
             )}
             
             {/* Action Buttons */}
-            <Box sx={{ mt: 3, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              <div className="flex flex-wrap gap-3 pt-4">
               <Button 
-                variant="contained" 
-                color="primary" 
                 onClick={() => window.location.href = '/'}
-                startIcon={<RestartAlt />}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
               >
+                  <Home className="mr-2 w-4 h-4" />
                 Go to Home
               </Button>
               <Button 
-                variant="outlined" 
+                  variant="outline"
                 onClick={() => window.location.reload()}
               >
+                  <RefreshCw className="mr-2 w-4 h-4" />
                 Reload Page
               </Button>
               <Button 
-                variant="outlined" 
-                color="secondary"
+                  variant="outline"
                 onClick={this.copyErrorDetailsToClipboard}
               >
+                  <Copy className="mr-2 w-4 h-4" />
                 Copy Error Details
               </Button>
-            </Box>
-          </Paper>
-        </Box>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       );
     }
 

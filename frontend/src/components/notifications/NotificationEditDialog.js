@@ -1,14 +1,17 @@
 import React from 'react';
 import {
   Dialog,
-  DialogActions,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
-  TextField,
-  FormControlLabel,
-  Switch,
-  Button,
-} from '@mui/material';
+} from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
+import { Textarea } from '../ui/textarea';
 
 const NotificationEditDialog = ({
   open,
@@ -26,62 +29,59 @@ const NotificationEditDialog = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="md" 
-      fullWidth
-      PaperProps={{
-        sx: { minHeight: '400px' }
-      }}
-    >
-      <DialogTitle>
-        Edit Notification
-      </DialogTitle>
-      <DialogContent>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Title"
-          fullWidth
-          variant="outlined"
-          value={editForm.title}
-          onChange={handleInputChange('title')}
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          margin="dense"
-          label="Message"
-          fullWidth
-          multiline
-          rows={4}
-          variant="outlined"
-          value={editForm.message}
-          onChange={handleInputChange('message')}
-          sx={{ mb: 2 }}
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={editForm.isImportant}
-              onChange={handleInputChange('isImportant')}
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Notification</DialogTitle>
+          <DialogDescription>
+            Make changes to your notification here. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={editForm.title}
+              onChange={handleInputChange('title')}
+              placeholder="Notification title"
             />
-          }
-          label="Mark as Important"
-        />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              value={editForm.message}
+              onChange={handleInputChange('message')}
+              placeholder="Notification message"
+              rows={4}
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="important"
+              checked={editForm.isImportant}
+              onCheckedChange={(checked) => onFormChange('isImportant', checked)}
+            />
+            <Label htmlFor="important">Mark as Important</Label>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={onSave} 
+            disabled={!editForm.title || !editForm.message || isLoading}
+          >
+            Save Changes
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={onSave} 
-          variant="contained"
-          disabled={!editForm.title || !editForm.message || isLoading}
-        >
-          Save Changes
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

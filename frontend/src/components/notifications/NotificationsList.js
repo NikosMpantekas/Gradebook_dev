@@ -1,33 +1,21 @@
 import React from 'react';
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  ListItemSecondaryAction,
-  Avatar,
-  IconButton,
-  Divider,
-  Chip,
-  Tooltip,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import {
-  NotificationsActive as NotificationsActiveIcon,
-  NotificationsNone as NotificationsNoneIcon,
-  Announcement as AnnouncementIcon,
-  Person as PersonIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  MarkEmailRead as MarkEmailReadIcon,
-} from '@mui/icons-material';
 import { format, isValid, parseISO } from 'date-fns';
+import { 
+  Bell, 
+  BellOff, 
+  Megaphone, 
+  User, 
+  Trash2, 
+  Edit, 
+  MailOpen,
+  AlertCircle
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader } from '../ui/card';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
+import { Separator } from '../ui/separator';
 
 const NotificationsList = ({ 
   notifications, 
@@ -38,9 +26,6 @@ const NotificationsList = ({
   onDelete,
   onNavigate 
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
   // Safely validate notification data
   const validateNotification = (notification) => {
     if (!notification || typeof notification !== 'object') {
@@ -106,50 +91,32 @@ const NotificationsList = ({
   if (!Array.isArray(notifications)) {
     console.error('Notifications is not an array:', typeof notifications, notifications);
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          py: 8, 
-          textAlign: 'center',
-          px: { xs: 2, sm: 3 }
-        }}
-      >
-        <NotificationsNoneIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
-        <Typography variant="h6" color="error.main" gutterBottom>
+      <div className="flex flex-col items-center py-16 text-center px-4">
+        <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+        <h3 className="text-lg font-semibold text-destructive mb-2">
           Error loading notifications
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+        </h3>
+        <p className="text-sm text-muted-foreground">
           Invalid notification data received. Please refresh the page.
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
   if (notifications.length === 0) {
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          py: 8, 
-          textAlign: 'center',
-          px: { xs: 2, sm: 3 }
-        }}
-      >
-        <NotificationsNoneIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-        <Typography variant="h6" color="text.secondary" gutterBottom>
+      <div className="flex flex-col items-center py-16 text-center px-4">
+        <BellOff className="h-16 w-16 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
           {tabValue === 0 ? 'No notifications received' : 'No notifications sent'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+        </h3>
+        <p className="text-sm text-muted-foreground">
           {tabValue === 0 
             ? 'You will see new notifications here when they arrive.' 
             : 'Notifications you send will appear here.'
           }
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
@@ -158,31 +125,21 @@ const NotificationsList = ({
 
   if (validNotifications.length === 0) {
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          py: 8, 
-          textAlign: 'center',
-          px: { xs: 2, sm: 3 }
-        }}
-      >
-        <NotificationsNoneIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
-        <Typography variant="h6" color="warning.main" gutterBottom>
+      <div className="flex flex-col items-center py-16 text-center px-4">
+        <AlertCircle className="h-16 w-16 text-warning mb-4" />
+        <h3 className="text-lg font-semibold text-warning mb-2">
           Invalid notification data
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+        </h3>
+        <p className="text-sm text-muted-foreground">
           All notifications contain invalid data. Please contact support.
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
-  // Mobile-optimized card layout
-  if (isMobile) {
-    return (
-      <Box sx={{ px: { xs: 1, sm: 2 } }}>
+  return (
+    <TooltipProvider>
+      <div className="space-y-4">
         {validNotifications.map((notification) => {
           const safeNotification = {
             _id: notification._id || 'unknown',
@@ -195,426 +152,124 @@ const NotificationsList = ({
           };
 
           return (
-            <Card
+            <Card 
               key={safeNotification._id}
-              sx={{
-                mb: 2,
-                cursor: 'pointer',
-                bgcolor: safeNotification.isImportant 
-                  ? (safeNotification.isRead ? 'warning.light' : 'warning.light')
-                  : (safeNotification.isRead ? 'transparent' : 'action.hover'),
-                '&:hover': {
-                  bgcolor: safeNotification.isImportant ? 'warning.main' : 'action.selected',
-                  transform: 'translateY(-1px)',
-                  boxShadow: safeNotification.isImportant ? '0 4px 12px rgba(255, 152, 0, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
-                },
-                border: safeNotification.isImportant ? '2px solid' : '1px solid',
-                borderColor: safeNotification.isImportant ? 'warning.main' : 'divider',
-                transition: 'all 0.3s ease',
-                boxShadow: safeNotification.isImportant ? '0 2px 8px rgba(255, 152, 0, 0.2)' : 'none',
-                position: 'relative',
-                overflow: 'visible',
-                '&::before': safeNotification.isImportant ? {
-                  content: '"🔥"',
-                  position: 'absolute',
-                  top: -8,
-                  right: -8,
-                  fontSize: '1.2rem',
-                  zIndex: 1,
-                  animation: 'pulse 2s infinite'
-                } : {}
-              }}
+              className={`cursor-pointer transition-all hover:shadow-md ${
+                safeNotification.isRead ? 'opacity-75' : 'border-primary/20'
+              }`}
               onClick={() => handleNotificationClick(safeNotification._id)}
             >
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <Avatar sx={{ 
-                    bgcolor: safeNotification.isImportant ? 'warning.main' : 'primary.main',
-                    width: 40,
-                    height: 40,
-                    flexShrink: 0
-                  }}>
-                    {safeNotification.isImportant ? (
-                      <AnnouncementIcon />
-                    ) : safeNotification.isRead ? (
-                      <NotificationsNoneIcon />
-                    ) : (
-                      <NotificationsActiveIcon />
-                    )}
-                  </Avatar>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="text-sm">
+                        {safeNotification.sender.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-semibold text-foreground truncate">
+                          {safeNotification.title}
+                        </h4>
+                        {safeNotification.isImportant && (
+                          <Badge variant="destructive" className="text-xs">
+                            Important
+                          </Badge>
+                        )}
+                        {!safeNotification.isRead && (
+                          <Badge variant="secondary" className="text-xs">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {safeNotification.message}
+                      </p>
+                    </div>
+                  </div>
                   
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography 
-                        variant="subtitle1" 
-                        sx={{ 
-                          fontWeight: safeNotification.isRead ? 'normal' : 'bold',
-                          flex: 1,
-                          minWidth: 0,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {safeNotification.title}
-                      </Typography>
-                      {safeNotification.isImportant && (
-                        <Chip 
-                          label="🔥" 
-                          size="small" 
-                          color="warning"
-                          variant="filled"
-                          sx={{
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem',
-                            animation: 'pulse 2s infinite',
-                            boxShadow: '0 2px 4px rgba(255, 152, 0, 0.3)',
-                            ml: 1
-                          }}
-                        />
-                      )}
-                    </Box>
+                  <div className="flex items-center space-x-2 ml-4">
+                    {!safeNotification.isRead && onMarkAsRead && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMarkAsRead(safeNotification._id);
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <MailOpen className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Mark as read</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        mb: 1,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        lineHeight: 1.4
-                      }}
-                    >
-                      {safeNotification.message}
-                    </Typography>
+                    {canEdit(safeNotification) && onEdit && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(safeNotification);
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit notification</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <PersonIcon sx={{ fontSize: 16 }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {tabValue === 0 ? 
-                            (safeNotification.sender?.name || 'Unknown sender') : 
-                            'To recipients'
-                          }
-                        </Typography>
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatNotificationDate(safeNotification.createdAt)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-                
-                {/* Action buttons */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
-                  {tabValue === 0 && !safeNotification.isRead && (
-                    <Tooltip title="Mark as read">
-                      <IconButton 
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onMarkAsRead === 'function') {
-                            onMarkAsRead(safeNotification._id);
-                            // Dispatch custom event to refresh header counts
-                            window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
-                          }
-                        }}
-                      >
-                        <MarkEmailReadIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {canEdit(notification) && (
-                    <Tooltip title="Edit notification">
-                      <IconButton 
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onEdit === 'function') {
-                            onEdit(e, notification);
-                          }
-                        }}
-                        sx={{ color: 'primary.main' }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {(tabValue === 1 || user?.role === 'admin') && (
-                    <Tooltip title="Delete notification">
-                      <IconButton 
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onDelete === 'function') {
-                            onDelete(safeNotification._id);
-                          }
-                        }}
-                        sx={{ color: 'error.main' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
+                    {canEdit(safeNotification) && onDelete && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(safeNotification._id);
+                            }}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete notification</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-3 w-3" />
+                    <span>{safeNotification.sender.name || 'Unknown sender'}</span>
+                  </div>
+                  <span>{formatNotificationDate(safeNotification.createdAt)}</span>
+                </div>
               </CardContent>
             </Card>
           );
         })}
-      </Box>
-    );
-  }
-
-  // Desktop list layout (existing code)
-  return (
-    <List>
-      {validNotifications.map((notification) => {
-        // Additional safety check for each notification
-        const safeNotification = {
-          _id: notification._id || 'unknown',
-          title: notification.title || 'Untitled',
-          message: notification.message || 'No message',
-          isRead: Boolean(notification.isRead),
-          isImportant: Boolean(notification.isImportant || notification.urgent),
-          sender: notification.sender || { name: 'Unknown sender' },
-          createdAt: notification.createdAt || new Date().toISOString()
-        };
-
-        return (
-          <Box key={safeNotification._id}>
-            <ListItem
-              alignItems="flex-start"
-              secondaryAction={
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {tabValue === 0 && !safeNotification.isRead && (
-                    <Tooltip title="Mark as read">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="mark as read"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onMarkAsRead === 'function') {
-                            onMarkAsRead(safeNotification._id);
-                            // Dispatch custom event to refresh header counts
-                            window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
-                          }
-                        }}
-                      >
-                        <MarkEmailReadIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {canEdit(notification) && (
-                    <Tooltip title="Edit notification">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="edit" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onEdit === 'function') {
-                            onEdit(e, notification);
-                          }
-                        }}
-                        sx={{ ml: 1, color: 'primary.main' }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {(tabValue === 1 || user?.role === 'admin') && (
-                    <Tooltip title="Delete notification">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="delete" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onDelete === 'function') {
-                            onDelete(safeNotification._id);
-                          }
-                        }}
-                        sx={{ ml: 1, color: 'error.main' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
-              }
-              sx={{
-                cursor: 'pointer',
-                bgcolor: safeNotification.isImportant 
-                  ? (safeNotification.isRead ? 'warning.light' : 'warning.light')
-                  : (safeNotification.isRead ? 'transparent' : 'action.hover'),
-                '&:hover': {
-                  bgcolor: safeNotification.isImportant ? 'warning.main' : 'action.selected',
-                  transform: 'translateY(-1px)',
-                  boxShadow: safeNotification.isImportant ? '0 4px 12px rgba(255, 152, 0, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
-                },
-                borderRadius: 1,
-                mb: 1,
-                border: safeNotification.isImportant ? '2px solid' : '1px solid',
-                borderColor: safeNotification.isImportant ? 'warning.main' : 'divider',
-                transition: 'all 0.3s ease',
-                boxShadow: safeNotification.isImportant ? '0 2px 8px rgba(255, 152, 0, 0.2)' : 'none',
-                position: 'relative',
-                overflow: 'visible',
-                '&::before': safeNotification.isImportant ? {
-                  content: '"🔥"',
-                  position: 'absolute',
-                  top: -8,
-                  right: -8,
-                  fontSize: '1.2rem',
-                  zIndex: 1,
-                  animation: 'pulse 2s infinite'
-                } : {}
-              }}
-              onClick={() => handleNotificationClick(safeNotification._id)}
-            >
-              <ListItemAvatar>
-                <Avatar sx={{ 
-                  bgcolor: safeNotification.isImportant ? 'warning.main' : 'primary.main',
-                  width: 40,
-                  height: 40
-                }}>
-                  {safeNotification.isImportant ? (
-                    <AnnouncementIcon />
-                  ) : safeNotification.isRead ? (
-                    <NotificationsNoneIcon />
-                  ) : (
-                    <NotificationsActiveIcon />
-                  )}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        fontWeight: safeNotification.isRead ? 'normal' : 'bold',
-                        flex: 1
-                      }}
-                    >
-                      {safeNotification.title}
-                    </Typography>
-                    {safeNotification.isImportant && (
-                      <Chip 
-                        label="🔥 IMPORTANT" 
-                        size="small" 
-                        color="warning"
-                        variant="filled"
-                        sx={{
-                          fontWeight: 'bold',
-                          fontSize: '0.75rem',
-                          animation: 'pulse 2s infinite',
-                          boxShadow: '0 2px 4px rgba(255, 152, 0, 0.3)'
-                        }}
-                      />
-                    )}
-                  </Box>
-                }
-                secondary={
-                  <Box>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        mb: 1
-                      }}
-                    >
-                      {safeNotification.message}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <PersonIcon sx={{ fontSize: 16 }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {tabValue === 0 ? 
-                            (safeNotification.sender?.name || 'Unknown sender') : 
-                            'To recipients'
-                          }
-                        </Typography>
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatNotificationDate(safeNotification.createdAt)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                }
-              />
-              <ListItemSecondaryAction>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {/* Mark as Read button - only show for unread notifications */}
-                  {!safeNotification.isRead && tabValue === 0 && (
-                    <Tooltip title="Mark as read">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="mark as read"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onMarkAsRead === 'function') {
-                            onMarkAsRead(safeNotification._id);
-                            // Dispatch custom event to refresh header counts
-                            window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
-                          }
-                        }}
-                        sx={{ color: 'success.main' }}
-                      >
-                        <MarkEmailReadIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {/* Edit button - only for sent notifications or admin */}
-                  {canEdit(safeNotification) && (
-                    <Tooltip title="Edit notification">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="edit" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onEdit === 'function') {
-                            onEdit(e, safeNotification);
-                          }
-                        }}
-                        sx={{ ml: 1, color: 'primary.main' }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {/* Delete button - only for sent notifications or admin */}
-                  {(tabValue === 1 || user?.role === 'admin') && (
-                    <Tooltip title="Delete notification">
-                      <IconButton 
-                        edge="end" 
-                        aria-label="delete" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof onDelete === 'function') {
-                            onDelete(safeNotification._id);
-                          }
-                        }}
-                        sx={{ ml: 1, color: 'error.main' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
-              </ListItemSecondaryAction>
-            </ListItem>
-            <Divider variant="inset" component="li" />
-          </Box>
-        );
-      })}
-    </List>
+      </div>
+    </TooltipProvider>
   );
 };
 

@@ -76,7 +76,7 @@ const AnimatedCog = ({ size = 120, position = "bottom-right" }) => {
         <SettingsIcon
           sx={{
             fontSize: size,
-            color: "#337ab7",
+            color: "hsl(var(--primary))",
             filter: "drop-shadow(0 0 8px rgba(51, 122, 183, 0.6))",
             opacity: 0.7, // Make it slightly transparent to be behind
           }}
@@ -273,7 +273,7 @@ const DashboardMockup = () => (
           sx={{
             width: 28,
             height: 28,
-            bgcolor: "#337ab7",
+            bgcolor: "hsl(var(--primary))",
             borderRadius: "50%",
           }}
         />
@@ -339,7 +339,7 @@ const DashboardMockup = () => (
             height: 36,
             bgcolor: "#23262b",
             borderRadius: 2,
-            border: "1px solid #337ab7",
+            border: "1px solid hsl(var(--primary))",
           }}
         />
         <Box
@@ -348,7 +348,7 @@ const DashboardMockup = () => (
             height: 36,
             bgcolor: "#23262b",
             borderRadius: 2,
-            border: "1px solid #337ab7",
+            border: "1px solid hsl(var(--primary))",
           }}
         />
         <Box
@@ -357,7 +357,7 @@ const DashboardMockup = () => (
             height: 36,
             bgcolor: "#23262b",
             borderRadius: 2,
-            border: "1px solid #337ab7",
+            border: "1px solid hsl(var(--primary))",
           }}
         />
         <Box
@@ -366,7 +366,7 @@ const DashboardMockup = () => (
             height: 36,
             bgcolor: "#23262b",
             borderRadius: 2,
-            border: "1px solid #337ab7",
+            border: "1px solid hsl(var(--primary))",
           }}
         />
       </Box>

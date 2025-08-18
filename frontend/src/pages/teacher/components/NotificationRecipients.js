@@ -1,568 +1,425 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  OutlinedInput,
-  FormHelperText,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Button,
-  Card,
-  CardContent,
-  Alert,
-  Divider,
-  FormControlLabel,
-  RadioGroup,
-  Radio
-} from '@mui/material';
+import { useSelector } from 'react-redux';
 import { 
-  Search as SearchIcon, 
-  Clear as ClearIcon,
-  FilterList as FilterListIcon,
-  Group as GroupIcon,
-  School as SchoolIcon,
-  Person as PersonIcon,
-  SupervisorAccount as SupervisorAccountIcon,
-  SelectAll as SelectAllIcon
-} from '@mui/icons-material';
-import axios from 'axios';
+  Users, 
+  User, 
+  School, 
+  BookOpen, 
+  Search, 
+  Filter, 
+  Check,
+  X,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Badge } from '../../../components/ui/badge';
+import { Checkbox } from '../../../components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { API_URL } from '../../../config/appConfig';
 
-/**
- * NotificationRecipients component with class-based filtering system
- * Implements cascading filters: School Branch → Direction → Subject → Users
- * Supports role-based filtering and "Select All" functionality
- */
-const NotificationRecipients = ({
-  selectedRecipients,
-  onRecipientsChange,
-  error,
+const NotificationRecipients = ({ 
+  selectedRecipients, 
+  onRecipientsChange, 
+  error, 
   disabled,
-  currentUserRole = 'admin' // Default to admin if not provided
+  currentUserRole,
+  // Add props for recipients data
+  students = [],
+  teachers = [],
+  parents = [],
+  loading = false
 }) => {
-  // Filter states
-  const [filterOptions, setFilterOptions] = useState({
-    schoolBranches: [],
-    directions: [],
-    subjects: []
-  });
-  
-  // Selected filter values
-  const [selectedFilters, setSelectedFilters] = useState({
-    schoolBranch: '',
-    direction: '',
-    subject: '',
-    userRole: 'student' // 'student', 'teacher', 'parent', 'all'
-  });
-  
-  // User data and search
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
+  const [expandedSections, setExpandedSections] = useState(new Set(['students', 'teachers', 'parents']));
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Loading states
-  const [loadingFilters, setLoadingFilters] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [filterError, setFilterError] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'cards'
 
-  // Get auth token for API calls
-  const getAuthConfig = () => {
-    const token = localStorage.getItem('token');
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
+  // Remove the API fetching logic - data comes from props now
+  // const [students, setStudents] = useState([]);
+  // const [teachers, setTeachers] = useState([]);
+  // const [parents, setParents] = useState([]);
+  // const [loading, setLoading] = useState(false);
+  // const { token } = useSelector((state) => state.auth);
+  // const { role: currentUserRole } = useState('admin'); // Default to admin for now
+
+  // Remove the useEffect and fetchRecipients function since data comes from props
+  // useEffect(() => {
+  //   fetchRecipients();
+  // }, []);
+
+  const handleRecipientToggle = (recipientId, recipientType) => {
+    const recipientKey = `${recipientType}_${recipientId}`;
+    
+    if (selectedRecipients.includes(recipientKey)) {
+      onRecipientsChange(selectedRecipients.filter(id => id !== recipientKey));
+    } else {
+      onRecipientsChange([...selectedRecipients, recipientKey]);
+    }
   };
 
-  // Load filter options on component mount
-  useEffect(() => {
-    loadFilterOptions();
-  }, []);
+  const isRecipientSelected = (recipientId, recipientType) => {
+    const recipientKey = `${recipientType}_${recipientId}`;
+    return selectedRecipients.includes(recipientKey);
+  };
 
-  // Load users when filters change
-  useEffect(() => {
-    if (selectedFilters.schoolBranch || selectedFilters.direction || selectedFilters.subject) {
-      loadFilteredUsers();
+  const getRecipientCount = (type) => {
+    const count = selectedRecipients.filter(id => id.startsWith(`${type}_`)).length;
+    return count > 0 ? count : null;
+  };
+
+  const toggleSection = (section) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
     } else {
-      setFilteredUsers([]);
+      newExpanded.add(section);
     }
-  }, [selectedFilters.schoolBranch, selectedFilters.direction, selectedFilters.subject, selectedFilters.userRole]);
+    setExpandedSections(newExpanded);
+  };
 
-  // Apply search filter to available users
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredUsers(allUsers);
-    } else {
-      const filtered = allUsers.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filterRecipients = (recipients, type) => {
+    let filtered = recipients;
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(recipient =>
+        recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipient.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredUsers(filtered);
     }
-  }, [searchTerm, allUsers]);
-
-  // Load filter options from backend
-  const loadFilterOptions = async () => {
-    setLoadingFilters(true);
-    setFilterError('');
     
-    try {
-      console.log('Loading notification filter options...');
-      const endpoint = `${API_URL}/api/students/notification/filters`;
-      const response = await axios.get(endpoint, getAuthConfig());
-      
-      console.log('Filter options loaded:', response.data);
-      setFilterOptions(response.data);
-    } catch (error) {
-      console.error('Error loading filter options:', error);
-      setFilterError('Failed to load filter options. Please try again.');
-    } finally {
-      setLoadingFilters(false);
+    // Filter by role
+    if (filterRole !== 'all') {
+      filtered = filtered.filter(recipient => recipient.role === filterRole);
     }
-  };
-
-  // Load filtered users based on selected criteria
-  const loadFilteredUsers = async () => {
-    setLoadingUsers(true);
-    setFilterError('');
     
-    try {
-      const params = new URLSearchParams();
-      if (selectedFilters.schoolBranch) params.append('schoolBranch', selectedFilters.schoolBranch);
-      if (selectedFilters.direction) params.append('direction', selectedFilters.direction);
-      if (selectedFilters.subject) params.append('subject', selectedFilters.subject);
-      if (selectedFilters.userRole) params.append('userRole', selectedFilters.userRole);
-      
-      console.log('Loading filtered users with params:', params.toString());
-      
-      const endpoint = `${API_URL}/api/students/notification/filtered?${params}`;
-      const response = await axios.get(endpoint, getAuthConfig());
-      
-      console.log(`Loaded ${response.data.length} filtered users:`, response.data);
-      setAllUsers(response.data);
-      setFilteredUsers(response.data);
-    } catch (error) {
-      console.error('Error loading filtered users:', error);
-      setFilterError('Failed to load users. Please try again.');
-      setFilteredUsers([]);
-    } finally {
-      setLoadingUsers(false);
-    }
+    return filtered;
   };
 
-  // Handle filter changes with cascading reset
-  const handleFilterChange = (filterType, value) => {
-    console.log(`Filter changed: ${filterType} = ${value}`);
-    
-    setSelectedFilters(prev => {
-      const newFilters = { ...prev, [filterType]: value };
-      
-      // Reset dependent filters when parent filter changes
-      if (filterType === 'schoolBranch') {
-        newFilters.direction = '';
-        newFilters.subject = '';
-      } else if (filterType === 'direction') {
-        newFilters.subject = '';
-      }
-      
-      return newFilters;
-    });
-    
-    // Clear current selection when filters change
-    onRecipientsChange({ target: { value: [] } });
+  const getFilteredStudents = () => filterRecipients(students, 'student');
+  const getFilteredTeachers = () => filterRecipients(teachers, 'teacher');
+  const getFilteredParents = () => filterRecipients(parents, 'parent');
+
+  const selectAllInSection = (recipients, type) => {
+    const recipientKeys = recipients.map(recipient => `${type}_${recipient._id}`);
+    const newSelected = [...new Set([...selectedRecipients, ...recipientKeys])];
+    onRecipientsChange(newSelected);
   };
 
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+  const deselectAllInSection = (recipients, type) => {
+    const recipientKeys = recipients.map(recipient => `${type}_${recipient._id}`);
+    const newSelected = selectedRecipients.filter(id => !recipientKeys.includes(id));
+    onRecipientsChange(newSelected);
   };
 
-  // Clear search
-  const handleClearSearch = () => {
-    setSearchTerm('');
-  };
-
-  // Clear all filters
-  const handleClearFilters = () => {
-    setSelectedFilters({
-      schoolBranch: '',
-      direction: '',
-      subject: '',
-      userRole: 'student'
-    });
-    setSearchTerm('');
-    onRecipientsChange({ target: { value: [] } });
-  };
-
-  // Select all filtered users
-  const handleSelectAll = () => {
-    const allUserIds = filteredUsers.map(user => user._id);
-    onRecipientsChange({ target: { value: allUserIds } });
-  };
-
-  // Clear all selections
-  const handleClearAll = () => {
-    onRecipientsChange({ target: { value: [] } });
-  };
-
-  // Get available directions based on selected school branch
-  const getAvailableDirections = () => {
-    return filterOptions.directions.filter(direction => {
-      // For now, show all directions - can be enhanced with branch-specific filtering
-      return true;
-    });
-  };
-
-  // Get available subjects based on selected direction
-  const getAvailableSubjects = () => {
-    return filterOptions.subjects.filter(subject => {
-      // For now, show all subjects - can be enhanced with direction-specific filtering
-      return true;
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+        <p className="text-sm text-muted-foreground">Loading recipients...</p>
+      </div>
+    );
+  }
 
   return (
-    <Card sx={{ mb: 3 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <FilterListIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" component="h2">
-            Select Recipients
-          </Typography>
-        </Box>
-
-        {filterError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {filterError}
-          </Alert>
-        )}
-
-        {/* Role Selection */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <GroupIcon sx={{ mr: 1, fontSize: '1.1rem' }} />
-            User Type
-          </Typography>
-          <FormControl component="fieldset">
-            <RadioGroup
-              row
-              value={selectedFilters.userRole}
-              onChange={(e) => handleFilterChange('userRole', e.target.value)}
-            >
-              <FormControlLabel 
-                value="student" 
-                control={<Radio />} 
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <PersonIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
-                    Students
-                  </Box>
-                }
-              />
-              {/* Hide teacher and all users options for teachers */}
-              {currentUserRole === 'admin' && (
-                <>
-                  <FormControlLabel 
-                    value="teacher" 
-                    control={<Radio />} 
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <SupervisorAccountIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
-                        Teachers
-                      </Box>
-                    }
-                  />
-                  <FormControlLabel 
-                    value="parent" 
-                    control={<Radio />} 
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <PersonIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
-                        Parents
-                      </Box>
-                    }
-                  />
-                  <FormControlLabel 
-                    value="all" 
-                    control={<Radio />} 
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <GroupIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
-                        All Users
-                      </Box>
-                    }
-                  />
-                </>
-              )}
-            </RadioGroup>
-          </FormControl>
-        </Box>
-
-        {/* Cascading Filters */}
-        <Box sx={{ display: 'grid', grid: 'auto / 1fr 1fr 1fr', gap: 2, mb: 3 }}>
-          {/* School Branch Filter */}
-          <FormControl fullWidth disabled={loadingFilters}>
-            <InputLabel>School Branch</InputLabel>
-            <Select
-              value={selectedFilters.schoolBranch}
-              onChange={(e) => handleFilterChange('schoolBranch', e.target.value)}
-              label="School Branch"
-              startAdornment={<SchoolIcon sx={{ mr: 1, color: 'action.active' }} />}
-            >
-              <MenuItem value="">
-                <em>All Branches</em>
-              </MenuItem>
-              {filterOptions.schoolBranches.map((branch) => (
-                <MenuItem key={branch.value} value={branch.value}>
-                  {branch.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Direction Filter */}
-          <FormControl fullWidth disabled={loadingFilters}>
-            <InputLabel>Direction</InputLabel>
-            <Select
-              value={selectedFilters.direction}
-              onChange={(e) => handleFilterChange('direction', e.target.value)}
-              label="Direction"
-            >
-              <MenuItem value="">
-                <em>All Directions</em>
-              </MenuItem>
-              {getAvailableDirections().map((direction) => (
-                <MenuItem key={direction.value} value={direction.value}>
-                  {direction.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Subject Filter */}
-          <FormControl fullWidth disabled={loadingFilters}>
-            <InputLabel>Subject</InputLabel>
-            <Select
-              value={selectedFilters.subject}
-              onChange={(e) => handleFilterChange('subject', e.target.value)}
-              label="Subject"
-            >
-              <MenuItem value="">
-                <em>All Subjects</em>
-              </MenuItem>
-              {getAvailableSubjects().map((subject) => (
-                <MenuItem key={subject.value} value={subject.value}>
-                  {subject.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Filter Actions */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleClearFilters}
-            disabled={loadingFilters || loadingUsers}
-          >
-            Clear Filters
-          </Button>
-          {loadingFilters && (
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-              <CircularProgress size={16} sx={{ mr: 1 }} />
-              <Typography variant="caption">Loading filters...</Typography>
-            </Box>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center space-x-3">
+          <Users className="h-6 w-6 text-primary" />
+          <CardTitle>Select Recipients</CardTitle>
+          {selectedRecipients.length > 0 && (
+            <Badge variant="default">{selectedRecipients.length} selected</Badge>
           )}
-        </Box>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Search and Filter */}
+        <div className="bg-muted/30 rounded-lg p-4 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search recipients by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-background border-border hover:border-primary/50 transition-colors"
+            />
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-primary" />
+              <Label className="text-sm font-medium text-foreground">Filter by role:</Label>
+            </div>
+            <Select value={filterRole} onValueChange={setFilterRole}>
+              <SelectTrigger className="w-36 h-9 bg-background border-border hover:border-primary/50 hover:bg-background/80 transition-all duration-200 shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="All Roles" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border shadow-lg">
+                <SelectItem value="all" className="hover:bg-muted/50 cursor-pointer">
+                  All Roles
+                </SelectItem>
+                <SelectItem value="student" className="hover:bg-muted/50 cursor-pointer">
+                  Students
+                </SelectItem>
+                <SelectItem value="teacher" className="hover:bg-muted/50 cursor-pointer">
+                  Teachers
+                </SelectItem>
+                <SelectItem value="parent" className="hover:bg-muted/50 cursor-pointer">
+                  Parents
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-        <Divider sx={{ my: 2 }} />
-
-
-        {/* Selection Actions */}
-        {filteredUsers.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<SelectAllIcon />}
-              onClick={handleSelectAll}
-              disabled={disabled || loadingUsers}
-            >
-              Select All ({filteredUsers.length})
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleClearAll}
-              disabled={disabled || loadingUsers || selectedRecipients.length === 0}
-            >
-              Clear Selection
-            </Button>
-          </Box>
-        )}
-
-        {/* Recipients Selection with Integrated Search */}
-        <FormControl 
-          fullWidth 
-          error={!!error}
-          disabled={disabled || loadingUsers}
-        >
-          <InputLabel id="recipients-label">Search and Select Recipients</InputLabel>
-          <Select
-            labelId="recipients-label"
-            id="recipients"
-            multiple
-            value={selectedRecipients}
-            onChange={onRecipientsChange}
-            input={<OutlinedInput label="Search and Select Recipients" />}
-            renderValue={(selected) => (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {selected.map((value) => {
-                  const selectedUser = filteredUsers.find(user => user._id === value);
-                  
-                  // GHOST USER FIX: Only render chips for valid users with names
-                  if (!selectedUser || !selectedUser.name || selectedUser.name.trim() === '') {
-                    console.warn('NotificationRecipients: Filtering out invalid user selection:', value);
-                    // Auto-remove invalid user from selection
-                    setTimeout(() => {
-                      const newSelected = selectedRecipients.filter(id => id !== value);
-                      onRecipientsChange({ target: { value: newSelected } });
-                    }, 0);
-                    return null; // Don't render this chip
-                  }
-                  
-                  return (
-                    <Chip 
-                      key={value} 
-                      label={`${selectedUser.name} (${selectedUser.role})`}
-                      size="small"
-                      color={selectedUser.role === 'teacher' ? 'secondary' : 'primary'}
-                      onDelete={() => {
-                        const newSelected = selectedRecipients.filter(id => id !== value);
-                        onRecipientsChange({ target: { value: newSelected } });
-                      }}
-                    />
-                  );
-                })}
-              </Box>
-            )}
-            MenuProps={{
-              PaperProps: {
-                style: { 
-                  maxHeight: 400,
-                  minWidth: 300
-                },
-              },
-              // Add search functionality to the dropdown
-              MenuListProps: {
-                sx: {
-                  '& .MuiMenuItem-root': {
-                    whiteSpace: 'normal',
-                    wordWrap: 'break-word'
-                  }
-                }
-              }
-            }}
-          >
-            {/* Search Field at Top of Dropdown */}
-            <Box sx={{ p: 1, borderBottom: '1px solid', borderColor: 'divider', position: 'sticky', top: 0, bgcolor: 'background.paper', zIndex: 1 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ fontSize: '1rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: searchTerm ? (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={handleClearSearch}
-                        edge="end"
-                      >
-                        <ClearIcon sx={{ fontSize: '1rem' }} />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null
-                }}
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: 'divider',
-                    },
-                  },
-                }}
-              />
-            </Box>
-            
-            {loadingUsers ? (
-              <MenuItem disabled>
-                <CircularProgress size={20} sx={{ mr: 1 }} />
-                Loading users...
-              </MenuItem>
-            ) : filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
-                <MenuItem key={user._id} value={user._id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    {user.role === 'teacher' ? (
-                      <SupervisorAccountIcon sx={{ mr: 1, fontSize: '1rem', color: 'secondary.main' }} />
+        {/* Recipients Sections */}
+        <div className="space-y-4">
+          {/* Students Section */}
+          <Collapsible open={expandedSections.has('students')}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <User className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Students</CardTitle>
+                      {getRecipientCount('student') && (
+                        <Badge variant="secondary">{getRecipientCount('student')}</Badge>
+                      )}
+                    </div>
+                    {expandedSections.has('students') ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <PersonIcon sx={{ mr: 1, fontSize: '1rem', color: 'primary.main' }} />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <Box>
-                      <Typography variant="body2">{user.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {user.email} • {user.role}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </MenuItem>
-              ))
-            ) : searchTerm ? (
-              <MenuItem disabled>
-                <Box sx={{ textAlign: 'center', py: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No users found matching "{searchTerm}"
-                  </Typography>
-                  <Button size="small" onClick={handleClearSearch} sx={{ mt: 1 }}>
-                    Clear Search
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => selectAllInSection(getFilteredStudents(), 'student')}
+                      disabled={disabled}
+                    >
+                      Select All
+                    </Button>
+          <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deselectAllInSection(getFilteredStudents(), 'student')}
+                      disabled={disabled}
+                    >
+                      Deselect All
+          </Button>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {getFilteredStudents().map((student) => (
+                      <div key={student._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`student-${student._id}`}
+                          checked={isRecipientSelected(student._id, 'student')}
+                          onCheckedChange={() => handleRecipientToggle(student._id, 'student')}
+                          disabled={disabled}
+                        />
+                        <Label htmlFor={`student-${student._id}`} className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{student.name}</span>
+                            <span className="text-sm text-muted-foreground">{student.email}</span>
+                          </div>
+                          {student.school && (
+                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                              <School className="h-3 w-3" />
+                              <span>{student.school.name}</span>
+                            </div>
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Teachers Section */}
+          <Collapsible open={expandedSections.has('teachers')}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <User className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Teachers</CardTitle>
+                      {getRecipientCount('teacher') && (
+                        <Badge variant="secondary">{getRecipientCount('teacher')}</Badge>
+                      )}
+                    </div>
+                    {expandedSections.has('teachers') ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="flex items-center space-x-2 mb-3">
+            <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => selectAllInSection(getFilteredTeachers(), 'teacher')}
+                      disabled={disabled}
+                    >
+                      Select All
+            </Button>
+            <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deselectAllInSection(getFilteredTeachers(), 'teacher')}
+                      disabled={disabled}
+                    >
+                      Deselect All
+            </Button>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {getFilteredTeachers().map((teacher) => (
+                      <div key={teacher._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`teacher-${teacher._id}`}
+                          checked={isRecipientSelected(teacher._id, 'teacher')}
+                          onCheckedChange={() => handleRecipientToggle(teacher._id, 'teacher')}
+                          disabled={disabled}
+                        />
+                        <Label htmlFor={`teacher-${teacher._id}`} className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{teacher.name}</span>
+                            <span className="text-sm text-muted-foreground">{teacher.email}</span>
+                          </div>
+                          {teacher.subjects && teacher.subjects.length > 0 && (
+                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                              <BookOpen className="h-3 w-3" />
+                              <span>{teacher.subjects.map(s => s.name).join(', ')}</span>
+                            </div>
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Parents Section */}
+          <Collapsible open={expandedSections.has('parents')}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <User className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Parents</CardTitle>
+                      {getRecipientCount('parent') && (
+                        <Badge variant="secondary">{getRecipientCount('parent')}</Badge>
+                      )}
+                    </div>
+                    {expandedSections.has('parents') ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => selectAllInSection(getFilteredParents(), 'parent')}
+                      disabled={disabled}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deselectAllInSection(getFilteredParents(), 'parent')}
+                      disabled={disabled}
+                    >
+                      Deselect All
                   </Button>
-                </Box>
-              </MenuItem>
-            ) : selectedFilters.schoolBranch || selectedFilters.direction || selectedFilters.subject ? (
-              <MenuItem disabled>
-                No users found with the selected filters
-              </MenuItem>
-            ) : (
-              <MenuItem disabled>
-                Please select filters to see available users
-              </MenuItem>
-            )}
-          </Select>
-          <FormHelperText>
-            {error || (
-              filteredUsers.length > 0 
-                ? `${filteredUsers.length} users available • ${selectedRecipients.length} selected`
-                : 'Use filters above to find users from your assigned classes'
-            )}
-          </FormHelperText>
-        </FormControl>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {getFilteredParents().map((parent) => (
+                      <div key={parent._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`parent-${parent._id}`}
+                          checked={isRecipientSelected(parent._id, 'parent')}
+                          onCheckedChange={() => handleRecipientToggle(parent._id, 'parent')}
+                          disabled={disabled}
+                        />
+                        <Label htmlFor={`parent-${parent._id}`} className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{parent.name}</span>
+                            <span className="text-sm text-muted-foreground">{parent.email}</span>
+                          </div>
+                          {parent.students && parent.students.length > 0 && (
+                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              <span>{parent.students.map(s => s.name).join(', ')}</span>
+                            </div>
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        </div>
+
+        {/* Summary */}
+        {selectedRecipients.length > 0 && (
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {selectedRecipients.length} recipient(s) selected
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onRecipientsChange([])}
+                disabled={disabled}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear All
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

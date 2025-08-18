@@ -5,31 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { getUserData } from '../features/auth/authSlice';
 import logger from '../services/loggerService';
 import ErrorBoundary from '../components/common/ErrorBoundary';
-import { 
-  Typography, 
-  Grid, 
-  Paper, 
-  Box, 
-  Button, 
-  CircularProgress,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-  Chip,
-  Stack,
-} from '@mui/material';
-import {
-  AssignmentTurnedIn as AssignmentIcon,
-  Notifications as NotificationsIcon,
-  School as SchoolIcon,
-} from '@mui/icons-material';
 import { getMyNotifications } from '../features/notifications/notificationSlice';
 import { getStudentGrades } from '../features/grades/gradeSlice';
 import { getSchools } from '../features/schools/schoolSlice';
 import { getDirections } from '../features/directions/directionSlice';
 import { getSubjects } from '../features/subjects/subjectSlice';
 import { useRef } from 'react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
+import { Assignment, Notifications, School } from 'lucide-react';
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -300,28 +286,17 @@ const Dashboard = () => {
           errors.subjects = true;
         }
         
-        // Only fetch grades for students
+        // Only try to load grades for students
         if (user.role === 'student') {
           try {
-            await dispatch(getStudentGrades(user._id)).unwrap();
+            await dispatch(getStudentGrades()).unwrap();
           } catch (error) {
             console.error('Failed to load grades:', error);
             errors.grades = true;
           }
         }
         
-        // Get populated user data only if we don't already have it
-        if (!(user.school && typeof user.school === 'object') || 
-            !(user.direction && typeof user.direction === 'object')) {
-          try {
-            await dispatch(getUserData()).unwrap();
-          } catch (error) {
-            console.error('Failed to load user data:', error);
-            errors.userData = true;
-          }
-        }
-        
-        // Set errors and show warning if any errors occurred
+        // Set loading errors if any occurred
         if (Object.keys(errors).length > 0) {
           setLoadingErrors(errors);
           setShowErrorWarning(true);
@@ -332,36 +307,47 @@ const Dashboard = () => {
     }
   }, [user, dispatch]);
 
+  // Process notifications and grades when they change
   useEffect(() => {
-    // Get recent notifications (last 3)
-    if (notifications && notifications.length > 0) {
-      setRecentNotifications(notifications.slice(0, 3));
+    if (notifications && Array.isArray(notifications)) {
+      // Get the 5 most recent notifications
+      const recent = notifications
+        .filter(n => n.date) // Ensure notification has a date
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+      setRecentNotifications(recent);
     }
-
-    // Get recent grades (last 3)
-    if (grades && grades.length > 0) {
-      setRecentGrades(grades.slice(0, 3));
+    
+    if (grades && Array.isArray(grades) && user?.role === 'student') {
+      // Get the 5 most recent grades
+      const recent = grades
+        .filter(g => g.date) // Ensure grade has a date
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+      setRecentGrades(recent);
     }
+  }, [notifications, grades, user?.role]);
 
-    // Set user's schools from populated user data - supporting both old and new field names
-    if (user) {
-      // New: First check for schools[] array (new field for teachers)
-      if (user.schools && user.schools.length > 0) {
-        console.log('Dashboard: Found schools data in new field name', user.schools);
-        // Process data from new field name
-        if (typeof user.schools[0] === 'object') {
-          // Schools are populated objects
+  // Process user's schools, directions, and subjects when they change
+  useEffect(() => {
+    // Get user's schools
+    if (schools && user && user.schools) {
+      // Handle both cases: when schools are objects or just IDs
+      if (user.schools[0] && typeof user.schools[0] === 'object') {
+        // Schools are already populated objects
           setUserSchools(user.schools);
-        } else if (schools && schools.length > 0) {
-          // Schools are just IDs, find the full objects
-          const schoolObjects = user.schools.map(schoolId => 
-            schools.find(s => s._id === schoolId)
-          ).filter(Boolean);
-          setUserSchools(schoolObjects);
-        }
+      } else if (schools.length > 0 && user.schools.length > 0) {
+        // Schools are just IDs, need to match with full objects
+        const userSchoolsData = schools.filter(school => 
+          user.schools.some(userSchool => 
+            (typeof userSchool === 'string' ? userSchool : userSchool._id) === school._id
+          )
+        );
+        setUserSchools(userSchoolsData);
+      }
       }
       // Check for old field name as fallback
-      else if (user.school) {
+    else if (user && user.school) {
         // Handle both single school and multiple schools
         if (Array.isArray(user.school)) {
           // Array of schools
@@ -377,39 +363,37 @@ const Dashboard = () => {
             setUserSchools(schoolObjects);
           }
         } else {
-          // Single school (for students)
-          console.log('Dashboard: Using single school value (student format)');
+        // Single school
+        console.log('Dashboard: Using single school value');
           if (typeof user.school === 'object' && user.school !== null) {
             // School is a populated object
             setUserSchools([user.school]);
           } else if (schools && typeof user.school === 'string') {
-            // School is just an ID, find the full object as fallback
+          // School is just an ID, find the full object
             const school = schools.find(s => s._id === user.school);
             if (school) setUserSchools([school]);
-          }
         }
       }
     }
 
-    // Set user's directions from populated user data - supporting both old and new field names
-    if (user) {
-      // New: First check for directions[] array (new field for teachers)
-      if (user.directions && user.directions.length > 0) {
-        console.log('Dashboard: Found directions data in new field name', user.directions);
-        // Process data from new field name
-        if (typeof user.directions[0] === 'object') {
-          // Directions are populated objects
+    // Get user's directions
+    if (directions && user && user.directions) {
+      // Handle both cases: when directions are objects or just IDs
+      if (user.directions[0] && typeof user.directions[0] === 'object') {
+        // Directions are already populated objects
           setUserDirections(user.directions);
-        } else if (directions && directions.length > 0) {
-          // Directions are just IDs, find the full objects
-          const directionObjects = user.directions.map(directionId => 
-            directions.find(d => d._id === directionId)
-          ).filter(Boolean);
-          setUserDirections(directionObjects);
-        }
+      } else if (directions.length > 0 && user.directions.length > 0) {
+        // Directions are just IDs, need to match with full objects
+        const userDirectionsData = directions.filter(direction => 
+          user.directions.some(userDirection => 
+            (typeof userDirection === 'string' ? userDirection : userDirection._id) === direction._id
+          )
+        );
+        setUserDirections(userDirectionsData);
+      }
       }
       // Check for old field name as fallback
-      else if (user.direction) {
+    else if (user && user.direction) {
         // Handle both single direction and multiple directions
         if (Array.isArray(user.direction)) {
           // Array of directions
@@ -434,7 +418,6 @@ const Dashboard = () => {
             // Direction is just an ID, find the full object as fallback
             const direction = directions.find(d => d._id === user.direction);
             if (direction) setUserDirections([direction]);
-          }
         }
       }
     }
@@ -467,201 +450,184 @@ const Dashboard = () => {
   // If data is still loading, show loading state
   if ((notificationsLoading || gradesLoading) && !user) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <div className="flex-1">
       {/* Error warning banner */}
       {showErrorWarning && (
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 2, 
-            mb: 3, 
-            bgcolor: 'warning.light', 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'warning.main'
-          }}
-        >
-          <Typography variant="body1" color="warning.dark">
+        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4">
+            <p className="text-yellow-800 mb-2">
             {t('errors.generic')}
-          </Typography>
+            </p>
           <Button 
-            size="small" 
+              size="sm" 
             onClick={() => window.location.reload()} 
-            sx={{ mt: 1 }}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
           >
             {t('common.refresh')}
           </Button>
-        </Paper>
+          </CardContent>
+        </Card>
       )}
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         {/* Welcome Section */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{
-            p: { xs: 1.5, sm: 2 }, 
-            height: '100%', 
-            borderRadius: 2,
-            background: theme => theme.palette.mode === 'dark' 
-              ? 'linear-gradient(to right, #1e3c72, #2a5298)'
-              : 'linear-gradient(to right, #4b6cb7, #182848)',
-            color: 'white'
-          }}
-          >
-            <Typography variant="h5" sx={{ mb: 1 }}>
+        <div className="md:col-span-1">
+          <Card className="h-full bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+            <CardContent className="p-4 sm:p-6">
+              <h2 className="text-xl font-bold mb-2">
               {getWelcomeMessage()}, {user?.name}!
-            </Typography>
-            <Typography variant="body1">
+              </h2>
+              <p className="text-blue-100">
               {t('dashboard.welcome')}
-            </Typography>
-          </Paper>
-        </Grid>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* User Info Section */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%', borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+        <div className="md:col-span-1">
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="text-lg font-bold mb-4">
               {t('common.profile')}
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="body1">
+              </h3>
+              <Separator className="mb-4" />
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600">
                   <strong>Role:</strong> {user?.role.charAt(0).toUpperCase() + user?.role.slice(1)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="body1">
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">
                   <strong>Email:</strong> {user?.email}
-                </Typography>
-              </Grid>
+                  </p>
+                </div>
               {(user?.role === 'student' || user?.role === 'teacher') && (
                 <>
-                  <Grid item xs={12}>
-                    <Typography variant="body1">
+                    <div>
+                      <p className="text-sm text-gray-600">
                       <strong>School{userSchools.length > 1 ? 's' : ''}:</strong>
                       {userSchools && userSchools.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          <div className="flex flex-wrap gap-1 mt-1">
                           {userSchools.map(school => (
-                            <Chip key={school._id} label={school.name} size="small" variant="outlined" sx={{ color: 'white', bgcolor: 'primary.main' }} />
+                              <Badge key={school._id} variant="secondary" className="bg-blue-100 text-blue-800">
+                                {school.name}
+                              </Badge>
                           ))}
-                        </Box>
+                          </div>
                       ) : (
                         user?.school ? 'Loading...' : 'Not assigned'
                       )}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="body1">
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">
                       <strong>Direction{userDirections.length > 1 ? 's' : ''}:</strong>
                       {userDirections && userDirections.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          <div className="flex flex-wrap gap-1 mt-1">
                           {userDirections.map(direction => (
-                            <Chip key={direction._id} label={direction.name} size="small" variant="outlined" sx={{ color: 'white', bgcolor: 'secondary.main' }} />
+                              <Badge key={direction._id} variant="secondary" className="bg-green-100 text-green-800">
+                                {direction.name}
+                              </Badge>
                           ))}
-                        </Box>
+                          </div>
                       ) : (
                         user?.direction ? 'Loading...' : 'Not assigned'
                       )}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="body1">
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">
                       <strong>Subjects:</strong> 
                       {userSubjects && userSubjects.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          <div className="flex flex-wrap gap-1 mt-1">
                           {userSubjects.map(subject => (
-                            <Chip key={subject._id} label={subject.name} size="small" variant="outlined" />
+                              <Badge key={subject._id} variant="outline">
+                                {subject.name}
+                              </Badge>
                           ))}
-                        </Box>
+                          </div>
                       ) : (
                         user?.subjects && user.subjects.length > 0 ? 'Loading...' : 'Not assigned'
                       )}
-                    </Typography>
-                  </Grid>
+                      </p>
+                    </div>
                 </>
               )}
-            </Grid>
-          </Paper>
-        </Grid>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Recent Activity Card */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 2, height: '100%', borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+        <div className="md:col-span-1">
+          <Card className="h-full">
+            <CardContent className="p-4">
+              <h3 className="text-lg font-bold mb-4">
               Quick Links
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Grid container spacing={2}>
+              </h3>
+              <Separator className="mb-4" />
+              <div className="grid grid-cols-1 gap-3">
               {user?.role === 'student' && (
-                <Grid item xs={12}>
                   <Button 
-                    variant="outlined" 
-                    startIcon={<AssignmentIcon />}
+                    variant="outline" 
                     onClick={() => navigate('/app/grades')}
-                    fullWidth
+                    className="w-full justify-start"
                   >
+                    <Assignment className="mr-2 w-4 h-4" />
                     View All Grades
                   </Button>
-                </Grid>
               )}
               {user?.role === 'teacher' && (
                 <>
-                  <Grid item xs={12}>
                     <Button 
-                      variant="outlined" 
-                      startIcon={<AssignmentIcon />}
+                      variant="outline" 
                       onClick={() => navigate('/app/teacher/grades/manage')}
-                      fullWidth
+                      className="w-full justify-start"
                     >
+                      <Assignment className="mr-2 w-4 h-4" />
                       Manage Grades
                     </Button>
-                  </Grid>
-                  <Grid item xs={12}>
                     <Button 
-                      variant="outlined" 
-                      startIcon={<NotificationsIcon />}
+                      variant="outline" 
                       onClick={() => navigate('/app/teacher/notifications/create')}
-                      fullWidth
+                      className="w-full justify-start"
                     >
+                      <Notifications className="mr-2 w-4 h-4" />
                       Send Notification
                     </Button>
-                  </Grid>
                 </>
               )}
               {user?.role === 'admin' && (
                 <>
-                  <Grid item xs={12}>
                     <Button 
-                      variant="outlined" 
-                      startIcon={<SchoolIcon />}
+                      variant="outline" 
                       onClick={() => navigate('/app/admin/users')}
-                      fullWidth
+                      className="w-full justify-start"
                     >
+                      <School className="mr-2 w-4 h-4" />
                       {t('navigation.students')}
                     </Button>
-                  </Grid>
-                  <Grid item xs={12}>
                     <Button 
-                      variant="outlined" 
-                      startIcon={<SchoolIcon />}
+                      variant="outline" 
                       onClick={() => navigate('/app/admin/schools')}
-                      fullWidth
+                      className="w-full justify-start"
                     >
+                      <School className="mr-2 w-4 h-4" />
                       {t('navigation.settings')}
                     </Button>
-                  </Grid>
                 </>
               )}
-              <Grid item xs={12}>
                 <Button 
-                  variant="outlined" 
-                  startIcon={<NotificationsIcon />}
+                  variant="outline" 
                   onClick={() => {
                     // Use the appropriate navigation based on user role
                     if (user?.role === 'teacher') {
@@ -674,121 +640,126 @@ const Dashboard = () => {
                       navigate('/app/notifications');
                     }
                   }}
-                  fullWidth
+                  className="w-full justify-start"
                 >
+                  <Notifications className="mr-2 w-4 h-4" />
                   {t('dashboard.notifications')}
                 </Button>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Recent Notifications Section */}
         {isFeatureEnabled('notifications') && (
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 2, minHeight: '120px' }}>
-            <Typography variant="h6" gutterBottom>
+        <div className="md:col-span-1">
+          <Card className="min-h-[120px]">
+            <CardContent className="p-4">
+              <h3 className="text-lg font-bold mb-3">
               {t('dashboard.notifications')}
-            </Typography>
+              </h3>
             {notificationsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <CircularProgress />
-              </Box>
+                <div className="flex justify-center p-4">
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
             ) : loadingErrors.notifications ? (
-              <Typography color="error">
+                <p className="text-red-600">
                 {t('errors.generic')}
-              </Typography>
+                </p>
             ) : (
               <>
                 {recentNotifications.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
+                    <p className="text-sm text-gray-500">
                     No recent notifications
-                  </Typography>
+                    </p>
                 ) : (
-                  <Box>
+                    <div>
                     {recentNotifications.map((notification, index) => (
-                      <Box key={index} sx={{ mb: 1 }}>
-                        <Typography variant="body2" gutterBottom>
+                        <div key={index} className="mb-2">
+                          <p className="text-sm font-medium mb-1">
                           {notification.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                          </p>
+                          <p className="text-xs text-gray-500">
                           {new Date(notification.date).toLocaleDateString()}
-                        </Typography>
-                      </Box>
+                          </p>
+                        </div>
                     ))}
-                  </Box>
+                    </div>
                 )}
                 <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<NotificationsIcon />}
+                    variant="outline"
+                    size="sm"
                   onClick={goToNotifications}
-                  sx={{ mt: 2 }}
+                    className="mt-3"
                 >
+                    <Notifications className="mr-2 w-4 h-4" />
                   View All
                 </Button>
               </>
             )}
-          </Paper>
-        </Grid>
+            </CardContent>
+          </Card>
+        </div>
         )}
 
         {/* Recent Grades Section (Students only) */}
         {user?.role === 'student' && isFeatureEnabled('grades') && (
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 2, minHeight: '120px' }}>
-            <Typography variant="h6" gutterBottom>
+        <div className="md:col-span-1">
+          <Card className="min-h-[120px]">
+            <CardContent className="p-4">
+              <h3 className="text-lg font-bold mb-3">
               Recent Grades
-            </Typography>
+              </h3>
             {gradesLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <CircularProgress />
-              </Box>
+                <div className="flex justify-center p-4">
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
             ) : loadingErrors.grades ? (
-              <Typography color="error">
+                <p className="text-red-600">
                 Error loading grades
-              </Typography>
+                </p>
             ) : (
               <>
                 {recentGrades.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
+                    <p className="text-sm text-gray-500">
                     No recent grades
-                  </Typography>
+                    </p>
                 ) : (
-                  <Box>
+                    <div>
                     {recentGrades.map((grade, index) => (
-                      <Box key={index} sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2">
+                        <div key={index} className="mb-2">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="text-sm">
                             {grade.subject?.name || 'Unknown Subject'}
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            </p>
+                            <p className="text-sm font-bold">
                             {grade.value}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
+                            </p>
+                          </div>
+                          <p className="text-xs text-gray-500">
                           {new Date(grade.date).toLocaleDateString()}
-                        </Typography>
-                      </Box>
+                          </p>
+                        </div>
                     ))}
-                  </Box>
+                    </div>
                 )}
                 <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<AssignmentIcon />}
+                    variant="outline"
+                    size="sm"
                   onClick={goToGrades}
-                  sx={{ mt: 2 }}
+                    className="mt-3"
                 >
+                    <Assignment className="mr-2 w-4 h-4" />
                   View All
                 </Button>
               </>
             )}
-          </Paper>
-        </Grid>
+            </CardContent>
+          </Card>
+        </div>
         )}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   );
 };
 

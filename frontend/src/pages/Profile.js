@@ -1,338 +1,417 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Paper,
-  CircularProgress,
-  Divider,
-} from '@mui/material';
-import { 
-  Save as SaveIcon,
-  Email as EmailIcon,
-  Security as SecurityIcon,
-  Person as PersonIcon,
-  Phone as PhoneIcon,
-  School as SchoolIcon,
-  Close as CloseIcon,
-  SaveAlt as SaveAltIcon
-} from '@mui/icons-material';
-import { updateProfile, reset } from '../features/auth/authSlice';
-import { setThemeColor } from '../features/ui/uiSlice';
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  GraduationCap,
+  Building,
+  Edit,
+  Save,
+  X,
+  Eye,
+  EyeOff,
+  Shield,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { Separator } from '../components/ui/separator';
+import { updateProfile } from '../features/auth/authSlice';
+import authService from '../features/auth/authService';
+import { Badge } from '../components/ui/badge';
 
 const Profile = () => {
-  const { user, isLoading, isError, isSuccess, message } = useSelector(
-    (state) => state.auth
-  );
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user, isLoading } = useSelector((state) => state.auth);
   
-  // Initialize with empty data, will be updated when user data is available
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    password2: '',
-    colorTheme: localStorage.getItem('themeColor') || 'blue', // Default theme color
+    phone: '',
+    contactEmail: '',
+    dateOfBirth: '',
+    role: '',
+    school: '',
+    department: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
   
-  // Set form data when user data becomes available
-  useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.name || '',
-        email: user.email || '',
-      }));
-    }
-  }, [user]);
-
-  const { name, email, password, password2 } = formData;
-
-  const dispatch = useDispatch();
-
-  // Track if form has been submitted
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  
-  const handleEditSave = () => {
-    onSubmit();
-  };
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (isError) {
-      toast.error(message);
-    }
-
-    // Only show success message if the form was actually submitted
-    if (isSuccess && hasSubmitted) {
-      toast.success('Profile updated successfully');
-      setHasSubmitted(false); // Reset after showing message
-    }
-
-    dispatch(reset());
-  }, [isError, isSuccess, message, dispatch, hasSubmitted]);
-
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
-    }));
-  };
-
-  const onSubmit = (e) => {
-    if (e) e.preventDefault();
-
-    if (password !== password2) {
-      toast.error('Passwords do not match');
+    if (!user) {
+      navigate('/login');
       return;
     }
     
-    const userData = {
-      name,
-      email,
-    };
+    // Initialize form data with user info
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      contactEmail: user.contactEmail || '',
+      dateOfBirth: user.dateOfBirth || '',
+      role: user.role || '',
+      school: user.school || '',
+      department: user.department || '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  }, [user, navigate]);
 
-    if (password) {
-      userData.password = password;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
-
-    // Set flag to indicate form was submitted to trigger success message
-    setHasSubmitted(true);
-    dispatch(updateProfile(userData));
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+    
+    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    if (formData.newPassword && formData.newPassword.length < 6) {
+      newErrors.newPassword = 'Password must be at least 6 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    
+    try {
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        contactEmail: formData.contactEmail,
+        dateOfBirth: formData.dateOfBirth,
+        school: formData.school,
+        department: formData.department
+      };
+      
+      // Only include password fields if they're being changed
+      if (formData.newPassword) {
+        updateData.currentPassword = formData.currentPassword;
+        updateData.newPassword = formData.newPassword;
+      }
+      
+      const response = await authService.updateProfile(updateData);
+      
+      if (response.success) {
+        toast.success('Profile updated successfully');
+        setIsEditing(false);
+        // Reset password fields
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      } else {
+        toast.error(response.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile. Please try again.');
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original user data
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      contactEmail: user.contactEmail || '',
+      dateOfBirth: user.dateOfBirth || '',
+      role: user.role || '',
+      school: user.school || '',
+      department: user.department || '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setErrors({});
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <Container component="main" maxWidth="md">
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: 4, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          borderRadius: 2,
-        }}
-      >
-        <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          My Profile
-        </Typography>
-        
-        <Grid container spacing={2}>
-          {/* User Info */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 0.5 }}>
-                {user?.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
-              </Typography>
-            </Box>
-          </Grid>
-          
-          {/* Profile Form */}
-          <Grid item xs={12}>
-            <Box component="form" onSubmit={onSubmit} noValidate>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="name"
-                label="Full Name"
-                name="name"
-                autoComplete="name"
-                value={name}
-                onChange={onChange}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Email Address (Cannot be changed)"
-                name="email"
-                autoComplete="email"
-                value={email}
-                disabled
-                helperText="Email cannot be changed for security reasons"
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: (
-                    <EmailIcon color="disabled" sx={{ mr: 1 }} />
-                  ),
-                }}
-              />
-              
-              <Divider sx={{ my: 3 }} />
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Change Password
-              </Typography>
-              
-              <TextField
-                margin="normal"
-                fullWidth
-                name="password"
-                label="New Password"
-                type="password"
-                id="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={onChange}
-                helperText="Leave blank to keep current password"
-              />
-              <TextField
-                margin="normal"
-                fullWidth
-                name="password2"
-                label="Confirm New Password"
-                type="password"
-                id="password2"
-                value={password2}
-                onChange={onChange}
-              />
-              
-              <Divider sx={{ my: 3 }} />
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                <Box display="flex" alignItems="center">
-                  <SecurityIcon color="primary" sx={{ mr: 1 }} />
-                  Theme Preferences
-                </Box>
-              </Typography>
-              
-              <Grid container spacing={2}>
-                {/* UI Theme Color Picker */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Theme Color
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
-                    {/* Blue Theme (Default) */}
-                    <Box
-                      onClick={() => {
-                        setFormData({ ...formData, colorTheme: 'blue' });
-                        dispatch(setThemeColor('blue'));
-                      }}
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 2,
-                        backgroundColor: '#4A90E2',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        border: formData.colorTheme === 'blue' ? '3px solid #000' : '3px solid transparent',
-                        '&:hover': { transform: 'scale(1.05)' },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      Blue
-                    </Box>
-                    
-                    {/* Green Theme */}
-                    <Box
-                      onClick={() => {
-                        setFormData({ ...formData, colorTheme: 'green' });
-                        dispatch(setThemeColor('green'));
-                      }}
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 2,
-                        backgroundColor: '#4CAF50',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        border: formData.colorTheme === 'green' ? '3px solid #000' : '3px solid transparent',
-                        '&:hover': { transform: 'scale(1.05)' },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      Green
-                    </Box>
-                    
-                    {/* Purple Theme */}
-                    <Box
-                      onClick={() => {
-                        setFormData({ ...formData, colorTheme: 'purple' });
-                        dispatch(setThemeColor('purple'));
-                      }}
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 2,
-                        backgroundColor: '#9C27B0',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        border: formData.colorTheme === 'purple' ? '3px solid #000' : '3px solid transparent',
-                        '&:hover': { transform: 'scale(1.05)' },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      Purple
-                    </Box>
-                    
-                    {/* Pink Theme */}
-                    <Box
-                      onClick={() => {
-                        setFormData({ ...formData, colorTheme: 'pink' });
-                        dispatch(setThemeColor('pink'));
-                      }}
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 2,
-                        backgroundColor: '#E91E63',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        border: formData.colorTheme === 'pink' ? '3px solid #000' : '3px solid transparent',
-                        '&:hover': { transform: 'scale(1.05)' },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      Pink
-                    </Box>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    Choose your preferred color theme
-                  </Typography>
-                </Grid>
-              </Grid>
-              
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                startIcon={<SaveIcon />}
-                sx={{ mt: 3, mb: 2, py: 1.2 }}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  'Save Changes'
-                )}
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-light tracking-wide">Profile</h1>
+          <p className="text-muted-foreground">Manage your account information and settings</p>
+        </div>
+        <div className="flex space-x-2">
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)} className="flex items-center space-x-2">
+              <Edit className="h-4 w-4" />
+              <span>Edit Profile</span>
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleCancel} className="flex items-center space-x-2">
+                <X className="h-4 w-4" />
+                <span>Cancel</span>
               </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-    </Container>
+              <Button onClick={handleSave} className="flex items-center space-x-2">
+                <Save className="h-4 w-4" />
+                <span>Save Changes</span>
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Picture & Basic Info */}
+        <div className="lg:col-span-1 space-y-4">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle>Profile Picture</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Avatar className="h-32 w-32 mx-auto mb-4">
+                <AvatarFallback className="text-3xl font-semibold">
+                  {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-sm text-muted-foreground">
+                Profile pictures are managed by your administrator
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Account Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Role:</span>
+                <Badge variant="secondary" className="capitalize">
+                  {user.role}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">School:</span>
+                <span className="text-sm">{user.school || 'Not specified'}</span>
+              </div>
+              {user.department && (
+                <div className="flex items-center space-x-2">
+                  <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Department:</span>
+                  <span className="text-sm">{user.department}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Profile Form */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className={errors.name ? 'border-destructive' : ''}
+                  />
+                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className={errors.email ? 'border-destructive' : ''}
+                  />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Input
+                    id="contactEmail"
+                    name="contactEmail"
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    placeholder="Enter your contact email"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Password Change Section */}
+          {isEditing && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="currentPassword"
+                        name="currentPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.currentPassword}
+                        onChange={handleInputChange}
+                        placeholder="Enter current password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      name="newPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.newPassword}
+                      onChange={handleInputChange}
+                      placeholder="Enter new password"
+                      className={errors.newPassword ? 'border-destructive' : ''}
+                    />
+                    {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="Confirm new password"
+                    className={errors.confirmPassword ? 'border-destructive' : ''}
+                  />
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+                </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  Leave password fields empty if you don't want to change your password.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

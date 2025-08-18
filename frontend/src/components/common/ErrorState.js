@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Typography, Button, Paper } from '@mui/material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 /**
  * A reusable error state component
@@ -18,33 +18,24 @@ const ErrorState = ({
   retryText = "Try Again"
 }) => {
   const content = (
-    <Box 
-      display="flex" 
-      flexDirection="column"
-      justifyContent="center" 
-      alignItems="center" 
-      sx={{ 
-        p: 4,
-        minHeight: fullPage ? '60vh' : '200px',
-        width: '100%'
-      }}
-    >
-      <ErrorOutlineIcon color="error" sx={{ fontSize: 60 }} />
-      <Typography variant="h6" sx={{ mt: 2, textAlign: 'center' }}>
+    <div className={`flex flex-col justify-center items-center p-8 w-full ${
+      fullPage ? 'min-h-[60vh]' : 'min-h-[200px]'
+    }`}>
+      <AlertCircle className="h-16 w-16 text-destructive" />
+      <h3 className="text-lg font-semibold mt-4 text-center text-foreground">
         {message}
-      </Typography>
+      </h3>
       {onRetry && (
         <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<RefreshIcon />} 
+          variant="default" 
           onClick={onRetry}
-          sx={{ mt: 3 }}
+          className="mt-6"
         >
+          <RefreshCw className="mr-2 h-4 w-4" />
           {retryText}
         </Button>
       )}
-    </Box>
+    </div>
   );
 
   // If it's a full page error state, show it directly
@@ -52,11 +43,13 @@ const ErrorState = ({
     return content;
   }
 
-  // Otherwise wrap it in a Paper component
+  // Otherwise wrap it in a Card component
   return (
-    <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-      {content}
-    </Paper>
+    <Card className="rounded-lg overflow-hidden">
+      <CardContent className="p-0">
+        {content}
+      </CardContent>
+    </Card>
   );
 };
 

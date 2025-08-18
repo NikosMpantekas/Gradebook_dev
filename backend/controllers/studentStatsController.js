@@ -3,6 +3,89 @@ const Grade = require('../models/gradeModel');
 const User = require('../models/userModel');
 const Class = require('../models/classModel');
 
+// @desc    Get student dashboard data (quick stats and recent grades)
+// @route   GET /api/stats/student-dashboard
+// @access  Private (Student only - their own data)
+const getStudentDashboard = asyncHandler(async (req, res) => {
+  try {
+    // Only students can access their own dashboard
+    if (req.user.role !== 'student') {
+      res.status(403);
+      throw new Error('Only students can access student dashboard');
+    }
+
+    const studentId = req.user._id;
+    console.log(`[StudentDashboard] Fetching dashboard data for student: ${studentId}`);
+
+    // Get all grades for this student
+    const grades = await Grade.find({
+      student: studentId,
+      schoolId: req.user.schoolId
+    })
+    .populate('subject', 'name')
+    .populate('teacher', 'name')
+    .sort({ date: -1 });
+
+    // Calculate quick stats
+    const gradeCount = grades.length;
+    const gradeValues = grades.map(g => g.value);
+    const averageGrade = gradeCount > 0 
+      ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
+      : 0;
+
+    // Get unique subjects
+    const subjects = [...new Set(grades.map(g => g.subject?.name).filter(Boolean))];
+    const totalSubjects = subjects.length;
+
+    // Get recent grades (last 7 days for graph)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const recentGrades = grades.filter(grade => 
+      new Date(grade.date) >= sevenDaysAgo
+    );
+
+    // Calculate pending grades (this semester - you might want to adjust this logic)
+    const currentDate = new Date();
+    const semesterStart = new Date(currentDate.getFullYear(), 
+      currentDate.getMonth() >= 8 ? 8 : 0, 1); // August for fall, January for spring
+    
+    const semesterGrades = grades.filter(grade => 
+      new Date(grade.date) >= semesterStart
+    );
+    
+    // For now, pending grades is a placeholder - you might want to implement
+    // logic to determine which assignments are pending
+    const pendingGrades = 0; // This would need business logic to determine
+
+    const dashboardData = {
+      stats: {
+        totalSubjects,
+        averageGrade,
+        gradesReceived: gradeCount,
+        pendingGrades
+      },
+      recentGrades: recentGrades.slice(0, 20), // Last 20 grades for the graph
+      allGrades: grades.slice(0, 10), // Last 10 grades for display
+      subjects
+    };
+
+    console.log(`[StudentDashboard] Dashboard data calculated:`, {
+      totalSubjects,
+      averageGrade,
+      gradesReceived: gradeCount,
+      recentGradesCount: recentGrades.length
+    });
+
+    res.status(200).json(dashboardData);
+
+  } catch (error) {
+    console.error('[StudentDashboard] Error:', error);
+    res.status(500);
+    throw new Error('Error retrieving student dashboard data');
+  }
+});
+
 // @desc    Get student statistics with grade averages and counts
 // @route   GET /api/stats/students
 // @access  Private (Admin: all students, Teacher: only shared students)
@@ -277,5 +360,6 @@ const getStudentDetailedStats = asyncHandler(async (req, res) => {
 
 module.exports = {
   getStudentStats,
-  getStudentDetailedStats
+  getStudentDetailedStats,
+  getStudentDashboard
 };

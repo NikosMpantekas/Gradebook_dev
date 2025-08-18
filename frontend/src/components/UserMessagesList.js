@@ -1,46 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Grid, 
-  Chip, 
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails,
-  Divider
-} from '@mui/material';
-import { 
-  ExpandMore as ExpandMoreIcon,
-  BugReport as BugReportIcon,
-  Email as EmailIcon,
-  QuestionAnswer as QuestionAnswerIcon
-} from '@mui/icons-material';
+  ChevronDown,
+  Bug,
+  Mail,
+  MessageCircle
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 const UserMessagesList = ({ messages }) => {
+  const [expandedMessage, setExpandedMessage] = useState(null);
+
   if (!messages || messages.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="body1" color="text.secondary">
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
           You haven't sent any messages yet.
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'new':
-        return 'primary';
+        return 'bg-blue-100 text-blue-800';
       case 'in-progress':
-        return 'warning';
+        return 'bg-yellow-100 text-yellow-800';
       case 'replied':
-        return 'success';
+        return 'bg-green-100 text-green-800';
       case 'closed':
-        return 'error';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'default';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -59,75 +53,80 @@ const UserMessagesList = ({ messages }) => {
     }
   };
 
+  const toggleMessage = (messageId) => {
+    setExpandedMessage(expandedMessage === messageId ? null : messageId);
+  };
+
   return (
-    <Box sx={{ mt: 2 }}>
+    <div className="space-y-4 mt-4">
       {messages.map((message) => (
-        <Accordion key={message._id} sx={{ mb: 2 }}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls={`message-${message._id}-content`}
-            id={`message-${message._id}-header`}
-          >
-            <Grid container alignItems="center" spacing={1}>
-              <Grid item>
-                {message.isBugReport ? (
-                  <BugReportIcon color="error" />
-                ) : (
-                  <EmailIcon color="primary" />
-                )}
-              </Grid>
-              <Grid item xs>
-                <Typography variant="subtitle1">{message.subject}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                </Typography>
-              </Grid>
-              <Grid item>
-                <Chip 
-                  label={getStatusLabel(message.status)} 
-                  color={getStatusColor(message.status)} 
-                  size="small" 
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ px: 1 }}>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                {message.message}
-              </Typography>
-              
-              {message.adminReply && (
-                <Box sx={{ mt: 3 }}>
-                  <Divider sx={{ mb: 2 }} />
-                  <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                    <Grid item>
-                      <QuestionAnswerIcon color="secondary" />
-                    </Grid>
-                    <Grid item>
-                      <Typography variant="subtitle2">
-                        Admin Response
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                  <Paper variant="outlined" sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {message.adminReply}
-                    </Typography>
-                    {message.adminReplyDate && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        Replied {formatDistanceToNow(new Date(message.adminReplyDate), { addSuffix: true })}
-                      </Typography>
+        <Card key={message._id} className="overflow-hidden">
+          <Collapsible open={expandedMessage === message._id}>
+            <CollapsibleTrigger asChild>
+              <CardHeader 
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => toggleMessage(message._id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {message.isBugReport ? (
+                      <Bug className="h-5 w-5 text-destructive" />
+                    ) : (
+                      <Mail className="h-5 w-5 text-primary" />
                     )}
-                  </Paper>
-                </Box>
-              )}
-            </Box>
-          </AccordionDetails>
-        </Accordion>
+                    <div className="flex flex-col items-start">
+                      <h3 className="font-semibold text-foreground">
+                        {message.subject}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Badge className={getStatusColor(message.status)}>
+                      {getStatusLabel(message.status)}
+                    </Badge>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${
+                      expandedMessage === message._id ? 'rotate-180' : ''
+                    }`} />
+                  </div>
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-foreground mb-2">Message</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {message.message}
+                    </p>
+                  </div>
+                  
+                  {message.adminReply && (
+                    <div>
+                      <h4 className="font-medium text-foreground mb-2">Admin Reply</h4>
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-sm text-foreground">
+                          {message.adminReply}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-muted-foreground">
+                    Sent: {new Date(message.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
       ))}
-    </Box>
+    </div>
   );
 };
 

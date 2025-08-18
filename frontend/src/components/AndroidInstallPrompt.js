@@ -1,44 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography, styled, Snackbar, IconButton } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/GetApp';
-import InfoIcon from '@mui/icons-material/Info';
-import Alert from '@mui/material/Alert';
-
-// Styled components for a more attractive UI
-const InstallButton = styled(Button)(({ theme }) => ({
-  backgroundColor: '#3f51b5',
-  color: 'white',
-  fontWeight: 'bold',
-  padding: '10px 20px',
-  borderRadius: '8px',
-  '&:hover': {
-    backgroundColor: '#303f9f',
-  },
-}));
-
-const StepBox = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'flex-start',
-  marginBottom: '16px',
-  padding: '10px',
-  borderRadius: '8px',
-  backgroundColor: '#f5f5f5',
-}));
-
-const StepNumber = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  width: '28px',
-  height: '28px',
-  borderRadius: '50%',
-  backgroundColor: '#3f51b5',
-  color: 'white',
-  fontWeight: 'bold',
-  marginRight: '16px',
-  flexShrink: 0,
-}));
+import { Download, Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Badge } from './ui/badge';
 
 const AndroidInstallPrompt = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -98,252 +62,196 @@ const AndroidInstallPrompt = () => {
         return () => clearTimeout(timer);
       }
     }
-    
-    // Listen for beforeinstallprompt event to capture it
+  }, []);
+
+  useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
-      console.log('[PWA] Before install prompt fired', e);
-      // Prevent Chrome 76+ from automatically showing the prompt
+      console.log('[PWA] Before install prompt event fired');
       e.preventDefault();
-      // Stash the event so it can be triggered later
       setInstallEvent(e);
-      // Show install status
-      setInstallStatus({
-        show: true,
-        message: 'App is installable! Open the menu to install.',
-        severity: 'success'
-      });
-      // Show the install button
-      setIsOpen(true);
     };
-    
-    // Listen for appinstalled event
-    const handleAppInstalled = (e) => {
-      console.log('[PWA] App was installed', e);
+
+    const handleAppInstalled = () => {
+      console.log('[PWA] App was installed');
       setInstallStatus({
         show: true,
-        message: 'App was successfully installed!',
+        message: 'GradeBook has been successfully installed on your device!',
         severity: 'success'
       });
-      // Hide the install prompt
       setIsOpen(false);
+      localStorage.removeItem('android_install_prompt_dismissed');
     };
-    
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
-    
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
-  const handleClose = () => {
-    setIsOpen(false);
-    localStorage.setItem('android_install_prompt_dismissed', 'true');
-    
-    // Reset after 1 day
-    setTimeout(() => {
-      localStorage.removeItem('android_install_prompt_dismissed');
-    }, 24 * 60 * 60 * 1000);
-  };
-
   const handleInstall = async () => {
+    if (!installEvent) {
+      console.log('[PWA] No install event available');
+      return;
+    }
+
     try {
-      if (installEvent) {
-        console.log('[PWA] Triggering installation prompt...');
-        
-        // Show the install prompt
-        await installEvent.prompt();
-        
-        // Wait for the user to respond to the prompt
-        const choiceResult = await installEvent.userChoice;
-        
-        console.log('[PWA] User installation choice:', choiceResult.outcome);
-        
-        if (choiceResult.outcome === 'accepted') {
-          console.log('[PWA] User accepted the install prompt');
-          setInstallStatus({
-            show: true,
-            message: 'Installation in progress!',
-            severity: 'info'
-          });
-        } else {
-          console.log('[PWA] User dismissed the install prompt');
-          setInstallStatus({
-            show: true,
-            message: 'Installation cancelled. You can install later from the browser menu.',
-            severity: 'warning'
-          });
-        }
-        
-        // Clear the saved prompt since it can't be used twice
-        setInstallEvent(null);
-      } else {
-        console.log('[PWA] No installation prompt available');
-        // Try manual installation instructions
+      console.log('[PWA] Prompting user to install');
+      const result = await installEvent.prompt();
+      console.log('[PWA] Install prompt result:', result);
+      
+      if (result.outcome === 'accepted') {
+        console.log('[PWA] User accepted the install prompt');
         setInstallStatus({
           show: true,
-          message: 'Please install manually: tap menu (⋮) then "Add to Home Screen"',
+          message: 'Installation started! Please follow the prompts on your device.',
+          severity: 'info'
+        });
+      } else {
+        console.log('[PWA] User dismissed the install prompt');
+        setInstallStatus({
+          show: true,
+          message: 'Installation was cancelled. You can install later from your browser menu.',
           severity: 'info'
         });
       }
     } catch (error) {
-      console.error('[PWA] Installation error:', error);
+      console.error('[PWA] Error during install prompt:', error);
       setInstallStatus({
         show: true,
-        message: 'Installation failed. Try again from browser menu.',
+        message: 'An error occurred during installation. Please try again.',
         severity: 'error'
       });
     }
-    
+  };
+
+  const handleDismiss = () => {
     setIsOpen(false);
+    localStorage.setItem('android_install_prompt_dismissed', 'true');
   };
-  
-  const handleDebug = () => {
-    // Force re-check if the app can be installed
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        console.log('[PWA Debug] Service Worker registrations:', registrations);
-      });
-    }
-    
-    // Clear dismissal flag to show prompt again
-    localStorage.removeItem('android_install_prompt_dismissed');
-    
-    setInstallStatus({
-      show: true,
-      message: 'Debug mode activated. Checking installation eligibility...',
-      severity: 'info'
-    });
-    
-    // Show dialog again if closed
-    setIsOpen(true);
+
+  const handleCloseStatus = () => {
+    setInstallStatus({ ...installStatus, show: false });
   };
+
+  if (!isOpen) return null;
 
   return (
     <>
-      <Dialog 
-        open={isOpen} 
-        onClose={handleClose}
-        PaperProps={{
-          style: {
-            borderRadius: '12px',
-            maxWidth: '400px',
-            width: '90%'
-          }
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: '#3f51b5', color: 'white', pb: 1 }}>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            <Box display="flex" alignItems="center">
-              <img 
-                src="/logo192.png" 
-                alt="GradeBook" 
-                style={{ width: '40px', height: '40px', marginRight: '12px', background: 'white', borderRadius: '8px', padding: '4px' }} 
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.style.display = 'none';
-                }}
-              />
-              <Typography variant="h6" fontWeight="bold">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-semibold">
                 Install GradeBook App
-              </Typography>
-            </Box>
-            <IconButton size="small" onClick={handleDebug} sx={{ color: 'white' }}>
-              <InfoIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        
-        <DialogContent sx={{ pt: 3 }}>
-          {debugInfo && (
-            <Box mb={2} p={1} bgcolor="#f5f5f5" borderRadius={1} fontSize="12px" fontFamily="monospace">
-              <Typography variant="caption" component="div" color="textSecondary">
-                {debugInfo}
-              </Typography>
-            </Box>
-          )}
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDismiss}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <DialogDescription>
+              Get the full app experience by installing GradeBook on your device
+            </DialogDescription>
+          </DialogHeader>
           
-          <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
-            Install GradeBook as an app on your Android device for a better experience:
-          </Typography>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  1
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Tap the install button below</p>
+                  <p className="text-xs text-muted-foreground">This will start the installation process</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  2
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Follow your device prompts</p>
+                  <p className="text-xs text-muted-foreground">Your device will guide you through the installation</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  3
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Enjoy the app experience</p>
+                  <p className="text-xs text-muted-foreground">Access GradeBook from your home screen</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                <Info className="h-4 w-4" />
+                <span>Installation is free and takes just a few seconds</span>
+              </div>
+            </div>
+          </div>
           
-          <StepBox>
-            <StepNumber>1</StepNumber>
-            <Box>
-              <Typography variant="subtitle1" fontWeight="bold">
-                Tap the "Install" button below
-              </Typography>
-              <Typography variant="body2">
-                This will trigger the Android installation prompt
-              </Typography>
-            </Box>
-          </StepBox>
-          
-          <StepBox>
-            <StepNumber>2</StepNumber>
-            <Box>
-              <Typography variant="subtitle1" fontWeight="bold">
-                Tap "Add to Home Screen"
-              </Typography>
-              <Typography variant="body2">
-                When prompted by your browser
-              </Typography>
-            </Box>
-          </StepBox>
-          
-          <StepBox>
-            <StepNumber>3</StepNumber>
-            <Box>
-              <Typography variant="subtitle1" fontWeight="bold">
-                Open from your home screen
-              </Typography>
-              <Typography variant="body2">
-                Enjoy a full-screen, app-like experience!
-              </Typography>
-            </Box>
-          </StepBox>
-          
-          <Box mt={2} p={1} bgcolor="#f5f5f5" borderRadius={1}>
-            <Typography variant="body2" color="textSecondary">
-              <strong>Alternative method:</strong> Click ⋮ (menu) in your browser and select "Add to Home Screen"
-            </Typography>
-          </Box>
+          <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
+            <Button
+              variant="outline"
+              onClick={handleDismiss}
+              className="w-full sm:w-auto"
+            >
+              Maybe Later
+            </Button>
+            <Button
+              onClick={handleInstall}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Install App
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        
-        <DialogActions sx={{ justifyContent: 'space-between', p: 2, pt: 0 }}>
-          <Button 
-            onClick={handleClose} 
-            color="inherit"
-            startIcon={<CloseIcon />}
-          >
-            Later
-          </Button>
-          <InstallButton 
-            onClick={handleInstall} 
-            variant="contained" 
-            startIcon={<DownloadIcon />}
-          >
-            Install Now
-          </InstallButton>
-        </DialogActions>
       </Dialog>
       
-      {/* Status Notification */}
-      <Snackbar 
-        open={installStatus.show} 
-        autoHideDuration={6000} 
-        onClose={() => setInstallStatus({...installStatus, show: false})}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setInstallStatus({...installStatus, show: false})} 
-          severity={installStatus.severity}
-          sx={{ width: '100%' }}
-        >
-          {installStatus.message}
-        </Alert>
-      </Snackbar>
+      {/* Status Snackbar */}
+      {installStatus.show && (
+        <div className={`fixed bottom-4 left-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          installStatus.severity === 'success' 
+            ? 'bg-green-100 border border-green-200 text-green-800' 
+            : installStatus.severity === 'error'
+            ? 'bg-red-100 border border-red-200 text-red-800'
+            : 'bg-blue-100 border border-blue-200 text-blue-800'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {installStatus.severity === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : installStatus.severity === 'error' ? (
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              ) : (
+                <Info className="h-5 w-5 text-blue-600" />
+              )}
+              <span className="text-sm font-medium">{installStatus.message}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCloseStatus}
+              className="h-6 w-6 p-0 text-current hover:bg-current/10"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

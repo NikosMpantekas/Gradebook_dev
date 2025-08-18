@@ -1,714 +1,699 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { createNotification, reset } from '../../features/notifications/notificationSlice';
-import { getUsersByRole } from '../../features/users/userSlice';
-// Removed unused imports for simplified filtering
 import { toast } from 'react-toastify';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  MenuItem,
-  FormControl,
-  Select,
-  InputLabel,
-  Paper,
-  FormHelperText,
-  FormControlLabel,
-  Switch,
-  CircularProgress,
-  // Divider, // Unused import
-  Chip,
-  ListItemText,
-  Checkbox,
-  OutlinedInput
-} from '@mui/material';
 import { 
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-  Notifications as NotificationsIcon
-  // FilterList as FilterIcon // Unused import
-} from '@mui/icons-material';
+  Plus, 
+  Save, 
+  X, 
+  Send, 
+  Bell, 
+  Users, 
+  Calendar,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Filter
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { API_URL } from '../../config/appConfig';
 
-// Import our custom components
-import LoadingState from '../../components/common/LoadingState';
-import ErrorState from '../../components/common/ErrorState';
-
-const CreateNotification = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  
-  const { user } = useSelector((state) => state.auth);
-  const { isLoading, isError, isSuccess, message } = useSelector((state) => state.notifications);
-  
-  // Check if teacher has permission to send notifications
-  React.useEffect(() => {
-    // Only applies to teachers, not admins
-    if (user?.role === 'teacher' && user?.canSendNotifications === false) {
-      // Teacher doesn't have permission to send notifications
-      toast.error('You do not have permission to send notifications');
-      navigate('/app/teacher/dashboard');
-    }
-  }, [user, navigate]);
-  const { users, filteredUsers, isLoading: isUsersLoading } = useSelector((state) => state.users);
-  
-  const [availableUsers, setAvailableUsers] = useState([]);
+const CreateNotificationold = () => {
   const [formData, setFormData] = useState({
-    recipients: [],         // Array of recipient IDs (multiple selection)
     title: '',
     message: '',
-    sendToAll: false,
-    filterByRole: 'student', // Default to student role
-    isImportant: false       // Whether this is an important notification
+    priority: 'normal',
+    type: 'announcement',
+    isImportant: false,
+    scheduledFor: '',
+    expiresAt: '',
+    recipients: []
   });
-  const [formErrors, setFormErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Loading state for all reference data
-  // eslint-disable-next-line no-unused-vars
-  const isLoadingOptions = isUsersLoading;
-  
-  // Fetch data when component mounts - simplified to only users based on role
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [parents, setParents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [expandedSections, setExpandedSections] = useState(new Set(['basic', 'recipients', 'advanced']));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
+
+  const { user, token } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    console.log('Fetching data for notification creation...');
-    
-    // Load users based on user role - respecting class-based filtering
-    dispatch(getUsersByRole(formData.filterByRole))
-      .unwrap()
-      .then(users => {
-        console.log(`Loaded ${users?.length || 0} ${formData.filterByRole}s`);
-        // Users will be filtered by class in backend for teachers
-      })
-      .catch(error => {
-        console.error(`Failed to load ${formData.filterByRole}s:`, error);
-        toast.error(`Failed to load users: ${error.message || 'Unknown error'}`);
+    fetchRecipients();
+  }, []);
+
+  const fetchRecipients = async () => {
+    try {
+      // Fetch students
+      const studentsResponse = await fetch(`${API_URL}/api/users?role=student`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-  }, [dispatch]);
 
-  // Update available users when filteredUsers data changes or role filter changes
-  useEffect(() => {
-    if (filteredUsers && Array.isArray(filteredUsers)) {
-      console.log(`Setting ${filteredUsers.length} users for role ${formData.filterByRole}:`, filteredUsers);
-      // Only include users with valid data
-      const validUsers = filteredUsers.filter(user => 
-        user && user._id && user.name && typeof user.name === 'string'
-      );
-      setAvailableUsers(validUsers);
-    } else {
-      // If filteredUsers is not available or not an array, set an empty array
-      console.warn('Filtered users data is invalid:', filteredUsers);
-      setAvailableUsers([]);
+      if (studentsResponse.ok) {
+        const studentsData = await studentsResponse.json();
+        setStudents(studentsData.users || []);
+      }
+
+      // Fetch teachers
+      const teachersResponse = await fetch(`${API_URL}/api/users?role=teacher`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (teachersResponse.ok) {
+        const teachersData = await teachersResponse.json();
+        setTeachers(teachersData.users || []);
+      }
+
+      // Fetch parents
+      const parentsResponse = await fetch(`${API_URL}/api/users?role=parent`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (parentsResponse.ok) {
+        const parentsData = await parentsResponse.json();
+        setParents(parentsData.users || []);
+      }
+
+    } catch (error) {
+      console.error('Error fetching recipients:', error);
+      toast.error('Failed to fetch recipients');
     }
-  }, [filteredUsers, formData.filterByRole]);
+  };
 
-  // Handle the filter related change in role
-  useEffect(() => {
-    // Reset filters when role changes
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      recipients: [], // Reset recipients when role changes
+      [name]: type === 'checkbox' ? checked : value
     }));
     
-    // Load new users - with class-based filtering applied in backend for teachers
-    console.log(`Role changed to ${formData.filterByRole}, loading users...`);
-    dispatch(getUsersByRole(formData.filterByRole));
-  }, [formData.filterByRole, dispatch]);
-
-  // Use refs to track component state
-  const isInitialMount = React.useRef(true);
-  const hasSubmitted = React.useRef(false);
-  
-  // Handle switch change - simplified just for sendToAll and isImportant
-  const handleSwitchChange = (e) => {
-    const { name, checked } = e.target;
-    
-    // Update form data based on switch name
-    setFormData(prev => ({
-      ...prev,
-      [name]: checked
-    }));
-    
-    // Clear errors if needed
-    if (name === 'sendToAll' && checked && formErrors.recipients) {
-      setFormErrors(prev => ({
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
         ...prev,
-        recipients: ''
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleRecipientToggle = (recipientId, recipientType) => {
+    const recipientKey = `${recipientType}_${recipientId}`;
+    
+    if (formData.recipients.includes(recipientKey)) {
+      setFormData(prev => ({
+        ...prev,
+        recipients: prev.recipients.filter(id => id !== recipientKey)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        recipients: [...prev.recipients, recipientKey]
       }));
     }
   };
   
-  const validate = () => {
-    const errors = {};
+  const isRecipientSelected = (recipientId, recipientType) => {
+    const recipientKey = `${recipientType}_${recipientId}`;
+    return formData.recipients.includes(recipientKey);
+  };
+
+  const toggleSection = (section) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const filterRecipients = (recipients, type) => {
+    let filtered = recipients;
     
-    // Basic fields validation
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(recipient =>
+        recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipient.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filter by role
+    if (filterRole !== 'all') {
+      filtered = filtered.filter(recipient => recipient.role === filterRole);
+    }
+    
+    return filtered;
+  };
+
+  const getFilteredStudents = () => filterRecipients(students, 'student');
+  const getFilteredTeachers = () => filterRecipients(teachers, 'teacher');
+  const getFilteredParents = () => filterRecipients(parents, 'parent');
+
+  const selectAllInSection = (recipients, type) => {
+    const recipientKeys = recipients.map(recipient => `${type}_${recipient._id}`);
+    const newRecipients = [...new Set([...formData.recipients, ...recipientKeys])];
+    setFormData(prev => ({ ...prev, recipients: newRecipients }));
+  };
+
+  const deselectAllInSection = (recipients, type) => {
+    const recipientKeys = recipients.map(recipient => `${type}_${recipient._id}`);
+    const newRecipients = formData.recipients.filter(id => !recipientKeys.includes(id));
+    setFormData(prev => ({ ...prev, recipients: newRecipients }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
     if (!formData.title.trim()) {
-      errors.title = 'Please enter a title';
-    } else if (formData.title.length > 100) {
-      errors.title = 'Title must be less than 100 characters';
+      newErrors.title = 'Title is required';
     }
     
     if (!formData.message.trim()) {
-      errors.message = 'Please enter a message';
-    } else if (formData.message.length > 1000) {
-      errors.message = 'Message must be less than 1000 characters';
+      newErrors.message = 'Message is required';
     }
     
-    // Recipient selection validation - simplified
-    if (!formData.sendToAll && formData.recipients.length === 0) {
-      errors.recipients = 'Please select at least one recipient or send to all';
+    if (formData.recipients.length === 0) {
+      newErrors.recipients = 'At least one recipient is required';
     }
     
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (formData.scheduledFor && formData.expiresAt) {
+      const scheduledDate = new Date(formData.scheduledFor);
+      const expiryDate = new Date(formData.expiresAt);
+      
+      if (scheduledDate >= expiryDate) {
+        newErrors.expiresAt = 'Expiry date must be after scheduled date';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
-  
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submission attempted');
     
-    if (validate()) {
-      console.log('Form validation passed, submitting notification');
+    if (!validateForm()) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
       
-      // Set our submission tracking flag
-      hasSubmitted.current = true;
-      
-      // Show loading indicator or disable the submit button
-      setIsSubmitting(true);
-      
-      // Make sure we're not in the initial mount state
-      isInitialMount.current = false;
-      
-      // Create the notification data
       const notificationData = {
-        sender: user._id,
-        title: formData.title,
-        message: formData.message,
+        title: formData.title.trim(),
+        message: formData.message.trim(),
+        priority: formData.priority,
+        type: formData.type,
         isImportant: formData.isImportant,
-        targetRole: formData.filterByRole,
+        scheduledFor: formData.scheduledFor || null,
+        expiresAt: formData.expiresAt || null,
+        recipients: formData.recipients.map(recipient => {
+          const [type, id] = recipient.split('_');
+          return { type, id };
+        })
       };
       
-      // Handle different recipient selection methods - simplified
-      if (formData.sendToAll) {
-        // Send to all users (possibly filtered by role)
-        notificationData.sendToAll = true;
-        // Class filtering will be applied in backend for teachers
-      } else {
-        // Send to specific recipients (multiple selection supported)
-        notificationData.recipients = formData.recipients;
-      }
+      const response = await fetch(`${API_URL}/api/notifications`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(notificationData)
+      });
       
-      console.log('Dispatching createNotification with data:', notificationData);
-      
-      // First ensure any previous notification state is reset
-      dispatch(reset());
-      
-      // Then dispatch the new notification
-      dispatch(createNotification(notificationData))
-        .unwrap()
-        .then((result) => {
-          console.log('Notification created successfully:', result);
-          // Success handling is done in the useEffect
-        })
-        .catch((error) => {
-          console.error('Failed to create notification:', error);
-          toast.error(`Failed to send notification: ${error.message || 'Unknown error'}`);
-          hasSubmitted.current = false;
-        })
-        .finally(() => {
-          setIsSubmitting(false);
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Notification created successfully!');
+        
+        // Reset form
+        setFormData({
+          title: '',
+          message: '',
+          priority: 'normal',
+          type: 'announcement',
+          isImportant: false,
+          scheduledFor: '',
+          expiresAt: '',
+          recipients: []
         });
+        
+        // Navigate to notifications list
+        navigate('/app/teacher/notifications');
     } else {
-      console.log('Form validation failed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create notification');
+      }
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      toast.error(error.message || 'Failed to create notification');
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const handleBack = () => {
-    navigate('/app/teacher/notifications');
-  };
-  
-  // Display loading state while fetching users data
-  if (isUsersLoading) {
-    return (
-      <Box sx={{ flexGrow: 1 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          sx={{ mb: 2 }}
-        >
-          Back to Notifications
-        </Button>
-        <LoadingState message="Loading users data..." />
-      </Box>
-    );
-  }
 
-  // Display error state if there's an error loading users
-  if (isError && !isSubmitting) {
-    return (
-      <Box sx={{ flexGrow: 1 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          sx={{ mb: 2 }}
-        >
-          Back to Notifications
-        </Button>
-        <ErrorState 
-          message={`Failed to load data: ${message || 'Unknown error'}`}
-          onRetry={() => dispatch(getUsersByRole(formData.filterByRole))}
-          retryText="Retry Loading"
-        />
-      </Box>
-    );
-  }
+  const getPriorityColor = (priority) => {
+    const colors = {
+      low: 'secondary',
+      normal: 'default',
+      high: 'destructive',
+      urgent: 'destructive'
+    };
+    return colors[priority] || 'default';
+  };
+
+  const getTypeIcon = (type) => {
+    const icons = {
+      announcement: '📢',
+      reminder: '⏰',
+      alert: '⚠️',
+      update: '📝'
+    };
+    return icons[type] || '📄';
+  };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={handleBack}
-        sx={{ mb: 2 }}
-      >
-        Back to Notifications
+    <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Create Notification (Legacy)</h1>
+            <p className="text-muted-foreground">
+              Send important messages to your students, parents, and colleagues
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => navigate('/app/teacher/notifications')}>
+            <X className="mr-2 h-4 w-4" />
+            Cancel
       </Button>
-      
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <NotificationsIcon color="primary" sx={{ mr: 1, fontSize: 28 }} />
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            Create New Notification
-          </Typography>
-        </Box>
-        
-        <Box component="form" onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            {/* Send To All Switch */}
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.sendToAll}
-                    onChange={handleSwitchChange}
-                    name="sendToAll"
-                    color="primary"
-                  />
-                }
-                label="Send to all recipients"
-              />
-            </Grid>
-            
-            {/* Important Notification Switch */}
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.isImportant}
-                    onChange={handleSwitchChange}
-                    name="isImportant"
-                    color="error"
-                  />
-                }
-                label="Mark as important notification"
-              />
-            </Grid>
-            
-            {/* Role Filter - Always visible */}
-            <Grid item xs={12} md={6}>
-                {/* For teachers, restrict sending to students only */}
-                {user.role === 'teacher' ? (
-                  <Box sx={{ my: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
-                    <Typography variant="body2">
-                      <strong>Note:</strong> As a teacher, you can only send notifications to students.
-                    </Typography>
-                  </Box>
-                ) : (
-                  <FormControl fullWidth>
-                    <InputLabel>Target Role</InputLabel>
-                    <Select
-                      name="filterByRole"
-                      value={formData.filterByRole}
-                      label="Target Role"
-                      onChange={handleChange}
-                    >
-                      <MenuItem value="all">All Users</MenuItem>
-                      <MenuItem value="student">Students Only</MenuItem>
-                      <MenuItem value="teacher">Teachers Only</MenuItem>
-                      {user.role === 'admin' && (
-                        <MenuItem value="admin">Admins Only</MenuItem>
-                      )}
-                    </Select>
-                    <FormHelperText>Select which type of users should receive this notification</FormHelperText>
-                  </FormControl>
-                )}
-            </Grid>
-            
-            {/* Use Advanced Filters Switch */}
-            {!formData.sendToAll && (
-              <Grid item xs={12} md={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.useFilters}
-                      onChange={handleSwitchChange}
-                      name="useFilters"
-                      color="primary"
-                    />
-                  }
-                  label="Use advanced filtering"
-                />
-                <FormHelperText>Filter recipients by school, direction, and subject</FormHelperText>
-              </Grid>
-            )}
-            
-            {/* Multiple Recipients Selection - Only show if NOT sending to all AND NOT using filters */}
-            {!formData.sendToAll && !formData.useFilters && (
-              <Grid item xs={12}>
-                <FormControl 
-                  fullWidth 
-                  error={!!formErrors.recipients}
-                >
-                  <InputLabel id="recipients-label">Recipients *</InputLabel>
-                  <Select
-                    labelId="recipients-label"
-                    id="recipients"
-                    multiple
-                    value={formData.recipients}
-                    label="Recipients *"
-                    onChange={handleRecipientsChange}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((value) => {
-                          const selectedUser = availableUsers.find(user => user._id === value);
-                          return (
-                            <Chip 
-                              key={value} 
-                              label={selectedUser?.name || value} 
-                              size="small" 
-                            />
-                          );
-                        })}
-                      </Box>
-                    )}
-                    MenuProps={{
-                      PaperProps: {
-                        style: { maxHeight: 300 },
-                      },
-                    }}
-                  >
-                    {isUsersLoading ? (
-                      <MenuItem disabled>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <CircularProgress size={20} sx={{ mr: 1 }} />
-                          Loading users...
-                        </Box>
-                      </MenuItem>
-                    ) : availableUsers.length > 0 ? (
-                      availableUsers.map((user) => (
-                        <MenuItem key={user._id} value={user._id}>
-                          <Checkbox checked={formData.recipients.indexOf(user._id) > -1} />
-                          <ListItemText primary={user.name} secondary={user.email} />
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem disabled>No users available for this role</MenuItem>
-                    )}
-                  </Select>
-                  <FormHelperText>
-                    {formErrors.recipients || 
-                    (isUsersLoading ? `Loading ${formData.filterByRole}s...` : 
-                      availableUsers.length === 0 ? `No ${formData.filterByRole}s available` :
-                      `Select one or more ${formData.filterByRole}s to send the notification to`)}
-                  </FormHelperText>
-                </FormControl>
-              </Grid>
-            )}
-            
-            {/* Advanced Filtering Options */}
-            {!formData.sendToAll && formData.useFilters && (
-              <>
-                {/* Filter by Schools */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    Filter by Schools
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      onClick={() => handleSelectAll('selectedSchools', schools)}
-                      disabled={isSchoolsLoading || !schools || schools.length === 0}
-                    >
-                      Select All
-                    </Button>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      onClick={() => handleClearSelection('selectedSchools')}
-                      disabled={formData.selectedSchools.length === 0}
-                    >
-                      Clear
-                    </Button>
-                  </Box>
-                  <FormControl 
-                    fullWidth
-                    error={!!formErrors.selectedSchools}
-                  >
-                    <InputLabel>Schools</InputLabel>
-                    <Select
-                      multiple
-                      name="selectedSchools"
-                      value={formData.selectedSchools}
-                      onChange={handleMultiSelectChange}
-                      input={<OutlinedInput label="Schools" />}
-                      disabled={isSchoolsLoading}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {selected.map((value) => {
-                            const school = schools?.find(s => s._id === value);
-                            return (
-                              <Chip key={value} label={school ? school.name : value} />
-                            );
-                          })}
-                        </Box>
-                      )}
-                    >
-                      {isSchoolsLoading ? (
-                        <MenuItem disabled>
-                          <CircularProgress size={20} sx={{ mr: 1 }} />
-                          Loading schools...
-                        </MenuItem>
-                      ) : schools && schools.length > 0 ? (
-                        schools.map((school) => (
-                          <MenuItem key={school._id} value={school._id}>
-                            <Checkbox checked={formData.selectedSchools.indexOf(school._id) > -1} />
-                            <ListItemText primary={school.name} />
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem disabled>No schools available</MenuItem>
-                      )}
-                    </Select>
-                    <FormHelperText>
-                      {formErrors.selectedSchools || 'Select schools to filter recipients'}
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
-                
-                {/* Filter by Directions */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    Filter by Directions
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      onClick={() => handleSelectAll('selectedDirections', directions)}
-                      disabled={isDirectionsLoading || !directions || directions.length === 0}
-                    >
-                      Select All
-                    </Button>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      onClick={() => handleClearSelection('selectedDirections')}
-                      disabled={formData.selectedDirections.length === 0}
-                    >
-                      Clear
-                    </Button>
-                  </Box>
-                  <FormControl 
-                    fullWidth
-                    error={!!formErrors.selectedDirections}
-                  >
-                    <InputLabel>Directions</InputLabel>
-                    <Select
-                      multiple
-                      name="selectedDirections"
-                      value={formData.selectedDirections}
-                      onChange={handleMultiSelectChange}
-                      input={<OutlinedInput label="Directions" />}
-                      disabled={isDirectionsLoading}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {selected.map((value) => {
-                            const direction = directions?.find(d => d._id === value);
-                            return (
-                              <Chip key={value} label={direction ? direction.name : value} />
-                            );
-                          })}
-                        </Box>
-                      )}
-                    >
-                      {isDirectionsLoading ? (
-                        <MenuItem disabled>
-                          <CircularProgress size={20} sx={{ mr: 1 }} />
-                          Loading directions...
-                        </MenuItem>
-                      ) : directions && directions.length > 0 ? (
-                        directions.map((direction) => (
-                          <MenuItem key={direction._id} value={direction._id}>
-                            <Checkbox checked={formData.selectedDirections.indexOf(direction._id) > -1} />
-                            <ListItemText primary={direction.name} />
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem disabled>No directions available</MenuItem>
-                      )}
-                    </Select>
-                    <FormHelperText>
-                      {formErrors.selectedDirections || 'Select directions to filter recipients'}
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
-                
-                {/* Filter by Subjects */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    Filter by Subjects
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      onClick={() => handleSelectAll('selectedSubjects', filteredSubjects)}
-                      disabled={isSubjectsLoading || !filteredSubjects || filteredSubjects.length === 0}
-                    >
-                      Select All
-                    </Button>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      onClick={() => handleClearSelection('selectedSubjects')}
-                      disabled={formData.selectedSubjects.length === 0}
-                    >
-                      Clear
-                    </Button>
-                  </Box>
-                  <FormControl 
-                    fullWidth
-                    error={!!formErrors.selectedSubjects}
-                  >
-                    <InputLabel>Subjects</InputLabel>
-                    <Select
-                      multiple
-                      name="selectedSubjects"
-                      value={formData.selectedSubjects}
-                      onChange={handleMultiSelectChange}
-                      input={<OutlinedInput label="Subjects" />}
-                      disabled={isSubjectsLoading}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {selected.map((value) => {
-                            const subject = subjects?.find(s => s._id === value);
-                            return (
-                              <Chip key={value} label={subject ? subject.name : value} />
-                            );
-                          })}
-                        </Box>
-                      )}
-                    >
-                      {isSubjectsLoading ? (
-                        <MenuItem disabled>
-                          <CircularProgress size={20} sx={{ mr: 1 }} />
-                          Loading subjects...
-                        </MenuItem>
-                      ) : filteredSubjects && filteredSubjects.length > 0 ? (
-                        filteredSubjects.map((subject) => (
-                          <MenuItem key={subject._id} value={subject._id}>
-                            <Checkbox checked={formData.selectedSubjects.indexOf(subject._id) > -1} />
-                            <ListItemText 
-                              primary={subject.name} 
-                              secondary={
-                                subject.directions && subject.directions.length > 0 ?
-                                subject.directions.map(dir => {
-                                  if (typeof dir === 'object' && dir.name) {
-                                    return dir.name;
-                                  } else {
-                                    const dirObj = directions?.find(d => d._id === dir);
-                                    return dirObj ? dirObj.name : '';
-                                  }
-                                }).filter(Boolean).join(', ') : ''
-                              }
-                            />
-                          </MenuItem>
-                        ))
-                      ) : formData.selectedDirections && formData.selectedDirections.length > 0 ? (
-                        <MenuItem disabled>No subjects found for selected directions</MenuItem>
-                      ) : (
-                        <MenuItem disabled>No subjects available</MenuItem>
-                      )}
-                    </Select>
-                    <FormHelperText>
-                      {formErrors.selectedSubjects || 'Select subjects to filter recipients'}
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
-                
-                {/* Filter Error Message */}
-                {formErrors.filters && (
-                  <Grid item xs={12}>
-                    <Typography color="error">{formErrors.filters}</Typography>
-                  </Grid>
-                )}
-              </>
-            )}
+        </div>
+      </div>
 
-            {/* Title Field */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Title *"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                error={!!formErrors.title}
-                helperText={formErrors.title || 'Enter a descriptive title for your notification'}
-                inputProps={{ maxLength: 100 }}
-              />
-            </Grid>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information Section */}
+        <Collapsible open={expandedSections.has('basic')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Bell className="h-6 w-6 text-primary" />
+                    <CardTitle>Basic Information</CardTitle>
+                  </div>
+                  {expandedSections.has('basic') ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
             
-            {/* Message Field */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Message *"
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                multiline
-                rows={6}
-                error={!!formErrors.message}
-                helperText={
-                  formErrors.message || 
-                  `${formData.message.length}/1000 characters. Enter your notification message.`
-                }
-                inputProps={{ maxLength: 1000 }}
-              />
-            </Grid>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="Enter notification title..."
+                    className={errors.title ? 'border-destructive' : ''}
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-destructive">{errors.title}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message *</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="Enter notification message..."
+                    rows={4}
+                    className={errors.message ? 'border-destructive' : ''}
+                  />
+                  {errors.message && (
+                    <p className="text-sm text-destructive">{errors.message}</p>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="isImportant"
+                    name="isImportant"
+                    checked={formData.isImportant}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isImportant: checked }))}
+                  />
+                  <Label htmlFor="isImportant" className="flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    <span>Mark as Important</span>
+                  </Label>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Recipients Section */}
+        <Collapsible open={expandedSections.has('recipients')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-6 w-6 text-primary" />
+                    <CardTitle>Select Recipients</CardTitle>
+                    {formData.recipients.length > 0 && (
+                      <Badge variant="default">{formData.recipients.length} selected</Badge>
+                    )}
+                  </div>
+                  {expandedSections.has('recipients') ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
             
-            {/* Submit Button */}
-            <Grid item xs={12}>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                {/* Search and Filter */}
+                <div className="space-y-3 mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search recipients by name or email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm">Filter by role:</Label>
+                    <select
+                      value={filterRole}
+                      onChange={(e) => setFilterRole(e.target.value)}
+                      className="text-sm border border-border rounded px-2 py-1 bg-background"
+                    >
+                      <option value="all">All Roles</option>
+                      <option value="student">Students</option>
+                      <option value="teacher">Teachers</option>
+                      <option value="parent">Parents</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Recipients Sections */}
+                <div className="space-y-4">
+                  {/* Students Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Students</h4>
+                      <div className="flex space-x-2">
+                    <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => selectAllInSection(getFilteredStudents(), 'student')}
+                    >
+                      Select All
+                    </Button>
+                    <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deselectAllInSection(getFilteredStudents(), 'student')}
+                        >
+                          Deselect All
+                    </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {getFilteredStudents().map((student) => (
+                        <div key={student._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                          <Checkbox
+                            id={`student-${student._id}`}
+                            checked={isRecipientSelected(student._id, 'student')}
+                            onCheckedChange={() => handleRecipientToggle(student._id, 'student')}
+                          />
+                          <Label htmlFor={`student-${student._id}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{student.name}</span>
+                              <span className="text-sm text-muted-foreground">{student.email}</span>
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Teachers Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Teachers</h4>
+                      <div className="flex space-x-2">
+                    <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => selectAllInSection(getFilteredTeachers(), 'teacher')}
+                    >
+                      Select All
+                    </Button>
+                    <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deselectAllInSection(getFilteredTeachers(), 'teacher')}
+                        >
+                          Deselect All
+                    </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {getFilteredTeachers().map((teacher) => (
+                        <div key={teacher._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                          <Checkbox
+                            id={`teacher-${teacher._id}`}
+                            checked={isRecipientSelected(teacher._id, 'teacher')}
+                            onCheckedChange={() => handleRecipientToggle(teacher._id, 'teacher')}
+                          />
+                          <Label htmlFor={`teacher-${teacher._id}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{teacher.name}</span>
+                              <span className="text-sm text-muted-foreground">{teacher.email}</span>
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Parents Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Parents</h4>
+                      <div className="flex space-x-2">
+                    <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => selectAllInSection(getFilteredParents(), 'parent')}
+                    >
+                      Select All
+                    </Button>
+                    <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deselectAllInSection(getFilteredParents(), 'parent')}
+                        >
+                          Deselect All
+                    </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {getFilteredParents().map((parent) => (
+                        <div key={parent._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                          <Checkbox
+                            id={`parent-${parent._id}`}
+                            checked={isRecipientSelected(parent._id, 'parent')}
+                            onCheckedChange={() => handleRecipientToggle(parent._id, 'parent')}
+                          />
+                          <Label htmlFor={`parent-${parent._id}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{parent.name}</span>
+                              <span className="text-sm text-muted-foreground">{parent.email}</span>
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {errors.recipients && (
+                  <p className="text-sm text-destructive mt-2">{errors.recipients}</p>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Advanced Options Section */}
+        <Collapsible open={expandedSections.has('advanced')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Plus className="h-6 w-6 text-primary" />
+                    <CardTitle>Advanced Options</CardTitle>
+                  </div>
+                  {expandedSections.has('advanced') ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="priority">Priority Level</Label>
+                    <Select value={formData.priority} onValueChange={(value) => handleSelectChange('priority', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Notification Type</Label>
+                    <Select value={formData.type} onValueChange={(value) => handleSelectChange('type', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="announcement">Announcement</SelectItem>
+                        <SelectItem value="reminder">Reminder</SelectItem>
+                        <SelectItem value="alert">Alert</SelectItem>
+                        <SelectItem value="update">Update</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduledFor">Schedule For (Optional)</Label>
+                    <Input
+                      id="scheduledFor"
+                      name="scheduledFor"
+                      type="datetime-local"
+                      value={formData.scheduledFor}
+                      onChange={handleInputChange}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to send immediately
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="expiresAt">Expires At (Optional)</Label>
+                    <Input
+                      id="expiresAt"
+                      name="expiresAt"
+                      type="datetime-local"
+                      value={formData.expiresAt}
+                      onChange={handleInputChange}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When this notification should expire
+                    </p>
+                  </div>
+                </div>
+
+                {errors.expiresAt && (
+                  <p className="text-sm text-destructive">{errors.expiresAt}</p>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3">
               <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={isSubmitting ? <CircularProgress size={24} color="inherit" /> : <SaveIcon />}
-                sx={{ mt: 3 }}
-                disabled={isSubmitting || isLoading}
-              >
-                {isSubmitting ? 'Sending...' : 'Send Notification'}
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/app/teacher/notifications')}
+            disabled={loading}
+          >
+            <X className="mr-2 h-4 w-4" />
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading}>
+            <Send className="mr-2 h-4 w-4" />
+            {loading ? 'Creating...' : 'Create Notification'}
               </Button>
-            </Grid>
-          </Grid>
-        </Box>
-      </Paper>
-    </Box>
+        </div>
+      </form>
+    </div>
   );
 };
 
-export default CreateNotification;
+export default CreateNotificationold;

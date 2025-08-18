@@ -17,8 +17,8 @@ const ScrollFix = () => {
         overflow-x: hidden;
       }
       
-      /* Fix for MUI containers that might block scrolling */
-      .MuiBox-root, .MuiContainer-root, .MuiPaper-root {
+      /* Fix for shadcn/ui containers that might block scrolling */
+      .scroll-fix, .container, .card {
         max-height: none !important;
         overflow: visible !important;
       }
@@ -31,12 +31,12 @@ const ScrollFix = () => {
       }
       
       /* Ensure inputs and select boxes are properly accessible */
-      .MuiFormControl-root {
+      .form-control {
         margin-bottom: 12px !important;
       }
       
       /* Improve dropdown visibility */
-      .MuiMenuItem-root {
+      .dropdown-item {
         padding: 12px 16px !important;
       }
       
@@ -45,6 +45,20 @@ const ScrollFix = () => {
         width: 100%;
         max-width: 1200px;
         margin: 0 auto;
+      }
+      
+      /* Fix for any remaining Material-UI classes that might exist */
+      .MuiBox-root, .MuiContainer-root, .MuiPaper-root {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      
+      .MuiFormControl-root {
+        margin-bottom: 12px !important;
+      }
+      
+      .MuiMenuItem-root {
+        padding: 12px 16px !important;
       }
     `;
     

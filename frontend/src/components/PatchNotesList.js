@@ -1,74 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails,
-  Chip,
-  Grid,
-  Divider,
-  IconButton,
-  Tooltip
-} from '@mui/material';
-import { 
-  ExpandMore as ExpandMoreIcon,
-  NewReleases as NewReleasesIcon,
-  BugReport as BugReportIcon,
-  CodeRounded as CodeIcon,
-  AutoFixHigh as FixIcon,
-  PriorityHigh as CriticalIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
+  ChevronDown,
+  Sparkles,
+  Bug,
+  Code,
+  Wrench,
+  AlertTriangle,
+  Edit,
+  Trash2
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import { Separator } from './ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 // Import ReactMarkdown safely
 import ReactMarkdown from 'react-markdown';
 
 const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
+  const [expandedNote, setExpandedNote] = useState(null);
+
   if (!patchNotes || patchNotes.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="body1" color="text.secondary">
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
           No patch notes available yet.
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
   const getTypeIcon = (type) => {
     switch (type) {
       case 'release':
-        return <NewReleasesIcon color="primary" />;
+        return <Sparkles className="h-4 w-4 text-primary" />;
       case 'bugfix':
-        return <BugReportIcon color="warning" />;
+        return <Bug className="h-4 w-4 text-warning" />;
       case 'feature':
-        return <CodeIcon color="success" />;
+        return <Code className="h-4 w-4 text-success" />;
       case 'improvement':
-        return <FixIcon color="info" />;
+        return <Wrench className="h-4 w-4 text-info" />;
       case 'critical':
-        return <CriticalIcon color="error" />;
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
       default:
-        return <NewReleasesIcon />;
+        return <Sparkles className="h-4 w-4" />;
     }
   };
 
   const getTypeColor = (type) => {
     switch (type) {
       case 'release':
-        return 'primary';
+        return 'bg-primary text-primary-foreground';
       case 'bugfix':
-        return 'warning';
+        return 'bg-warning text-warning-foreground';
       case 'feature':
-        return 'success';
+        return 'bg-success text-success-foreground';
       case 'improvement':
-        return 'info';
+        return 'bg-info text-info-foreground';
       case 'critical':
-        return 'error';
+        return 'bg-destructive text-destructive-foreground';
       default:
-        return 'default';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -89,112 +84,140 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
     }
   };
 
+  const toggleNote = (noteId) => {
+    setExpandedNote(expandedNote === noteId ? null : noteId);
+  };
+
   return (
-    <Box sx={{ mt: 2 }}>
-      {patchNotes.map((note) => (
-        <Accordion key={note._id} sx={{ mb: 2 }}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls={`note-${note._id}-content`}
-            id={`note-${note._id}-header`}
-          >
-            <Grid container alignItems="center" spacing={1}>
-              <Grid item>
-                {getTypeIcon(note.type)}
-              </Grid>
-              <Grid item xs>
-                <Typography variant="subtitle1">
-                  {note.title} <Typography component="span" variant="caption" color="text.secondary">v{note.version}</Typography>
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
-                </Typography>
-              </Grid>
-              <Grid item>
-                <Chip 
-                  label={getTypeLabel(note.type)} 
-                  color={getTypeColor(note.type)} 
-                  size="small" 
-                  variant="outlined"
-                />
-              </Grid>
-              
-              {/* Edit/Delete buttons for superadmin */}
-              {user?.role === 'superadmin' && (
-                <Grid item>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Edit patch note">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onEdit) onEdit(note);
-                        }}
-                        sx={{ 
-                          '&:hover': { 
-                            backgroundColor: 'primary.light',
-                            color: 'primary.contrastText'
-                          }
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+    <TooltipProvider>
+      <div className="space-y-4 mt-4">
+        {patchNotes.map((note) => (
+          <Card key={note._id} className="overflow-hidden">
+            <Collapsible open={expandedNote === note._id}>
+              <CollapsibleTrigger asChild>
+                <CardHeader 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => toggleNote(note._id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getTypeIcon(note.type)}
+                      <div className="flex flex-col items-start">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-foreground">
+                            {note.title}
+                          </h3>
+                          <Badge className={getTypeColor(note.type)}>
+                            {getTypeLabel(note.type)}
+                          </Badge>
+                          {note.version && (
+                            <Badge variant="outline">
+                              v{note.version}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
                     
-                    <Tooltip title="Delete patch note">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onDelete) onDelete(note);
-                        }}
-                        sx={{ 
-                          '&:hover': { 
-                            backgroundColor: 'error.light',
-                            color: 'error.contrastText'
-                          }
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Grid>
-              )}
-            </Grid>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box sx={{ px: 1 }}>
-              <Paper variant="outlined" sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
-                {/* Using ReactMarkdown to support markdown in patch notes */}
-                <ReactMarkdown>
-                  {note.content}
-                </ReactMarkdown>
-                
-                <Divider sx={{ my: 1 }} />
-                
-                <Grid container justifyContent="space-between" alignItems="center">
-                  <Grid item>
-                    <Typography variant="caption" color="text.secondary">
-                      Version {note.version}
-                    </Typography>
-                  </Grid>
-                  {note.publishedBy && (
-                    <Grid item>
-                      <Typography variant="caption" color="text.secondary">
-                        Published by {note.publishedBy.name || 'Admin'}
-                      </Typography>
-                    </Grid>
-                  )}
-                </Grid>
-              </Paper>
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      ))}
-    </Box>
+                    <div className="flex items-center space-x-2">
+                      <ChevronDown className={`h-4 w-4 transition-transform ${
+                        expandedNote === note._id ? 'rotate-180' : ''
+                      }`} />
+                      
+                      {user && (user.role === 'admin' || user.role === 'superadmin') && (
+                        <>
+                          {onEdit && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit(note);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Edit patch note</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {onDelete && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(note._id);
+                                  }}
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Delete patch note</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    {note.description && (
+                      <div>
+                        <h4 className="font-medium text-foreground mb-2">Description</h4>
+                        <p className="text-sm text-muted-foreground">{note.description}</p>
+                      </div>
+                    )}
+                    
+                    {note.changes && note.changes.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-foreground mb-2">Changes</h4>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                          {note.changes.map((change, index) => (
+                            <li key={index}>{change}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {note.markdownContent && (
+                      <div>
+                        <h4 className="font-medium text-foreground mb-2">Details</h4>
+                        <div className="prose prose-sm max-w-none text-muted-foreground">
+                          <ReactMarkdown>{note.markdownContent}</ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-muted-foreground">
+                      Created: {new Date(note.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 };
 

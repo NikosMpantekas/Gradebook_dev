@@ -138,14 +138,6 @@ const AdminRoute = ({ children }) => {
       }
     }
     
-    // System Maintenance
-    if (location.pathname.includes('/app/admin/maintenance')) {
-      if (!isFeatureEnabled('enableSystemMaintenance')) {
-        console.log('❌ AdminRoute - System Maintenance feature disabled for this school');
-        return <Navigate to="/app/dashboard" />;
-      }
-    }
-    
     // Bug Reports
     if (location.pathname.includes('/app/admin/bug-reports')) {
       if (!isFeatureEnabled('enableBugReports')) {

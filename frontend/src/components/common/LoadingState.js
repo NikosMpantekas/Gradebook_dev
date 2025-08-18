@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, CircularProgress, Typography, Paper } from '@mui/material';
+import { Card, CardContent } from '../ui/card';
+import { Spinner } from '../ui/spinner';
 
 /**
  * A reusable loading state component
@@ -11,28 +12,20 @@ import { Box, CircularProgress, Typography, Paper } from '@mui/material';
 const LoadingState = ({ message = "Loading...", fullPage = false, size = "medium" }) => {
   // Determine spinner size based on the size prop
   const spinnerSize = {
-    small: 24,
-    medium: 40,
-    large: 60
-  }[size] || 40;
+    small: "h-6 w-6",
+    medium: "h-10 w-10",
+    large: "h-16 w-16"
+  }[size] || "h-10 w-10";
 
   const content = (
-    <Box 
-      display="flex" 
-      flexDirection="column"
-      justifyContent="center" 
-      alignItems="center" 
-      sx={{ 
-        p: 4,
-        minHeight: fullPage ? '60vh' : '200px',
-        width: '100%'
-      }}
-    >
-      <CircularProgress size={spinnerSize} />
-      <Typography variant="h6" sx={{ mt: 2 }}>
+    <div className={`flex flex-col justify-center items-center p-8 w-full ${
+      fullPage ? 'min-h-[60vh]' : 'min-h-[200px]'
+    }`}>
+      <Spinner className={`${spinnerSize} text-primary`} />
+      <h3 className="text-lg font-semibold mt-4 text-foreground">
         {message}
-      </Typography>
-    </Box>
+      </h3>
+    </div>
   );
 
   // If it's a full page loading state, show it directly
@@ -40,11 +33,13 @@ const LoadingState = ({ message = "Loading...", fullPage = false, size = "medium
     return content;
   }
 
-  // Otherwise wrap it in a Paper component
+  // Otherwise wrap it in a Card component
   return (
-    <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-      {content}
-    </Paper>
+    <Card className="rounded-lg overflow-hidden">
+      <CardContent className="p-0">
+        {content}
+      </CardContent>
+    </Card>
   );
 };
 

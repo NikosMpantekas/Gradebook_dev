@@ -1,0 +1,395 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   Theme tokens (shadcn/ui + Tailwind HSL)
+   ========================================= */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 207 56% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 207 56% 46%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 13% 11%;
+    --foreground: 0 0% 100%;
+
+    --card: 220 13% 18%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 220 13% 18%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 207 56% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 13% 18%;
+    --muted-foreground: 220 13% 86%;
+
+    --accent: 220 13% 18%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 207 56% 46%;
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+/* =========================================
+   Base element rules and utilities
+   ========================================= */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Prevent layout shifts */
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* Prevent horizontal scrollbar from appearing */
+    overflow-x: hidden;
+    /* Ensure body doesn't shift */
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Hide scrollbars globally (desktop & mobile) but keep scrolling functional */
+  html,
+  body,
+  #root {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;    /* Firefox */
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #root::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  /* Utility to hide scrollbar on specific containers if needed */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  /* Prevent body from shifting when modals are open */
+  body[style*="overflow: hidden"] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Ensure dropdowns and modals don't cause layout shifts */
+  [data-radix-popper-content-wrapper] {
+    position: fixed !important;
+  }
+
+  /* Prevent any potential horizontal overflow */
+  .overflow-x-hidden {
+    overflow-x: hidden !important;
+  }
+
+  /* Ensure the main layout container is stable */
+  #root {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+
+  /* Prevent any potential layout shifts from Material-UI components */
+  .MuiModal-root,
+  .MuiPopover-root,
+  .MuiMenu-root,
+  .MuiBackdrop-root {
+    position: fixed !important;
+  }
+
+  /* Ensure all fixed positioned elements don't cause shifts */
+  [style*="position: fixed"] {
+    position: fixed !important;
+  }
+
+  /* Ensure the layout is completely stable */
+  .layout-stable {
+    overflow-x: hidden !important;
+    position: relative !important;
+  }
+
+  /* Ensure tooltips don't cause shifts */
+  [data-radix-tooltip-content] {
+    position: fixed !important;
+  }
+
+  /* Prevent any potential horizontal shifts */
+  .no-horizontal-shift {
+    transform: translateX(0) !important;
+    left: 0 !important;
+    right: auto !important;
+  }
+}
+
+/* =========================================
+   Global CSS for animations
+   ========================================= */
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide out to left */
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* Fade in/out */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Dropdown slide */
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdownSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Page items and panels */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpStagger {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Card hover */
+@keyframes cardHover {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+  }
+  100% {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 25px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+}
+
+/* =========================================
+   Animation helper classes
+   ========================================= */
+.sidebar-slide-in { animation: slideInLeft 0.3s ease-out; }
+.sidebar-slide-out { animation: slideOutLeft 0.3s ease-in; }
+
+.fade-in { animation: fadeIn 0.2s ease-out; }
+.fade-out { animation: fadeOut 0.2s ease-in; }
+
+.dropdown-slide-in {
+  animation: dropdownSlideIn 0.2s ease-out;
+  transform-origin: top center;
+}
+.dropdown-slide-out {
+  animation: dropdownSlideOut 0.2s ease-in;
+  transform-origin: top center;
+}
+
+/* Unified animation classes */
+.fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+.fade-in-up-stagger { animation: fadeInUpStagger 0.6s ease-out forwards; }
+.panel-slide-in { animation: panelSlideIn 0.5s ease-out forwards; }
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover:hover {
+  animation: cardHover 0.3s ease-out forwards;
+}
+
+/* No animation class - completely disables animations and transitions */
+.no-animation {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Custom scrollbar styles for sidebar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--primary) / 0.5);
+}
+
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thumb-border::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+}
+
+.scrollbar-thumb-primary\/50::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--primary) / 0.5);
+}
+
+/* Stagger helpers */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+/* Hide scrollbars globally (fallbacks) */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+

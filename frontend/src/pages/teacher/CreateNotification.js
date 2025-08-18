@@ -1,65 +1,67 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { reset } from '../../features/notifications/notificationSlice';
 import { toast } from 'react-toastify';
-
-// Material UI imports
-import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  CircularProgress,
-  Container,
-  Card,
-  CardContent,
-  Divider,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
 import { 
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-  Notifications as NotificationsIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
-  School as SchoolIcon
-} from '@mui/icons-material';
-
-// Import our custom components
-import LoadingState from '../../components/common/LoadingState';
-import ErrorState from '../../components/common/ErrorState';
+  Plus, 
+  Save, 
+  X, 
+  Send, 
+  Bell, 
+  Users,
+  ChevronUp,
+  ChevronDown
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { API_URL } from '../../config/appConfig';
 import NotificationForm from './components/NotificationForm';
 import NotificationRecipients from './components/NotificationRecipients';
-import NotificationService from './components/NotificationService';
 
-/**
- * CreateNotification - Main component for creating notifications
- * Integrates NotificationForm and NotificationRecipients components with class-based filtering
- */
 const CreateNotification = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  // Redux state
-  const { user } = useSelector((state) => state.auth);
-  const { isLoading, isError, isSuccess, message } = useSelector((state) => state.notifications);
-  
-  // Component state
   const [formData, setFormData] = useState({
-    recipients: [],         // Array of recipient IDs (multiple selection)
     title: '',
     message: '',
-    isImportant: false      // Whether this is an important notification
+    recipients: []
   });
-  const [formErrors, setFormErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Refs to track component state
-  const hasSubmitted = useRef(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [expandedSections, setExpandedSections] = useState(new Set(['basic', 'recipients']));
   
+  // Add recipients state
+  const [recipientsData, setRecipientsData] = useState({
+    students: [],
+    teachers: [],
+    parents: []
+  });
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+  
+  // Add filter options state
+  const [filterOptions, setFilterOptions] = useState({
+    schoolBranches: [],
+    directions: [],
+    subjects: []
+  });
+  const [selectedFilters, setSelectedFilters] = useState({
+    schoolBranch: '',
+    direction: '',
+    subject: ''
+  });
+
+  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  // Get token from user object or localStorage as fallback
+  const authToken = user?.token || localStorage.getItem('token');
+
   // Check if user has permission to send notifications
   useEffect(() => {
     if (user?.role === 'teacher' && user?.canSendNotifications === false) {
@@ -76,302 +78,473 @@ const CreateNotification = () => {
     }
   }, [user, navigate]);
 
-  // Handle notification creation success
+  // Load filter options when component mounts
   useEffect(() => {
-    if (isSuccess && hasSubmitted.current) {
-      toast.success('Notification sent successfully');
-      // Dynamic navigation based on user role
-      if (user?.role === 'admin') {
-        navigate('/app/admin/notifications/manage');
-      } else {
-        navigate('/app/teacher/notifications');
-      }
+    if (user?.token) {
+      loadFilterOptions();
     }
-    
-    return () => {
-      // Reset the notification state when component unmounts
-      if (isSuccess) {
-        dispatch(reset());
-      }
-    };
-  }, [isSuccess, dispatch, navigate, user]);
+  }, [user]);
 
-  // Handle form field changes
+  // Load students when filters change
+  useEffect(() => {
+    if (selectedFilters.schoolBranch && selectedFilters.direction && selectedFilters.subject && user?.token) {
+      loadFilteredUsers();
+    } else {
+      setRecipientsData({ students: [], teachers: [], parents: [] });
+    }
+  }, [selectedFilters, user]);
+
+  const loadFilterOptions = async () => {
+    try {
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      // Get filter options first
+      const filtersEndpoint = `${API_URL}/api/students/notification/filters`;
+      const filtersResponse = await fetch(filtersEndpoint, config);
+      
+      if (filtersResponse.ok) {
+        const filterData = await filtersResponse.json();
+        setFilterOptions(filterData);
+        console.log('[CreateNotification] Loaded filter options:', filterData);
+      } else {
+        console.error('Failed to load filter options:', filtersResponse.status);
+        setFilterOptions({ schoolBranches: [], directions: [], subjects: [] });
+      }
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+      setFilterOptions({ schoolBranches: [], directions: [], subjects: [] });
+    }
+  };
+
+  const loadFilteredUsers = async () => {
+    if (!selectedFilters.schoolBranch || !selectedFilters.direction || !selectedFilters.subject) return;
+    
+    try {
+      setRecipientsLoading(true);
+      
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      // Build query parameters for filtered users
+      const params = new URLSearchParams({
+        schoolBranch: selectedFilters.schoolBranch,
+        direction: selectedFilters.direction,
+        subject: selectedFilters.subject,
+        userRole: 'all' // Get all user types
+      });
+      
+      const endpoint = `${API_URL}/api/students/notification/filtered?${params}`;
+      const response = await fetch(endpoint, config);
+      
+      if (response.ok) {
+        const users = await response.json();
+        
+        // Filter users by role
+        setRecipientsData({
+          students: users.filter(user => user.role === 'student') || [],
+          teachers: users.filter(user => user.role === 'teacher') || [],
+          parents: users.filter(user => user.role === 'parent') || []
+        });
+        
+        console.log('[CreateNotification] Loaded filtered users:', users);
+      } else {
+        console.error('Failed to load filtered users:', response.status);
+        setRecipientsData({ students: [], teachers: [], parents: [] });
+      }
+    } catch (error) {
+      console.error('Error loading filtered users:', error);
+      setRecipientsData({ students: [], teachers: [], parents: [] });
+    } finally {
+      setRecipientsLoading(false);
+    }
+  };
+
+  const handleFilterChange = (filterName, value) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+    
+    // Reset dependent filters
+    if (filterName === 'schoolBranch') {
+      setSelectedFilters(prev => ({ ...prev, direction: '', subject: '' }));
+    } else if (filterName === 'direction') {
+      setSelectedFilters(prev => ({ ...prev, subject: '' }));
+    }
+  };
+
+
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    console.log(`Form field changed: ${name} = ${type === 'checkbox' ? checked : value}`);
-    
-    setFormData(prevState => ({
-      ...prevState,
+    setFormData(prev => ({
+      ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
     
-    // Clear related errors when user starts typing
-    if (formErrors[name]) {
-      setFormErrors(prevErrors => ({
-        ...prevErrors,
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
         [name]: ''
       }));
     }
   };
 
-  // Handle recipients selection change
-  const handleRecipientsChange = (e) => {
-    const selectedRecipients = e.target.value;
-    console.log('Recipients changed:', selectedRecipients);
-    
-    setFormData(prevState => ({
-      ...prevState,
-      recipients: selectedRecipients
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
     
-    // Clear recipients error when user selects recipients
-    if (formErrors.recipients) {
-      setFormErrors(prevErrors => ({
-        ...prevErrors,
-        recipients: ''
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
       }));
     }
   };
 
-  // Validate form before submission
+  const handleRecipientsChange = (recipients) => {
+    setFormData(prev => ({
+      ...prev,
+      recipients
+    }));
+  };
+
+  const toggleSection = (section) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
   const validateForm = () => {
-    const errors = {};
+    const newErrors = {};
     
     if (!formData.title.trim()) {
-      errors.title = 'Title is required';
+      newErrors.title = 'Title is required';
     }
     
     if (!formData.message.trim()) {
-      errors.message = 'Message is required';
+      newErrors.message = 'Message is required';
     }
     
-    if (!formData.recipients || formData.recipients.length === 0) {
-      errors.recipients = 'At least one recipient must be selected';
+    if (formData.recipients.length === 0) {
+      newErrors.recipients = 'At least one recipient is required';
     }
     
-    console.log('Form validation:', { isValid: Object.keys(errors).length === 0, errors });
-    return errors;
+    if (formData.scheduledFor && formData.expiresAt) {
+      const scheduledDate = new Date(formData.scheduledFor);
+      const expiryDate = new Date(formData.expiresAt);
+      
+      if (scheduledDate >= expiryDate) {
+        newErrors.expiresAt = 'Expiry date must be after scheduled date';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate form
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      toast.error('Please fix the form errors before submitting');
+    if (!validateForm()) {
       return;
     }
     
-    setIsSubmitting(true);
-    hasSubmitted.current = true;
-    
-    console.log('[NOTIFICATION CREATION] Starting submission process with data:', formData);
-    console.log('[NOTIFICATION CREATION] User context:', { role: user?.role, id: user?.id });
-    
-    // Use the NotificationService to send the notification with proper callback handling
-    NotificationService.sendNotification(
-      dispatch,
-      formData,
-      user,
-      // Success callback
-      (result) => {
-        console.log('[NOTIFICATION CREATION] Notification sent successfully:', result);
-        toast.success('Notification sent successfully!');
+    try {
+      setLoading(true);
+      
+      const notificationData = {
+        title: formData.title.trim(),
+        message: formData.message.trim(),
+        priority: formData.priority,
+        type: formData.type,
+        isImportant: formData.isImportant,
+        scheduledFor: formData.scheduledFor || null,
+        expiresAt: formData.expiresAt || null,
+        recipients: formData.recipients.map(recipient => {
+          const [type, id] = recipient.split('_');
+          return { type, id };
+        })
+      };
+      
+      const response = await fetch(`${API_URL}/api/notifications`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(notificationData)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Notification created successfully!');
         
         // Reset form
         setFormData({
-          recipients: [],
           title: '',
           message: '',
+          priority: 'normal',
+          type: 'announcement',
           isImportant: false,
-          filterByRole: '',
-          sendToAll: false
+          scheduledFor: '',
+          expiresAt: '',
+          recipients: []
         });
-        setFormErrors({});
-        hasSubmitted.current = false;
         
-        // Navigate back to notifications list
-        handleBack();
-      },
-      // Error callback
-      (error) => {
-        console.error('[NOTIFICATION CREATION] Failed to send notification:', error);
-        toast.error(error.message || 'Failed to send notification');
-        hasSubmitted.current = false;
-      },
-      // Complete callback (always called)
-      () => {
-        console.log('[NOTIFICATION CREATION] Submission process completed');
-        setIsSubmitting(false);
+        // Navigate to notifications list
+        const redirectPath = user.role === 'admin' || user.role === 'superadmin' 
+          ? '/app/admin/notifications'
+          : '/app/teacher/notifications';
+        
+        console.log(`[CreateNotification] Redirecting ${user.role} to: ${redirectPath}`);
+        navigate(redirectPath);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create notification');
       }
-    );
-  };
-
-  // Handle back navigation
-  const handleBack = () => {
-    if (user?.role === 'admin') {
-      navigate('/app/admin/notifications/manage');
-    } else {
-      navigate('/app/teacher/notifications');
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      toast.error(error.message || 'Failed to create notification');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Show loading state
-  if (isLoading || isSubmitting) {
-    return <LoadingState message={isSubmitting ? "Sending notification..." : "Loading..."} />;
-  }
+  const getPriorityColor = (priority) => {
+    const colors = {
+      low: 'secondary',
+      normal: 'default',
+      high: 'destructive',
+      urgent: 'destructive'
+    };
+    return colors[priority] || 'default';
+  };
 
-  // Show error state
-  if (isError) {
-    return <ErrorState message={message || "Failed to load notification data"} />;
-  }
+  const getTypeIcon = (type) => {
+    const icons = {
+      announcement: '📢',
+      reminder: '⏰',
+      alert: '⚠️',
+      update: '📝'
+    };
+    return icons[type] || '📄';
+  };
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      {/* Header */}
-      <Card sx={{ mb: { xs: 2, sm: 3 } }}>
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            mb: { xs: 2, sm: 3 }, 
-            flexDirection: { xs: 'column', sm: 'row' }, 
-            gap: { xs: 2, sm: 0 } 
-          }}>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              width: { xs: '100%', sm: 'auto' },
-              flexDirection: { xs: 'column', sm: 'row' },
-              textAlign: { xs: 'center', sm: 'left' }
-            }}>
-              {user?.role === 'admin' ? (
-                <AdminPanelSettingsIcon sx={{ 
-                  mr: { xs: 0, sm: 2 }, 
-                  mb: { xs: 1, sm: 0 },
-                  color: 'primary.main', 
-                  fontSize: { xs: '2rem', sm: '2.5rem' } 
-                }} />
-              ) : (
-                <SchoolIcon sx={{ 
-                  mr: { xs: 0, sm: 2 }, 
-                  mb: { xs: 1, sm: 0 },
-                  color: 'primary.main', 
-                  fontSize: { xs: '2rem', sm: '2.5rem' } 
-                }} />
-              )}
-              <Box>
-                <Typography variant="h4" component="h1" gutterBottom sx={{ 
-                  mb: 0, 
-                  fontSize: { xs: '1.5rem', sm: '2.125rem' },
-                  textAlign: { xs: 'center', sm: 'left' }
-                }}>
-                  Create Notification
-                </Typography>
-                <Typography variant="subtitle1" color="text.secondary" sx={{ 
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  textAlign: { xs: 'center', sm: 'left' }
-                }}>
-                  {user?.role === 'admin' ? 
-                    'Send notifications to students and teachers in your school' : 
-                    'Send notifications to students in your assigned classes'
-                  }
-                </Typography>
-              </Box>
-            </Box>
+    <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {user.role === 'admin' ? 'Admin: Create Notification' : 'Create Notification'}
+            </h1>
+            <p className="text-muted-foreground">
+              {user.role === 'admin' 
+                ? 'Send notifications to students and teachers in your school' : 
+                'Send important messages to your students, parents, and colleagues'
+              }
+            </p>
+          </div>
+          <div className="flex space-x-2">
             <Button
-              variant="outlined"
-              startIcon={<ArrowBackIcon />}
-              onClick={handleBack}
-              sx={{ 
-                minWidth: { xs: '100%', sm: 120 }, 
-                width: { xs: '100%', sm: 'auto' },
-                mt: { xs: 2, sm: 0 }
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const cancelPath = user.role === 'admin' || user.role === 'superadmin' 
+                  ? '/app/admin/notifications'
+                  : '/app/teacher/notifications';
+                navigate(cancelPath);
               }}
+              disabled={loading}
             >
-              Back
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
-
-      <form onSubmit={handleSubmit}>
-        <Box sx={{ display: 'grid', gap: { xs: 2, sm: 3 } }}>
-          {/* Notification Form */}
-          <NotificationForm
-            formData={formData}
-            onChange={handleInputChange}
-            errors={formErrors}
-            disabled={isSubmitting}
-          />
-
-          {/* Recipients Selection */}
-          <NotificationRecipients
-            selectedRecipients={formData.recipients}
-            onRecipientsChange={handleRecipientsChange}
-            error={formErrors.recipients}
-            disabled={isSubmitting}
-            currentUserRole={user?.role || 'admin'}
-          />
-
-          {/* Submit Actions */}
-          <Card>
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                flexDirection: { xs: 'column', sm: 'row' }, 
-                gap: { xs: 2, sm: 0 } 
-              }}>
-                <Typography variant="body2" color="text.secondary" sx={{ 
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  textAlign: { xs: 'center', sm: 'left' }
-                }}>
-                  {formData.recipients.length === 0 ? 
-                    'Select recipients to send the notification' : 
-                    `Ready to send to ${formData.recipients.length} recipient${formData.recipients.length !== 1 ? 's' : ''}`
-                  }
-                </Typography>
-                
-                <Box sx={{ 
-                  display: 'flex', 
-                  gap: { xs: 1, sm: 2 }, 
-                  width: { xs: '100%', sm: 'auto' }, 
-                  flexDirection: { xs: 'column', sm: 'row' } 
-                }}>
-                  <Button
-                    variant="outlined"
-                    onClick={handleBack}
-                    disabled={isSubmitting}
-                    sx={{ width: { xs: '100%', sm: 'auto' } }}
-                  >
+              <X className="mr-2 h-4 w-4" />
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />}
-                    disabled={isSubmitting || formData.recipients.length === 0}
-                    sx={{ 
-                      minWidth: { xs: '100%', sm: 140 }, 
-                      width: { xs: '100%', sm: 'auto' } 
-                    }}
-                  >
-                    {isSubmitting ? 'Sending...' : 'Send Notification'}
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Mode */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information Section */}
+          <Collapsible open={expandedSections.has('basic')}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Bell className="h-6 w-6 text-primary" />
+                      <CardTitle>Basic Information</CardTitle>
+                    </div>
+                    {expandedSections.has('basic') ? (
+                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="space-y-4">
+          <NotificationForm
+            formData={formData}
+                    errors={errors}
+            onChange={handleInputChange}
+                    disabled={loading}
+                  />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Recipients Section */}
+          <Collapsible open={expandedSections.has('recipients')}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Users className="h-6 w-6 text-primary" />
+                      <CardTitle>Select Recipients</CardTitle>
+                      {formData.recipients.length > 0 && (
+                        <Badge variant="default">{formData.recipients.length} selected</Badge>
+                      )}
+                    </div>
+                    {expandedSections.has('recipients') ? (
+                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="space-y-4">
+                  {/* Filter Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="schoolBranch">School Branch</Label>
+                      <Select 
+                        value={selectedFilters.schoolBranch} 
+                        onValueChange={(value) => handleFilterChange('schoolBranch', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select branch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterOptions.schoolBranches.map((branch) => (
+                            <SelectItem key={branch.value} value={branch.value}>
+                              {branch.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="direction">Direction</Label>
+                      <Select 
+                        value={selectedFilters.direction} 
+                        onValueChange={(value) => handleFilterChange('direction', value)}
+                        disabled={!selectedFilters.schoolBranch}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select direction" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterOptions.directions.map((direction) => (
+                            <SelectItem key={direction.value} value={direction.value}>
+                              {direction.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject</Label>
+                      <Select 
+                        value={selectedFilters.subject} 
+                        onValueChange={(value) => handleFilterChange('subject', value)}
+                        disabled={!selectedFilters.direction}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterOptions.subjects.map((subject) => (
+                            <SelectItem key={subject.value} value={subject.value}>
+                              {subject.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Recipients Selection */}
+                  <NotificationRecipients
+                    selectedRecipients={formData.recipients}
+                    onRecipientsChange={handleRecipientsChange}
+                    error={errors.recipients}
+                    disabled={loading}
+                    currentUserRole={user?.role}
+                    students={recipientsData.students}
+                    teachers={recipientsData.teachers}
+                    parents={recipientsData.parents}
+                    loading={recipientsLoading}
+                  />
+                  
+                  {errors.recipients && (
+                    <p className="text-sm text-destructive mt-2">{errors.recipients}</p>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const cancelPath = user.role === 'admin' || user.role === 'superadmin' 
+                  ? '/app/admin/notifications'
+                  : '/app/teacher/notifications';
+                navigate(cancelPath);
+              }}
+              disabled={loading}
+            >
+              <X className="mr-2 h-4 w-4" />
+                    Cancel
                   </Button>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Box>
+            <Button type="submit" disabled={loading}>
+              <Send className="mr-2 h-4 w-4" />
+              {loading ? 'Creating...' : 'Create Notification'}
+                  </Button>
+          </div>
       </form>
-    </Box>
+    </div>
   );
 };
 

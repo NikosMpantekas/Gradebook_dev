@@ -1,27 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import {
-  Container,
-  Box,
-  Avatar,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Link,
-  Paper,
-  FormControlLabel,
-  Checkbox,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
-} from '@mui/material';
-import { LockOutlined as LockOutlinedIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { Lock, ArrowLeft } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Checkbox } from '../components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '../components/ui/dialog';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { cn } from '../lib/utils';
 import { login, reset } from '../features/auth/authSlice';
 import authService from '../features/auth/authService';
 
@@ -33,7 +23,6 @@ const Login = () => {
     saveCredentials: false,
   });
 
-  const [version, setVersion] = useState('');
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
@@ -113,18 +102,6 @@ const Login = () => {
     };
   }, [user, isError, isSuccess, message, navigate, dispatch]);
 
-  // Load version dynamically like the Footer component
-  useEffect(() => {
-    import('../config/appConfig.js')
-      .then(module => {
-        setVersion(module.appConfig.version);
-      })
-      .catch(error => {
-        console.error('Failed to load appConfig:', error);
-        setVersion('0.0.0');
-      });
-  }, []);
-
   const onChange = (e) => {
     setFormData((prevState) => ({
       ...prevState,
@@ -166,145 +143,241 @@ const Login = () => {
     }
   };
 
+  // Handle forgot password modal open with delay to prevent autofill conflicts
+  const handleForgotOpen = () => {
+    try {
+      // Close Safari's email autocomplete dropdown if it's open
+      const emailInput = document.getElementById('email');
+      if (emailInput) {
+        // Blur the input to close any open autocomplete dropdowns
+        emailInput.blur();
+        // Force focus away from the input
+        document.activeElement?.blur();
+      }
+      
+      // Close any password manager autofill overlays (Bitwarden, 1Password, etc.)
+      // These extensions often inject their own DOM elements that can conflict with modals
+      const passwordManagerOverlays = document.querySelectorAll('[data-1p-ignore], [data-lpignore], [data-bitwarden-widget]');
+      passwordManagerOverlays.forEach(overlay => {
+        if (overlay.style) {
+          overlay.style.display = 'none';
+        }
+      });
+      
+      // More aggressive: Hide any elements that might be autofill overlays
+      // Look for common autofill overlay patterns
+      const potentialAutofillElements = document.querySelectorAll('div[style*="position: absolute"], div[style*="position: fixed"], div[class*="autofill"], div[class*="autocomplete"]');
+      potentialAutofillElements.forEach(element => {
+        if (element.style && !element.classList.contains('modal') && !element.classList.contains('dialog')) {
+          element.style.visibility = 'hidden';
+          // Store original visibility to restore later
+          element.dataset.originalVisibility = element.style.visibility;
+        }
+      });
+      
+      // Prevent any DOM manipulation errors by temporarily disabling problematic scripts
+      const originalInsertBefore = Node.prototype.insertBefore;
+      const originalAppendChild = Node.prototype.appendChild;
+      
+      // Override insertBefore to catch and ignore NotFoundError
+      Node.prototype.insertBefore = function(newNode, referenceNode) {
+        try {
+          return originalInsertBefore.call(this, newNode, referenceNode);
+        } catch (error) {
+          if (error.name === 'NotFoundError') {
+            console.warn('Caught and prevented NotFoundError in insertBefore:', error);
+            return newNode;
+          }
+          throw error;
+        }
+      };
+      
+      // Override appendChild to catch and ignore NotFoundError
+      Node.prototype.appendChild = function(newNode) {
+        try {
+          return originalAppendChild.call(this, newNode);
+        } catch (error) {
+          if (error.name === 'NotFoundError') {
+            console.warn('Caught and prevented NotFoundError in appendChild:', error);
+            return newNode;
+          }
+          throw error;
+        }
+      };
+      
+      // Longer delay to ensure modal is fully rendered and stable before any scripts can interfere
+      setTimeout(() => {
+        setForgotOpen(true);
+        
+        // Restore original DOM methods after modal is stable
+        setTimeout(() => {
+          Node.prototype.insertBefore = originalInsertBefore;
+          Node.prototype.appendChild = originalAppendChild;
+          
+          // Restore visibility of hidden elements after modal is stable
+          potentialAutofillElements.forEach(element => {
+            if (element.dataset.originalVisibility !== undefined) {
+              element.style.visibility = element.dataset.originalVisibility;
+              delete element.dataset.originalVisibility;
+            }
+          });
+        }, 500);
+      }, 200);
+      
+    } catch (error) {
+      console.warn('Error in handleForgotOpen, opening modal anyway:', error);
+      // Fallback: just open the modal
+      setForgotOpen(true);
+    }
+  };
+
   return (
-    <Container component="main" maxWidth="xs">
-      <Paper 
-        elevation={6} 
-        sx={{ 
-          mt: 8, 
-          p: 4, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center',
-          borderRadius: 2,
-        }}
-      >
-        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
-        <Typography component="h1" variant="h5">
-          {t('auth.loginTitle')}
-        </Typography>
-        <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label={t('auth.emailPlaceholder')}
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={onChange}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label={t('auth.passwordPlaceholder')}
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={onChange}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox 
-                value="remember" 
-                color="primary" 
-                name="saveCredentials"
-                checked={saveCredentials}
+    <div className="container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4">
+      <Card className="w-full">
+        <CardHeader className="flex flex-col items-center space-y-2">
+          <Avatar className="bg-primary">
+            <AvatarFallback>
+              <Lock className="h-6 w-6" />
+            </AvatarFallback>
+          </Avatar>
+          <CardTitle className="text-2xl font-normal">
+            {t('auth.loginTitle')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('auth.emailPlaceholder')}</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                autoFocus
+                value={email}
                 onChange={onChange}
               />
-            }
-            label="Remember me"
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 1.5, py: 1.2 }}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              t('auth.loginButton')
-            )}
-          </Button>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('auth.passwordPlaceholder')}</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={onChange}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="saveCredentials"
+                name="saveCredentials"
+                checked={saveCredentials}
+                onCheckedChange={(checked) => 
+                  onChange({ target: { name: 'saveCredentials', value: checked } })
+                }
+              />
+              <Label htmlFor="saveCredentials" className="text-sm font-normal">
+                Remember me
+              </Label>
+            </div>
+            
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  <span>Loading...</span>
+                </div>
+              ) : (
+                t('auth.loginButton')
+              )}
+            </Button>
 
-          <Button
-            fullWidth
-            variant="text"
-            sx={{ mb: 2, textTransform: 'none' }}
-            onClick={() => setForgotOpen(true)}
-          >
-            Forgot password?
-          </Button>
-          
-          <Button
-            component={RouterLink}
-            to="/"
-            startIcon={<ArrowBackIcon />}
-            variant="outlined"
-            fullWidth
-            sx={{ 
-              mb: 2,
-              color: 'text.secondary',
-              borderColor: 'text.secondary',
-              '&:hover': {
-                borderColor: 'primary.main',
-                color: 'primary.main',
-              }
-            }}
-          >
-            Back to Homepage
-          </Button>
-          {/* Sign-up option removed as accounts are admin-created only */}
-        </Box>
-      </Paper>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full bg-muted hover:bg-muted-foreground/20 text-foreground hover:text-foreground transition-colors"
+              onClick={handleForgotOpen}
+            >
+              Forgot password?
+            </Button>
+            
+            <Button
+              asChild
+              variant="outline"
+              className="w-full"
+            >
+              <RouterLink to="/" className="flex items-center justify-center space-x-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Homepage</span>
+              </RouterLink>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Forgot password dialog */}
-      <Dialog open={forgotOpen} onClose={() => setForgotOpen(false)} fullWidth maxWidth="xs" keepMounted disableRestoreFocus>
-        <DialogTitle>Forgot password</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enter the email you use to sign in. We will notify the appropriate administrator to help reset your password.
-          </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="forgot-email"
-            label="Email"
-            type="email"
-            fullWidth
-            variant="outlined"
-            value={forgotEmail}
-            onChange={(e) => setForgotEmail(e.target.value)}
-          />
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="sm:max-w-md fade-in">
+          <DialogHeader>
+            <DialogTitle>Forgot Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter the email you use to sign in. We will notify the appropriate administrator to help reset your password.
+            </p>
+            <form onSubmit={handleForgot} className="space-y-4" autoComplete="off">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email</Label>
+                <Input
+                  id="forgot-email"
+                  name="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setForgotOpen(false)} disabled={isSubmittingForgot}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmittingForgot}>
+                  {isSubmittingForgot ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      <span>Sending...</span>
+                    </div>
+                  ) : (
+                    'Send request'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setForgotOpen(false)} disabled={isSubmittingForgot}>Cancel</Button>
-          <Button onClick={handleForgot} variant="contained" disabled={isSubmittingForgot}>
-            {isSubmittingForgot ? <CircularProgress size={20} color="inherit" /> : 'Send request'}
-          </Button>
-        </DialogActions>
       </Dialog>
 
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          {'© '}
-          {new Date().getFullYear()}
-          {' GradeBook - Progressive Web App \n Created by the GradeBook Team'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {'Version: '}{version}
-        </Typography>
-      </Box>
-    </Container>
+      <div className="mt-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          © {new Date().getFullYear()} GradeBook - Progressive Web App<br />
+          Created by the GradeBook Team
+        </p>
+      </div>
+    </div>
   );
 };
 

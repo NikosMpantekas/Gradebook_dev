@@ -2,20 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import {
-  Container,
-  Box,
-  Avatar,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import { LockOutlined as LockOutlinedIcon } from '@mui/icons-material';
+import { Lock } from 'lucide-react';
 import { logout } from '../features/auth/authSlice';
 import { API_URL } from '../config/appConfig';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
 const PasswordChange = () => {
   const [formData, setFormData] = useState({
@@ -98,152 +92,105 @@ const PasswordChange = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Password changed successfully');
-        toast.success('Password changed successfully! Please log in with your new password.');
-        
-        // Log out the user so they can log in with new password
+        toast.success('Password changed successfully! Please log in again.');
         dispatch(logout());
         navigate('/login');
       } else {
-        console.error('Password change failed:', data.message);
         toast.error(data.message || 'Failed to change password');
-        
-        if (data.message && data.message.includes('current password')) {
-          setErrors({ currentPassword: 'Current password is incorrect' });
-        }
       }
     } catch (error) {
-      console.error('Password change error:', error);
+      console.error('Error changing password:', error);
       toast.error('An error occurred while changing password');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    // If this is a forced password change, don't allow cancel
-    if (user?.requirePasswordChange || user?.isFirstLogin) {
-      toast.warning('You must change your password before continuing');
-      return;
-    }
-    
-    // Navigate back to appropriate dashboard
-    const redirectPath = user?.role === 'superadmin' 
-      ? '/superadmin/dashboard' 
-      : `/app/${user?.role}`;
-    navigate(redirectPath);
-  };
-
   return (
-    <Container component="main" maxWidth="xs">
-      <Paper 
-        elevation={6} 
-        sx={{ 
-          mt: 8, 
-          p: 4, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center',
-          borderRadius: 2,
-        }}
-      >
-        <Avatar sx={{ m: 1, bgcolor: 'warning.main' }}>
-          <LockOutlinedIcon />
-        </Avatar>
-        <Typography component="h1" variant="h5">
-          {user?.requirePasswordChange || user?.isFirstLogin 
-            ? 'Password Change Required' 
-            : 'Change Password'}
-        </Typography>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Avatar className="h-16 w-16 bg-primary">
+              <AvatarFallback className="text-primary-foreground text-lg">
+                <Lock className="h-8 w-8" />
+              </AvatarFallback>
+            </Avatar>
+          </div>
+          <CardTitle className="text-2xl font-bold">Change Password</CardTitle>
+          <p className="text-muted-foreground">
+            Enter your current password and choose a new one
+          </p>
+        </CardHeader>
         
-        {(user?.requirePasswordChange || user?.isFirstLogin) && (
-          <Alert severity="warning" sx={{ mt: 2, mb: 2, width: '100%' }}>
-            You must change your password before continuing to use the system.
-          </Alert>
-        )}
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={onChange}
+                placeholder="Enter your current password"
+                className={errors.currentPassword ? 'border-destructive' : ''}
+              />
+              {errors.currentPassword && (
+                <p className="text-sm text-destructive">{errors.currentPassword}</p>
+              )}
+            </div>
 
-        <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="currentPassword"
-            label="Current Password"
-            type="password"
-            id="currentPassword"
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={onChange}
-            error={!!errors.currentPassword}
-            helperText={errors.currentPassword}
-            autoFocus
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="newPassword"
-            label="New Password"
-            type="password"
-            id="newPassword"
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={onChange}
-            error={!!errors.newPassword}
-            helperText={errors.newPassword}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="confirmPassword"
-            label="Confirm New Password"
-            type="password"
-            id="confirmPassword"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={onChange}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-          />
-          
-          <Box sx={{ display: 'flex', gap: 2, mt: 3, mb: 2 }}>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={onChange}
+                placeholder="Enter your new password"
+                className={errors.newPassword ? 'border-destructive' : ''}
+              />
+              {errors.newPassword && (
+                <p className="text-sm text-destructive">{errors.newPassword}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={onChange}
+                placeholder="Confirm your new password"
+                className={errors.confirmPassword ? 'border-destructive' : ''}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+              )}
+            </div>
+
             <Button
               type="submit"
-              fullWidth
-              variant="contained"
+              className="w-full"
               disabled={isLoading}
-              sx={{ py: 1.2 }}
             >
               {isLoading ? (
-                <CircularProgress size={24} color="inherit" />
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Changing Password...
+                </>
               ) : (
                 'Change Password'
               )}
             </Button>
-            
-            {!(user?.requirePasswordChange || user?.isFirstLogin) && (
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={handleCancel}
-                disabled={isLoading}
-                sx={{ py: 1.2 }}
-              >
-                Cancel
-              </Button>
-            )}
-          </Box>
-        </Box>
-      </Paper>
-      
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          &copy; {new Date().getFullYear()} GradeBook PWA 
-          Created by Nikos Mpantekas
-        </Typography>
-      </Box>
-    </Container>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

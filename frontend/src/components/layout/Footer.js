@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
 import axios from 'axios';
 import { API_URL, appConfig } from '../../config/appConfig';
+import { useSelector } from 'react-redux';
+import { Separator } from '../ui/separator';
 
 const Footer = () => {
+  const { darkMode } = useSelector((state) => state.ui);
+  
   // Start with appConfig version immediately (no loading state)
   const [version, setVersion] = useState(appConfig.version);
   const [showVersion, setShowVersion] = useState(true);
@@ -61,26 +64,24 @@ const Footer = () => {
   }, []);
   
   return (
-    <Box
-      component="footer"
-      sx={{
-        py: 3,
-        px: 2,
-        mt: 'auto',
-        textAlign: 'center',
-      }}
-    >
-      <Typography variant="body2" color="text.secondary">
-        {'© '}
-        {new Date().getFullYear()}
-        {' GradeBook - Progressive Web App \n Created by the GradeBook Team'}
-      </Typography>
-      {showVersion && (
-        <Typography variant="body2" color="text.secondary">
-          {'Version: '}{version}
-        </Typography>
-      )}
-    </Box>
+    <footer className="w-full border-t border-border bg-background transition-colors duration-200">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-center">
+        <div className="text-center space-y-1.5">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} GradeBook - Progressive Web App created by the GradeBook Team.
+          </p>
+          
+          {showVersion && (
+            <>
+              <Separator className="w-20 mx-auto" />
+              <p className="text-xs text-muted-foreground/70">
+                Version: {version}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </footer>
   );
 };
 

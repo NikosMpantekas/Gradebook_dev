@@ -1,27 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  Button, 
-  CircularProgress, 
-  Grid, 
-  Alert,
-  useMediaQuery,
-  useTheme,
-  IconButton,
-  Tooltip,
-  Chip
-} from '@mui/material';
-import {
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Event as EventIcon,
-  Add as AddIcon,
-  FilterList as FilterListIcon
-} from '@mui/icons-material';
 import { format, addMonths, subMonths, parseISO, isSameDay, startOfMonth, endOfMonth } from 'date-fns';
 import { getEvents, deleteEvent, reset } from '../features/events/eventSlice';
 import { toast } from 'react-toastify';
@@ -31,10 +10,13 @@ import CalendarEventDialog from '../components/calendar/CalendarEventDialog';
 import CalendarFilterDialog from '../components/calendar/CalendarFilterDialog';
 import DayDetailsDialog from '../components/calendar/DayDetailsDialog';
 import ErrorBoundary from '../components/common/ErrorBoundary';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Filter, X } from 'lucide-react';
 
 const Calendar = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -207,130 +189,167 @@ const Calendar = () => {
   // Show loading state
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ ml: 2 }}>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <h2 className="ml-4 text-xl font-semibold text-gray-700">
           Loading calendar...
-        </Typography>
-      </Box>
+        </h2>
+      </div>
     );
   }
 
   return (
     <ErrorBoundary componentName="Calendar">
-      <Box sx={{ p: 2 }}>
+      <div className="p-4">
         {/* Header section */}
-        <Paper elevation={3} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-          <Grid container alignItems="center" spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h5" component="h1" gutterBottom>
-                <EventIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div>
+                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+                  <CalendarIcon className="mr-2 w-6 h-6 text-blue-600" />
                 Calendar
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                </CardTitle>
+              </div>
+              <div className="flex justify-start md:justify-end space-x-2">
               {canCreateEvents && (
                 <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddIcon />}
                   onClick={() => {
                     setSelectedDate(new Date());
                     setSelectedEvent(null);
                     setIsEventDialogOpen(true);
                   }}
-                  sx={{ mr: 1 }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="mr-2 w-4 h-4" />
+                    <span className="hidden sm:inline">Add Event</span>
+                    <span className="sm:hidden">Add</span>
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleOpenFilterDialog}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
-                  {isMobile ? 'Add' : 'Add Event'}
+                  <span className="hidden sm:inline mr-2">Filter</span>
+                  <Filter className="w-4 h-4" />
                 </Button>
-              )}
-              <Button
-                variant="outlined"
-                startIcon={<FilterListIcon />}
-                onClick={handleOpenFilterDialog}
-                sx={{ mr: 1 }}
-              >
-                {isMobile ? '' : 'Filter'}
-                {isMobile && <FilterListIcon />}
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* Calendar navigation */}
-        <Paper elevation={3} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-          <Grid container alignItems="center" justifyContent="space-between">
-            <Grid item>
-              <IconButton onClick={handlePrevMonth} color="primary">
-                <ChevronLeftIcon />
-              </IconButton>
-            </Grid>
-            <Grid item>
-              <Typography variant="h6" component="span">
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handlePrevMonth}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              
+              <h2 className="text-xl font-semibold text-gray-900">
                 {format(currentMonth, 'MMMM yyyy')}
-              </Typography>
-            </Grid>
-            <Grid item>
-              <IconButton onClick={handleNextMonth} color="primary">
-                <ChevronRightIcon />
-              </IconButton>
-            </Grid>
-            <Grid item sx={{ ml: 2 }}>
-              <Tooltip title="Go to current month">
-                <Button size="small" onClick={handleCurrentMonth} variant="outlined">
+              </h2>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNextMonth}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCurrentMonth}
+                className="ml-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+                title="Go to current month"
+              >
                   Today
                 </Button>
-              </Tooltip>
-            </Grid>
-          </Grid>
-        </Paper>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Active filter indicators */}
         {(filter.tags.length > 0 || filter.audience) && (
-          <Paper elevation={3} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" gutterBottom>
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
               Active Filters:
-            </Typography>
-            <Grid container spacing={1}>
+              </h3>
+              <div className="flex flex-wrap gap-2">
               {filter.tags.map(tag => (
-                <Grid item key={tag}>
-                  <Chip label={tag} onDelete={() => {
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => {
                     setFilter({
                       ...filter,
                       tags: filter.tags.filter(t => t !== tag)
                     });
-                  }} />
-                </Grid>
+                      }}
+                      className="ml-2 hover:bg-blue-300 rounded-full p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
               ))}
               {filter.audience && (
-                <Grid item>
-                  <Chip label={`Audience: ${filter.audience}`} onDelete={() => {
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-800 hover:bg-green-200"
+                  >
+                    Audience: {filter.audience}
+                    <button
+                      onClick={() => {
                     setFilter({
                       ...filter,
                       audience: null
                     });
-                  }} />
-                </Grid>
-              )}
-              <Grid item>
-                <Button size="small" onClick={handleClearFilter} color="primary">
+                      }}
+                      className="ml-2 hover:bg-green-300 rounded-full p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleClearFilter}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
                   Clear All
                 </Button>
-              </Grid>
-            </Grid>
-          </Paper>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Calendar grid */}
-        <Paper elevation={3} sx={{ p: 2, borderRadius: 2 }}>
+        <Card>
+          <CardContent className="p-4">
           <CalendarGrid 
             currentMonth={currentMonth}
             events={events}
             getEventsForDay={getEventsForDay}
             onDayClick={handleDayClick}
-            isMobile={isMobile}
+              isMobile={false}
           />
-        </Paper>
+          </CardContent>
+        </Card>
 
         {/* Event dialog */}
         <CalendarEventDialog
@@ -361,7 +380,7 @@ const Calendar = () => {
           onDelete={handleEventDelete}
           onCreateEvent={handleCreateEventFromDayDetails}
         />
-      </Box>
+      </div>
     </ErrorBoundary>
   );
 };

@@ -1,44 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Container } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import offlineManager from '../utils/offlineManager';
 import axios from 'axios';
-import RefreshIcon from "@mui/icons-material/Refresh";
-
-// Styled component for the offline message container with watermark
-const OfflineContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '60vh',
-  textAlign: 'center',
-  position: 'relative',
-  padding: theme.spacing(3),
-  
-  // Watermark styling
-  '&::before': {
-    content: '"</>"',
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    fontSize: '8rem',
-    fontWeight: 'bold',
-    color: theme.palette.mode === 'dark' 
-      ? 'rgba(255, 255, 255, 0.03)' 
-      : 'rgba(0, 0, 0, 0.03)',
-    zIndex: 0,
-    userSelect: 'none',
-    pointerEvents: 'none',
-  },
-  
-  // Ensure content is above watermark
-  '& > *': {
-    position: 'relative',
-    zIndex: 1,
-  }
-}));
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const OfflineDetector = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true);
@@ -98,14 +63,18 @@ const OfflineDetector = ({ children }) => {
   // Listen for browser online/offline events as backup
   useEffect(() => {
     const handleOnline = async () => {
-      console.log('Browser reports online, checking connectivity...');
+      console.log('Browser went online, checking connectivity...');
       setIsChecking(true);
-      await checkConnectivity();
+      const isConnected = await checkConnectivity();
       setIsChecking(false);
+      
+      if (isConnected) {
+        console.log('Connectivity confirmed, going online');
+      }
     };
 
     const handleOffline = () => {
-      console.log('Browser reports offline');
+      console.log('Browser went offline');
       offlineManager.setOfflineState(true);
     };
 
@@ -118,15 +87,21 @@ const OfflineDetector = ({ children }) => {
     };
   }, []);
 
-  // Handle retry button click
+  // Manual retry function
   const handleRetry = async () => {
-    setRetryCount(prev => prev + 1);
     setIsChecking(true);
+    setRetryCount(prev => prev + 1);
     
-    // Reset the offline manager and try to connect
-    offlineManager.reset();
-    await checkConnectivity();
-    setIsChecking(false);
+    try {
+      const isConnected = await checkConnectivity();
+      if (isConnected) {
+        console.log('Manual retry successful');
+      }
+    } catch (error) {
+      console.error('Manual retry failed:', error);
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   // If online, render children normally
@@ -134,67 +109,71 @@ const OfflineDetector = ({ children }) => {
     return children;
   }
 
-  // If offline, show offline message
+  // Offline state UI
   return (
-    <Container maxWidth="sm">
-      <OfflineContainer>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          gutterBottom
-          sx={{ 
-            fontWeight: 'bold',
-            color: 'primary.main',
-            mb: 2
-          }}
-        >
-          Είστε εκτός σύνδεσης
-        </Typography>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center relative overflow-hidden">
+        {/* Watermark */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+          <span className="text-8xl font-bold text-muted-foreground/5">
+            &lt;/&gt;
+          </span>
+        </div>
         
-        <Typography 
-          variant="body1" 
-          color="text.secondary"
-          sx={{ 
-            mb: 4,
-            fontSize: '1.1rem',
-            lineHeight: 1.6
-          }}
-        >
-          Συνδεθείτε στο ίντερνετ και προσπαθήστε ξανά.
-        </Typography>
+        <CardHeader className="relative z-10">
+          <div className="flex justify-center mb-4">
+            <WifiOff className="h-16 w-16 text-destructive" />
+          </div>
+          <CardTitle className="text-2xl">You're Offline</CardTitle>
+        </CardHeader>
         
-        <Button
-          variant="contained"
-          size="large"
-          onClick={handleRetry}
-          disabled={isChecking}
-          startIcon={<RefreshIcon />}
-          sx={{
-            px: 4,
-            py: 1.5,
-            fontSize: '1.1rem',
-            fontWeight: 'medium',
-            borderRadius: 2,
-            boxShadow: 2,
-            '&:hover': {
-              boxShadow: 4,
-            }
-          }}
-        >
-          {isChecking ? 'Περιμένετε...' : 'ΔΟΚΙΜΑΣΤΕ ΞΑΝΑ'}
-        </Button>
-        
-        {retryCount > 0 && (
-          <Typography 
-            variant="caption" 
-            color="text.secondary"
-            sx={{ mt: 2, opacity: 0.7 }}
-          >
-            Επιχειρήσεις επανασύνδεσης: {retryCount}
-          </Typography>
-        )}
-      </OfflineContainer>
-    </Container>
+        <CardContent className="relative z-10 space-y-4">
+          <p className="text-muted-foreground">
+            It looks like you've lost your internet connection. 
+            Some features may not work properly.
+          </p>
+          
+          <div className="bg-muted/50 p-3 rounded-lg">
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <Wifi className="h-4 w-4" />
+              <span>Check your internet connection and try again</span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Button
+              onClick={handleRetry}
+              disabled={isChecking}
+              className="w-full"
+            >
+              {isChecking ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Checking Connection...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Try Again
+                </>
+              )}
+            </Button>
+            
+            {retryCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Attempt {retryCount} - Still offline
+              </p>
+            )}
+          </div>
+          
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>• You can still view cached content</p>
+            <p>• Changes will sync when you're back online</p>
+            <p>• Try refreshing the page if the issue persists</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

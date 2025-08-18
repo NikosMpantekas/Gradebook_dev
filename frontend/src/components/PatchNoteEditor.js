@@ -1,34 +1,26 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Grid, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem,
-  FormControlLabel,
-  Switch,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Tooltip
-} from '@mui/material';
-import { 
-  Save as SaveIcon, 
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Close as CloseIcon,
-  Preview as PreviewIcon
-} from '@mui/icons-material';
+  Save, 
+  Trash2,
+  Plus,
+  X,
+  Eye,
+  EyeOff
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Switch } from './ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 // Import ReactMarkdown properly
 import ReactMarkdown from 'react-markdown';
 
@@ -100,18 +92,10 @@ const PatchNoteEditor = forwardRef(({ user, onPatchNotesChanged }, ref) => {
     setPreviewMode(!previewMode);
   };
   
-  const handleDeleteConfirm = () => {
-    setConfirmDelete(true);
-  };
-  
-  const handleCancelDelete = () => {
-    setConfirmDelete(false);
-  };
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.content || !formData.version) {
+    if (!formData.title.trim() || !formData.content.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -119,39 +103,32 @@ const PatchNoteEditor = forwardRef(({ user, onPatchNotesChanged }, ref) => {
     setLoading(true);
     
     try {
-      const config = {
+      const endpoint = isEditing 
+        ? `${API_URL}/api/patch-notes/${formData._id}`
+        : `${API_URL}/api/patch-notes`;
+      
+      const method = isEditing ? 'PUT' : 'POST';
+      
+      const response = await axios({
+        method,
+        url: endpoint,
+        data: formData,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user.token}`
         }
-      };
+      });
       
-      let response;
+      toast.success(isEditing ? 'Patch note updated successfully!' : 'Patch note created successfully!');
       
-      if (isEditing) {
-        // Update existing patch note
-        response = await axios.put(
-          `${API_URL}/api/patch-notes/${formData._id}`,
-          formData,
-          config
-        );
-        toast.success('Patch note updated successfully');
-      } else {
-        // Create new patch note
-        response = await axios.post(`${API_URL}/api/patch-notes`, formData, config);
-        toast.success('Patch note created successfully');
-      }
-      
-      // Close the dialog and reset form
-      handleClose();
-      
-      // Trigger refresh of patch notes list
       if (onPatchNotesChanged) {
         onPatchNotesChanged();
       }
+      
+      handleClose();
     } catch (error) {
       console.error('Error saving patch note:', error);
-      toast.error(error.response?.data?.message || 'Error saving patch note');
+      toast.error(error.response?.data?.message || 'Failed to save patch note');
     } finally {
       setLoading(false);
     }
@@ -163,229 +140,296 @@ const PatchNoteEditor = forwardRef(({ user, onPatchNotesChanged }, ref) => {
     setLoading(true);
     
     try {
-      const config = {
+      await axios.delete(`${API_URL}/api/patch-notes/${formData._id}`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
-      };
+      });
       
-      await axios.delete(`${API_URL}/api/patch-notes/${formData._id}`, config);
+      toast.success('Patch note deleted successfully!');
       
-      toast.success('Patch note deleted successfully');
-      
-      // Close dialogs and reset form
-      setConfirmDelete(false);
-      handleClose();
-      
-      // Trigger refresh of patch notes list
       if (onPatchNotesChanged) {
         onPatchNotesChanged();
       }
+      
+      setConfirmDelete(false);
+      handleClose();
     } catch (error) {
       console.error('Error deleting patch note:', error);
-      toast.error(error.response?.data?.message || 'Error deleting patch note');
+      toast.error(error.response?.data?.message || 'Failed to delete patch note');
     } finally {
       setLoading(false);
     }
   };
   
-  // Only superadmins can manage patch notes
-  if (user.role !== 'superadmin') {
-    return null;
-  }
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'release':
+        return 'bg-blue-100 text-blue-800';
+      case 'bugfix':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'feature':
+        return 'bg-green-100 text-green-800';
+      case 'improvement':
+        return 'bg-purple-100 text-purple-800';
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
   
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case 'release':
+        return 'Release';
+      case 'bugfix':
+        return 'Bug Fix';
+      case 'feature':
+        return 'New Feature';
+      case 'improvement':
+        return 'Improvement';
+      case 'critical':
+        return 'Critical Update';
+      default:
+        return type;
+    }
+  };
+
   return (
-    <>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleOpen}
-        >
+    <TooltipProvider>
+      <div>
+        <Button onClick={handleOpen} className="mb-4">
+          <Plus className="mr-2 h-4 w-4" />
           Create Patch Note
         </Button>
-      </Box>
-      
-      {/* Patch Note Editor Dialog */}
-      <Dialog 
-        open={open} 
-        onClose={!loading ? handleClose : undefined}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              {isEditing ? 'Edit Patch Note' : 'Create Patch Note'}
-            </Typography>
-            {!loading && (
-              <IconButton edge="end" color="inherit" onClick={handleClose} aria-label="close">
-                <CloseIcon />
-              </IconButton>
-            )}
-          </Box>
-        </DialogTitle>
         
-        <form onSubmit={handleSubmit}>
-          <DialogContent dividers>
-            {previewMode ? (
-              <Box sx={{ mb: 2 }}>
-                <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
-                  <Typography variant="h5" gutterBottom>
-                    {formData.title || 'Untitled Patch Note'} <Typography component="span" variant="caption" color="text.secondary">v{formData.version || '0.0.0'}</Typography>
-                  </Typography>
-                  <ReactMarkdown>
-                    {formData.content || '*No content provided*'}
-                  </ReactMarkdown>
-                </Paper>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle>
+                  {isEditing ? 'Edit Patch Note' : 'Create New Patch Note'}
+                </DialogTitle>
                 <Button
-                  variant="outlined"
-                  onClick={togglePreviewMode}
-                  startIcon={<CloseIcon />}
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClose}
+                  className="h-8 w-8 p-0"
                 >
-                  Exit Preview
+                  <X className="h-4 w-4" />
                 </Button>
-              </Box>
-            ) : (
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={8}>
-                  <TextField
+              </div>
+              <DialogDescription>
+                {isEditing ? 'Update the patch note details below.' : 'Fill in the details for the new patch note.'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
                     name="title"
-                    label="Title"
-                    fullWidth
-                    variant="outlined"
                     value={formData.title}
                     onChange={handleChange}
-                    disabled={loading}
+                    placeholder="Enter patch note title"
                     required
                   />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="version">Version</Label>
+                  <Input
+                    id="version"
                     name="version"
-                    label="Version"
-                    fullWidth
-                    variant="outlined"
                     value={formData.version}
                     onChange={handleChange}
-                    disabled={loading}
-                    required
-                    placeholder="e.g. 1.2.3"
+                    placeholder="e.g., 1.2.0"
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControl fullWidth variant="outlined">
-                    <InputLabel id="type-label">Type</InputLabel>
-                    <Select
-                      labelId="type-label"
-                      name="type"
-                      value={formData.type}
-                      onChange={handleChange}
-                      label="Type"
-                      disabled={loading}
-                    >
-                      <MenuItem value="release">Release</MenuItem>
-                      <MenuItem value="bugfix">Bug Fix</MenuItem>
-                      <MenuItem value="feature">New Feature</MenuItem>
-                      <MenuItem value="improvement">Improvement</MenuItem>
-                      <MenuItem value="critical">Critical Update</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="release">Release</SelectItem>
+                      <SelectItem value="bugfix">Bug Fix</SelectItem>
+                      <SelectItem value="feature">New Feature</SelectItem>
+                      <SelectItem value="improvement">Improvement</SelectItem>
+                      <SelectItem value="critical">Critical Update</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="isActive">Active</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isActive"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                    />
+                    <Label htmlFor="isActive" className="text-sm">
+                      {formData.isActive ? 'Active' : 'Inactive'}
+                    </Label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="content">Content *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={togglePreviewMode}
+                  >
+                    {previewMode ? (
+                      <>
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        Hide Preview
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Show Preview
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {previewMode ? (
+                  <Card className="p-4">
+                    <div className="mb-2">
+                      <Badge className={getTypeColor(formData.type)}>
+                        {getTypeLabel(formData.type)}
+                      </Badge>
+                      {formData.version && (
+                        <Badge variant="outline" className="ml-2">
+                          v{formData.version}
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{formData.title}</h3>
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown>{formData.content}</ReactMarkdown>
+                    </div>
+                  </Card>
+                ) : (
+                  <Textarea
+                    id="content"
                     name="content"
-                    label="Content (Markdown supported)"
-                    fullWidth
-                    multiline
-                    rows={10}
-                    variant="outlined"
                     value={formData.content}
                     onChange={handleChange}
-                    disabled={loading}
+                    placeholder="Enter patch note content (Markdown supported)"
+                    rows={12}
                     required
                   />
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    You can use Markdown formatting for rich text. For example: **bold**, *italic*, ## headings, etc.
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        name="isActive"
-                        checked={formData.isActive}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    }
-                    label="Active (visible to users)"
-                  />
-                </Grid>
-
-              </Grid>
-            )}
+                )}
+              </div>
+              
+              <Separator />
+              
+              <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={loading}
+                    className="w-full sm:w-auto"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
+                
+                <div className="flex space-x-2 w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClose}
+                    disabled={loading}
+                    className="flex-1 sm:flex-none"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        {isEditing ? 'Updating...' : 'Creating...'}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {isEditing ? 'Update' : 'Create'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogFooter>
+            </form>
           </DialogContent>
-          
-          <DialogActions>
-            {isEditing && (
-              <Button 
-                variant="outlined" 
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDeleteConfirm}
+        </Dialog>
+        
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Delete</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this patch note? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDelete(false)}
                 disabled={loading}
-                sx={{ mr: 'auto' }}
+                className="w-full sm:w-auto"
               >
-                Delete
+                Cancel
               </Button>
-            )}
-            
-            <Button 
-              onClick={handleClose}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            
-            <Button 
-              type="submit"
-              variant="contained" 
-              color="primary"
-              startIcon={<SaveIcon />}
-              disabled={loading || previewMode}
-            >
-              {loading ? 'Saving...' : (isEditing ? 'Update' : 'Create')}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={confirmDelete} onClose={handleCancelDelete}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete this patch note? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleDelete} 
-            color="error" 
-            variant="contained"
-            disabled={loading}
-          >
-            {loading ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={loading}
+                className="w-full sm:w-auto"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 });
+
+PatchNoteEditor.displayName = 'PatchNoteEditor';
 
 export default PatchNoteEditor;
