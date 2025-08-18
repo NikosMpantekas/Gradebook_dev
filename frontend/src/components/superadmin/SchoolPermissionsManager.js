@@ -252,145 +252,98 @@ const SchoolPermissionsManager = () => {
     );
   }
 
+  const featureCategories = {
+    'Core Management': ['enableUserManagement', 'enableClasses'],
+    'Grade Management': ['enableGrades', 'enableAnalytics', 'enableRatings'],
+    'Notification Management': ['enableNotifications'],
+    'School Administration': ['enableSchedule', 'enableSchoolSettings'],
+    'Communication': ['enableContact']
+  };
+
+  const getFeatureName = (featureKey) => {
+    const names = {
+      enableUserManagement: 'User Management',
+      enableClasses: 'Class Management',
+      enableGrades: 'Grade Management',
+      enableAnalytics: 'Analytics & Reports',
+      enableRatings: 'Rating System (/app/ratings)',
+      enableNotifications: 'Notifications',
+      enableSchedule: 'Schedule Management',
+      enableSchoolSettings: 'School Settings',
+      enableContact: 'Contact System'
+    };
+    return names[featureKey] || featureKey;
+  };
+
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
-      <div className="mb-6">
-        <div className="flex items-center space-x-3 mb-2">
-          <Shield className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">School Permissions Manager</h1>
-        </div>
-        <p className="text-muted-foreground">
-          Manage feature access and permissions for all schools in the system
-        </p>
+    <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Feature Usage Statistics</h1>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <Button onClick={saveAllPermissions} disabled={saving} className="sm:w-auto">
-          <Save className="mr-2 h-4 w-4" />
-          {saving ? 'Saving...' : 'Save All Changes'}
-        </Button>
-        <Button onClick={resetToDefaults} variant="outline" disabled={saving} className="sm:w-auto">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Reset to Defaults
-              </Button>
-      </div>
+      {Array.isArray(schools) && schools.map((schoolData) => {
+        const school = schoolData.school || schoolData;
+        const schoolPermissions = permissions[school._id]?.features || {};
+        
+        return (
+          <Card key={school._id} className="mb-6">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-2xl font-bold">{school.name}</CardTitle>
+                  <p className="text-muted-foreground mt-1">
+                    {school.emailDomain} • 
+                    <Badge variant={school.active ? "default" : "secondary"} className="ml-2">
+                      {school.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </p>
+                </div>
+                <Button
+                  onClick={() => saveSchoolPermissions(school._id)}
+                  disabled={saving}
+                  className="ml-4"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-8">
+              {Object.entries(featureCategories).map(([categoryName, features]) => (
+                <div key={categoryName} className="space-y-4">
+                  <h3 className="text-lg font-semibold text-primary border-b pb-2">
+                    {categoryName}
+                  </h3>
+                  <div className="grid gap-3">
+                    {features.map((featureKey) => (
+                      <div key={featureKey} className="flex items-center justify-between py-3 px-4 border rounded-lg hover:bg-muted/50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-2 h-2 rounded-full bg-primary"></div>
+                          <Label className="font-medium cursor-pointer" htmlFor={`${school._id}-${featureKey}`}>
+                            {getFeatureName(featureKey)}
+                          </Label>
+                        </div>
+                        <Switch
+                          id={`${school._id}-${featureKey}`}
+                          checked={schoolPermissions[featureKey] || false}
+                          onCheckedChange={(checked) => handleFeatureToggle(school._id, featureKey, checked)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })}
 
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
           <p className="text-destructive">{error}</p>
         </div>
       )}
-
-      <div className="space-y-4">
-        {Array.isArray(schools) && schools.map((schoolData) => {
-          const school = schoolData.school || schoolData;
-          return (
-          <Collapsible key={school._id} open={expandedSchools.has(school._id)}>
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <School className="h-6 w-6 text-primary" />
-                    <div>
-                      <CardTitle className="text-lg">{school.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {school.location} • {school.students?.length || 0} students
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={school.active ? "default" : "secondary"}>
-                      {school.active ? "Active" : "Inactive"}
-                    </Badge>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleSchoolExpansion(school._id)}
-                      >
-                        {expandedSchools.has(school._id) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="space-y-6">
-                    {/* Features Section */}
-                    <div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Settings className="h-5 w-5 text-primary" />
-                        <h3 className="text-lg font-semibold">Features</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(permissions[school._id]?.features || {}).map(([featureKey, enabled]) => (
-                          <div key={featureKey} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">{getFeatureIcon(featureKey)}</span>
-                              <Label className="text-sm font-medium capitalize">
-                                {featureKey.replace(/([A-Z])/g, ' $1').trim()}
-                              </Label>
-                            </div>
-                            <Switch
-                              checked={enabled}
-                              onCheckedChange={(checked) => handleFeatureToggle(school._id, featureKey, checked)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Permissions Section */}
-                    <div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Shield className="h-5 w-5 text-primary" />
-                        <h3 className="text-lg font-semibold">Permissions</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(permissions[school._id]?.permissions || {}).map(([permissionKey, enabled]) => (
-                          <div key={permissionKey} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">{getPermissionIcon(permissionKey)}</span>
-                              <Label className="text-sm font-medium capitalize">
-                                {permissionKey.replace(/([A-Z])/g, ' $1').trim()}
-                              </Label>
-                            </div>
-                            <Switch
-                              checked={enabled}
-                              onCheckedChange={(checked) => handlePermissionToggle(school._id, permissionKey, checked)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end pt-4 border-t">
-                      <Button
-                        onClick={() => saveSchoolPermissions(school._id)}
-                        disabled={saving}
-                        size="sm"
-                      >
-                        <Save className="mr-2 h-4 w-4" />
-                        {saving ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-          );
-        })}
-      </div>
 
       {schools.length === 0 && (
         <div className="text-center py-12">

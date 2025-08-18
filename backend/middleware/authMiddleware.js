@@ -383,47 +383,130 @@ const teacher = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Secretary-specific permission middlewares - FIXED: Allow teachers to manage grades
+// NEW: School permission-based middleware using schoolpermissions database
+const requireSchoolFeature = (featureName) => {
+  return asyncHandler(async (req, res, next) => {
+    // Superadmin always has access
+    if (req.user && req.user.role === 'superadmin') {
+      return next();
+    }
+
+    // Get user's school permissions from database
+    try {
+      const School = require('../models/schoolModel');
+      const userSchool = await School.findById(req.user.schoolId);
+      
+      if (!userSchool || !userSchool.features || !userSchool.features[featureName]) {
+        console.log(`🚫 Feature '${featureName}' disabled for school ${req.user.schoolId}`);
+        return res.status(403).json({ 
+          success: false, 
+          message: `Feature '${featureName}' is not enabled for your school` 
+        });
+      }
+
+      console.log(`✅ Feature '${featureName}' enabled for school ${req.user.schoolId}`);
+      next();
+    } catch (error) {
+      console.error('Error checking school feature:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error checking permissions' 
+      });
+    }
+  });
+};
+
+// Role-based permission middleware that also checks school features
 const canManageGrades = asyncHandler(async (req, res, next) => {
-  if (
-    req.user && (
-      req.user.role === 'superadmin' ||
-      req.user.role === 'admin' || 
-      req.user.role === 'teacher' ||
-      (req.user.role === 'secretary' && 
-       req.user.secretaryPermissions && 
-       req.user.secretaryPermissions.canManageGrades === true)
-    )
-  ) {
-    next();
+  if (req.user && (
+    req.user.role === 'superadmin' ||
+    req.user.role === 'admin' || 
+    req.user.role === 'teacher'
+  )) {
+    // Check if grades feature is enabled for the school
+    return requireSchoolFeature('enableGrades')(req, res, next);
   } else {
     res.status(403);
     throw new Error('Not authorized for this action');
   }
 });
-// FIXED: Allow teachers to send notifications
+
 const canSendNotifications = asyncHandler(async (req, res, next) => {
-  if (
-    req.user && (
-      req.user.role === 'superadmin' ||
-      req.user.role === 'admin' || 
-      req.user.role === 'teacher' ||
-      (req.user.role === 'secretary' && 
-       req.user.secretaryPermissions && 
-       req.user.secretaryPermissions.canSendNotifications === true)
-    )
-  ) {
-    next();
+  if (req.user && (
+    req.user.role === 'superadmin' ||
+    req.user.role === 'admin' || 
+    req.user.role === 'teacher'
+  )) {
+    // Check if notifications feature is enabled for the school
+    return requireSchoolFeature('enableNotifications')(req, res, next);
   } else {
     res.status(403);
     throw new Error('Not authorized for this action');
   }
 });
-const canManageUsers = adminOrSecretary('canManageUsers');
-const canManageSchools = adminOrSecretary('canManageSchools');
-const canManageDirections = adminOrSecretary('canManageDirections');
-const canManageSubjects = adminOrSecretary('canManageSubjects');
-const canAccessStudentProgress = adminOrSecretary('canAccessStudentProgress');
+// School feature-based permission middleware for admin functions
+const canManageUsers = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+    return requireSchoolFeature('enableUserManagement')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canManageSchools = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+    return requireSchoolFeature('enableSchoolSettings')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canManageClasses = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin')) {
+    return requireSchoolFeature('enableClasses')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canAccessAnalytics = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin' || req.user.role === 'teacher')) {
+    return requireSchoolFeature('enableAnalytics')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canManageSchedule = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin' || req.user.role === 'teacher')) {
+    return requireSchoolFeature('enableSchedule')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canAccessRatings = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin' || req.user.role === 'teacher' || req.user.role === 'student')) {
+    return requireSchoolFeature('enableRatings')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
+
+const canAccessContact = asyncHandler(async (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.role === 'admin' || req.user.role === 'teacher' || req.user.role === 'student')) {
+    return requireSchoolFeature('enableContact')(req, res, next);
+  } else {
+    res.status(403);
+    throw new Error('Not authorized for this action');
+  }
+});
 
 // Middleware to check if user is a student
 const student = asyncHandler(async (req, res, next) => {
@@ -495,15 +578,15 @@ module.exports = {
   superadmin,
   teacher, 
   student,
-  adminOrSecretary,
+  // NEW: School permission-based middleware
+  requireSchoolFeature,
   canManageGrades,
   canSendNotifications,
   canManageUsers,
   canManageSchools,
-  canManageDirections,
-  canManageSubjects,
-  adminCanManageSubjects,
-  canAccessStudentProgress,
-  canManageStudents,
-  adminCanManageSchools
+  canManageClasses,
+  canAccessAnalytics,
+  canManageSchedule,
+  canAccessRatings,
+  canAccessContact
 };
