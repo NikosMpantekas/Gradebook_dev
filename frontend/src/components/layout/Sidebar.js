@@ -62,7 +62,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     if (isSuperAdmin) {
       return [
         { icon: Shield, label: 'Super Admin', path: '/superadmin/dashboard' },
-        { icon: Building, label: 'School Management', path: '/superadmin/school-features' },
+        { icon: Building, label: 'School Management', path: '/superadmin/school-permissions' },
         { icon: Users, label: 'User Management', path: '/superadmin/create-school-owner' },
         { icon: BarChart3, label: 'System Logs', path: '/superadmin/system-logs' },
         { icon: Megaphone, label: 'Patch Notes', path: '/superadmin/patch-notes' },
