@@ -177,6 +177,7 @@ schoolPermissionsSchema.statics.getAvailableFeatures = function() {
     enableCalendar: 'Calendar',
     enableSchedule: 'Schedule',
     enableRatingSystem: 'Rating System',
+    enableRatings: 'Rating System (/app/ratings)',
     enableAnalytics: 'Analytics',
     enableUserManagement: 'User Management',
     enableSchoolSettings: 'School Settings',
