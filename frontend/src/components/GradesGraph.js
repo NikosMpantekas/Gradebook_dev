@@ -27,13 +27,17 @@ export function GradesGraph({ recentGrades }) {
       .sort((a, b) => new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date));
 
     // Create array spanning full width with both data points
-    return sortedGrades.map((grade, index) => ({
-      index: index + 1,
-      grade: Number(grade.value) || 0,
-      selectedSubjectGrade: (grade.subject?.name || "Unknown Subject") === selectedSubject ? (Number(grade.value) || 0) : null,
-      subject: grade.subject?.name || "Unknown Subject",
-      date: new Date(grade.createdAt || grade.date).toLocaleDateString()
-    }));
+    // For selected subject, we want a continuous line that extends across the full width
+    return sortedGrades.map((grade, index) => {
+      const isSelectedSubject = (grade.subject?.name || "Unknown Subject") === selectedSubject;
+      return {
+        index: index + 1,
+        grade: Number(grade.value) || 0,
+        selectedSubjectGrade: isSelectedSubject ? (Number(grade.value) || 0) : null,
+        subject: grade.subject?.name || "Unknown Subject",
+        date: new Date(grade.createdAt || grade.date).toLocaleDateString()
+      };
+    });
   }, [recentGrades, selectedSubject]);
 
   // Update selectedSubject when subjects change
@@ -117,7 +121,7 @@ export function GradesGraph({ recentGrades }) {
                 dot={{ r: 3, fill: "#8884d8" }}
                 activeDot={{ r: 5, stroke: "#8884d8", strokeWidth: 2 }}
                 name="All Grades"
-                connectNulls={false}
+                connectNulls={true}
               />
               <Line
                 type="monotone"
@@ -127,7 +131,7 @@ export function GradesGraph({ recentGrades }) {
                 dot={{ r: 3, fill: "#82ca9d" }}
                 activeDot={{ r: 5, stroke: "#82ca9d", strokeWidth: 2 }}
                 name={selectedSubject}
-                connectNulls={false}
+                connectNulls={true}
               />
             </LineChart>
           </ResponsiveContainer>

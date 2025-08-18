@@ -97,8 +97,8 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       return [
         { icon: BookOpen, label: 'My Grades', path: '/app/grades' },
         { icon: Bell, label: 'Notifications', path: '/app/student/notifications' },
-        { icon: Star, label: 'Submit Ratings', path: '/app/ratings' },
         { icon: Clock, label: 'Schedule', path: '/app/schedule' },
+        { icon: Star, label: 'Submit Ratings', path: '/app/ratings' },
         { icon: MessageSquare, label: 'Contact Messages', path: '/app/student/contact' },
       ];
     }
