@@ -25,11 +25,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
 import { TooltipProvider } from '../../components/ui/tooltip';
+import { useTranslation } from 'react-i18next';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, ChartTooltip, Legend);
 
 const StudentGrades = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
@@ -179,9 +181,9 @@ const StudentGrades = () => {
       <div className="container mx-auto p-4 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Grades</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('student.myGrades')}</h1>
             <p className="text-muted-foreground mt-2">
-              View and track your academic performance
+              {t('student.viewAndTrack')}
             </p>
           </div>
         </div>
@@ -198,7 +200,7 @@ const StudentGrades = () => {
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">Average</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t('student.average')}</p>
                     <p className="text-2xl font-bold text-primary">{gradeStats.average}</p>
                   </CardContent>
                 </Card>
@@ -209,7 +211,7 @@ const StudentGrades = () => {
                     <div className="flex items-center justify-center mb-2">
                       <Award className="h-5 w-5 text-green-500" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">Highest</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t('student.highest')}</p>
                     <p className="text-2xl font-bold text-green-500">{gradeStats.highestGrade}</p>
                   </CardContent>
                 </Card>
@@ -220,7 +222,7 @@ const StudentGrades = () => {
                     <div className="flex items-center justify-center mb-2">
                       <AlertTriangle className="h-5 w-5 text-red-500" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">Lowest</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t('student.lowest')}</p>
                     <p className="text-2xl font-bold text-red-500">{gradeStats.lowestGrade}</p>
                   </CardContent>
                 </Card>
@@ -231,7 +233,7 @@ const StudentGrades = () => {
                     <div className="flex items-center justify-center mb-2">
                       <CheckCircle className="h-5 w-5 text-blue-500" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">Passing Rate</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t('student.passingRate')}</p>
                     <p className="text-2xl font-bold text-blue-500">{gradeStats.passingRate}%</p>
                   </CardContent>
                 </Card>
@@ -243,7 +245,7 @@ const StudentGrades = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BookOpen className="h-5 w-5" />
-                      Grade Distribution
+                      {t('student.gradeDistribution')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
@@ -260,7 +262,7 @@ const StudentGrades = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search grades..."
+                  placeholder={t('student.searchGrades')}
                   value={searchTerm}
                   onChange={handleSearchChange}
                   className="pl-10"
@@ -271,19 +273,19 @@ const StudentGrades = () => {
             {/* Grades Table */}
             <Card>
               <CardHeader>
-                <CardTitle>Grades</CardTitle>
+                <CardTitle>{t('student.grades')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Subject</TableHead>
-                        <TableHead className="text-center">Grade</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Teacher</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
+                        <TableHead>{t('student.subject')}</TableHead>
+                        <TableHead className="text-center">{t('student.grade')}</TableHead>
+                        <TableHead>{t('student.description')}</TableHead>
+                        <TableHead>{t('student.teacher')}</TableHead>
+                        <TableHead>{t('student.date')}</TableHead>
+                        <TableHead className="text-center">{t('student.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -317,7 +319,7 @@ const StudentGrades = () => {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>View Details</p>
+                                  <p>{t('student.viewDetails')}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TableCell>
@@ -330,7 +332,7 @@ const StudentGrades = () => {
                 {/* Pagination */}
                 <div className="flex items-center justify-between space-x-2 py-4">
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">Rows per page</p>
+                    <p className="text-sm text-muted-foreground">{t('student.rowsPerPage')}</p>
                     <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
                       <SelectTrigger className="h-8 w-[70px]">
                         <SelectValue />
@@ -352,7 +354,7 @@ const StudentGrades = () => {
                       onClick={() => handleChangePage(page - 1)}
                       disabled={page === 0}
                     >
-                      Previous
+                      {t('student.previous')}
                     </Button>
                     <Button
                       variant="outline"
@@ -360,7 +362,7 @@ const StudentGrades = () => {
                       onClick={() => handleChangePage(page + 1)}
                       disabled={(page + 1) * rowsPerPage >= filteredGrades.length}
                     >
-                      Next
+                      {t('student.next')}
                     </Button>
                   </div>
                 </div>
@@ -371,9 +373,9 @@ const StudentGrades = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Grades Available</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('student.noGradesAvailable')}</h3>
               <p className="text-muted-foreground text-center">
-                You don't have any grades yet. Check back later or contact your teachers.
+                {t('student.noGradesYet')}
               </p>
             </CardContent>
           </Card>

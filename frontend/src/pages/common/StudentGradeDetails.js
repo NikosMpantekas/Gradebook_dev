@@ -28,6 +28,7 @@ import {
   Print as PrintIcon, 
   CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -40,6 +41,7 @@ const formatDateForApi = (date) => {
 };
 
 const StudentGradeDetails = ({ open, onClose, student }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -96,7 +98,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
       setStudentDetails(processedData);
     } catch (error) {
       console.error('[StudentGradeDetails] Error fetching student details:', error);
-      setDetailsError(error.message || 'Failed to load student details');
+      setDetailsError(error.message || t('student.failedToLoadDetails'));
     } finally {
       setDetailsLoading(false);
     }
@@ -152,7 +154,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
     if (printWindow) {
       printWindow.focus();
     } else {
-      alert('Please allow pop-ups for this site to use the print feature.');
+      alert(t('student.allowPopups'));
     }
   };
 
@@ -169,7 +171,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
       <DialogTitle sx={{ borderBottom: `1px solid ${theme.palette.divider}`, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">
-            Student Grade Details
+            {t('grades.myGradesDetails')}
           </Typography>
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
@@ -189,7 +191,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                         {student?.student?.name || 'Student Name'}
                       </Typography>
                       <Typography variant="body2" color="textSecondary">
-                        {student?.student?.email || 'No email available'}
+                        {student?.student?.email || t('student.noEmailAvailable')}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} md={6}>
@@ -203,7 +205,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                             borderRadius: 1
                           }}
                         >
-                          Printable Table
+                          {t('student.printableTable')}
                         </Button>
                       </Box>
                     </Grid>
@@ -217,13 +219,13 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                 <CardContent>
                   <Typography variant="subtitle1" gutterBottom>
                     <CalendarIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-                    Select Period
+                    {t('student.selectPeriod')}
                   </Typography>
                   <Grid container spacing={2} mt={1}>
                     <Grid item xs={12} md={5}>
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
                         <DatePicker
-                          label="Start Date"
+                          label={t('student.startDate')}
                           value={startDate}
                           onChange={(newValue) => setStartDate(newValue)}
                           slotProps={{ textField: { fullWidth: true, variant: 'outlined', size: 'small' } }}
@@ -233,7 +235,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                     <Grid item xs={12} md={5}>
                       <LocalizationProvider dateAdapter={AdapterDateFns}>
                         <DatePicker
-                          label="End Date"
+                          label={t('student.endDate')}
                           value={endDate}
                           onChange={(newValue) => setEndDate(newValue)}
                           slotProps={{ textField: { fullWidth: true, variant: 'outlined', size: 'small' } }}
@@ -247,7 +249,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                         onClick={handleDateRangeChange}
                         sx={{ height: '40px' }}
                       >
-                        Apply
+                        {t('common.apply')}
                       </Button>
                     </Grid>
                   </Grid>
@@ -271,7 +273,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                       <Card variant="outlined" sx={{ bgcolor: theme.palette.background.paper }}>
                         <CardContent>
                           <Typography variant="h6" gutterBottom>
-                            Grade Summary
+                            {t('student.gradeSummary')}
                           </Typography>
                           <Grid container spacing={2}>
                             <Grid item xs={12} sm={4}>
@@ -280,7 +282,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                                   {studentDetails.totalAverage?.toFixed(1) || '0.0'}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                  Average Grade
+                                  {t('student.averageGrade')}
                                 </Typography>
                               </Box>
                             </Grid>
@@ -290,7 +292,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                                   {studentDetails.totalGrades || '0'}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                  Total Grades
+                                  {t('student.totalGrades')}
                                 </Typography>
                               </Box>
                             </Grid>
@@ -300,7 +302,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                                   {Object.keys(studentDetails.subjectBreakdown || {}).length || '0'}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                  Subjects
+                                  {t('navigation.subjects')}
                                 </Typography>
                               </Box>
                             </Grid>
@@ -313,17 +315,17 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                       <Card variant="outlined" sx={{ bgcolor: theme.palette.background.paper }}>
                         <CardContent>
                           <Typography variant="h6" gutterBottom>
-                            Subject Performance
+                            {t('student.subjectPerformance')}
                           </Typography>
                           <TableContainer component={Paper} variant="outlined" sx={{ bgcolor: theme.palette.background.paper }}>
                             <Table>
                               <TableHead>
                                 <TableRow>
-                                  <TableCell>Subject</TableCell>
-                                  <TableCell align="center">Average Grade</TableCell>
-                                  <TableCell align="center">Highest</TableCell>
-                                  <TableCell align="center">Lowest</TableCell>
-                                  <TableCell align="center">Count</TableCell>
+                                  <TableCell>{t('student.subject')}</TableCell>
+                                  <TableCell align="center">{t('student.averageGrade')}</TableCell>
+                                  <TableCell align="center">{t('student.highest')}</TableCell>
+                                  <TableCell align="center">{t('student.lowest')}</TableCell>
+                                  <TableCell align="center">{t('student.count')}</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -341,7 +343,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                                 {Object.keys(studentDetails.subjectBreakdown || {}).length === 0 && (
                                   <TableRow>
                                     <TableCell colSpan={5} align="center">
-                                      No subject data available
+                                      {t('student.noSubjectData')}
                                     </TableCell>
                                   </TableRow>
                                 )}
@@ -356,7 +358,7 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
                   </>
                 ) : (
                   <Alert severity="info">
-                    Select a date range to view student details
+                    {t('student.selectDateRange')}
                   </Alert>
                 )}
               </>
@@ -364,14 +366,14 @@ const StudentGradeDetails = ({ open, onClose, student }) => {
           </>
         ) : (
           <Alert severity="warning">
-            No student selected
+            {t('student.noStudentSelected')}
           </Alert>
         )}
       </DialogContent>
       
       <DialogActions sx={{ borderTop: `1px solid ${theme.palette.divider}`, p: 2 }}>
         <Button onClick={onClose} color="primary">
-          Close
+          {t('common.close')}
         </Button>
       </DialogActions>
     </Dialog>

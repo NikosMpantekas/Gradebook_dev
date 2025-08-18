@@ -25,8 +25,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { useTranslation } from 'react-i18next';
 
 const StudentStats = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [students, setStudents] = useState([]);
@@ -108,14 +110,14 @@ const StudentStats = () => {
     if (user?.role === 'admin') {
       return {
         icon: <Shield className="h-8 w-8" />,
-        title: 'Admin Student Analysis',
-        description: 'Detailed grade analysis and class comparison'
+        title: t('student.adminStudentAnalysis'),
+        description: t('student.detailedAnalysis')
       };
     } else {
       return {
         icon: <School className="h-8 w-8" />,
-        title: 'Student Grade Analysis',
-        description: 'Detailed grade analysis and class comparison'
+        title: t('student.studentGradeAnalysis'),
+        description: t('student.detailedAnalysis')
       };
     }
   };
@@ -133,7 +135,7 @@ const StudentStats = () => {
   // Navigate to dedicated print page
   const handlePrintReport = () => {
     if (!selectedStudent || !startDate || !endDate) {
-      alert('Please select a student and date range first.');
+      alert(t('student.selectStudentAndDate'));
       return;
     }
     
@@ -174,14 +176,14 @@ const StudentStats = () => {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="space-y-2">
-              <Label htmlFor="student">Select Student</Label>
+              <Label htmlFor="student">{t('student.selectStudent')}</Label>
               <Select
                 value={selectedStudent}
                 onValueChange={setSelectedStudent}
                 disabled={studentsLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a student" />
+                  <SelectValue placeholder={t('student.chooseStudent')} />
                 </SelectTrigger>
                 <SelectContent>
                   {students.map((student) => (
@@ -194,7 +196,7 @@ const StudentStats = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
+              <Label htmlFor="startDate">{t('student.startDate')}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -206,7 +208,7 @@ const StudentStats = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
+              <Label htmlFor="endDate">{t('student.endDate')}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -227,7 +229,7 @@ const StudentStats = () => {
                 className="min-w-[140px]"
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Print Report
+                {t('student.printReport')}
               </Button>
             </div>
           )}
@@ -257,13 +259,13 @@ const StudentStats = () => {
           <Card className="mb-6">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <h1 className="text-4xl font-light mb-4">Student Grade Analysis Report</h1>
+                <h1 className="text-4xl font-light mb-4">{t('student.gradeAnalysisReport')}</h1>
                 <h2 className="text-2xl text-primary mb-2">{selectedStudentData?.name}</h2>
                 <p className="text-muted-foreground">
-                  Date Range: {startDate ? new Date(startDate).toLocaleDateString() : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString() : 'N/A'}
+                  {t('student.dateRange')}: {startDate ? new Date(startDate).toLocaleDateString() : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString() : 'N/A'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Generated on: {new Date().toLocaleDateString()}
+                  {t('student.generatedOn')}: {new Date().toLocaleDateString()}
                 </p>
               </div>
             </CardContent>
@@ -285,7 +287,7 @@ const StudentStats = () => {
                         <div className="text-2xl font-bold text-primary">
                           {subjectData.studentAverage?.toFixed(1) || 'N/A'}
                         </div>
-                        <p className="text-sm text-muted-foreground">Student Average</p>
+                        <p className="text-sm text-muted-foreground">{t('student.studentAverage')}</p>
                       </CardContent>
                     </Card>
                     
@@ -294,7 +296,7 @@ const StudentStats = () => {
                         <div className="text-2xl font-bold text-secondary">
                           {subjectData.classAverage?.toFixed(1) || 'N/A'}
                         </div>
-                        <p className="text-sm text-muted-foreground">Class Average</p>
+                        <p className="text-sm text-muted-foreground">{t('student.classAverage')}</p>
                       </CardContent>
                     </Card>
                     
@@ -303,7 +305,7 @@ const StudentStats = () => {
                         <div className="text-2xl font-bold">
                           {subjectData.grades?.length || 0}
                         </div>
-                        <p className="text-sm text-muted-foreground">Total Grades</p>
+                        <p className="text-sm text-muted-foreground">{t('student.totalGrades')}</p>
                       </CardContent>
                     </Card>
                     
@@ -313,7 +315,7 @@ const StudentStats = () => {
                           variant={subjectData.studentAverage >= subjectData.classAverage ? 'default' : 'secondary'}
                           className="text-sm"
                         >
-                          {subjectData.studentAverage >= subjectData.classAverage ? 'Above Average' : 'Below Average'}
+                          {subjectData.studentAverage >= subjectData.classAverage ? t('student.aboveAverage') : t('student.belowAverage')}
                         </Badge>
                       </CardContent>
                     </Card>
@@ -323,7 +325,7 @@ const StudentStats = () => {
                   {subjectData.grades && subjectData.grades.length > 1 && (
                     <div className="mb-6">
                       <h4 className="text-lg font-semibold mb-4">
-                        📈 Grade Progress Over Time
+                        📈 {t('student.gradeProgressOverTime')}
                       </h4>
                       <div className="w-full h-[300px]">
                         <ResponsiveContainer>
@@ -338,8 +340,8 @@ const StudentStats = () => {
                               tick={{ fontSize: 12 }}
                             />
                             <Tooltip 
-                              formatter={(value) => [value, 'Grade']}
-                              labelFormatter={(label) => `Date: ${label}`}
+                              formatter={(value) => [value, t('student.grade')]}
+                              labelFormatter={(label) => `${t('student.date')}: ${label}`}
                             />
                             <Legend />
                             <Line 
@@ -348,7 +350,7 @@ const StudentStats = () => {
                               stroke="hsl(var(--primary))" 
                               strokeWidth={3}
                               dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
-                              name="Grade"
+                              name={t('student.grade')}
                             />
                           </LineChart>
                         </ResponsiveContainer>
@@ -358,16 +360,16 @@ const StudentStats = () => {
 
                   {/* Grades Table */}
                   <h4 className="text-lg font-semibold mb-4">
-                    📋 All Grades
+                    📋 {t('student.allGrades')}
                   </h4>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Grade</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Teacher</TableHead>
-                        <TableHead>vs Class Avg</TableHead>
+                        <TableHead>{t('student.date')}</TableHead>
+                        <TableHead>{t('student.grade')}</TableHead>
+                        <TableHead>{t('student.description')}</TableHead>
+                        <TableHead>{t('student.teacher')}</TableHead>
+                        <TableHead>{t('student.vsClassAvg')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -388,14 +390,14 @@ const StudentStats = () => {
                               variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
                               className="text-xs"
                             >
-                              {grade.value >= subjectData.classAverage ? '↗️ Above' : '↘️ Below'}
+                              {grade.value >= subjectData.classAverage ? `↗️ ${t('student.above')}` : `↘️ ${t('student.below')}`}
                             </Badge>
                           </TableCell>
                         </TableRow>
                       )) || (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center">
-                            No grades found for this period
+                            {t('student.noGradesForPeriod')}
                           </TableCell>
                         </TableRow>
                       )}
@@ -408,10 +410,10 @@ const StudentStats = () => {
             <Card>
               <CardContent className="p-8 text-center">
                 <h3 className="text-lg text-muted-foreground mb-2">
-                  No grades found for the selected period
+                  {t('student.noGradesFoundPeriod')}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Try selecting a different time period or check if grades have been recorded
+                  {t('student.tryDifferentPeriod')}
                 </p>
               </CardContent>
             </Card>
@@ -425,10 +427,10 @@ const StudentStats = () => {
           <CardContent className="p-8 text-center">
             <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg text-muted-foreground mb-2">
-              Select a student and date range to view grade analysis
+              {t('student.selectForAnalysis')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Choose a student and select start/end dates above to generate a detailed grade report with class comparisons and progress charts
+              {t('student.chooseForReport')}
             </p>
           </CardContent>
         </Card>

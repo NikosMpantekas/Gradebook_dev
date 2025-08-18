@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { Spinner } from '../../components/ui/spinner';
@@ -26,6 +27,7 @@ import { GradesGraph } from "../../components/GradesGraph";
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
 
 const StudentDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -61,7 +63,7 @@ const StudentDashboard = () => {
     
     if (user.role !== 'student') {
       console.log('StudentDashboard: User is not student, redirecting');
-      toast.error('Access denied. Student privileges required.');
+      toast.error(t('student.accessDenied'));
       navigate('/app/dashboard');
       return;
     }
@@ -149,7 +151,7 @@ const StudentDashboard = () => {
       
     } catch (error) {
       console.error('StudentDashboard: Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please refresh the page.');
+      setError(t('student.failedToLoad'));
     } finally {
       setLoading(false);
       setPanelLoading({ notifications: false, grades: false, classes: false });
@@ -269,7 +271,7 @@ const StudentDashboard = () => {
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md mb-6">
           <div className="flex items-center space-x-2">
             <XCircle className="h-5 w-5" />
-            <span>Access denied. Student privileges required.</span>
+            <span>{t('student.accessDenied')}</span>
           </div>
         </div>
       </div>
@@ -280,42 +282,42 @@ const StudentDashboard = () => {
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-light tracking-wide">Welcome back, {user?.name}!</h1>
-        <p className="text-muted-foreground">Track your academic progress and stay updated with your studies.</p>
+        <h1 className="text-3xl font-light tracking-wide">{t('student.welcomeBack')}, {user?.name}!</h1>
+        <p className="text-muted-foreground">{t('student.trackProgress')}</p>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.stats.totalSubjects}</div>
-            <p className="text-xs text-muted-foreground">Enrolled subjects</p>
+            <p className="text-xs text-muted-foreground">{t('student.enrolledSubjects')}</p>
           </CardContent>
         </Card>
 
         <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.stats.averageGrade.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">Current average</p>
+            <p className="text-xs text-muted-foreground">{t('student.currentAverage')}</p>
           </CardContent>
         </Card>
 
         <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Grades Received</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.stats.gradesReceived}</div>
-            <p className="text-xs text-muted-foreground">This semester</p>
+            <p className="text-xs text-muted-foreground">{t('student.thisSemester')}</p>
           </CardContent>
         </Card>
       </div>
@@ -329,7 +331,7 @@ const StudentDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
-              <span>Quick Actions</span>
+              <span>{t('student.quickActions')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-center">
@@ -340,7 +342,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <BookOpen className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">View My Grades</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.viewMyGrades')}</span>
               </Button>
 
               <Button
@@ -349,7 +351,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">My Schedule</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.mySchedule')}</span>
               </Button>
 
               <Button
@@ -358,7 +360,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Notifications</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
                 onClick={() => navigate('/app/student-stats')}
@@ -366,7 +368,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">My Stats</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.myStats')}</span>
               </Button>
             </div>
           </CardContent>
@@ -379,7 +381,7 @@ const StudentDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-primary" />
-              <span>Monthly Calendar</span>
+              <span>{t('student.monthlyCalendar')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -392,7 +394,7 @@ const StudentDashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-primary" />
-              <span>Recent Notifications</span>
+              <span>{t('student.recentNotifications')}</span>
             </CardTitle>
             <Button 
               variant="outline" 
@@ -400,7 +402,7 @@ const StudentDashboard = () => {
               onClick={() => navigate('/app/notifications')}
               className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
             >
-              View All
+              {t('dashboard.viewAll')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -444,7 +446,7 @@ const StudentDashboard = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground fade-in-up">
                 <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No recent notifications</p>
+                <p>{t('dashboard.noNotifications')}</p>
               </div>
             )}
           </CardContent>
@@ -458,7 +460,7 @@ const StudentDashboard = () => {
             <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
               <Info className="h-5 w-5" />
               <span className="text-sm">
-                Some dashboard features are currently disabled. Contact your system administrator to enable additional features.
+                {t('student.featuresDisabled')}
               </span>
             </div>
           </CardContent>
