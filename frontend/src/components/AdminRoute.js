@@ -201,106 +201,99 @@ const AdminRoute = ({ children }) => {
     // Enable enhanced logging for secretary access attempts
     console.log(`Secretary access attempt to: ${location.pathname}`);
     
-    // For student progress
+    // For student progress - check school feature only
     if (location.pathname.includes('/app/admin/progress')) {
-      // Check specific permission if available, but fallback to allowing access
-      const hasExplicitPermission = user.secretaryPermissions?.canAccessStudentProgress;
-      // Also check if the feature is enabled at the school level
-      const isFeatureActive = isFeatureEnabled('enableStudentProgress');
-      
-      console.log(`Secretary progress access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}, Feature enabled: ${isFeatureActive}`);
+      const isFeatureActive = isFeatureEnabled('enableAnalytics');
       
       if (!isFeatureActive) {
-        console.log('❌ Secretary access denied - Student Progress feature disabled for school');
+        console.log('❌ Secretary access denied - Analytics feature disabled for school');
         return <Navigate to="/app/dashboard" />;
       }
       
       return children;
     }
     
-    // For user management
+    // For user management - check school feature only
     if (location.pathname.includes('/app/admin/users')) {
-      const hasExplicitPermission = user.secretaryPermissions?.canManageUsers;
-      console.log(`Secretary user management access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}`);
+      const isFeatureActive = isFeatureEnabled('enableUserManagement');
+      if (!isFeatureActive) {
+        console.log('❌ AdminRoute - User Management feature disabled for this school');
+        return <Navigate to="/app/dashboard" />;
+      }
       return children;
     }
     
-    // For school management
+    // For school management - check school feature only
     if (location.pathname.includes('/app/admin/schools')) {
-      const hasExplicitPermission = user.secretaryPermissions?.canManageSchools;
-      console.log(`Secretary school management access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}`);
+      const isFeatureActive = isFeatureEnabled('enableSchoolSettings');
+      if (!isFeatureActive) {
+        console.log('❌ AdminRoute - School Settings feature disabled for this school');
+        return <Navigate to="/app/dashboard" />;
+      }
       return children;
     }
     
-    // For direction management
-    if (location.pathname.includes('/app/admin/directions')) {
-      const hasExplicitPermission = user.secretaryPermissions?.canManageDirections;
-      console.log(`Secretary direction management access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}`);
+    // For classes management - check school feature only  
+    if (location.pathname.includes('/app/admin/classes')) {
+      const isFeatureActive = isFeatureEnabled('enableClasses');
+      if (!isFeatureActive) {
+        console.log('❌ AdminRoute - Classes feature disabled for this school');
+        return <Navigate to="/app/dashboard" />;
+      }
       return children;
     }
     
-    // For subject management
-    if (location.pathname.includes('/app/admin/subjects')) {
-      const hasExplicitPermission = user.secretaryPermissions?.canManageSubjects;
-      console.log(`Secretary subject management access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}`);
-      return children;
-    }
-    
-    // For grades management - check both secretary permissions AND feature toggle
+    // For grades management - check school feature only
     if (location.pathname.includes('/app/admin/grades')) {
-      const hasExplicitPermission = user.secretaryPermissions?.canManageGrades;
       const isFeatureActive = isFeatureEnabled('enableGrades');
       
-      console.log(`Secretary grades access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}, Feature enabled: ${isFeatureActive}`);
+      console.log(`Grades feature enabled: ${isFeatureActive}`);
       
       if (!isFeatureActive) {
-        console.log('❌ Secretary access denied - Grades feature disabled for school');
+        console.log('❌ AdminRoute - Grades feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
-      
-      return children;
     }
     
-    // For notifications management - check both secretary permissions AND feature toggle
+    // For notifications management - check school feature only
     if (location.pathname.includes('/app/admin/notifications')) {
-      const hasExplicitPermission = user.secretaryPermissions?.canSendNotifications;
       const isFeatureActive = isFeatureEnabled('enableNotifications');
       
-      console.log(`Secretary notifications access: ${hasExplicitPermission ? 'Explicitly granted' : 'Default granted'}, Feature enabled: ${isFeatureActive}`);
+      console.log(`Notifications feature enabled: ${isFeatureActive}`);
       
       if (!isFeatureActive) {
-        console.log('❌ Secretary access denied - Notifications feature disabled for school');
+        console.log('❌ AdminRoute - Notifications feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
-      
+    }
+    
+    // For schedule management - check school feature only
+    if (location.pathname.includes('/app/admin/schedule')) {
+      const isFeatureActive = isFeatureEnabled('enableSchedule');
+      if (!isFeatureActive) {
+        console.log('❌ AdminRoute - Schedule feature disabled for this school');
+        return <Navigate to="/app/dashboard" />;
+      }
       return children;
     }
     
-    // For calendar management - check feature toggle
-    if (location.pathname.includes('/app/admin/calendar')) {
-      const isFeatureActive = isFeatureEnabled('enableCalendar');
-      
-      console.log(`Secretary calendar access check, Feature enabled: ${isFeatureActive}`);
-      
-      if (!isFeatureActive) {
-        console.log('❌ Secretary access denied - Calendar feature disabled for school');
-        return <Navigate to="/app/dashboard" />;
-      }
-      
-      return children;
-    }
-    
-    // For rating system - check feature toggle
+    // For rating system - check school feature only
     if (location.pathname.includes('/app/admin/rating')) {
-      const isFeatureActive = isFeatureEnabled('enableRatingSystem');
-      
-      console.log(`Secretary rating system access check, Feature enabled: ${isFeatureActive}`);
-      
+      const isFeatureActive = isFeatureEnabled('enableRatings');
       if (!isFeatureActive) {
-        console.log('❌ Secretary access denied - Rating System feature disabled for school');
+        console.log('❌ AdminRoute - Ratings feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
-      
+      return children;
+    }
+    
+    // For contact system - check school feature only
+    if (location.pathname.includes('/app/admin/contact')) {
+      const isFeatureActive = isFeatureEnabled('enableContact');
+      if (!isFeatureActive) {
+        console.log('❌ AdminRoute - Contact feature disabled for this school');
+        return <Navigate to="/app/dashboard" />;
+      }
       return children;
     }
     

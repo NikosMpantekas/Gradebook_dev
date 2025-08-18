@@ -32,6 +32,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
 import { API_URL } from '../../config/appConfig';
 import { ScrollArea } from '../ui/scroll-area';
+import { useFeatureToggles } from '../../context/FeatureToggleContext';
 
 const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { t } = useTranslation();
@@ -39,6 +40,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { isFeatureEnabled, loading: permissionsLoading } = useFeatureToggles();
   
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   
@@ -57,8 +59,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const isStudent = user?.role === 'student';
   const isParent = user?.role === 'parent';
   
-  // Navigation items based on user role
+  // Navigation items based on user role and school permissions
   const getNavigationItems = () => {
+    console.log('🔍 SIDEBAR MENU DEBUG: Building navigation for role:', user?.role);
+    console.log('🔍 SIDEBAR MENU DEBUG: Permissions loading:', permissionsLoading);
+    
     if (isSuperAdmin) {
       return [
         { icon: Shield, label: 'Super Admin', path: '/superadmin/dashboard' },
@@ -69,49 +74,109 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       ];
     }
 
+    const items = [];
+
     if (isAdmin) {
-      return [
-        { icon: Users, label: 'Manage Users', path: '/app/admin/users' },
-        { icon: Users2, label: 'Manage Classes', path: '/app/admin/classes' },
-        { icon: Building, label: 'School Branches', path: '/app/admin/schools' },
-        { icon: BookOpen, label: 'Grade Management', path: '/app/admin/grades/manage' },
-        { icon: BarChart3, label: 'Student Progress', path: '/app/admin/student-stats' },
-        { icon: Bell, label: 'Notifications', path: '/app/admin/notifications' },
-        { icon: Star, label: 'Ratings', path: '/app/admin/ratings' },
-        { icon: Clock, label: 'Schedule', path: '/app/admin/schedule' },
-        { icon: MessageSquare, label: 'Contact Messages', path: '/app/admin/contact' },
-      ];
+      // Admin items - check permissions for each feature
+      if (isFeatureEnabled('enableUserManagement')) {
+        items.push({ icon: Users, label: 'Manage Users', path: '/app/admin/users' });
+      }
+      
+      if (isFeatureEnabled('enableClasses')) {
+        items.push({ icon: Users2, label: 'Manage Classes', path: '/app/admin/classes' });
+      }
+      
+      if (isFeatureEnabled('enableSchoolSettings')) {
+        items.push({ icon: Building, label: 'School Branches', path: '/app/admin/schools' });
+      }
+      
+      if (isFeatureEnabled('enableGrades')) {
+        items.push({ icon: BookOpen, label: 'Grade Management', path: '/app/admin/grades/manage' });
+      }
+      
+      if (isFeatureEnabled('enableAnalytics')) {
+        items.push({ icon: BarChart3, label: 'Student Progress', path: '/app/admin/student-stats' });
+      }
+      
+      if (isFeatureEnabled('enableNotifications')) {
+        items.push({ icon: Bell, label: 'Notifications', path: '/app/admin/notifications' });
+      }
+      
+      if (isFeatureEnabled('enableRatings')) {
+        items.push({ icon: Star, label: 'Ratings', path: '/app/admin/ratings' });
+      }
+      
+      if (isFeatureEnabled('enableSchedule')) {
+        items.push({ icon: Clock, label: 'Schedule', path: '/app/admin/schedule' });
+      }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/admin/contact' });
+      }
     }
 
     if (isTeacher) {
-      return [
-        { icon: BookOpen, label: 'Manage Grades', path: '/app/teacher/grades/manage' },
-        { icon: Bell, label: 'Notifications', path: '/app/teacher/notifications' },
-        { icon: BarChart3, label: 'Student Stats', path: '/app/teacher/student-stats' },
-        { icon: Clock, label: 'Schedule', path: '/app/teacher/schedule' },
-        { icon: MessageSquare, label: 'Contact Messages', path: '/app/teacher/contact' },
-      ];
+      // Teacher items - check permissions for each feature
+      if (isFeatureEnabled('enableGrades')) {
+        items.push({ icon: BookOpen, label: 'Manage Grades', path: '/app/teacher/grades/manage' });
+      }
+      
+      if (isFeatureEnabled('enableNotifications')) {
+        items.push({ icon: Bell, label: 'Notifications', path: '/app/teacher/notifications' });
+      }
+      
+      if (isFeatureEnabled('enableAnalytics')) {
+        items.push({ icon: BarChart3, label: 'Student Stats', path: '/app/teacher/student-stats' });
+      }
+      
+      if (isFeatureEnabled('enableSchedule')) {
+        items.push({ icon: Clock, label: 'Schedule', path: '/app/teacher/schedule' });
+      }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/teacher/contact' });
+      }
     }
 
     if (isStudent) {
-      return [
-        { icon: BookOpen, label: 'My Grades', path: '/app/grades' },
-        { icon: Bell, label: 'Notifications', path: '/app/student/notifications' },
-        { icon: Clock, label: 'Schedule', path: '/app/schedule' },
-        { icon: Star, label: 'Submit Ratings', path: '/app/ratings' },
-        { icon: MessageSquare, label: 'Contact Messages', path: '/app/student/contact' },
-      ];
+      // Student items - check permissions for each feature
+      if (isFeatureEnabled('enableGrades')) {
+        items.push({ icon: BookOpen, label: 'My Grades', path: '/app/grades' });
+      }
+      
+      if (isFeatureEnabled('enableNotifications')) {
+        items.push({ icon: Bell, label: 'Notifications', path: '/app/student/notifications' });
+      }
+      
+      if (isFeatureEnabled('enableSchedule')) {
+        items.push({ icon: Clock, label: 'Schedule', path: '/app/schedule' });
+      }
+      
+      if (isFeatureEnabled('enableRatings')) {
+        items.push({ icon: Star, label: 'Submit Ratings', path: '/app/ratings' });
+      }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/student/contact' });
+      }
     }
 
     if (isParent) {
-      return [
-        { icon: BookOpen, label: 'Child Grades', path: '/app/parent/grades' },
-        { icon: Clock, label: 'Schedule', path: '/app/parent/schedule' },
-        { icon: Calendar, label: 'Calendar', path: '/app/parent/calendar' },
-      ];
+      // Parent items - check permissions for each feature
+      if (isFeatureEnabled('enableGrades')) {
+        items.push({ icon: BookOpen, label: 'Child Grades', path: '/app/parent/grades' });
+      }
+      
+      if (isFeatureEnabled('enableSchedule')) {
+        items.push({ icon: Clock, label: 'Schedule', path: '/app/parent/schedule' });
+        items.push({ icon: Calendar, label: 'Calendar', path: '/app/parent/calendar' });
+      }
     }
 
-    return [];
+    console.log('🔍 SIDEBAR MENU DEBUG: Final items count:', items.length);
+    console.log('🔍 SIDEBAR MENU DEBUG: Final items:', items.map(item => item.label));
+    
+    return items;
   };
 
   const navigationItems = getNavigationItems();
