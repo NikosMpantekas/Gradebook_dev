@@ -276,7 +276,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       <Sheet open={mobileOpen} onOpenChange={handleDrawerToggle}>
         <SheetContent 
           side="left" 
-          className="w-64 p-0 bg-card border-r border-border overflow-hidden transition-all duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left mobile-sidebar-content"
+          className="w-64 p-0 bg-card border-r border-border overflow-hidden"
         >
           <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
             {sidebarContent}
