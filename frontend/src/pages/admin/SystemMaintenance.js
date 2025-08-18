@@ -36,6 +36,12 @@ import { useSelector } from 'react-redux';
 const SystemMaintenance = () => {
   const { user, token } = useSelector((state) => state.auth);
   
+  // State management - moved to top before any conditional returns
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [results, setResults] = useState(null);
+  
   // Additional security check - ensure only superadmins can access
   if (!user || user.role !== 'superadmin') {
     return (
@@ -47,12 +53,6 @@ const SystemMaintenance = () => {
     );
   }
   
-  // State management
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [results, setResults] = useState(null);
-
   // Fix school permissions - the only function in this panel
   const fixSchoolPermissions = async () => {
     try {

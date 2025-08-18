@@ -117,7 +117,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       };
 
       await axios.post(`${API_URL}/api/contact/${messageId}/reply`, {
-        adminReply: replyText[message._id].trim()
+        adminReply: replyText[messageId].trim()
       }, config);
 
       toast.success('Reply sent successfully');
