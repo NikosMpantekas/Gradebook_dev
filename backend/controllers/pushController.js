@@ -8,12 +8,58 @@ const PushSubscription = require('../models/pushSubscriptionModel');
  * Follows 2024 PWA standards for iOS, Android, Windows
  */
 
-// Configure VAPID keys
-webpush.setVapidDetails(
-  'mailto:' + process.env.VAPID_EMAIL,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+// Configure VAPID keys with proper validation
+let vapidConfigured = false;
+
+try {
+  const vapidEmail = process.env.VAPID_EMAIL;
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+  console.log('[PushController] VAPID configuration check:', {
+    hasEmail: !!vapidEmail,
+    hasPublicKey: !!vapidPublicKey,
+    hasPrivateKey: !!vapidPrivateKey,
+    emailValue: vapidEmail || 'NOT_SET',
+    publicKeyLength: vapidPublicKey?.length || 0,
+    privateKeyLength: vapidPrivateKey?.length || 0,
+    publicKeyFormat: vapidPublicKey ? (vapidPublicKey.startsWith('B') ? 'Valid Base64' : 'Invalid Format') : 'Missing',
+    privateKeyFormat: vapidPrivateKey ? (vapidPrivateKey.length === 43 ? 'Valid Length' : `Invalid Length: ${vapidPrivateKey.length}`) : 'Missing',
+    environment: process.env.NODE_ENV || 'unknown'
+  });
+
+  // Log first few characters for debugging (safe)
+  if (vapidPublicKey) {
+    console.log('[PushController] Public key preview:', vapidPublicKey.substring(0, 20) + '...');
+  }
+  if (vapidPrivateKey) {
+    console.log('[PushController] Private key preview:', vapidPrivateKey.substring(0, 10) + '...');
+  }
+
+  if (!vapidEmail || !vapidPublicKey || !vapidPrivateKey) {
+    console.error('[PushController] VAPID keys incomplete - push notifications will fail');
+    console.error('[PushController] Missing:', {
+      email: !vapidEmail,
+      publicKey: !vapidPublicKey,
+      privateKey: !vapidPrivateKey
+    });
+  } else {
+    // Set VAPID details with proper email format
+    const emailSubject = vapidEmail.startsWith('mailto:') ? vapidEmail : `mailto:${vapidEmail}`;
+    
+    webpush.setVapidDetails(
+      emailSubject,
+      vapidPublicKey,
+      vapidPrivateKey
+    );
+    
+    vapidConfigured = true;
+    console.log('[PushController] VAPID keys configured successfully');
+    console.log('[PushController] Email subject:', emailSubject);
+  }
+} catch (error) {
+  console.error('[PushController] Error configuring VAPID keys:', error);
+}
 
 /**
  * Push Notification Service Class
@@ -180,14 +226,24 @@ const getVapidPublicKey = asyncHandler(async (req, res) => {
     hasKey: !!publicKey,
     keyLength: publicKey ? publicKey.length : 0,
     userId: req.user._id,
-    userRole: req.user.role
+    userRole: req.user.role,
+    vapidConfigured: vapidConfigured,
+    keyFormat: publicKey ? (publicKey.startsWith('B') ? 'Valid Base64' : 'Invalid Format') : 'Missing'
   });
   
   if (!publicKey) {
     console.error('[PushController] VAPID_PUBLIC_KEY environment variable not set');
     return res.status(500).json({ 
       success: false,
-      error: 'Push notifications not configured on server' 
+      error: 'Push notifications not configured on server - missing VAPID_PUBLIC_KEY' 
+    });
+  }
+
+  if (!vapidConfigured) {
+    console.error('[PushController] VAPID keys not properly configured');
+    return res.status(500).json({ 
+      success: false,
+      error: 'Push notifications not configured on server - VAPID keys invalid' 
     });
   }
 
