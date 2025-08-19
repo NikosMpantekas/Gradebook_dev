@@ -9,7 +9,7 @@ import './globals.css';
 import './i18n/i18n';
 
 // Push Notification Component
-import PushNotificationManager from './components/PushNotificationManager';
+import PushNotificationSettings from './components/PushNotificationSettings';
 
 // CRITICAL FIX: Import error handling and safety guard systems
 import { initGlobalErrorHandlers, trackError } from './utils/errorHandler';
@@ -94,8 +94,8 @@ import SuperAdminNotifications from './pages/superadmin/SuperAdminNotifications'
 import SchoolPermissionsManager from './components/superadmin/SchoolPermissionsManager';
 import SystemLogs from './pages/superadmin/SystemLogs';
 
-// Push notification service
-import { setupPushNotifications } from './services/pushNotificationService';
+// Modern Push notification service
+import PushNotificationManager from './services/PushNotificationManager';
 import setupAxios from './app/setupAxios';
 import logger from './services/loggerService';
 // Using the ErrorBoundary from ./components/ErrorBoundary
@@ -179,23 +179,30 @@ function App() {
     setupAxios();
   }, []);
 
-  // CRITICAL FIX: Initialize push notification service worker when user is logged in
+  // Initialize modern push notification service when user is logged in
   useEffect(() => {
     if (user && user.token && configInitialized) {
-      console.log('[App] User is logged in, initializing push notifications');
+      console.log('[App] User is logged in, initializing modern push notifications');
       
-      // Initialize push notifications with proper error handling
-      setupPushNotifications()
-        .then((result) => {
+      // Initialize modern push notification manager
+      const initializePushNotifications = async () => {
+        try {
+          const pushManager = new PushNotificationManager();
+          
+          // Register the modern service worker
+          const result = await pushManager.initializeServiceWorker();
+          
           if (result.success) {
-            console.log('[App] Push notifications initialized successfully');
+            console.log('[App] Modern push notifications initialized successfully');
           } else {
-            console.log('[App] Push notifications initialization failed:', result.error);
+            console.log('[App] Modern push notifications initialization failed:', result.error);
           }
-        })
-        .catch((error) => {
-          console.error('[App] Push notifications initialization error:', error);
-        });
+        } catch (error) {
+          console.error('[App] Modern push notifications initialization error:', error);
+        }
+      };
+      
+      initializePushNotifications();
     }
   }, [user, configInitialized]);
 
@@ -778,8 +785,7 @@ function App() {
         </Routes>
       </Router>
       <Toaster position="top-right" />
-      {/* Push notification manager */}
-      <PushNotificationManager />
+      {/* Modern Push notification settings component is now embedded in other pages when needed */}
       {/* Android PWA Installation Prompt */}
       <AndroidInstallPrompt />
       </FeatureToggleProvider>
