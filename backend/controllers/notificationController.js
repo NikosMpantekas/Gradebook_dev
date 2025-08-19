@@ -121,9 +121,19 @@ const createNotification = asyncHandler(async (req, res) => {
       if (recipients && recipients.length > 0) {
         console.log(`[SECURITY] Validating ${recipients.length} direct recipients for sender role: ${req.user.role}`);
         
+        // Extract recipient IDs from frontend format {type, id} or plain ObjectId
+        const recipientIds = recipients.map(recipient => {
+          if (typeof recipient === 'object' && recipient.id) {
+            return recipient.id; // Frontend format: {type: 'student', id: 'xxx'}
+          }
+          return recipient; // Plain ObjectId format
+        });
+        
+        console.log(`[SECURITY] Extracted ${recipientIds.length} recipient IDs:`, recipientIds);
+        
         // SECURITY: Validate each recipient against sender permissions
         const recipientUsers = await User.find({
-          _id: { $in: recipients },
+          _id: { $in: recipientIds },
           schoolId: req.user.schoolId
         }).select('_id role name');
         
