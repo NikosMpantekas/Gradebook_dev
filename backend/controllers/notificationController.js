@@ -463,12 +463,26 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     // Compute isRead and isSeen for each notification for the current user
     const notificationsWithReadStatus = notifications.map(notification => {
       const notificationObj = notification.toObject();
+      
       // Check if current user has read/seen this notification in recipients array
       const recipient = notification.recipients?.find(r => 
         r.user && r.user.toString() === user._id.toString()
       );
+      
+      // Debug logging for seen status extraction
+      console.log(`NOTIFICATION_STATUS Processing notification ${notification._id}:`);
+      console.log(`NOTIFICATION_STATUS - Found recipient:`, recipient ? {
+        user: recipient.user.toString(),
+        isRead: recipient.isRead,
+        isSeen: recipient.isSeen
+      } : 'NO RECIPIENT FOUND');
+      
       notificationObj.isRead = recipient ? recipient.isRead : false;
       notificationObj.isSeen = recipient ? recipient.isSeen : false;
+      
+      // Additional logging to confirm extraction
+      console.log(`NOTIFICATION_STATUS - Final status: isRead=${notificationObj.isRead}, isSeen=${notificationObj.isSeen}`);
+      
       return notificationObj;
     });
     
