@@ -161,7 +161,6 @@ const PushNotificationManager = () => {
       const registration = await navigator.serviceWorker.ready;
       
       // iOS-specific check: Ensure service worker is active
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       if (isIOS && !registration.active) {
         console.warn('[Push] iOS: Service worker not yet active, waiting...');
         // Wait a bit more for iOS
