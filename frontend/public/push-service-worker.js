@@ -10,9 +10,19 @@ self.addEventListener('push', async function(event) {
   // FORCE NOTIFICATION DISPLAY - Always show notification regardless of conditions
   console.log('[Push Service Worker] FORCE DISPLAY MODE - Will show notification unconditionally');
   
-  // iOS DEBUGGING: Log push event details
+  // iOS DEBUGGING: Enhanced iOS detection and logging
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isStandalone = self.navigator?.standalone === true || (self.matchMedia && self.matchMedia('(display-mode: standalone)').matches);
+  
+  // iOS CRITICAL: Log standalone status - iOS notifications may not work without PWA mode
+  if (isIOS) {
+    console.log('[Push Service Worker] iOS STANDALONE CHECK:', {
+      isStandalone,
+      navigatorStandalone: self.navigator?.standalone,
+      displayMode: self.matchMedia ? self.matchMedia('(display-mode: standalone)').matches : 'unknown'
+    });
+  }
   
   // CRITICAL DEBUG: Log EVERYTHING about the push event
   console.log('[Push Service Worker] CRITICAL DEBUG - Push Event Details:', {
@@ -95,15 +105,19 @@ self.addEventListener('push', async function(event) {
             url: data.url || '/app/notifications',
             notificationId: data.notificationId
           },
-          actions: [
-            {
-              action: 'view',
-              title: 'View'
-            }
-          ],
-          vibrate: data.urgent ? [100, 50, 100, 50, 100, 50, 100] : [100, 50, 100],
-          renotify: !!data.urgent, // Only notify again if urgent
-          requireInteraction: !!data.urgent // Keep notification visible if urgent
+          // iOS FIX: Remove actions and complex options that iOS doesn't support well
+          vibrate: isIOS ? [] : (data.urgent ? [100, 50, 100, 50, 100, 50, 100] : [100, 50, 100]),
+          renotify: false, // iOS FIX: Disable renotify for iOS compatibility
+          requireInteraction: false, // iOS FIX: Disable requireInteraction for iOS
+          // iOS FIX: Only add actions for non-iOS devices
+          ...(isIOS ? {} : {
+            actions: [
+              {
+                action: 'view',
+                title: 'View'
+              }
+            ]
+          })
         };
         
         // FORCE NOTIFICATION DISPLAY - Skip all complex logic and always show notification

@@ -91,18 +91,35 @@ const PushNotificationManager = () => {
     if (!user) return;
     
     setLoading(true);
-    setError('');
+    setNotification({ open: false, message: '', severity: 'info' });
     
     try {
+      // iOS CRITICAL CHECK: Warn about PWA requirement for iOS
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+      
+      if (isIOS && !isStandalone) {
+        setNotification({
+          open: true,
+          message: 'For iOS push notifications to work reliably, please add this app to your home screen first. Tap the share button and select "Add to Home Screen".',
+          severity: 'info'
+        });
+        // Don't return - still try to set up notifications but warn the user
+      }
+      
       // Request permission if not granted
       if (Notification.permission !== 'granted') {
         const permission = await Notification.requestPermission();
         setPushPermission(permission);
         
         if (permission !== 'granted') {
+          const message = isIOS 
+            ? 'Notification permission denied. For iOS: Go to Settings > Notifications > Safari > Allow Notifications.' 
+            : 'Notification permission denied. Please enable notifications in your browser settings.';
+          
           setNotification({
             open: true,
-            message: 'Notification permission denied. Please enable notifications in your browser settings.',
+            message,
             severity: 'warning'
           });
           setLoading(false);
