@@ -144,6 +144,17 @@ class NotificationHandler {
         }
       }
 
+      // CRITICAL: Check if notification is intended for current user
+      const currentUserId = await this._getCurrentUserId();
+      const targetUserId = notificationData.data?.targetUserId;
+      
+      console.log(`[${SW_NAME}] SECURITY CHECK - Current User: ${currentUserId} | Target User: ${targetUserId}`);
+      
+      if (targetUserId && currentUserId && targetUserId !== currentUserId) {
+        console.log(`[${SW_NAME}] 🛡️ SECURITY: Notification not for current user - BLOCKED`);
+        return; // Don't show notification not intended for this user
+      }
+      
       // CRITICAL: Check user receiving preference before showing notification
       const shouldReceiveNotifications = await this._checkUserReceivingPreference();
       
@@ -152,6 +163,7 @@ class NotificationHandler {
         return; // Service stays active but doesn't show notification
       }
 
+      console.log(`[${SW_NAME}] ✅ SECURITY PASSED - Showing notification for user: ${currentUserId}`);
       // Show notification
       await this._showNotification(notificationData);
 
@@ -159,6 +171,49 @@ class NotificationHandler {
       console.error(`[${SW_NAME}] Error handling push event:`, error);
       // Show fallback notification
       await this._showFallbackNotification();
+    }
+  }
+
+  /**
+   * Get current user ID from storage for security filtering
+   */
+  async _getCurrentUserId() {
+    try {
+      // Try to get from various storage locations
+      let userId = null;
+      
+      // Try localStorage first
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          // Decode JWT token to get user ID
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.id;
+          console.log(`[${SW_NAME}] Current user ID from token: ${userId}`);
+        } catch (tokenError) {
+          console.error(`[${SW_NAME}] Error decoding token:`, tokenError);
+        }
+      }
+      
+      // Fallback to stored user data
+      if (!userId) {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            userId = user._id || user.id;
+            console.log(`[${SW_NAME}] Current user ID from user data: ${userId}`);
+          } catch (userError) {
+            console.error(`[${SW_NAME}] Error parsing user data:`, userError);
+          }
+        }
+      }
+      
+      return userId;
+      
+    } catch (error) {
+      console.error(`[${SW_NAME}] Error getting current user ID:`, error);
+      return null;
     }
   }
 

@@ -309,6 +309,31 @@ const createNotification = asyncHandler(async (req, res) => {
 
     console.log('[PUSH_SECURITY]', `Found ${subscriptions.length} push subscriptions for intended recipients only`);
     console.log('[PUSH_SECURITY] Subscription user IDs:', subscriptions.map(sub => sub.userId.toString()));
+    
+    // EMERGENCY DEBUG: Get ALL push subscriptions to check for sharing
+    const allSubscriptions = await PushSubscription.find({ isActive: true }).select('userId endpoint');
+    console.log('[EMERGENCY_DEBUG] ALL ACTIVE PUSH SUBSCRIPTIONS:');
+    allSubscriptions.forEach((sub, index) => {
+      console.log(`[EMERGENCY_DEBUG] ${index + 1}. User: ${sub.userId} | Endpoint: ${sub.endpoint.substring(0, 50)}...`);
+    });
+    
+    // Check for endpoint sharing
+    const endpointMap = new Map();
+    allSubscriptions.forEach(sub => {
+      if (!endpointMap.has(sub.endpoint)) {
+        endpointMap.set(sub.endpoint, []);
+      }
+      endpointMap.get(sub.endpoint).push(sub.userId.toString());
+    });
+    
+    console.log('[EMERGENCY_DEBUG] ENDPOINT SHARING ANALYSIS:');
+    for (const [endpoint, userIds] of endpointMap) {
+      if (userIds.length > 1) {
+        console.log(`[EMERGENCY_DEBUG] ❌ SHARED ENDPOINT: ${endpoint.substring(0, 50)}... used by users: ${userIds.join(', ')}`);
+      } else {
+        console.log(`[EMERGENCY_DEBUG] ✅ UNIQUE ENDPOINT: ${endpoint.substring(0, 50)}... used by user: ${userIds[0]}`);
+      }
+    }
 
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
@@ -319,22 +344,33 @@ const createNotification = asyncHandler(async (req, res) => {
         
         const payload = JSON.stringify({
           title: newNotification.title,
-          body: newNotification.message.substring(0, 100),
-          icon: '/icon-192x192.png',
-          badge: '/icon-192x192.png',
+          body: newNotification.message,
+          icon: '/logo192.png',
+          badge: '/badge-icon.png',
+          tag: `notification-${newNotification._id}`,
           data: {
-            notificationId: newNotification._id.toString(),
-            url: `/notifications/${newNotification._id}`
+            notificationId: newNotification._id,
+            url: '/app/notifications',
+            targetUserId: subscription.userId.toString(), // CRITICAL: Add target user ID for filtering
+            senderName: newNotification.senderName,
+            urgent: newNotification.urgent || false
           }
         });
 
-        return webpush.sendNotification(subscription, payload)
-          .then(() => {
-            console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.userId.toString());
-          })
-          .catch(error => {
-            console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.userId.toString(), 'error:', error.message);
-          });
+        return webpush.sendNotification(
+          {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: subscription.keys.p256dh,
+              auth: subscription.keys.auth
+            }
+          },
+          payload
+        ).then(() => {
+          console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.userId.toString());
+        }).catch(error => {
+          console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.userId.toString(), 'error:', error.message);
+        });
       });
 
       await Promise.allSettled(pushPromises);
