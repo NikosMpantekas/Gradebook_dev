@@ -446,11 +446,6 @@ function App() {
             <Route path="/app/student/notifications/:id" element={<NotificationDetail />} />
             <Route path="/app/student/schedule" element={<Schedule />} />
             
-            {/* Parent-specific routes */}
-            <Route path="/app/parent/grades" element={<ParentGrades />} />
-            <Route path="/app/parent/grades/:id" element={<GradeDetail />} />
-            <Route path="/app/parent/notifications" element={<Notifications />} />
-            <Route path="/app/parent/notifications/:id" element={<NotificationDetail />} />
             
             {/* STEP 2: DUPLICATE ALL ADMIN FUNCTIONS FOR STUDENT ROLE */}
             <Route path="/app/student/users" element={
@@ -686,14 +681,8 @@ function App() {
               </TeacherRoute>
             } />
 
-          </Route>
-
-          {/* Parent Routes - Using PrivateRoute + Layout + ParentRoute pattern */}
-          <Route element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }>
+            
+            {/* Parent Routes */}
             <Route path="/app/parent" element={
               <ParentRoute>
                 <ParentDashboard />
@@ -724,11 +713,7 @@ function App() {
                 <UserContactMessages />
               </ParentRoute>
             } />
-            <Route path="/app/parent/profile" element={
-              <ParentRoute>
-                <Profile />
-              </ParentRoute>
-            } />
+
           </Route>
 
           {/* SuperAdmin Routes - Using PrivateRoute + Layout + SuperAdminRoute pattern */}

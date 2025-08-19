@@ -169,9 +169,12 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: BookOpen, label: 'Child Grades', path: '/app/parent/grades' });
       }
       
-      if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock, label: 'Schedule', path: '/app/parent/schedule' });
-        items.push({ icon: Calendar, label: 'Calendar', path: '/app/parent/calendar' });
+      if (isFeatureEnabled('enableNotifications')) {
+        items.push({ icon: Bell, label: 'Notifications', path: '/app/parent/notifications' });
+      }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/parent/contact' });
       }
     }
 
