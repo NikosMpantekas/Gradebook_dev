@@ -5,14 +5,17 @@
 
 // Enhanced push event handler with comprehensive iOS debugging
 self.addEventListener('push', async function(event) {
-  console.log('[Push Service Worker] Push event received');
+  console.log('[Push Service Worker] CRITICAL: Push event received at', new Date().toISOString());
+  
+  // FORCE NOTIFICATION DISPLAY - Always show notification regardless of conditions
+  console.log('[Push Service Worker] FORCE DISPLAY MODE - Will show notification unconditionally');
   
   // iOS DEBUGGING: Log push event details
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
-  // CRITICAL iPhone DEBUG: Log EVERYTHING about the push event
-  console.log('[Push Service Worker] CRITICAL iPhone DEBUG - Push Event Received:', {
+  // CRITICAL DEBUG: Log EVERYTHING about the push event
+  console.log('[Push Service Worker] CRITICAL DEBUG - Push Event Details:', {
     isIOS: isIOS,
     isMobile: isMobile,
     userAgent: navigator.userAgent,
@@ -21,7 +24,8 @@ self.addEventListener('push', async function(event) {
     timestamp: new Date().toISOString(),
     serviceWorkerState: self.registration?.active?.state,
     registrationScope: self.registration?.scope,
-    eventConstructor: event.constructor.name
+    eventConstructor: event.constructor.name,
+    eventKeys: Object.keys(event)
   });
   
   if (isIOS) {
@@ -102,99 +106,51 @@ self.addEventListener('push', async function(event) {
           requireInteraction: !!data.urgent // Keep notification visible if urgent
         };
         
-        // Get all clients to check if any are visible
-        const clientList = await self.clients.matchAll({
-          type: 'window',
-          includeUncontrolled: true
+        // FORCE NOTIFICATION DISPLAY - Skip all complex logic and always show notification
+        console.log('[Push Service Worker] FORCING NOTIFICATION DISPLAY - Bypassing all client checks');
+        
+        // Simplified notification display with maximum debugging
+        console.log('[Push Service Worker] About to display notification:', {
+          title,
+          body: options.body,
+          timestamp: new Date().toISOString(),
+          registrationExists: !!self.registration,
+          showNotificationExists: typeof self.registration?.showNotification === 'function'
         });
         
-        const focusedClient = clientList.find(client => client.focused);
-        
-        // Always show notification on mobile
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(self.navigator.userAgent);
-        
-        // iOS DEBUGGING: Enhanced client and notification display logging
-        if (isIOS) {
-          console.log('[Push Service Worker] iOS Client Debug:', {
-            focusedClient: !!focusedClient,
-            clientCount: clientList.length,
-            isMobile,
-            willShowNotification: !focusedClient || isMobile
-          });
-        }
-        
-        // CRITICAL iPhone FIX: Always show notifications on iOS devices
-        // iPhone focus detection is unreliable, so always display notifications
-        const shouldSkipNotification = focusedClient && !isMobile && !isIOS;
-        
-        if (shouldSkipNotification) {
-          console.log('[Push Service Worker] Application is focused on desktop, posting message instead of notification');
-          // Send the notification data to the focused client
-          focusedClient.postMessage({
-            type: 'PUSH_RECEIVED',
-            notification: {
-              ...data,
-              title: title,
-              options: options
-            }
-          });
-          
-          console.log('[Push Service Worker] Message posted to focused desktop client');
-        } else {
-          // ALWAYS show notification on iPhone/mobile OR when app not focused
-          const reason = isIOS ? 'iOS device (always show)' : 
-                        isMobile ? 'mobile device' : 
-                        !focusedClient ? 'no focused client' : 
-                        'fallback';
-          console.log(`[Push Service Worker] Showing notification (${reason})`);
-          
-          // iOS DEBUGGING: Log notification display attempt for iOS
-          if (isIOS) {
-            console.log('[Push Service Worker] iOS Notification Display:', {
-              title,
-              optionsKeys: Object.keys(options),
-              registrationScope: self.registration.scope,
-              timestamp: new Date().toISOString()
-            });
-          }
-          
+        // FORCE DISPLAY - Always show notification
+        try {
           const notificationResult = await self.registration.showNotification(title, options);
+          console.log('[Push Service Worker] FORCED notification display result:', notificationResult);
           
-          // iOS DEBUGGING: Log notification result for iOS
-          if (isIOS) {
-            console.log('[Push Service Worker] iOS Notification Result:', {
-              result: notificationResult,
-              success: notificationResult === undefined, // showNotification returns undefined on success
-              timestamp: new Date().toISOString()
-            });
-            
-            // CRITICAL iPhone FIX: Double-check notification was displayed
-            setTimeout(async () => {
-              try {
-                const notifications = await self.registration.getNotifications();
-                console.log('[Push Service Worker] iOS Notification Verification:', {
-                  activeNotifications: notifications.length,
-                  lastNotificationTitle: notifications[0]?.title,
-                  timestamp: new Date().toISOString()
+          // Verify notification was created
+          setTimeout(async () => {
+            try {
+              const notifications = await self.registration.getNotifications();
+              console.log('[Push Service Worker] VERIFICATION - Active notifications:', {
+                count: notifications.length,
+                titles: notifications.map(n => n.title),
+                timestamp: new Date().toISOString()
+              });
+              
+              if (notifications.length === 0) {
+                console.error('[Push Service Worker] CRITICAL ERROR: No notifications found after display attempt');
+                // Emergency fallback notification
+                await self.registration.showNotification('GradeBook Emergency Test', {
+                  body: 'Emergency test notification - please report if you see this',
+                  icon: '/logo192.png',
+                  tag: 'emergency-test'
                 });
-                
-                // If no notifications are active, try to force display
-                if (notifications.length === 0) {
-                  console.warn('[Push Service Worker] iOS WARNING: No active notifications found, attempting force display');
-                  await self.registration.showNotification('iPhone Debug: Notification Test', {
-                    body: 'This is a test notification to debug iPhone display issues',
-                    icon: '/icon-192x192.png',
-                    badge: '/icon-192x192.png',
-                    tag: 'iphone-debug'
-                  });
-                }
-              } catch (verifyError) {
-                console.error('[Push Service Worker] iOS notification verification failed:', verifyError);
               }
-            }, 1000);
-          }
+            } catch (verifyError) {
+              console.error('[Push Service Worker] Verification failed:', verifyError);
+            }
+          }, 500);
           
           return notificationResult;
+        } catch (displayError) {
+          console.error('[Push Service Worker] CRITICAL ERROR displaying notification:', displayError);
+          throw displayError;
         }
       } catch (error) {
         console.error('[Push Service Worker] Error handling push:', error);
