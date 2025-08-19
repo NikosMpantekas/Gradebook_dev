@@ -1497,6 +1497,13 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
     
     console.log(`[GET_PARENTS_BY_STUDENT] Found ${parents.length} parents for student ${student.name}`);
     
+    // Disable caching to ensure fresh parent data
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
     res.json({
       hasParents: parents.length > 0,
       parentCount: parents.length,
