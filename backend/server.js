@@ -29,6 +29,13 @@ connectDB()
         `Admin permissions migration result: ${migrationResult.updatedCount} users updated`
           .green
       );
+      
+      // Add pushNotificationEnabled field to users who don't have it
+      const pushMigrationResult = await addPushNotificationEnabledField();
+      console.log(
+        `Push notification migration result: ${pushMigrationResult.updated} users updated`
+          .green
+      );
     } catch (error) {
       console.error(`Migration error: ${error.message}`.red);
     }
@@ -324,6 +331,7 @@ app.use('/api', (req, res, next) => {
 
 // Import migrations
 const { updateAllAdminPermissions } = require("./utils/migrations");
+const { addPushNotificationEnabledField } = require("./migrations/addPushNotificationEnabled");
 
 // User routes - No global middleware for auth checking, each route will handle individually
 app.use("/api/users", require("./routes/userRoutes"));

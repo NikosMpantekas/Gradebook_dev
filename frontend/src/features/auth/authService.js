@@ -500,13 +500,32 @@ axios.interceptors.request.use(
   }
 );
 
+// Update push notification preference
+const updatePushNotificationPreference = async (enabled) => {
+  try {
+    console.log('[AuthService] Updating push notification preference to:', enabled);
+    
+    const response = await axiosInstance.put('/api/users/push-notification-preference', {
+      enabled
+    });
+    
+    console.log('[AuthService] Push notification preference updated successfully');
+    return response.data;
+  } catch (error) {
+    console.error('[AuthService] Failed to update push notification preference:', error);
+    throw error;
+  }
+};
+
 const authService = {
   register,
   login,
-  forgotPasswordRequest,
   logout,
-  getUserData,
+  refreshToken,
   updateProfile,
+  changePassword,
+  forgotPassword,
+  updatePushNotificationPreference,
 };
 
 export default authService;

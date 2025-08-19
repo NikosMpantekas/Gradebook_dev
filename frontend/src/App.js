@@ -8,8 +8,6 @@ import './globals.css';
 // Initialize i18n
 import './i18n/i18n';
 
-// Push Notification Component
-import PushNotificationSettings from './components/PushNotificationSettings';
 
 // CRITICAL FIX: Import error handling and safety guard systems
 import { initGlobalErrorHandlers, trackError } from './utils/errorHandler';
@@ -107,6 +105,7 @@ import { FeatureToggleProvider } from './context/FeatureToggleContext';
 // Custom components
 import HomeScreenPrompt from './components/HomeScreenPrompt';
 import AndroidInstallPrompt from './components/AndroidInstallPrompt';
+import FloatingPushToggle from './components/FloatingPushToggle';
 
 function App() {
   const dispatch = useDispatch();
@@ -179,12 +178,12 @@ function App() {
     setupAxios();
   }, []);
 
-  // Initialize modern push notification service when user is logged in
+  // Initialize modern push notification service when user is logged in - AUTO-ENABLE FOR ALL USERS
   useEffect(() => {
     if (user && user.token && configInitialized) {
-      console.log('[App] User is logged in, initializing modern push notifications');
+      console.log('[App] User is logged in, auto-enabling push notifications for all users');
       
-      // Initialize modern push notification manager
+      // Initialize and auto-enable push notifications
       const initializePushNotifications = async () => {
         try {
           const pushManager = new PushNotificationManager();
@@ -194,6 +193,23 @@ function App() {
           
           if (result.success) {
             console.log('[App] Modern push notifications initialized successfully');
+            
+            // Auto-enable push notifications after a short delay
+            setTimeout(async () => {
+              try {
+                console.log('[App] Auto-enabling push notifications for user');
+                const enableResult = await pushManager.enablePushNotifications();
+                
+                if (enableResult.success) {
+                  console.log('[App] Push notifications auto-enabled successfully');
+                } else {
+                  console.log('[App] Push notifications auto-enable failed:', enableResult.error);
+                }
+              } catch (enableError) {
+                console.error('[App] Auto-enable push notifications error:', enableError);
+              }
+            }, 3000); // Wait 3 seconds to ensure everything is loaded
+            
           } else {
             console.log('[App] Modern push notifications initialization failed:', result.error);
           }
@@ -788,6 +804,8 @@ function App() {
       {/* Modern Push notification settings component is now embedded in other pages when needed */}
       {/* Android PWA Installation Prompt */}
       <AndroidInstallPrompt />
+      {/* Floating Push Notification Toggle */}
+      <FloatingPushToggle />
       </FeatureToggleProvider>
     </ThemeProvider>
     </ErrorBoundary>

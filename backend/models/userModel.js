@@ -226,6 +226,12 @@ const userSchema = mongoose.Schema(
       default: Date.now,
     },
     
+    // Push Notification Preferences
+    pushNotificationEnabled: {
+      type: Boolean,
+      default: true, // Default to enabled for new users
+    },
+    
     // Parent-Student Many-to-Many Relationship
     // For parent role users: array of linked student IDs
     linkedStudentIds: [{

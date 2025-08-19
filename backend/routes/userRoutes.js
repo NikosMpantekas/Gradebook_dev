@@ -34,6 +34,39 @@ router.get('/me', protect, getMe);
 router.get('/profile', protect, getMe); // GET profile uses same logic as /me
 router.put('/profile', protect, updateProfile);
 router.post('/change-password', protect, changePassword);
+router.put('/push-notification-preference', protect, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const User = require('../models/userModel');
+    
+    console.log(`[PUSH_PREF] User ${req.user._id} updating push notification preference to:`, enabled);
+    
+    // Update user's push notification preference
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { pushNotificationEnabled: enabled },
+      { new: true }
+    ).select('-password');
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    console.log(`[PUSH_PREF] Successfully updated push preference for user ${req.user._id} to ${enabled}`);
+    
+    res.json({
+      success: true,
+      message: 'Push notification preference updated',
+      pushNotificationEnabled: updatedUser.pushNotificationEnabled
+    });
+  } catch (error) {
+    console.error('[PUSH_PREF] Error updating push notification preference:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to update push notification preference' 
+    });
+  }
+});
 
 // Admin routes for user management
 router.get('/', protect, admin, getUsers);
