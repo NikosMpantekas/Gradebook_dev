@@ -323,26 +323,12 @@ const createNotification = asyncHandler(async (req, res) => {
 
         console.log('NOTIFICATION_CREATE', `Push notifications completed: ${pushResults.successful} success, ${pushResults.failed} failures out of ${pushResults.total} total`);
 
-        // Clean up expired subscriptions
-        if (pushResults.expiredSubscriptions && pushResults.expiredSubscriptions.length > 0) {
-          console.log('NOTIFICATION_CREATE', `Cleaning up ${pushResults.expiredSubscriptions.length} expired subscriptions`);
-          await PushSubscription.deleteMany({
-            endpoint: { $in: pushResults.expiredSubscriptions.map(sub => sub.endpoint) }
-          });
-        }
       } catch (error) {
-        console.error('NOTIFICATION_CREATE', 'Error sending push notifications:', error);
+        console.error('NOTIFICATION_CREATE', `Error sending push notifications: ${error.message}`);
       }
     }
 
-    // Populate the response
-    const populatedNotification = await Notification.findById(newNotification._id)
-      .populate('recipients.user', 'name email role')
-      .populate('classes', 'name schoolBranch direction subject')
-      .populate('schoolBranches', 'name location');
-
-    console.log('NOTIFICATION_CREATE', `Notification created successfully with ${uniqueRecipients.length} recipients`);
-    res.status(201).json(populatedNotification);
+    res.status(201).json(newNotification);
 
   } catch (error) {
     console.error('NOTIFICATION_CREATE', `Error creating notification: ${error.message}`, {
