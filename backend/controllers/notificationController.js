@@ -284,7 +284,6 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // Find web push subscriptions for recipients using Subscription model
     const Subscription = require('../models/subscriptionModel');
-    const User = require('../models/userModel');
     
     // Filter users who have push notifications enabled
     const usersWithPushEnabled = await User.find({
