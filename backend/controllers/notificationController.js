@@ -282,8 +282,8 @@ const createNotification = asyncHandler(async (req, res) => {
     newNotification.deliveryStats.seen = 0;
     await newNotification.save();
 
-    // Find web push subscriptions for recipients using Subscription model
-    const Subscription = require('../models/subscriptionModel');
+    // SECURITY FIX: Find web push subscriptions for ONLY intended recipients
+    console.log('[PUSH_SECURITY] Filtering push subscriptions for intended recipients only');
     
     // Filter users who have push notifications enabled
     const usersWithPushEnabled = await User.find({
@@ -292,19 +292,24 @@ const createNotification = asyncHandler(async (req, res) => {
     }).select('_id');
     
     const enabledUserIds = usersWithPushEnabled.map(user => user._id);
-    console.log('NOTIFICATION_CREATE', `Found ${enabledUserIds.length} users with push notifications enabled out of ${uniqueRecipients.length} total recipients`);
+    console.log('[PUSH_SECURITY]', `Found ${enabledUserIds.length} users with push notifications enabled out of ${uniqueRecipients.length} total recipients`);
+    console.log('[PUSH_SECURITY] Enabled user IDs:', enabledUserIds.map(id => id.toString()));
     
-    const subscriptions = await Subscription.find({
+    // CRITICAL FIX: Use correct PushSubscription model and filter by actual recipients
+    const subscriptions = await PushSubscription.find({
       user: { $in: enabledUserIds }
     });
 
-    console.log('NOTIFICATION_CREATE', `Found ${subscriptions.length} push subscriptions for enabled users`);
+    console.log('[PUSH_SECURITY]', `Found ${subscriptions.length} push subscriptions for intended recipients only`);
+    console.log('[PUSH_SECURITY] Subscription user IDs:', subscriptions.map(sub => sub.user.toString()));
 
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
       const webpush = require('web-push');
       
       const pushPromises = subscriptions.map(subscription => {
+        console.log('[PUSH_SECURITY] Sending push to user:', subscription.user.toString(), 'subscription:', subscription._id.toString());
+        
         const payload = JSON.stringify({
           title: newNotification.title,
           body: newNotification.message.substring(0, 100),
@@ -317,8 +322,11 @@ const createNotification = asyncHandler(async (req, res) => {
         });
 
         return webpush.sendNotification(subscription, payload)
+          .then(() => {
+            console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.user.toString());
+          })
           .catch(error => {
-            console.error('NOTIFICATION_CREATE', `Push notification failed for subscription ${subscription._id}:`, error.message);
+            console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.user.toString(), 'error:', error.message);
           });
       });
 

@@ -24,6 +24,10 @@ import {
   Checkbox,
   ListItemText,
   OutlinedInput,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -58,6 +62,13 @@ const EditUser = () => {
   // State for schools data
   const [schools, setSchools] = useState([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
+  
+  // State for parent linking functionality
+  const [availableParents, setAvailableParents] = useState([]);
+  const [linkedParents, setLinkedParents] = useState([]);
+  const [parentLinkingLoading, setParentLinkingLoading] = useState(false);
+  const [linkParentDialogOpen, setLinkParentDialogOpen] = useState(false);
+  const [selectedParentId, setSelectedParentId] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -122,6 +133,54 @@ const EditUser = () => {
     
     fetchSchools();
   }, [currentUser.token]);
+
+  // Fetch available parents and student's linked parents
+  const fetchParentData = async () => {
+    if (!userData || userData.role !== 'student') return;
+    
+    try {
+      setParentLinkingLoading(true);
+      
+      // Fetch available parents
+      const parentsResponse = await fetch(`${API_URL}/api/users/available-parents`, {
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (parentsResponse.ok) {
+        const parentsData = await parentsResponse.json();
+        setAvailableParents(parentsData.parents || []);
+      }
+      
+      // Fetch student's linked parents
+      const linkedResponse = await fetch(`${API_URL}/api/users/student/${id}/parents`, {
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (linkedResponse.ok) {
+        const linkedData = await linkedResponse.json();
+        setLinkedParents(linkedData.linkedParents || []);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching parent data:', error);
+      toast.error('Failed to load parent data');
+    } finally {
+      setParentLinkingLoading(false);
+    }
+  };
+
+  // Load parent data when user data is available
+  useEffect(() => {
+    if (userData && userData.role === 'student') {
+      fetchParentData();
+    }
+  }, [userData]);
 
   // Define empty arrays for legacy fields to prevent undefined errors
   const directions = [];
@@ -441,6 +500,79 @@ const EditUser = () => {
   
   const handleMouseDownPassword = (e) => {
     e.preventDefault();
+  };
+
+  // Parent linking functionality
+  const handleLinkParent = async () => {
+    if (!selectedParentId) {
+      toast.error('Please select a parent to link');
+      return;
+    }
+    
+    try {
+      setParentLinkingLoading(true);
+      
+      const response = await fetch(`${API_URL}/api/users/link-parent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          parentId: selectedParentId,
+          studentId: id
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Successfully linked parent: ${result.parent.name}`);
+        setLinkParentDialogOpen(false);
+        setSelectedParentId('');
+        // Refresh parent data
+        await fetchParentData();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to link parent');
+      }
+    } catch (error) {
+      console.error('Error linking parent:', error);
+      toast.error('Failed to link parent');
+    } finally {
+      setParentLinkingLoading(false);
+    }
+  };
+
+  const handleUnlinkParent = async (parentId, parentName) => {
+    try {
+      setParentLinkingLoading(true);
+      
+      const response = await fetch(`${API_URL}/api/users/unlink-parent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          parentId: parentId,
+          studentId: id
+        })
+      });
+      
+      if (response.ok) {
+        toast.success(`Successfully unlinked parent: ${parentName}`);
+        // Refresh parent data
+        await fetchParentData();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to unlink parent');
+      }
+    } catch (error) {
+      console.error('Error unlinking parent:', error);
+      toast.error('Failed to unlink parent');
+    } finally {
+      setParentLinkingLoading(false);
+    }
   };
   
   const handleSubmit = (e) => {
@@ -1117,33 +1249,29 @@ const EditUser = () => {
                   </Typography>
                   
                   {/* Existing Parent Accounts Display */}
-                  {userData && userData.parentIds && userData.parentIds.length > 0 ? (
+                  {linkedParents && linkedParents.length > 0 ? (
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         Current parent accounts linked to this student:
                       </Typography>
-                      {userData.parentIds.map((parent, index) => (
-                        <Alert key={index} severity="info" sx={{ mb: 1 }}>
+                      {linkedParents.map((parent, index) => (
+                        <Alert key={parent._id || index} severity="info" sx={{ mb: 1 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
                               <Typography variant="body2">
-                                <strong>{parent.name || 'Parent Name'}</strong> - {parent.email || 'parent@school.com'}
+                                <strong>{parent.name}</strong> - {parent.email}
                               </Typography>
-                              {parent.mobilePhone && (
-                                <Typography variant="caption" color="text.secondary">
-                                  📱 {parent.mobilePhone}
-                                </Typography>
-                              )}
+                              <Typography variant="caption" color="text.secondary">
+                                Total linked students: {parent.totalLinkedStudents || 0}
+                              </Typography>
                             </Box>
                             <Button
                               size="small"
                               color="error"
-                              onClick={() => {
-                                // TODO: Implement unlink parent functionality
-                                toast.info('Unlink parent functionality coming soon');
-                              }}
+                              disabled={parentLinkingLoading}
+                              onClick={() => handleUnlinkParent(parent._id, parent.name)}
                             >
-                              Unlink
+                              {parentLinkingLoading ? 'Unlinking...' : 'Unlink'}
                             </Button>
                           </Box>
                         </Alert>
@@ -1158,24 +1286,11 @@ const EditUser = () => {
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => {
-                      // TODO: Implement add parent functionality  
-                      toast.info('Add parent functionality coming soon - will redirect to ManageParents or open modal');
-                    }}
+                    disabled={parentLinkingLoading}
+                    onClick={() => setLinkParentDialogOpen(true)}
                     sx={{ mr: 2 }}
                   >
-                    Add Parent Account
-                  </Button>
-                  
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => {
-                      // TODO: Navigate to ManageParents filtered for this student
-                      navigate(`/app/admin/parents?studentId=${id}`);
-                    }}
-                  >
-                    Manage All Parents
+                    Link Parent Account
                   </Button>
                 </Paper>
               </Grid>
@@ -1278,6 +1393,56 @@ const EditUser = () => {
           </Grid>
         </form>
       </Paper>
+
+      {/* Link Parent Dialog */}
+      <Dialog 
+        open={linkParentDialogOpen} 
+        onClose={() => setLinkParentDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Link Parent to Student</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Select Parent</InputLabel>
+              <Select
+                value={selectedParentId}
+                onChange={(e) => setSelectedParentId(e.target.value)}
+                label="Select Parent"
+              >
+                {availableParents
+                  .filter(parent => !linkedParents.some(linked => linked._id === parent._id))
+                  .map((parent) => (
+                    <MenuItem key={parent._id} value={parent._id}>
+                      {parent.name} ({parent.email}) - {parent.linkedStudentsCount} students
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+            {availableParents.filter(parent => !linkedParents.some(linked => linked._id === parent._id)).length === 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                No available parents to link. All parents in this school are already linked to this student.
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setLinkParentDialogOpen(false)}
+            disabled={parentLinkingLoading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleLinkParent}
+            disabled={parentLinkingLoading || !selectedParentId}
+            variant="contained"
+          >
+            {parentLinkingLoading ? 'Linking...' : 'Link Parent'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

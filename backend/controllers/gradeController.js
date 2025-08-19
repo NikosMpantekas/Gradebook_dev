@@ -215,13 +215,32 @@ const getAllGrades = asyncHandler(async (req, res) => {
 // @access  Private
 const getStudentGrades = asyncHandler(async (req, res) => {
   try {
-    // Students can only view their own grades, teachers and admins can view any student's grades
+    console.log(`[GRADES] User ${req.user.name} (${req.user.role}) requesting grades for student ID: ${req.params.id}`);
+    
+    // Authorization checks based on user role
     if (req.user.role === 'student' && req.user.id !== req.params.id) {
+      console.log(`[GRADES] Student ${req.user.id} denied access to other student's grades`);
       res.status(403);
       throw new Error('Not authorized to view other students\' grades');
     }
     
-    // First, verify the student exists and belongs to the same school
+    // Parent authorization: check if requesting grades for their linked student
+    if (req.user.role === 'parent') {
+      console.log(`[GRADES] Parent ${req.user.id} requesting grades. Linked students:`, req.user.linkedStudentIds);
+      
+      // Check if the requested student ID is in the parent's linkedStudentIds
+      const hasAccess = req.user.linkedStudentIds && req.user.linkedStudentIds.some(
+        studentId => studentId.toString() === req.params.id
+      );
+      
+      if (!hasAccess) {
+        console.log(`[GRADES] Parent ${req.user.id} denied access to student ${req.params.id} - not linked`);
+        res.status(403);
+        throw new Error('Not authorized to view this student\'s grades - student not linked to your account');
+      }
+    }
+    
+    // Verify the student exists and belongs to the same school
     const student = await User.findOne({ 
       _id: req.params.id, 
       role: 'student',
@@ -229,9 +248,12 @@ const getStudentGrades = asyncHandler(async (req, res) => {
     });
     
     if (!student) {
+      console.log(`[GRADES] Student ${req.params.id} not found in school ${req.user.schoolId}`);
       res.status(404);
       throw new Error('Student not found in this school');
     }
+    
+    console.log(`[GRADES] Found student: ${student.name} (${student._id})`);
     
     // Find all grades for this student in this school
     const grades = await Grade.find({
@@ -242,11 +264,85 @@ const getStudentGrades = asyncHandler(async (req, res) => {
       .populate('teacher', 'name')
       .sort({ date: -1 });
     
+    console.log(`[GRADES] Found ${grades.length} grades for student ${student.name}`);
+    
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getStudentGrades controller:', error.message);
     res.status(error.statusCode || 500);
     throw new Error(error.message || 'Error retrieving student grades');
+  }
+});
+
+// @desc    Get all linked students' grades for parents
+// @route   GET /api/grades/parent/students
+// @access  Private/Parent
+const getParentStudentsGrades = asyncHandler(async (req, res) => {
+  try {
+    console.log(`[PARENT_GRADES] Parent ${req.user.name} requesting all linked students' grades`);
+    
+    // Only parents can access this endpoint
+    if (req.user.role !== 'parent') {
+      res.status(403);
+      throw new Error('Access denied - parents only');
+    }
+    
+    // Check if parent has any linked students
+    if (!req.user.linkedStudentIds || req.user.linkedStudentIds.length === 0) {
+      console.log(`[PARENT_GRADES] Parent ${req.user.id} has no linked students`);
+      return res.status(200).json({
+        students: [],
+        message: 'No students linked to your account'
+      });
+    }
+    
+    console.log(`[PARENT_GRADES] Parent has ${req.user.linkedStudentIds.length} linked students:`, req.user.linkedStudentIds);
+    
+    // Get all linked students with their information
+    const students = await User.find({
+      _id: { $in: req.user.linkedStudentIds },
+      role: 'student',
+      schoolId: req.user.schoolId
+    }).select('name email class').populate('class', 'name');
+    
+    console.log(`[PARENT_GRADES] Found ${students.length} valid students in same school`);
+    
+    // Get grades for each student
+    const studentsWithGrades = await Promise.all(
+      students.map(async (student) => {
+        const grades = await Grade.find({
+          student: student._id,
+          schoolId: req.user.schoolId
+        })
+          .populate('subject', 'name')
+          .populate('teacher', 'name')
+          .sort({ date: -1 })
+          .limit(20); // Limit recent grades for dashboard view
+        
+        return {
+          student: {
+            _id: student._id,
+            name: student.name,
+            email: student.email,
+            class: student.class
+          },
+          grades: grades,
+          gradeCount: grades.length
+        };
+      })
+    );
+    
+    console.log(`[PARENT_GRADES] Returning data for ${studentsWithGrades.length} students`);
+    
+    res.status(200).json({
+      students: studentsWithGrades,
+      totalStudents: studentsWithGrades.length
+    });
+    
+  } catch (error) {
+    console.error('Error in getParentStudentsGrades controller:', error.message);
+    res.status(error.statusCode || 500);
+    throw new Error(error.message || 'Error retrieving parent students grades');
   }
 });
 
@@ -508,6 +604,7 @@ module.exports = {
   createGrade,
   getAllGrades,
   getStudentGrades,
+  getParentStudentsGrades,
   getGradesBySubject,
   getGradesByTeacher,
   getGradeById,

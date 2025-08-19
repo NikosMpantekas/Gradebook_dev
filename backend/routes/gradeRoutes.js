@@ -4,6 +4,7 @@ const {
   createGrade,
   getAllGrades,
   getStudentGrades,
+  getParentStudentsGrades,
   getGradesBySubject,
   getGradesByTeacher,
   getGradeById,
@@ -19,6 +20,9 @@ router.get('/student', protect, (req, res) => {
   return getStudentGrades(req, res);
 });
 router.get('/student/:id', protect, getStudentGrades);
+
+// Parent routes for viewing linked students' grades
+router.get('/parent/students', protect, getParentStudentsGrades);
 router.get('/subject/:id', protect, getGradesBySubject);
 router.get('/teacher', protect, (req, res) => {
   // Get grades for authenticated user - add their ID to params

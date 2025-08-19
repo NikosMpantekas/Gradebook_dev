@@ -993,14 +993,9 @@ const CreateUser = (props) => {
                   <MenuItem value="">
                     <em>Select a role</em>
                   </MenuItem>
-                  <MenuItem value="admin" disabled={restrictAdmin}>
-                    {restrictAdmin ? "Admin (Only one admin allowed)" : "Admin"}
-                  </MenuItem>
-                  <MenuItem value="secretary" disabled={restrictSecretary}>
-                    {restrictSecretary ? "Secretary (Only admin can create)" : "Secretary"}
-                  </MenuItem>
                   <MenuItem value="teacher">Teacher</MenuItem>
                   <MenuItem value="student">Student</MenuItem>
+                  <MenuItem value="parent">Parent</MenuItem>
                 </Select>
                 {formErrors.role && (
                   <FormHelperText>{formErrors.role}</FormHelperText>
