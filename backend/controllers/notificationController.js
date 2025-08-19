@@ -585,6 +585,73 @@ const markNotificationRead = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Mark notification as seen
+// @route   PUT /api/notifications/:id/seen
+// @access  Private
+const markNotificationSeen = asyncHandler(async (req, res) => {
+  try {
+    console.log('NOTIFICATION_SEEN', `Marking notification ${req.params.id} as seen by user ${req.user._id} (${req.user.role})`);
+    
+    // Find the notification with schoolId filtering
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      schoolId: req.user.schoolId
+    }).populate('classes', 'students teachers')
+      .populate('schoolBranches', 'name');
+    
+    if (!notification) {
+      console.log('NOTIFICATION_SEEN', `Notification ${req.params.id} not found`);
+      res.status(404);
+      throw new Error('Notification not found');
+    }
+    
+    // Check if user is authorized recipient
+    let isAuthorizedRecipient = false;
+    
+    // Direct recipient check with new structure
+    const recipientEntry = notification.recipients.find(r => r.user && r.user.toString() === req.user._id.toString());
+    if (recipientEntry) {
+      isAuthorizedRecipient = true;
+      console.log('NOTIFICATION_SEEN', 'User is direct recipient');
+    }
+    
+    // Admin/superadmin can always mark as seen
+    if (!isAuthorizedRecipient && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+      isAuthorizedRecipient = true;
+      console.log('NOTIFICATION_SEEN', 'Admin/superadmin access granted');
+    }
+    
+    if (!isAuthorizedRecipient) {
+      console.log('NOTIFICATION_SEEN', `User ${req.user._id} not authorized to mark notification ${req.params.id} as seen`);
+      res.status(403);
+      throw new Error('Not authorized to mark this notification as seen');
+    }
+    
+    // Use the new markAsSeenBy method
+    const wasAlreadySeen = notification.isSeenBy(req.user._id);
+    if (!wasAlreadySeen) {
+      await notification.markAsSeenBy(req.user._id);
+      console.log('NOTIFICATION_SEEN', `Notification ${req.params.id} marked as seen by user ${req.user._id}`);
+    } else {
+      console.log('NOTIFICATION_SEEN', `Notification ${req.params.id} already marked as seen by user ${req.user._id}`);
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      message: wasAlreadySeen ? 'Already marked as seen' : 'Marked as seen'
+    });
+    
+  } catch (error) {
+    console.error('NOTIFICATION_SEEN', `Error marking notification as seen: ${error.message}`, {
+      notificationId: req.params.id,
+      userId: req.user._id,
+      stack: error.stack
+    });
+    res.status(error.status || 500);
+    throw new Error(error.message || 'Failed to mark notification as seen');
+  }
+});
+
 // @desc    Get a specific notification
 // @route   GET /api/notifications/:id
 // @access  Private
