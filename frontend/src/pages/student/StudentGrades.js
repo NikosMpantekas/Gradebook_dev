@@ -10,7 +10,8 @@ import {
   XCircle,
   BookOpen,
   Calendar,
-  User
+  User,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -26,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
 import { TooltipProvider } from '../../components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
+import { Spinner } from '../../components/ui/spinner';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, ChartTooltip, Legend);
@@ -171,7 +173,9 @@ const StudentGrades = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Spinner>
+          <Loader2 className="h-12 w-12 text-primary" />
+        </Spinner>
       </div>
     );
   }

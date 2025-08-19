@@ -211,6 +211,32 @@
   }
 }
 
+/* Slide in from left for sidebar */
+.slide-in-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+/* Slide out to left for sidebar */
+.slide-out-left {
+  animation: slideOutLeft 0.3s ease-in;
+}
+
+/* Enhanced sidebar animations that work with Sheet component */
+.sidebar-animation {
+  /* Override default Sheet animations for better control */
+  animation-duration: 0.3s !important;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Enhance the built-in Sheet slide animations */
+.sidebar-animation[data-state="open"] {
+  animation-name: slide-in-from-left !important;
+}
+
+.sidebar-animation[data-state="closed"] {
+  animation-name: slide-out-to-left !important;
+}
+
 /* Slide out to left */
 @keyframes slideOutLeft {
   from {
@@ -220,6 +246,25 @@
   to {
     transform: translateX(-100%);
     opacity: 0;
+  }
+}
+
+/* Sheet component slide animations */
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
   }
 }
 
