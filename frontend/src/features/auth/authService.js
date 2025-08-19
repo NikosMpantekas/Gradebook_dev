@@ -505,7 +505,7 @@ const updatePushNotificationPreference = async (enabled) => {
   try {
     console.log('[AuthService] Updating push notification preference to:', enabled);
     
-    const response = await axiosInstance.put('/api/users/push-notification-preference', {
+    const response = await axios.put('/api/users/push-notification-preference', {
       enabled
     });
     
@@ -521,10 +521,10 @@ const authService = {
   register,
   login,
   logout,
-  refreshToken,
+  refreshToken: refreshTokenFunction,
   updateProfile,
-  changePassword,
-  forgotPassword,
+  changePassword: updateProfile, // Using updateProfile for profile changes including password
+  forgotPassword: forgotPasswordRequest,
   updatePushNotificationPreference,
 };
 
