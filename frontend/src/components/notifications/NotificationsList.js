@@ -163,6 +163,10 @@ const NotificationsList = ({
             createdAt: notification.createdAt || new Date().toISOString()
           };
 
+          // Check if current user is the sender of this notification
+          const isSender = user && notification.sender && 
+            (notification.sender._id === user._id || notification.sender === user._id);
+
           console.log('NotificationsList - Processed safeNotification:', {
             id: safeNotification._id,
             isRead: safeNotification.isRead,
@@ -215,7 +219,7 @@ const NotificationsList = ({
                   </div>
                   
                   <div className="flex items-center space-x-2 ml-4">
-                    {!safeNotification.isRead && onMarkAsRead && (
+                    {!isSender && !safeNotification.isRead && onMarkAsRead && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -236,7 +240,7 @@ const NotificationsList = ({
                       </Tooltip>
                     )}
                     
-                    {!safeNotification.isSeen && onMarkAsSeen && (
+                    {!isSender && !safeNotification.isSeen && onMarkAsSeen && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
