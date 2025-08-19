@@ -431,9 +431,13 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       console.log(`[SECURITY] Teacher ${req.user._id} restricted to sent notifications and direct recipient notifications`);
     }
     else if (req.user.role === 'admin') {
-      // ADMINS: Can see all notifications in their school (no additional restrictions)
-      // query already has schoolId filter which is sufficient for admins
-      console.log('[SECURITY] Admin user - full school access granted');
+      // ADMINS: Can see notifications they sent OR where they are direct recipients
+      // This prevents "NO RECIPIENT FOUND" errors when admins view notifications they're not recipients of
+      query.$or = [
+        { sender: req.user._id }, // Notifications they created
+        { 'recipients.user': req.user._id } // Directly addressed to this admin
+      ];
+      console.log(`[SECURITY] Admin ${req.user._id} restricted to sent notifications and direct recipient notifications`);
     }
     else if (req.user.role === 'parent') {
       // PARENTS: Can ONLY see notifications where they are direct recipients
