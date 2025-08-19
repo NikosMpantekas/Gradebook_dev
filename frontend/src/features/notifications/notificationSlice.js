@@ -142,8 +142,30 @@ export const markNotificationAsRead = createAsyncThunk(
       // so the reducer can properly update the state
       return {
         ...response,
-        _id: id,
-        notificationId: id
+        id: id
+      };
+    } catch (error) {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// Mark notification as seen
+export const markNotificationAsSeen = createAsyncThunk(
+  'notifications/markAsSeen',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.user.token;
+      const response = await notificationService.markNotificationAsSeen(id, token);
+      return {
+        ...response,
+        id: id
       };
     } catch (error) {
       const message =
@@ -315,6 +337,29 @@ export const notificationSlice = createSlice({
         }
       })
       .addCase(markNotificationAsRead.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(markNotificationAsSeen.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(markNotificationAsSeen.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        if (state.notifications && state.notifications.length > 0) {
+          state.notifications = state.notifications.map(notification => {
+            if (notification._id === action.payload.id) {
+              return { ...notification, isSeen: true };
+            }
+            return notification;
+          });
+        }
+        if (state.notification && state.notification._id === action.payload.id) {
+          state.notification = { ...state.notification, isSeen: true };
+        }
+      })
+      .addCase(markNotificationAsSeen.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;

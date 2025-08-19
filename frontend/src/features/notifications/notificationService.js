@@ -198,6 +198,23 @@ const markNotificationAsRead = async (notificationId, token) => {
   return response.data;
 };
 
+// Mark notification as seen
+const markNotificationAsSeen = async (notificationId, token) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+
+  const response = await axiosInstance.put(
+    `${API_NOTIFICATIONS}/${notificationId}/seen`,
+    {},
+    config
+  );
+
+  return response.data;
+};
+
 // Subscribe to push notifications
 const subscribeToPushNotifications = async (subscription, token) => {
   // Validate token before making the request
@@ -235,6 +252,7 @@ const notificationService = {
   updateNotification,
   deleteNotification,
   markNotificationAsRead,
+  markNotificationAsSeen,
   subscribeToPushNotifications,
   getVapidPublicKey,
 };
