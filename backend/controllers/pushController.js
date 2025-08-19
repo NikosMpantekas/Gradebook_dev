@@ -12,15 +12,15 @@ const PushSubscription = require('../models/pushSubscriptionModel');
 let vapidConfigured = false;
 
 try {
-  const vapidEmail = process.env.VAPID_EMAIL;
+  const vapidSubject = process.env.VAPID_SUBJECT;
   const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
   const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
   console.log('[PushController] VAPID configuration check:', {
-    hasEmail: !!vapidEmail,
+    hasSubject: !!vapidSubject,
     hasPublicKey: !!vapidPublicKey,
     hasPrivateKey: !!vapidPrivateKey,
-    emailValue: vapidEmail || 'NOT_SET',
+    subjectValue: vapidSubject || 'NOT_SET',
     publicKeyLength: vapidPublicKey?.length || 0,
     privateKeyLength: vapidPrivateKey?.length || 0,
     publicKeyFormat: vapidPublicKey ? (vapidPublicKey.startsWith('B') ? 'Valid Base64' : 'Invalid Format') : 'Missing',
@@ -36,26 +36,26 @@ try {
     console.log('[PushController] Private key preview:', vapidPrivateKey.substring(0, 10) + '...');
   }
 
-  if (!vapidEmail || !vapidPublicKey || !vapidPrivateKey) {
+  if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
     console.error('[PushController] VAPID keys incomplete - push notifications will fail');
     console.error('[PushController] Missing:', {
-      email: !vapidEmail,
+      subject: !vapidSubject,
       publicKey: !vapidPublicKey,
       privateKey: !vapidPrivateKey
     });
   } else {
-    // Set VAPID details with proper email format
-    const emailSubject = vapidEmail.startsWith('mailto:') ? vapidEmail : `mailto:${vapidEmail}`;
+    // Set VAPID details with proper subject format
+    const subject = vapidSubject.startsWith('mailto:') ? vapidSubject : `mailto:${vapidSubject}`;
     
     webpush.setVapidDetails(
-      emailSubject,
+      subject,
       vapidPublicKey,
       vapidPrivateKey
     );
     
     vapidConfigured = true;
     console.log('[PushController] VAPID keys configured successfully');
-    console.log('[PushController] Email subject:', emailSubject);
+    console.log('[PushController] Subject:', subject);
   }
 } catch (error) {
   console.error('[PushController] Error configuring VAPID keys:', error);
