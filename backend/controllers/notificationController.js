@@ -49,14 +49,16 @@ const createNotification = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Create notification with new class-based structure
+    console.log('NOTIFICATION_CREATE', '🔧 CODE FIX ACTIVE - Recipients will be processed after creation');
+    
+    // Create notification with new class-based structure - recipients will be populated after processing
     const notificationData = {
       title,
       message,
       sender: req.user._id,
       senderName: req.user.name,
       senderRole: req.user.role,
-      recipients: recipients || [],
+      recipients: [], // FIXED: Initialize empty, populate after processing
       classes: classes || [],
       schoolBranches: schoolBranches || [],
       targetRole: targetRole || 'all',
@@ -66,14 +68,18 @@ const createNotification = asyncHandler(async (req, res) => {
       sendToAll: sendToAll || false,
       status: 'sent'
     };
+    
+    console.log('NOTIFICATION_CREATE', '✅ Recipients initialized as empty array for proper processing');
 
     console.log('NOTIFICATION_CREATE', 'Creating notification with data:', {
       ...notificationData,
-      message: message.substring(0, 100) + '...'
+      message: message.substring(0, 100) + '...',
+      recipients: `[${recipients?.length || 0} recipients - will be processed after creation]`
     });
 
     const newNotification = await Notification.create(notificationData);
     console.log('NOTIFICATION_CREATE', 'Notification created with ID:', newNotification._id);
+    console.log('NOTIFICATION_CREATE', '🚀 RECIPIENTS PROCESSING STARTING - Raw frontend data will be converted');
 
     // CRITICAL SECURITY: Validate sender permissions before determining recipients
     console.log(`[SECURITY] Validating sender permissions for ${req.user.role} creating notification with targetRole: ${targetRole}`);
