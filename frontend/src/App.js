@@ -249,17 +249,7 @@ function App() {
 
   // Theme colors are now handled by the ThemeProvider component
 
-  // Set up push notifications if user is logged in
-  useEffect(() => {
-    if (user) {
-      setupPushNotifications().catch((error) => {
-        // Handle push notification errors silently to avoid false authentication error messages
-        console.warn('Push notification setup failed (this is normal if user denied permission):', error.message);
-        // Don't propagate push notification errors to global error handler
-        // as they're not critical and shouldn't interfere with app functionality
-      });
-    }
-  }, [user]);
+  // Push notifications are now handled by the first useEffect above that checks for user authentication
 
   // Console log initial state - helps with debugging
   console.log('App rendering with auth state:', { isLoggedIn: !!user });

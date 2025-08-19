@@ -107,6 +107,19 @@ const PushNotificationManager = () => {
         // Don't return - still try to set up notifications but warn the user
       }
       
+      // Check if push worker is registered
+      const pushWorkerRegistered = sessionStorage.getItem('pushWorkerRegistered') === 'true';
+      if (!pushWorkerRegistered) {
+        console.warn('[Push] Push worker not registered, attempting to initialize...');
+        // Try to set up push notifications first
+        try {
+          const { setupPushNotifications } = await import('../services/pushNotificationService');
+          await setupPushNotifications();
+        } catch (setupError) {
+          console.warn('[Push] Failed to setup push notifications:', setupError);
+        }
+      }
+      
       // Request permission if not granted
       if (Notification.permission !== 'granted') {
         const permission = await Notification.requestPermission();
@@ -130,8 +143,8 @@ const PushNotificationManager = () => {
       // Get VAPID public key from backend - use API_URL for secure HTTPS in production
       console.log('[Push] Step 1: Fetching VAPID public key using API_URL:', API_URL);
       
-      const vapidResponse = await axios.get(`${API_URL}/api/vapid/public-key`);
-      const vapidPublicKey = vapidResponse.data.publicKey;
+      const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`);
+      const vapidPublicKey = vapidResponse.data.vapidPublicKey;
       
       if (!vapidPublicKey) {
         throw new Error('VAPID public key not received from server');
@@ -147,6 +160,14 @@ const PushNotificationManager = () => {
       // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
       
+      // iOS-specific check: Ensure service worker is active
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isIOS && !registration.active) {
+        console.warn('[Push] iOS: Service worker not yet active, waiting...');
+        // Wait a bit more for iOS
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
       console.log('[Push] Step 4: Service worker ready, subscribing to push manager');
       
       // Subscribe to push manager
@@ -158,9 +179,10 @@ const PushNotificationManager = () => {
       console.log('[Push] Step 5: Push subscription created, sending to backend');
       
       // Send subscription to backend
-      const subscriptionResponse = await axios.post(`${API_URL}/api/vapid/subscribe`, {
-        subscription: subscription,
-        userId: user._id
+      const subscriptionResponse = await axios.post(`${API_URL}/api/subscriptions`, {
+        endpoint: subscription.endpoint,
+        expirationTime: subscription.expirationTime,
+        keys: subscription.keys
       }, {
         headers: {
           Authorization: `Bearer ${user.token}`
@@ -184,11 +206,26 @@ const PushNotificationManager = () => {
       
     } catch (err) {
       console.error('[Push] Error subscribing to push notifications:', err);
-      setError(err.message || 'Failed to enable push notifications');
+      
+      // iOS-specific error handling
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      let errorMessage = err.message || 'Failed to enable push notifications';
+      
+      if (isIOS) {
+        if (err.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        } else if (err.message?.includes('Build directory not found')) {
+          errorMessage = 'Server configuration issue. Please try again later.';
+        } else if (err.message?.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        }
+      }
+      
+      setError(errorMessage);
       
       setNotification({
         open: true,
-        message: 'Failed to enable push notifications. Please try again.',
+        message: errorMessage,
         severity: 'error'
       });
     } finally {
@@ -208,12 +245,12 @@ const PushNotificationManager = () => {
       await pushSubscription.unsubscribe();
       
       // Remove subscription from backend
-      await axios.delete(`${API_URL}/api/vapid/unsubscribe`, {
+      await axios.delete(`${API_URL}/api/subscriptions`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         },
         data: {
-          userId: user._id
+          endpoint: pushSubscription.endpoint
         }
       });
       
