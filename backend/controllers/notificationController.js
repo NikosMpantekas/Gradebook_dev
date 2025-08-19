@@ -1,9 +1,9 @@
 const asyncHandler = require('express-async-handler');
-const webpush = require('web-push');
 const mongoose = require('mongoose');
 const Notification = require('../models/notificationModel');
 const User = require('../models/userModel');
-const Subscription = require('../models/subscriptionModel');
+const PushSubscription = require('../models/pushSubscriptionModel');
+const { pushService } = require('./pushController');
 
 // @desc    Create a new notification
 // @route   POST /api/notifications
@@ -282,102 +282,57 @@ const createNotification = asyncHandler(async (req, res) => {
     newNotification.deliveryStats.seen = 0;
     await newNotification.save();
 
-    // Find web push subscriptions for recipients
-    const subscriptions = await Subscription.find({
-      user: { $in: uniqueRecipients }
+    // Find modern push subscriptions for recipients using new model
+    const subscriptions = await PushSubscription.find({
+      userId: { $in: uniqueRecipients },
+      isActive: true
     });
 
     console.log('NOTIFICATION_CREATE', `Found ${subscriptions.length} push subscriptions`);
 
-    // Send push notifications (if web push is enabled)
-    if (subscriptions.length > 0) {
-      const pushPromises = subscriptions.map(async (subscription) => {
+    // Send push notifications using modern push service
+    if (subscriptions.length > 0 && pushService) {
+      try {
         // CRITICAL FIX: Include important flag in push notification
         const isImportant = newNotification.urgent || newNotification.isImportant;
         const importantPrefix = isImportant ? "🔥 IMPORTANT: " : "";
         
-        const payload = JSON.stringify({
+        const pushPayload = {
           title: `${importantPrefix}${newNotification.title}`,
           body: newNotification.message.substring(0, 100),
-          icon: '/icon-192x192.png',
-          badge: '/icon-192x192.png',
-          data: {
-            notificationId: newNotification._id.toString(),
-            url: `/notifications/${newNotification._id}`,
-            isImportant: isImportant,
-            urgent: newNotification.urgent || false
-          }
+          icon: '/logo192.png',
+          badge: '/badge-icon.png',
+          url: `/app/notifications/${newNotification._id}`,
+          notificationId: newNotification._id.toString(),
+          urgent: newNotification.urgent || isImportant,
+          timestamp: Date.now()
+        };
+
+        console.log('NOTIFICATION_CREATE', 'Sending push notifications with modern service:', {
+          subscriptionCount: subscriptions.length,
+          payloadTitle: pushPayload.title.substring(0, 50) + '...',
+          urgent: pushPayload.urgent
         });
 
-        // iOS DEBUGGING: Enhanced push notification error logging
-        console.log('NOTIFICATION_CREATE', `Attempting push to subscription ${subscription._id}:`, {
-          endpoint: subscription.endpoint?.substring(0, 50) + '...',
-          hasKeys: !!(subscription.keys && subscription.keys.p256dh && subscription.keys.auth),
-          payloadLength: payload.length
-        });
+        // Use modern push service with proper VAPID authentication
+        const pushResults = await pushService.sendToMultipleSubscriptions(
+          subscriptions,
+          pushPayload,
+          { ttl: 86400, urgency: pushPayload.urgent ? 'high' : 'normal' }
+        );
 
-        try {
-          const result = await webpush.sendNotification(subscription, payload);
-          console.log('NOTIFICATION_CREATE', `Push notification SUCCESS for subscription ${subscription._id}:`, {
-            statusCode: result?.statusCode,
-            headers: result?.headers,
-            body: result?.body?.substring(0, 100)
-          });
-          return result;
-        } catch (error) {
-          // iOS DEBUGGING: Comprehensive error logging
-          console.error('NOTIFICATION_CREATE', `Push notification FAILED for subscription ${subscription._id}:`, {
-            errorMessage: error.message,
-            errorName: error.name,
-            statusCode: error.statusCode,
-            headers: error.headers,
-            body: error.body,
-            endpoint: subscription.endpoint?.substring(0, 50) + '...',
-            subscriptionKeys: {
-              hasP256dh: !!(subscription.keys && subscription.keys.p256dh),
-              hasAuth: !!(subscription.keys && subscription.keys.auth),
-              p256dhLength: subscription.keys?.p256dh?.length,
-              authLength: subscription.keys?.auth?.length
-            },
-            stack: error.stack
-          });
-          
-          // Check for specific iOS/Safari push notification errors
-          if (error.statusCode === 410 || error.statusCode === 404) {
-            console.warn('NOTIFICATION_CREATE', `Subscription ${subscription._id} is expired/invalid, removing from database`);
-            // Remove invalid subscription from database
-            try {
-              await Subscription.findByIdAndDelete(subscription._id);
-              console.log('NOTIFICATION_CREATE', `Successfully removed invalid subscription ${subscription._id}`);
-            } catch (deleteError) {
-              console.error('NOTIFICATION_CREATE', `Failed to remove invalid subscription ${subscription._id}:`, deleteError.message);
-            }
-          } else if (error.statusCode === 400) {
-            console.error('NOTIFICATION_CREATE', `Bad request - payload or subscription format issue for ${subscription._id}`);
-          } else if (error.statusCode === 413) {
-            console.error('NOTIFICATION_CREATE', `Payload too large for subscription ${subscription._id}`);
-          } else if (error.message && error.message.includes('Received unexpected response code')) {
-            console.error('NOTIFICATION_CREATE', `iOS/Safari specific error - likely subscription format or APNs connectivity issue for ${subscription._id}`);
-          }
-          
-          return null; // Don't rethrow, just log and continue
-        }
-      });
+        console.log('NOTIFICATION_CREATE', `Push notifications completed: ${pushResults.successful} success, ${pushResults.failed} failures out of ${pushResults.total} total`);
 
-      const pushResults = await Promise.allSettled(pushPromises);
-      const successCount = pushResults.filter(result => result.status === 'fulfilled' && result.value !== null).length;
-      const failureCount = pushResults.filter(result => result.status === 'rejected' || result.value === null).length;
-      
-      console.log('NOTIFICATION_CREATE', `Push notifications completed: ${successCount} success, ${failureCount} failures out of ${subscriptions.length} total`);
-      
-      // iOS DEBUGGING: Log detailed results
-      pushResults.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error('NOTIFICATION_CREATE', `Push promise ${index} rejected:`, result.reason);
-        } else if (result.value === null) {
-          console.warn('NOTIFICATION_CREATE', `Push promise ${index} returned null (failed but caught)`);
+        // Clean up expired subscriptions
+        if (pushResults.expiredSubscriptions && pushResults.expiredSubscriptions.length > 0) {
+          console.log('NOTIFICATION_CREATE', `Cleaning up ${pushResults.expiredSubscriptions.length} expired subscriptions`);
+          await PushSubscription.deleteMany({
+            endpoint: { $in: pushResults.expiredSubscriptions.map(sub => sub.endpoint) }
+          });
         }
-      });
+      } catch (error) {
+        console.error('NOTIFICATION_CREATE', 'Error sending push notifications:', error);
+      }
     }
 
     // Populate the response
