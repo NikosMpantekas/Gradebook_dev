@@ -197,6 +197,13 @@ const getAvailableParents = asyncHandler(async (req, res) => {
     
     console.log(`[GET_PARENTS] Found ${parents.length} parents in school ${req.user.schoolId}`);
     
+    // Disable caching to ensure fresh parent data
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
     res.status(200).json({
       parents: parents.map(parent => ({
         _id: parent._id,
@@ -246,6 +253,13 @@ const getStudentParents = asyncHandler(async (req, res) => {
     const linkedParents = student.parentIds || [];
     
     console.log(`[GET_STUDENT_PARENTS] Student ${student.name} has ${linkedParents.length} linked parents`);
+    
+    // Disable caching to ensure fresh parent data
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     
     res.status(200).json({
       student: {
