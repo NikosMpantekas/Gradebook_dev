@@ -175,44 +175,66 @@ class NotificationHandler {
   }
 
   /**
-   * Get current user ID from storage for security filtering
+   * Get current user ID from IndexedDB for security filtering
+   * Service workers cannot access localStorage directly
    */
   async _getCurrentUserId() {
     try {
-      // Try to get from various storage locations
-      let userId = null;
+      console.log(`[${SW_NAME}] Getting current user ID from IndexedDB...`);
       
-      // Try localStorage first
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          // Decode JWT token to get user ID
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.id;
-          console.log(`[${SW_NAME}] Current user ID from token: ${userId}`);
-        } catch (tokenError) {
-          console.error(`[${SW_NAME}] Error decoding token:`, tokenError);
-        }
-      }
+      // Open IndexedDB connection
+      const dbRequest = indexedDB.open('GradeBookApp', 1);
       
-      // Fallback to stored user data
-      if (!userId) {
-        const userData = localStorage.getItem('user');
-        if (userData) {
+      return new Promise((resolve, reject) => {
+        dbRequest.onerror = () => {
+          console.error(`[${SW_NAME}] IndexedDB error:`, dbRequest.error);
+          resolve(null);
+        };
+        
+        dbRequest.onsuccess = () => {
+          const db = dbRequest.result;
+          
           try {
-            const user = JSON.parse(userData);
-            userId = user._id || user.id;
-            console.log(`[${SW_NAME}] Current user ID from user data: ${userId}`);
-          } catch (userError) {
-            console.error(`[${SW_NAME}] Error parsing user data:`, userError);
+            const transaction = db.transaction(['userAuth'], 'readonly');
+            const store = transaction.objectStore('userAuth');
+            const request = store.get('currentUser');
+            
+            request.onsuccess = () => {
+              const result = request.result;
+              if (result && result.userId) {
+                console.log(`[${SW_NAME}] Current user ID from IndexedDB: ${result.userId}`);
+                resolve(result.userId);
+              } else {
+                console.log(`[${SW_NAME}] No user ID found in IndexedDB`);
+                resolve(null);
+              }
+            };
+            
+            request.onerror = () => {
+              console.error(`[${SW_NAME}] Error reading from IndexedDB:`, request.error);
+              resolve(null);
+            };
+            
+          } catch (storeError) {
+            console.error(`[${SW_NAME}] IndexedDB store error:`, storeError);
+            resolve(null);
           }
-        }
-      }
-      
-      return userId;
+        };
+        
+        dbRequest.onupgradeneeded = () => {
+          console.log(`[${SW_NAME}] IndexedDB needs upgrade - creating stores`);
+          const db = dbRequest.result;
+          
+          if (!db.objectStoreNames.contains('userAuth')) {
+            db.createObjectStore('userAuth');
+          }
+          
+          // Continue to success handler
+        };
+      });
       
     } catch (error) {
-      console.error(`[${SW_NAME}] Error getting current user ID:`, error);
+      console.error(`[${SW_NAME}] Error accessing IndexedDB:`, error);
       return null;
     }
   }

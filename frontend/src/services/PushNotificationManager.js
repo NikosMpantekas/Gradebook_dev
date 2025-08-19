@@ -329,12 +329,100 @@ class PushNotificationManager {
   async initializeAlwaysActivePushService() {
     console.log('[PushManager] INITIALIZING ALWAYS-ACTIVE PUSH SERVICE (tied to user ID)...');
     try {
+      // Store user ID in IndexedDB for service worker access
+      await this._storeUserIdForServiceWorker();
+      
       await setupPushNotifications();
       console.log('[PushManager] ✅ ALWAYS-ACTIVE PUSH SERVICE INITIALIZED - User can now receive targeted notifications');
       return { success: true };
     } catch (error) {
       console.error('[PushManager] Always-active service failed:', error);
       return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Store current user ID in IndexedDB for service worker filtering
+   */
+  async _storeUserIdForServiceWorker() {
+    try {
+      console.log('[PushManager] Storing user ID in IndexedDB for service worker...');
+      
+      // Get current user ID from auth state
+      const token = localStorage.getItem('token');
+      let userId = null;
+      
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.id;
+        } catch (e) {
+          console.error('[PushManager] Error decoding token:', e);
+        }
+      }
+      
+      if (!userId) {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            userId = user._id || user.id;
+          } catch (e) {
+            console.error('[PushManager] Error parsing user data:', e);
+          }
+        }
+      }
+      
+      if (!userId) {
+        console.error('[PushManager] No user ID found to store');
+        return;
+      }
+      
+      // Store in IndexedDB
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('GradeBookApp', 1);
+        
+        request.onerror = () => {
+          console.error('[PushManager] IndexedDB error:', request.error);
+          resolve(); // Don't fail the whole process
+        };
+        
+        request.onsuccess = () => {
+          const db = request.result;
+          try {
+            const transaction = db.transaction(['userAuth'], 'readwrite');
+            const store = transaction.objectStore('userAuth');
+            
+            store.put({ userId: userId, timestamp: Date.now() }, 'currentUser');
+            
+            transaction.oncomplete = () => {
+              console.log(`[PushManager] ✅ Stored user ID ${userId} in IndexedDB for service worker`);
+              resolve();
+            };
+            
+            transaction.onerror = () => {
+              console.error('[PushManager] Transaction error:', transaction.error);
+              resolve(); // Don't fail the whole process
+            };
+          } catch (e) {
+            console.error('[PushManager] Store error:', e);
+            resolve(); // Don't fail the whole process
+          }
+        };
+        
+        request.onupgradeneeded = () => {
+          console.log('[PushManager] Creating IndexedDB stores for user auth');
+          const db = request.result;
+          
+          if (!db.objectStoreNames.contains('userAuth')) {
+            db.createObjectStore('userAuth');
+          }
+        };
+      });
+      
+    } catch (error) {
+      console.error('[PushManager] Error storing user ID:', error);
+      // Don't fail the whole process
     }
   }
 
