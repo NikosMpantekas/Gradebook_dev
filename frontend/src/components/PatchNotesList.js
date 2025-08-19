@@ -92,7 +92,7 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
     <TooltipProvider>
       <div className="space-y-4 mt-4">
         {patchNotes.map((note) => (
-          <Card key={note._id} className="overflow-hidden">
+          <Card key={note._id} className="overflow-hidden border-2 border-gray-600 dark:border-gray-400">
             <Collapsible open={expandedNote === note._id}>
               <CollapsibleTrigger asChild>
                 <CardHeader 
@@ -139,9 +139,9 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
                                     e.stopPropagation();
                                     onEdit(note);
                                   }}
-                                  className="h-8 w-8 p-0"
+                                  className="h-10 w-10 p-0"
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <Edit className="h-5 w-5" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -160,9 +160,9 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
                                     e.stopPropagation();
                                     onDelete(note._id);
                                   }}
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  className="h-10 w-10 p-0 text-destructive hover:text-destructive"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-5 w-5" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -180,30 +180,9 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
               <CollapsibleContent>
                 <CardContent className="pt-0">
                   <div className="space-y-4">
-                    {note.description && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-2">Description</h4>
-                        <p className="text-sm text-muted-foreground">{note.description}</p>
-                      </div>
-                    )}
-                    
-                    {note.changes && note.changes.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-2">Changes</h4>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                          {note.changes.map((change, index) => (
-                            <li key={index}>{change}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {note.markdownContent && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-2">Details</h4>
-                        <div className="prose prose-sm max-w-none text-muted-foreground">
-                          <ReactMarkdown>{note.markdownContent}</ReactMarkdown>
-                        </div>
+                    {note.content && (
+                      <div className="prose prose-sm max-w-none text-muted-foreground">
+                        <ReactMarkdown>{note.content}</ReactMarkdown>
                       </div>
                     )}
                     

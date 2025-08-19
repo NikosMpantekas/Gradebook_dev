@@ -22,6 +22,7 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Spinner } from '../ui/spinner';
 import { API_URL } from '../../config/appConfig';
 
 const SchoolPermissionsManager = () => {
@@ -246,7 +247,7 @@ const SchoolPermissionsManager = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <Spinner className="text-primary" />
         <p className="text-muted-foreground">Loading school permissions...</p>
       </div>
     );

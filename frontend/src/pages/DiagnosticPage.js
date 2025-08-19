@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
+import { Spinner } from '../components/ui/spinner';
 import { API_URL } from '../config/appConfig';
 
 const DiagnosticPage = () => {
@@ -295,7 +296,7 @@ const DiagnosticPage = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <Spinner className="text-primary" />
         <p className="text-muted-foreground">Running system diagnostics...</p>
       </div>
     );

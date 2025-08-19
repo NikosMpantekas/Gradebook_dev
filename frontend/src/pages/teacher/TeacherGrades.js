@@ -31,6 +31,7 @@ import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { Checkbox } from '../../components/ui/checkbox';
+import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
 
 const TeacherGrades = () => {
@@ -288,7 +289,7 @@ const TeacherGrades = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <Spinner className="text-primary" />
         <p className="text-muted-foreground">Loading grades...</p>
       </div>
     );

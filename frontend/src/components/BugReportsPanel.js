@@ -123,7 +123,7 @@ const BugReportsPanel = ({ openContactForm }) => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-2 border-gray-600 dark:border-gray-400">
         <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </CardContent>
@@ -179,7 +179,7 @@ const BugReportsPanel = ({ openContactForm }) => {
       <CardContent>
         <div className="space-y-4">
           {messages.map((message) => (
-            <div key={message._id} className="border rounded-lg overflow-hidden">
+            <div key={message._id} className="border-2 border-gray-600 dark:border-gray-400 rounded-lg overflow-hidden">
               <Collapsible open={expandedId === message._id}>
                 <CollapsibleTrigger asChild>
                   <div 

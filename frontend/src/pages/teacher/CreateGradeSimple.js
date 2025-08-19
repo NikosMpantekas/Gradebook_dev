@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
 
 const CreateGradeSimple = () => {
@@ -397,7 +398,7 @@ const CreateGradeSimple = () => {
         <CardContent>
           {loadingFilters ? (
             <div className="flex justify-center items-center p-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <Spinner className="text-primary" />
               <span className="ml-2">Loading filter options...</span>
             </div>
           ) : (
@@ -491,7 +492,7 @@ const CreateGradeSimple = () => {
                       <SelectContent>
                         {loadingStudents ? (
                           <div className="flex items-center justify-center p-4">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            <Spinner className="text-primary" />
                             <span className="ml-2">Loading students...</span>
                           </div>
                         ) : students.length === 0 ? (

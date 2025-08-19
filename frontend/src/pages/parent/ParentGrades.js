@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
 
 const ParentGrades = () => {
@@ -124,7 +125,7 @@ const ParentGrades = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <Spinner className="text-primary" />
         <p className="text-muted-foreground">Loading student grades...</p>
       </div>
     );

@@ -21,6 +21,7 @@ import { Badge } from '../../../components/ui/badge';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Spinner } from '../../../components/ui/spinner';
 import { API_URL } from '../../../config/appConfig';
 
 const NotificationRecipients = ({ 
@@ -121,7 +122,7 @@ const NotificationRecipients = ({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+        <Spinner className="text-primary" />
         <p className="text-sm text-muted-foreground">Loading recipients...</p>
       </div>
     );

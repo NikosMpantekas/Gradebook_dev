@@ -41,6 +41,7 @@ import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import { Label } from '../components/ui/label';
+import { Spinner } from '../components/ui/spinner';
 
 const UnifiedDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -178,7 +179,7 @@ const UnifiedDashboard = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <Spinner className="text-primary" />
         <p className="text-muted-foreground">Loading your dashboard...</p>
       </div>
     );

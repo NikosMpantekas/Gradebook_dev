@@ -408,7 +408,7 @@ const StudentDashboard = () => {
           <CardContent>
             {panelLoading.notifications ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <Spinner className="text-primary" />
               </div>
             ) : dashboardData.notifications.length > 0 ? (
               <div className="space-y-4">
