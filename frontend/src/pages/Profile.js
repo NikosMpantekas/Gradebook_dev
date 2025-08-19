@@ -28,7 +28,6 @@ import { Spinner } from '../components/ui/spinner';
 import { updateProfile } from '../features/auth/authSlice';
 import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
-import PushNotificationSettings from '../components/PushNotificationSettings';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -413,18 +412,6 @@ const Profile = () => {
             </Card>
           )}
 
-          {/* Push Notification Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Bell className="h-5 w-5" />
-                <span>Push Notifications</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PushNotificationSettings />
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

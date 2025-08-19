@@ -387,6 +387,80 @@ class PushNotificationManager {
   }
 
   /**
+   * Check if user has active push subscription
+   */
+  async hasActiveSubscription() {
+    try {
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      if (!registration || !registration.pushManager) {
+        return false;
+      }
+
+      const subscription = await registration.pushManager.getSubscription();
+      return !!subscription;
+    } catch (error) {
+      console.error('[PushManager] Error checking subscription status:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Disable push notifications (unsubscribe)
+   */
+  async disablePushNotifications() {
+    try {
+      console.log('[PushManager] Disabling push notifications...');
+      
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      if (!registration || !registration.pushManager) {
+        console.log('[PushManager] No service worker registration found');
+        return { success: true, message: 'No subscription to remove' };
+      }
+
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        console.log('[PushManager] Unsubscribing from push notifications');
+        await subscription.unsubscribe();
+        console.log('[PushManager] Successfully unsubscribed from push notifications');
+      }
+
+      return { success: true, message: 'Push notifications disabled' };
+    } catch (error) {
+      console.error('[PushManager] Error disabling push notifications:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Clear existing subscription to force fresh permission prompt
+   */
+  async clearExistingSubscription() {
+    try {
+      console.log('[PushManager] Clearing existing subscription to trigger fresh permission...');
+      
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      if (!registration || !registration.pushManager) {
+        console.log('[PushManager] No service worker registration found');
+        return { success: true };
+      }
+
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        console.log('[PushManager] Clearing existing subscription');
+        await subscription.unsubscribe();
+        console.log('[PushManager] Existing subscription cleared - fresh permission prompt will be shown');
+      } else {
+        console.log('[PushManager] No existing subscription found');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('[PushManager] Error clearing existing subscription:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Get auth token from localStorage
    */
   _getAuthToken() {
