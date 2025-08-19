@@ -37,8 +37,28 @@ const notificationSchema = mongoose.Schema(
       index: true, // Index for performance
     },
     recipients: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      // Individual recipient tracking states
+      isRead: {
+        type: Boolean,
+        default: false
+      },
+      isSeen: {
+        type: Boolean, 
+        default: false
+      },
+      readAt: {
+        type: Date,
+        default: null
+      },
+      seenAt: {
+        type: Date,
+        default: null
+      }
     }],
     // CLASS-BASED FILTERING SYSTEM - New approach using classes
     classes: [{
@@ -83,7 +103,7 @@ const notificationSchema = mongoose.Schema(
       enum: ['draft', 'sent', 'expired', 'deleted'],
       default: 'sent'
     },
-    // Read tracking for multiple recipients
+    // Legacy read tracking - kept for backward compatibility
     readBy: [{
       user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -107,6 +127,10 @@ const notificationSchema = mongoose.Schema(
       read: {
         type: Number,
         default: 0
+      },
+      seen: {
+        type: Number,
+        default: 0
       }
     }
   },
@@ -117,7 +141,7 @@ const notificationSchema = mongoose.Schema(
 
 // Index for improved query performance when filtering by schoolId
 notificationSchema.index({ schoolId: 1, createdAt: -1 });
-notificationSchema.index({ recipients: 1, createdAt: -1 });
+notificationSchema.index({ 'recipients.user': 1, createdAt: -1 });
 notificationSchema.index({ sender: 1, createdAt: -1 });
 notificationSchema.index({ classes: 1 });
 notificationSchema.index({ schoolBranches: 1 });
@@ -138,6 +162,8 @@ notificationSchema.pre('save', function(next) {
   // Set total recipients count
   if (this.isModified('recipients')) {
     this.deliveryStats.totalRecipients = this.recipients.length;
+    this.deliveryStats.read = this.recipients.filter(r => r.isRead).length;
+    this.deliveryStats.seen = this.recipients.filter(r => r.isSeen).length;
   }
   
   next();
@@ -145,17 +171,42 @@ notificationSchema.pre('save', function(next) {
 
 // Method to mark notification as read by a user
 notificationSchema.methods.markAsReadBy = function(userId) {
-  const alreadyRead = this.readBy.some(r => r.user.toString() === userId.toString());
-  if (!alreadyRead) {
-    this.readBy.push({ user: userId, readAt: new Date() });
-    this.deliveryStats.read = this.readBy.length;
+  const recipient = this.recipients.find(r => r.user.toString() === userId.toString());
+  if (recipient && !recipient.isRead) {
+    recipient.isRead = true;
+    recipient.readAt = new Date();
+    this.deliveryStats.read = this.recipients.filter(r => r.isRead).length;
+    
+    // Also update legacy readBy for backward compatibility
+    const alreadyRead = this.readBy.some(r => r.user.toString() === userId.toString());
+    if (!alreadyRead) {
+      this.readBy.push({ user: userId, readAt: new Date() });
+    }
+  }
+  return this.save();
+};
+
+// Method to mark notification as seen by a user
+notificationSchema.methods.markAsSeenBy = function(userId) {
+  const recipient = this.recipients.find(r => r.user.toString() === userId.toString());
+  if (recipient && !recipient.isSeen) {
+    recipient.isSeen = true;
+    recipient.seenAt = new Date();
+    this.deliveryStats.seen = this.recipients.filter(r => r.isSeen).length;
   }
   return this.save();
 };
 
 // Method to check if user has read the notification
 notificationSchema.methods.isReadBy = function(userId) {
-  return this.readBy.some(r => r.user.toString() === userId.toString());
+  const recipient = this.recipients.find(r => r.user.toString() === userId.toString());
+  return recipient ? recipient.isRead : false;
+};
+
+// Method to check if user has seen the notification
+notificationSchema.methods.isSeenBy = function(userId) {
+  const recipient = this.recipients.find(r => r.user.toString() === userId.toString());
+  return recipient ? recipient.isSeen : false;
 };
 
 module.exports = mongoose.model('Notification', notificationSchema);

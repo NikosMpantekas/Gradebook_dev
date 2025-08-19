@@ -7,6 +7,7 @@ const {
   getAllNotifications,
   getSentNotifications,
   markNotificationRead,
+  markNotificationSeen,
   getNotificationById,
   deleteNotification,
   createPushSubscription
@@ -25,6 +26,7 @@ router.get('/vapid-public-key', protect, getVapidPublicKey);
 router.get('/sent', protect, canSendNotifications, getSentNotifications);
 router.get('/:id', protect, getNotificationById);
 router.put('/:id/read', protect, markNotificationRead);
+router.put('/:id/seen', protect, markNotificationSeen);
 
 // Create notification - teachers and admins only
 router.post('/', protect, canSendNotifications, createNotification);
