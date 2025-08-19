@@ -151,7 +151,10 @@ const EditUser = () => {
       
       if (parentsResponse.ok) {
         const parentsData = await parentsResponse.json();
+        console.log('[FETCH_PARENT_DATA] Available parents response:', parentsData);
         setAvailableParents(parentsData.parents || []);
+      } else {
+        console.error('[FETCH_PARENT_DATA] Failed to fetch available parents:', parentsResponse.status);
       }
       
       // Fetch student's linked parents
@@ -164,7 +167,12 @@ const EditUser = () => {
       
       if (linkedResponse.ok) {
         const linkedData = await linkedResponse.json();
-        setLinkedParents(linkedData.linkedParents || []);
+        console.log('[FETCH_PARENT_DATA] Linked parents response:', linkedData);
+        console.log('[FETCH_PARENT_DATA] Setting linked parents to:', linkedData.parents || []);
+        // FIX: Backend returns 'parents' not 'linkedParents'
+        setLinkedParents(linkedData.parents || []);
+      } else {
+        console.error('[FETCH_PARENT_DATA] Failed to fetch linked parents:', linkedResponse.status);
       }
       
     } catch (error) {
