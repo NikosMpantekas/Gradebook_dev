@@ -54,21 +54,41 @@ class PushNotificationSettings extends Component {
    */
   async initializePushManager() {
     try {
+      console.log('[PushSettings] STARTING INITIALIZATION...');
+      
       // Import PushNotificationManager dynamically
       const { default: PushNotificationManager } = await import('../services/PushNotificationManager');
+      console.log('[PushSettings] PushNotificationManager imported successfully');
       
       this.pushManager = new PushNotificationManager();
+      console.log('[PushSettings] PushNotificationManager instance created');
       
       // Check support and platform
       const isSupported = this.pushManager.isSupported();
       const platform = this.pushManager.detectPlatform();
       const isPWA = this.pushManager.isPWAMode();
       
-      console.log('[PushSettings] Push manager initialized:', {
+      console.log('[PushSettings] CRITICAL RESULTS:', {
         isSupported,
         platform,
-        isPWA
+        isPWA,
+        userAgent: navigator.userAgent,
+        serviceWorkerSupported: 'serviceWorker' in navigator,
+        notificationSupported: 'Notification' in window,
+        pushManagerSupported: 'PushManager' in window
       });
+      
+      // FORCE SUPPORT FOR iOS 18.6 DEBUGGING
+      if (navigator.userAgent.includes('iPhone OS 18_6') && !isSupported) {
+        console.error('[PushSettings] FORCING SUPPORT FOR iOS 18.6 - ORIGINAL DETECTION FAILED');
+        this.setState({
+          isSupported: true,
+          platform,
+          isPWA,
+          error: 'Forced support for iOS 18.6 - check console for details'
+        });
+        return;
+      }
       
       this.setState({
         isSupported,
@@ -77,9 +97,9 @@ class PushNotificationSettings extends Component {
       });
       
     } catch (error) {
-      console.error('[PushSettings] Failed to initialize push manager:', error);
+      console.error('[PushSettings] CRITICAL ERROR in initialization:', error);
       this.setState({
-        error: 'Failed to initialize push notifications',
+        error: `Failed to initialize: ${error.message}`,
         isSupported: false
       });
     }

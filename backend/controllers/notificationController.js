@@ -282,69 +282,48 @@ const createNotification = asyncHandler(async (req, res) => {
     newNotification.deliveryStats.seen = 0;
     await newNotification.save();
 
-    // Find modern push subscriptions for recipients using new model
-    console.log('NOTIFICATION_CREATE', 'Looking for push subscriptions with query:', {
-      userId: { $in: uniqueRecipients },
-      isActive: true,
-      recipientCount: uniqueRecipients.length,
-      recipientIds: uniqueRecipients.map(id => id.toString())
-    });
-
-    const subscriptions = await PushSubscription.find({
-      userId: { $in: uniqueRecipients },
-      isActive: true
+    // Find web push subscriptions for recipients using Subscription model
+    const Subscription = require('../models/subscriptionModel');
+    const subscriptions = await Subscription.find({
+      user: { $in: uniqueRecipients }
     });
 
     console.log('NOTIFICATION_CREATE', `Found ${subscriptions.length} push subscriptions`);
-    
-    // Debug: Show total subscriptions in database
-    const totalSubscriptions = await PushSubscription.countDocuments();
-    const activeSubscriptions = await PushSubscription.countDocuments({ isActive: true });
-    console.log('NOTIFICATION_CREATE', 'Subscription debug info:', {
-      totalInDatabase: totalSubscriptions,
-      activeInDatabase: activeSubscriptions,
-      foundForRecipients: subscriptions.length
-    });
 
-    // Send push notifications using modern push service
-    if (subscriptions.length > 0 && pushService) {
-      try {
-        // CRITICAL FIX: Include important flag in push notification
-        const isImportant = newNotification.urgent || newNotification.isImportant;
-        const importantPrefix = isImportant ? "🔥 IMPORTANT: " : "";
-        
-        const pushPayload = {
-          title: `${importantPrefix}${newNotification.title}`,
+    // Send push notifications (if web push is enabled)
+    if (subscriptions.length > 0) {
+      const webpush = require('web-push');
+      
+      const pushPromises = subscriptions.map(subscription => {
+        const payload = JSON.stringify({
+          title: newNotification.title,
           body: newNotification.message.substring(0, 100),
-          icon: '/logo192.png',
-          badge: '/badge-icon.png',
-          url: `/app/notifications/${newNotification._id}`,
-          notificationId: newNotification._id.toString(),
-          urgent: newNotification.urgent || isImportant,
-          timestamp: Date.now()
-        };
-
-        console.log('NOTIFICATION_CREATE', 'Sending push notifications with modern service:', {
-          subscriptionCount: subscriptions.length,
-          payloadTitle: pushPayload.title.substring(0, 50) + '...',
-          urgent: pushPayload.urgent
+          icon: '/icon-192x192.png',
+          badge: '/icon-192x192.png',
+          data: {
+            notificationId: newNotification._id.toString(),
+            url: `/notifications/${newNotification._id}`
+          }
         });
 
-        // Use modern push service with proper VAPID authentication
-        const pushResults = await pushService.sendToMultipleSubscriptions(
-          subscriptions,
-          pushPayload,
-          { ttl: 86400, urgency: pushPayload.urgent ? 'high' : 'normal' }
-        );
+        return webpush.sendNotification(subscription, payload)
+          .catch(error => {
+            console.error('NOTIFICATION_CREATE', `Push notification failed for subscription ${subscription._id}:`, error.message);
+          });
+      });
 
-        console.log('NOTIFICATION_CREATE', `Push notifications completed: ${pushResults.successful} success, ${pushResults.failed} failures out of ${pushResults.total} total`);
-
-      } catch (error) {
-        console.error('NOTIFICATION_CREATE', `Error sending push notifications: ${error.message}`);
-      }
+      await Promise.allSettled(pushPromises);
+      console.log('NOTIFICATION_CREATE', 'Push notifications sent');
     }
 
-    res.status(201).json(newNotification);
+    // Populate the response
+    const populatedNotification = await Notification.findById(newNotification._id)
+      .populate('recipients', 'name email role')
+      .populate('classes', 'name schoolBranch direction subject')
+      .populate('schoolBranches', 'name location');
+
+    console.log('NOTIFICATION_CREATE', `Notification created successfully with ${uniqueRecipients.length} recipients`);
+    res.status(201).json(populatedNotification);
 
   } catch (error) {
     console.error('NOTIFICATION_CREATE', `Error creating notification: ${error.message}`, {
