@@ -288,6 +288,12 @@ const createNotification = asyncHandler(async (req, res) => {
     // CRITICAL: ALWAYS send to validated recipients (tied to user ID)
     // Push service is always active - user preference controls receiving only
     console.log('[PUSH_SECURITY] Processing ALL validated recipients for push notifications');
+    
+    // Get actual user objects for push notifications
+    const validatedRecipients = await User.find({
+      _id: { $in: uniqueRecipients }
+    }).select('_id name email role');
+    
     const recipientUserIds = validatedRecipients.map(recipient => {
       console.log(`[PUSH_SECURITY] User ${recipient._id} (${recipient.name}): will receive push if subscribed`);
       return recipient._id;
