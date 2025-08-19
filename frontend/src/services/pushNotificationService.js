@@ -187,11 +187,21 @@ export const initializePushNotifications = async () => {
       throw new Error(error);
     }
 
+    // iOS CRITICAL: Check PWA mode requirement
+    if (isIOS && !isStandalone) {
+      const error = 'iOS push notifications require PWA mode (Add to Home Screen)';
+      console.error('[Push Service] iOS PWA Error:', error);
+      console.log('[Push Service] iOS PWA Instructions: Tap Share button → Add to Home Screen');
+      // Don't throw error, just warn - let user decide if they want to continue
+    }
+
     // iOS DEBUGGING: Log notification permission state
     if (isIOS) {
       console.log('[Push Service] iOS Notification Permission State:', {
         permission: Notification.permission,
-        canRequestPermission: typeof Notification.requestPermission === 'function'
+        canRequestPermission: typeof Notification.requestPermission === 'function',
+        isStandalone,
+        userAgent: navigator.userAgent
       });
     }
 
