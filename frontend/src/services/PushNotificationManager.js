@@ -26,6 +26,27 @@ class PushNotificationManager {
   }
 
   /**
+   * Public method to check if push notifications are supported
+   */
+  isSupported() {
+    return this.isSupported;
+  }
+
+  /**
+   * Public method to get platform detection info
+   */
+  detectPlatform() {
+    return this.platformInfo;
+  }
+
+  /**
+   * Public method to check if in PWA mode
+   */
+  isPWAMode() {
+    return this.platformInfo.isStandalone;
+  }
+
+  /**
    * Detect platform and capabilities
    */
   _detectPlatform() {
@@ -48,16 +69,54 @@ class PushNotificationManager {
    * Check if push notifications are supported on current platform
    */
   _checkSupport() {
-    const { supportsServiceWorker, supportsPushManager, supportsNotifications } = this.platformInfo;
+    const { 
+      supportsServiceWorker, 
+      supportsPushManager, 
+      supportsNotifications,
+      isIOS,
+      isSafari,
+      isAndroid,
+      isChrome,
+      isFirefox
+    } = this.platformInfo;
     
-    this.isSupported = supportsServiceWorker && supportsPushManager && supportsNotifications;
+    // More lenient support check for mobile devices
+    let isSupported = false;
+    
+    // iOS Safari 16.4+ supports push notifications in PWA mode
+    if (isIOS && isSafari) {
+      // Check if we're in standalone/PWA mode or if push is available
+      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      isSupported = supportsServiceWorker && supportsNotifications && (isStandalone || supportsPushManager);
+      console.log('[PushManager] iOS Safari detection:', { isStandalone, supportsServiceWorker, supportsNotifications, supportsPushManager });
+    }
+    // Android Chrome and other mobile browsers
+    else if (isAndroid || isChrome || isFirefox) {
+      isSupported = supportsServiceWorker && supportsPushManager && supportsNotifications;
+    }
+    // Desktop browsers
+    else {
+      isSupported = supportsServiceWorker && supportsPushManager && supportsNotifications;
+    }
+    
+    // Fallback: if standard checks pass, assume supported
+    if (!isSupported && supportsServiceWorker && supportsNotifications) {
+      console.log('[PushManager] Fallback support check - allowing based on service worker + notifications');
+      isSupported = true;
+    }
+    
+    this.isSupported = isSupported;
     
     console.log('[PushManager] Support check:', {
       serviceWorker: supportsServiceWorker,
       pushManager: supportsPushManager,
       notifications: supportsNotifications,
+      isIOS,
+      isSafari,
+      isAndroid,
+      isChrome,
       overall: this.isSupported,
-      platform: this.platformInfo
+      userAgent: navigator.userAgent
     });
 
     return this.isSupported;
