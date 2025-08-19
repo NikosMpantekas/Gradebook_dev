@@ -7,8 +7,7 @@ import {
   getSentNotifications,
   markNotificationAsRead,
   deleteNotification,
-  updateNotification,
-  reset,
+  updateNotification
 } from '../features/notifications/notificationSlice';
 import NotificationsList from '../components/notifications/NotificationsList';
 import NotificationEditDialog from '../components/notifications/NotificationEditDialog';
@@ -16,13 +15,14 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
+import { Spinner } from '../components/ui/spinner';
 
 const Notifications = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { notifications, isLoading, isError, isSuccess, message } = useSelector(
+  const { notifications, isLoading, isError } = useSelector(
     (state) => state.notifications
   );
 
@@ -195,7 +195,9 @@ const Notifications = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <Spinner>
+          <Loader2 className="h-12 w-12 text-primary" />
+        </Spinner>
       </div>
     );
   }

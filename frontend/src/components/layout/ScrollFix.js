@@ -27,7 +27,6 @@ const ScrollFix = () => {
       main {
         overflow-y: auto !important;
         min-height: calc(100vh - 64px);
-        padding-bottom: 2rem !important;
       }
       
       /* Ensure inputs and select boxes are properly accessible */

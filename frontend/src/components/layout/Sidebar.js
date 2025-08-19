@@ -52,6 +52,8 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   };
   const handleLogoutCancel = () => setLogoutDialogOpen(false);
   
+
+  
   // User role checks
   const isSuperAdmin = user?.role === 'superadmin';
   const isAdmin = user?.role === 'admin' || isSuperAdmin;
@@ -341,7 +343,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       <Sheet open={mobileOpen} onOpenChange={handleDrawerToggle}>
         <SheetContent 
           side="left" 
-          className="w-64 p-0 bg-card border-r border-border overflow-hidden"
+          className="w-64 p-0 bg-card border-r border-border overflow-hidden sidebar-animation"
         >
           <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
             {sidebarContent}
