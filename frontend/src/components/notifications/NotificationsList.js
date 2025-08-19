@@ -143,16 +143,32 @@ const NotificationsList = ({
     <TooltipProvider>
       <div className="space-y-4">
         {validNotifications.map((notification) => {
+          // Debug notification data
+          console.log('NotificationsList - Raw notification data:', {
+            id: notification._id,
+            isSeen: notification.isSeen,
+            seen: notification.seen,
+            isRead: notification.isRead,
+            read: notification.read
+          });
+          
           const safeNotification = {
             _id: notification._id || 'unknown',
             title: notification.title || 'Untitled',
             message: notification.message || 'No message',
-            isRead: Boolean(notification.isRead),
-            isSeen: Boolean(notification.isSeen),
+            isRead: Boolean(notification.isRead || notification.read),
+            isSeen: Boolean(notification.isSeen || notification.seen),
             isImportant: Boolean(notification.isImportant || notification.urgent),
             sender: notification.sender || { name: 'Unknown sender' },
             createdAt: notification.createdAt || new Date().toISOString()
           };
+
+          console.log('NotificationsList - Processed safeNotification:', {
+            id: safeNotification._id,
+            isRead: safeNotification.isRead,
+            isSeen: safeNotification.isSeen,
+            showSeenButton: !safeNotification.isSeen && onMarkAsSeen
+          });
 
           return (
             <Card 

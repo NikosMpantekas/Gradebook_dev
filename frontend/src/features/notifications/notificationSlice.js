@@ -163,6 +163,7 @@ export const markNotificationAsSeen = createAsyncThunk(
     try {
       const token = thunkAPI.getState().auth.user.token;
       const response = await notificationService.markNotificationAsSeen(id, token);
+      console.log('markNotificationAsSeen API response:', response);
       return {
         ...response,
         id: id
@@ -347,16 +348,23 @@ export const notificationSlice = createSlice({
       .addCase(markNotificationAsSeen.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
+        console.log('Redux: markNotificationAsSeen fulfilled', action.payload);
+        
+        // Update notifications array
         if (state.notifications && state.notifications.length > 0) {
-          state.notifications = state.notifications.map(notification => {
+          state.notifications = state.notifications.map((notification) => {
             if (notification._id === action.payload.id) {
-              return { ...notification, isSeen: true };
+              console.log('Redux: Updating notification in array', notification._id);
+              return { ...notification, isSeen: true, seen: true };
             }
             return notification;
           });
         }
+        
+        // Update single notification
         if (state.notification && state.notification._id === action.payload.id) {
-          state.notification = { ...state.notification, isSeen: true };
+          console.log('Redux: Updating single notification', state.notification._id);
+          state.notification = { ...state.notification, isSeen: true, seen: true };
         }
       })
       .addCase(markNotificationAsSeen.rejected, (state, action) => {
