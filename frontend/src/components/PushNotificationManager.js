@@ -360,6 +360,40 @@ const PushNotificationManager = () => {
                 </div>
               )}
               
+              {pushSubscription && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      // Send test push notification
+                      await axios.post(`${API_URL}/api/notifications/test-push`, {
+                        userId: user._id
+                      }, {
+                        headers: {
+                          Authorization: `Bearer ${user.token}`
+                        }
+                      });
+                      
+                      setNotification({
+                        open: true,
+                        message: 'Test push notification sent! Check if you received it.',
+                        severity: 'info'
+                      });
+                    } catch (err) {
+                      setNotification({
+                        open: true,
+                        message: 'Failed to send test notification',
+                        severity: 'error'
+                      });
+                    }
+                  }}
+                  className="w-full"
+                >
+                  Send Test Notification
+                </Button>
+              )}
+
               <div className="text-xs text-muted-foreground space-y-1">
                 <p>• Notifications are sent securely through your browser</p>
                 <p>• You can disable them at any time</p>
