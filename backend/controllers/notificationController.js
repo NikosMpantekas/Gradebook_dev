@@ -251,9 +251,19 @@ const createNotification = asyncHandler(async (req, res) => {
 
     console.log('NOTIFICATION_CREATE', `Found ${uniqueRecipients.length} unique recipients`);
 
-    // Update notification with final recipient list
-    newNotification.recipients = uniqueRecipients;
-    newNotification.deliveryStats.totalRecipients = uniqueRecipients.length;
+    // Update notification with final recipient list - convert to new structure
+    const recipientObjects = uniqueRecipients.map(recipientId => ({
+      user: recipientId,
+      isRead: false,
+      isSeen: false,
+      readAt: null,
+      seenAt: null
+    }));
+    
+    newNotification.recipients = recipientObjects;
+    newNotification.deliveryStats.totalRecipients = recipientObjects.length;
+    newNotification.deliveryStats.read = 0;
+    newNotification.deliveryStats.seen = 0;
     await newNotification.save();
 
     // Find web push subscriptions for recipients
@@ -356,7 +366,7 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // Populate the response
     const populatedNotification = await Notification.findById(newNotification._id)
-      .populate('recipients', 'name email role')
+      .populate('recipients.user', 'name email role')
       .populate('classes', 'name schoolBranch direction subject')
       .populate('schoolBranches', 'name location');
 
@@ -392,66 +402,17 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     console.log(`[SECURITY] Applying strict role filtering for ${req.user.role} user ${req.user._id}`);
     
     if (req.user.role === 'student') {
-      // STUDENTS: Can ONLY see notifications specifically intended for them - NO cross-role visibility
-      query.$and = [
-        {
-          $or: [
-            { recipients: req.user._id }, // Directly addressed to this student
-            {
-              $and: [
-                { targetRole: { $in: ['student', 'all'] } }, // Only student/all roles
-                {
-                  $or: [
-                    { classes: { $in: req.user.classes || [] } }, // Their classes only
-                    { schoolBranches: req.user.schoolBranch }, // Their branch only
-                    { sendToAll: true } // School-wide announcements
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        // SECURITY: Exclude any notifications with teacher-only or admin-only roles
-        { targetRole: { $nin: ['teacher', 'admin'] } },
-        // SECURITY: Exclude notifications sent by teachers to other teachers
-        {
-          $or: [
-            { senderRole: { $ne: 'teacher' } },
-            { targetRole: { $in: ['student', 'all'] } }
-          ]
-        }
-      ];
+      // STUDENTS: Can ONLY see notifications where they are direct recipients
+      query['recipients.user'] = req.user._id;
+      console.log(`[SECURITY] Student ${req.user._id} restricted to direct recipient notifications only`);
     }
     else if (req.user.role === 'teacher') {
-      // TEACHERS: Can see notifications they sent OR that are specifically targeted to them
-      query.$and = [
-        {
-          $or: [
-            { sender: req.user._id }, // Notifications they created
-            { recipients: req.user._id }, // Directly addressed to this teacher
-            {
-              $and: [
-                { targetRole: { $in: ['teacher', 'all'] } }, // Only teacher/all roles
-                {
-                  $or: [
-                    { classes: { $in: req.user.classes || [] } }, // Classes they teach
-                    { schoolBranches: req.user.schoolBranch }, // Their branch
-                    { sendToAll: true } // School-wide announcements
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        // SECURITY: Exclude student-only notifications they didn't create
-        {
-          $or: [
-            { sender: req.user._id }, // They created it
-            { targetRole: { $nin: ['student'] } }, // Not student-only
-            { targetRole: { $in: ['teacher', 'all'] } } // Teacher-allowed roles
-          ]
-        }
+      // TEACHERS: Can see notifications they sent OR where they are direct recipients
+      query.$or = [
+        { sender: req.user._id }, // Notifications they created
+        { 'recipients.user': req.user._id } // Directly addressed to this teacher
       ];
+      console.log(`[SECURITY] Teacher ${req.user._id} restricted to sent notifications and direct recipient notifications`);
     }
     else if (req.user.role === 'admin') {
       // ADMINS: Can see all notifications in their school (no additional restrictions)
@@ -459,32 +420,9 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       console.log('[SECURITY] Admin user - full school access granted');
     }
     else if (req.user.role === 'parent') {
-      // PARENTS: Can ONLY see notifications sent directly to them - STRICT SEPARATION from student notifications
-      console.log('[SECURITY] Parent user - applying STRICT parent-only filtering for user:', req.user._id);
-      
-      // CRITICAL: Parents can ONLY see notifications directly addressed to them
-      // NO ACCESS to student notifications - complete separation as requested
-      query.$and = [
-        {
-          $or: [
-            // ONLY notifications sent directly to this parent
-            { recipients: req.user._id },
-            // ONLY notifications with parent role targeting
-            {
-              $and: [
-                { targetRole: { $in: ['parent', 'all'] } },
-                { recipients: { $exists: false, $eq: [] } } // General announcements without specific recipients
-              ]
-            }
-          ]
-        },
-        // SECURITY: Explicitly exclude any student-targeted notifications
-        { targetRole: { $nin: ['student'] } },
-        // SECURITY: Exclude notifications sent by students
-        { senderRole: { $ne: 'student' } }
-      ];
-      
-      console.log(`[SECURITY] Parent ${req.user._id} STRICT SEPARATION enforced`);
+      // PARENTS: Can ONLY see notifications where they are direct recipients
+      query['recipients.user'] = req.user._id;
+      console.log(`[SECURITY] Parent ${req.user._id} restricted to direct recipient notifications only`);
     }
     else {
       // SECURITY: Unknown role - deny access
@@ -500,20 +438,21 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(limit)
       .populate('sender', 'name')
-      .populate('recipients', 'name')
+      .populate('recipients.user', 'name')
       .populate('schoolId', 'name')
       .populate('classes', 'name');
     
     console.log(`Found ${notifications.length} notifications`);
     
-    // Compute isRead for each notification for the current user
+    // Compute isRead and isSeen for each notification for the current user
     const notificationsWithReadStatus = notifications.map(notification => {
       const notificationObj = notification.toObject();
-      // Check if current user has read this notification by checking readBy array
-      const readEntry = notification.readBy?.find(entry => 
-        entry.userId && entry.userId.toString() === user._id.toString()
+      // Check if current user has read/seen this notification in recipients array
+      const recipient = notification.recipients?.find(r => 
+        r.user && r.user.toString() === user._id.toString()
       );
-      notificationObj.isRead = !!readEntry;
+      notificationObj.isRead = recipient ? recipient.isRead : false;
+      notificationObj.isSeen = recipient ? recipient.isSeen : false;
       return notificationObj;
     });
     
@@ -543,10 +482,10 @@ const getSentNotifications = asyncHandler(async (req, res) => {
     
     console.log('NOTIFICATION_SENT', 'Query:', query);
     
-    // Find sent notifications with new class-based populate
+    // Find sent notifications with new recipient structure populate
     const sentNotifications = await Notification.find(query)
       .sort({ createdAt: -1 })
-      .populate('recipients', 'name email role')
+      .populate('recipients.user', 'name email role')
       .populate('classes', 'name schoolBranch direction subject')
       .populate('schoolBranches', 'name location')
       .populate('sender', 'name role')
@@ -559,7 +498,8 @@ const getSentNotifications = asyncHandler(async (req, res) => {
       ...notification,
       isRead: notification.readBy?.some(r => r.user.toString() === req.user._id.toString()) || false,
       totalRecipients: notification.deliveryStats?.totalRecipients || notification.recipients?.length || 0,
-      readCount: notification.deliveryStats?.read || 0
+      readCount: notification.deliveryStats?.read || 0,
+      seenCount: notification.deliveryStats?.seen || 0
     }));
     
     res.status(200).json(enrichedNotifications);
@@ -596,55 +536,18 @@ const markNotificationRead = asyncHandler(async (req, res) => {
     
     console.log('NOTIFICATION_READ', `Found notification: ${notification.title}`);
     
-    // Check if this user is a recipient using the new class-based system
+    // Check if this user is a recipient using the new recipient structure
     let isAuthorizedRecipient = false;
     
-    // Direct recipient check
-    const isDirectRecipient = notification.recipients.some(r => r.toString() === req.user._id.toString());
-    if (isDirectRecipient) {
+    // Direct recipient check with new structure
+    const recipientEntry = notification.recipients.find(r => r.user && r.user.toString() === req.user._id.toString());
+    if (recipientEntry) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_READ', 'User is direct recipient');
     }
     
-    // Role-based recipient check
-    if (!isAuthorizedRecipient && notification.targetRole && 
-        (notification.targetRole === req.user.role || notification.targetRole === 'all')) {
-      isAuthorizedRecipient = true;
-      console.log('NOTIFICATION_READ', `User matches target role: ${notification.targetRole}`);
-    }
-    
-    // Send to all check
-    if (!isAuthorizedRecipient && notification.sendToAll) {
-      isAuthorizedRecipient = true;
-      console.log('NOTIFICATION_READ', 'Notification is sent to all users');
-    }
-    
-    // Class-based recipient check
-    if (!isAuthorizedRecipient && notification.classes && notification.classes.length > 0) {
-      for (const classObj of notification.classes) {
-        const classStudents = classObj.students || [];
-        const classTeachers = classObj.teachers || [];
-        
-        if (classStudents.some(s => s.toString() === req.user._id.toString()) ||
-            classTeachers.some(t => t.toString() === req.user._id.toString())) {
-          isAuthorizedRecipient = true;
-          console.log('NOTIFICATION_READ', `User found in class: ${classObj.name || classObj._id}`);
-          break;
-        }
-      }
-    }
-    
-    // School branch based recipient check
-    if (!isAuthorizedRecipient && notification.schoolBranches && notification.schoolBranches.length > 0 && req.user.schoolBranch) {
-      const userSchoolBranch = req.user.schoolBranch.toString();
-      const hasMatchingBranch = notification.schoolBranches.some(branch => 
-        branch._id.toString() === userSchoolBranch
-      );
-      if (hasMatchingBranch) {
-        isAuthorizedRecipient = true;
-        console.log('NOTIFICATION_READ', 'User matches school branch criteria');
-      }
-    }
+    // NOTE: With new recipient structure, we only check direct recipients
+    // Legacy role-based and class-based checks removed since recipients are now explicit
     
     // Admin/superadmin can always mark as read
     if (!isAuthorizedRecipient && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
@@ -696,7 +599,7 @@ const getNotificationById = asyncHandler(async (req, res) => {
       schoolId: req.user.schoolId
     })
     .populate('sender', 'name')
-    .populate('recipients', 'name')
+    .populate('recipients.user', 'name')
     .populate('schoolId', 'name')
     .populate('classes', 'name');
     
@@ -705,7 +608,7 @@ const getNotificationById = asyncHandler(async (req, res) => {
       if (req.user.role === 'superadmin') {
         const adminNotification = await Notification.findById(notificationId)
           .populate('sender', 'name')
-          .populate('recipients', 'name')
+          .populate('recipients.user', 'name')
           .populate('schoolId', 'name')
           .populate('classes', 'name');
         
@@ -854,6 +757,7 @@ module.exports = {
   getAllNotifications,
   getSentNotifications,
   markNotificationRead,
+  markNotificationSeen,
   getNotificationById,
   deleteNotification,
   getVapidPublicKey,
