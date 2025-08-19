@@ -143,10 +143,22 @@ const PushNotificationManager = () => {
       // Get VAPID public key from backend - use API_URL for secure HTTPS in production
       console.log('[Push] Step 1: Fetching VAPID public key using API_URL:', API_URL);
       
-      const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`);
+      const vapidResponse = await axios.get(`${API_URL}/api/notifications/vapid-public-key`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+      console.log('[Push] VAPID response received:', {
+        status: vapidResponse.status,
+        statusText: vapidResponse.statusText,
+        data: vapidResponse.data,
+        headers: vapidResponse.headers
+      });
+      
       const vapidPublicKey = vapidResponse.data.vapidPublicKey;
       
       if (!vapidPublicKey) {
+        console.error('[Push] VAPID response missing vapidPublicKey:', vapidResponse.data);
         throw new Error('VAPID public key not received from server');
       }
       
@@ -205,6 +217,20 @@ const PushNotificationManager = () => {
       
     } catch (err) {
       console.error('[Push] Error subscribing to push notifications:', err);
+      
+      // Enhanced error logging
+      if (err.response) {
+        console.error('[Push] Error response details:', {
+          status: err.response.status,
+          statusText: err.response.statusText,
+          data: err.response.data,
+          headers: err.response.headers
+        });
+      } else if (err.request) {
+        console.error('[Push] Error request details:', err.request);
+      } else {
+        console.error('[Push] Error message:', err.message);
+      }
       
       // iOS-specific error handling
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
