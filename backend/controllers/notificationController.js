@@ -283,12 +283,28 @@ const createNotification = asyncHandler(async (req, res) => {
     await newNotification.save();
 
     // Find modern push subscriptions for recipients using new model
+    console.log('NOTIFICATION_CREATE', 'Looking for push subscriptions with query:', {
+      userId: { $in: uniqueRecipients },
+      isActive: true,
+      recipientCount: uniqueRecipients.length,
+      recipientIds: uniqueRecipients.map(id => id.toString())
+    });
+
     const subscriptions = await PushSubscription.find({
       userId: { $in: uniqueRecipients },
       isActive: true
     });
 
     console.log('NOTIFICATION_CREATE', `Found ${subscriptions.length} push subscriptions`);
+    
+    // Debug: Show total subscriptions in database
+    const totalSubscriptions = await PushSubscription.countDocuments();
+    const activeSubscriptions = await PushSubscription.countDocuments({ isActive: true });
+    console.log('NOTIFICATION_CREATE', 'Subscription debug info:', {
+      totalInDatabase: totalSubscriptions,
+      activeInDatabase: activeSubscriptions,
+      foundForRecipients: subscriptions.length
+    });
 
     // Send push notifications using modern push service
     if (subscriptions.length > 0 && pushService) {
