@@ -1486,11 +1486,16 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
       throw new Error('Student not found or not in your school');
     }
     
-    // Find all parent accounts linked to this student
+    console.log(`[GET_PARENTS_BY_STUDENT] Student ${student.name} has parentIds:`, student.parentIds);
+    
+    // Find all parent accounts linked to this student using the student's parentIds array
     const parents = await User.find({
+      _id: { $in: student.parentIds || [] },
       role: 'parent',
-      linkedStudentIds: req.params.studentId
+      schoolId: req.user.schoolId
     }).select('-password');
+    
+    console.log(`[GET_PARENTS_BY_STUDENT] Found ${parents.length} parents for student ${student.name}`);
     
     res.json({
       hasParents: parents.length > 0,
