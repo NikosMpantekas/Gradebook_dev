@@ -20,6 +20,13 @@ const {
   unlinkParentFromStudents,
   forgotPasswordRequest
 } = require('../controllers/userController');
+
+const {
+  linkParentToStudent,
+  unlinkParentFromStudent,
+  getAvailableParents,
+  getStudentParents,
+} = require('../controllers/parentController');
 const { protect, admin, canManageUsers } = require('../middleware/authMiddleware');
 
 // Public routes
@@ -166,5 +173,11 @@ router.get('/student/:studentId/parents', protect, admin, getParentsByStudent);
 router.get('/parent/students-data', protect, getStudentsDataForParent);
 router.get('/parent/:parentId/students', protect, admin, getStudentsByParent);
 router.delete('/parent/:parentId/students', protect, admin, unlinkParentFromStudents);
+
+// New parent-student linking routes
+router.post('/link-parent', protect, admin, linkParentToStudent);
+router.post('/unlink-parent', protect, admin, unlinkParentFromStudent);
+router.get('/available-parents', protect, admin, getAvailableParents);
+router.get('/student/:id/parents', protect, admin, getStudentParents);
 
 module.exports = router;

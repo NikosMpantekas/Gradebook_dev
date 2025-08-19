@@ -43,49 +43,52 @@ const ParentDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch students data
-      const studentsResponse = await fetch(`${API_URL}/api/users/my-students`, {
+      console.log('[PARENT_DASHBOARD] Fetching parent students and grades...');
+      
+      // Fetch parent's linked students and their grades in one call
+      const gradesResponse = await fetch(`${API_URL}/api/grades/parent/students`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (studentsResponse.ok) {
-        const studentsData = await studentsResponse.json();
-        setStudentsData(studentsData.students || []);
+      if (gradesResponse.ok) {
+        const gradesData = await gradesResponse.json();
+        console.log('[PARENT_DASHBOARD] Received grades data:', gradesData);
         
-        // Fetch recent grades for all students
-        if (studentsData.students && studentsData.students.length > 0) {
-          const gradesPromises = studentsData.students.map(student =>
-            fetch(`${API_URL}/api/grades/student/${student._id}/recent`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            })
-          );
+        if (gradesData.students) {
+          // Extract student information
+          const students = gradesData.students.map(item => item.student);
+          setStudentsData(students);
           
-          const gradesResponses = await Promise.all(gradesPromises);
+          // Extract and flatten all grades
           const allGrades = [];
-          
-          for (let i = 0; i < gradesResponses.length; i++) {
-            if (gradesResponses[i].ok) {
-              const gradesData = await gradesResponses[i].json();
-              if (gradesData.grades) {
-                const gradesWithStudent = gradesData.grades.map(grade => ({
-                  ...grade,
-                  studentName: studentsData.students[i].name
-                }));
-                allGrades.push(...gradesWithStudent);
-              }
+          gradesData.students.forEach(item => {
+            if (item.grades && item.grades.length > 0) {
+              const gradesWithStudent = item.grades.map(grade => ({
+                ...grade,
+                studentName: item.student.name,
+                studentId: item.student._id
+              }));
+              allGrades.push(...gradesWithStudent);
             }
-          }
+          });
           
           // Sort by date and take the most recent
-          allGrades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          allGrades.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
           setRecentGrades(allGrades.slice(0, 10));
+          
+          console.log(`[PARENT_DASHBOARD] Found ${students.length} students and ${allGrades.length} total grades`);
+        } else {
+          console.log('[PARENT_DASHBOARD] No students data in response');
+          setStudentsData([]);
+          setRecentGrades([]);
         }
+      } else {
+        const errorData = await gradesResponse.json();
+        console.error('[PARENT_DASHBOARD] Failed to fetch grades:', errorData);
+        setError(errorData.message || 'Failed to load student grades');
       }
 
       // Fetch notifications
