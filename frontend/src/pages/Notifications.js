@@ -135,6 +135,12 @@ const Notifications = () => {
       .unwrap()
       .then(() => {
         toast.success('Notification marked as seen');
+        // Force refresh notifications to get updated state
+        if (tabValue === 'received') {
+          dispatch(getMyNotifications());
+        } else {
+          dispatch(getSentNotifications());
+        }
         // Dispatch custom event to refresh header counts
         window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
       })
@@ -142,7 +148,7 @@ const Notifications = () => {
         console.error('Failed to mark notification as seen:', error);
         toast.error('Failed to mark notification as seen');
       });
-  }, [dispatch]);
+  }, [dispatch, tabValue]);
 
   // Handle edit notification
   const handleEdit = useCallback((event, notification) => {

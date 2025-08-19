@@ -153,14 +153,16 @@ const TeacherNotifications = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Update local state
+      // Update local state with both seen and isSeen properties for compatibility
       setNotifications(prev => 
         prev.map(notif => 
           notif._id === notificationId 
-            ? { ...notif, seen: true }
+            ? { ...notif, seen: true, isSeen: true }
             : notif
         )
       );
+      
+      console.log('Updated local state - notification marked as seen:', notificationId);
       
       toast.success('Notification marked as seen');
     } catch (error) {
