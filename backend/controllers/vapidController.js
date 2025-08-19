@@ -21,7 +21,7 @@ const getVapidPublicKey = asyncHandler(async (req, res) => {
   }
 
   console.log('[VAPID] Returning VAPID public key to client');
-  res.status(200).json({ publicKey: publicKey });
+  res.status(200).json({ vapidPublicKey: publicKey });
 });
 
 module.exports = {
