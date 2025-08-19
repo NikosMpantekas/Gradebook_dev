@@ -69,54 +69,16 @@ class PushNotificationManager {
    * Check if push notifications are supported on current platform
    */
   _checkSupport() {
-    const { 
-      supportsServiceWorker, 
-      supportsPushManager, 
-      supportsNotifications,
-      isIOS,
-      isSafari,
-      isAndroid,
-      isChrome,
-      isFirefox
-    } = this.platformInfo;
+    const { supportsServiceWorker, supportsNotifications } = this.platformInfo;
     
-    // More lenient support check for mobile devices
-    let isSupported = false;
-    
-    // iOS Safari 16.4+ supports push notifications in PWA mode
-    if (isIOS && isSafari) {
-      // Check if we're in standalone/PWA mode or if push is available
-      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-      isSupported = supportsServiceWorker && supportsNotifications && (isStandalone || supportsPushManager);
-      console.log('[PushManager] iOS Safari detection:', { isStandalone, supportsServiceWorker, supportsNotifications, supportsPushManager });
-    }
-    // Android Chrome and other mobile browsers
-    else if (isAndroid || isChrome || isFirefox) {
-      isSupported = supportsServiceWorker && supportsPushManager && supportsNotifications;
-    }
-    // Desktop browsers
-    else {
-      isSupported = supportsServiceWorker && supportsPushManager && supportsNotifications;
-    }
-    
-    // Fallback: if standard checks pass, assume supported
-    if (!isSupported && supportsServiceWorker && supportsNotifications) {
-      console.log('[PushManager] Fallback support check - allowing based on service worker + notifications');
-      isSupported = true;
-    }
-    
-    this.isSupported = isSupported;
+    // Simple and reliable support check - just need service workers and notifications
+    this.isSupported = supportsServiceWorker && supportsNotifications;
     
     console.log('[PushManager] Support check:', {
       serviceWorker: supportsServiceWorker,
-      pushManager: supportsPushManager,
       notifications: supportsNotifications,
-      isIOS,
-      isSafari,
-      isAndroid,
-      isChrome,
       overall: this.isSupported,
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent.substring(0, 100)
     });
 
     return this.isSupported;
@@ -606,9 +568,59 @@ class PushNotificationManager {
   }
 
   /**
-   * Test push notification (for debugging)
+   * Get current permission status
    */
-  async testNotification() {
+  async getPermissionStatus() {
+    return Notification?.permission || 'default';
+  }
+
+  /**
+   * Check if currently subscribed
+   */
+  async isSubscribed() {
+    if (!this.registration) {
+      await this.initialize();
+    }
+    await this._checkExistingSubscription();
+    return !!this.subscription;
+  }
+
+  /**
+   * Enable push notifications (subscribe)
+   */
+  async enablePushNotifications() {
+    try {
+      if (!this.registration) {
+        await this.initialize();
+      }
+      
+      await this.subscribe();
+      return { success: true };
+      
+    } catch (error) {
+      console.error('[PushManager] Enable failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Disable push notifications (unsubscribe)
+   */
+  async disablePushNotifications() {
+    try {
+      await this.unsubscribe();
+      return { success: true };
+      
+    } catch (error) {
+      console.error('[PushManager] Disable failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Send test notification
+   */
+  async sendTestNotification(payload = {}) {
     try {
       console.log('[PushManager] Sending test notification...');
       
@@ -624,8 +636,8 @@ class PushNotificationManager {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          title: 'Test Notification',
-          body: 'This is a test push notification',
+          title: payload.title || 'Test Notification',
+          body: payload.body || 'This is a test push notification',
           platform: this.platformInfo
         })
       });
@@ -634,13 +646,37 @@ class PushNotificationManager {
         throw new Error(`Test notification failed: ${response.status} ${response.statusText}`);
       }
 
+      const result = await response.json();
       console.log('[PushManager] Test notification sent');
-      return true;
+      return { success: true, results: result };
       
     } catch (error) {
       console.error('[PushManager] Test notification failed:', error);
-      throw error;
+      return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Initialize service worker for simple cases
+   */
+  async initializeServiceWorker() {
+    try {
+      await this.initialize();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Test push notification (for debugging - legacy method)
+   */
+  async testNotification() {
+    const result = await this.sendTestNotification();
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+    return true;
   }
 }
 
