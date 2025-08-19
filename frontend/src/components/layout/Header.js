@@ -203,7 +203,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         )}
       >
         <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
-          {/* Mobile menu button */}
+          {/* Sidebar toggle button - shown on mobile, tablet, and small desktop screens */}
           {isMobile && (
             <Button
               variant="ghost"
