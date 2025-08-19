@@ -27,6 +27,7 @@ import { Switch } from '../../components/ui/switch';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
+import { Spinner } from '../../components/ui/spinner';
 
 const SystemSettings = () => {
   const navigate = useNavigate();
@@ -211,7 +212,7 @@ const SystemSettings = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+          <Spinner className="text-primary" />
         </div>
       </div>
     );

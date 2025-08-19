@@ -29,6 +29,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Spinner } from '../../components/ui/spinner';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
@@ -48,8 +49,6 @@ const TeacherDashboard = () => {
     stats: {
       totalStudents: 0,
       totalClasses: 0,
-      gradesSubmitted: 0,
-      pendingGrades: 0
     }
   });
   
@@ -133,8 +132,6 @@ const TeacherDashboard = () => {
             newData.stats = {
               totalStudents: 0,
               totalClasses: 0,
-              gradesSubmitted: 0,
-              pendingGrades: 0
             };
           } else {
             newData[key] = [];
@@ -171,8 +168,6 @@ const TeacherDashboard = () => {
       const stats = {
         totalStudents: students.length,
         totalClasses: classes.length,
-        gradesSubmitted: 0, // TODO: Implement grade counting
-        pendingGrades: 0    // TODO: Implement pending grade counting
       };
       
       console.log('TeacherDashboard: Stats calculated:', stats);
@@ -184,8 +179,6 @@ const TeacherDashboard = () => {
       return {
         totalStudents: 0,
         totalClasses: 0,
-        gradesSubmitted: 0,
-        pendingGrades: 0
       };
     }
   };
@@ -212,9 +205,9 @@ const TeacherDashboard = () => {
   if (featuresLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
-        </div>
+              <div className="flex justify-center items-center min-h-[60vh]">
+        <Spinner className="text-primary" />
+      </div>
       </div>
     );
   }
@@ -255,119 +248,100 @@ const TeacherDashboard = () => {
         <p className="text-muted-foreground">Manage your classes, grades, and student communications.</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">Enrolled students</p>
-          </CardContent>
-        </Card>
+      {/* Quick Stats and Actions - Side by Side on Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Stats */}
+        <div className="space-y-4 h-full flex flex-col justify-center">
+          <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="flex flex-col justify-center flex-1">
+              <div className="text-2xl font-bold">{dashboardData.stats.totalStudents}</div>
+              <p className="text-xs text-muted-foreground">Enrolled students</p>
+            </CardContent>
+          </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.totalClasses}</div>
-            <p className="text-xs text-muted-foreground">Current classes</p>
-          </CardContent>
-        </Card>
+          <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="flex flex-col justify-center flex-1">
+              <div className="text-2xl font-bold">{dashboardData.stats.totalClasses}</div>
+              <p className="text-xs text-muted-foreground">Current classes</p>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Grades Submitted</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+              {/* Quick Actions */}
+        <Card className="panel-slide-in">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Zap className="h-5 w-5 text-primary" />
+              <span>Quick Actions</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.gradesSubmitted}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={() => navigate('/app/teacher/grades/create')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <Plus className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">Create Grade</span>
+              </Button>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Grades</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.pendingGrades}</div>
-            <p className="text-xs text-muted-foreground">Need attention</p>
+              <Button
+                onClick={() => navigate('/app/teacher/grades/manage')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <Edit className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">Manage Grades</span>
+              </Button>
+
+              <Button
+                onClick={() => navigate('/app/teacher/notifications/create')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">Send Notifications</span>
+              </Button>
+
+              <Button
+                onClick={() => navigate('/app/teacher/notifications')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <MessageSquare className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">View Notifications</span>
+              </Button>
+
+              <Button
+                onClick={() => navigate('/app/schedule')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">Schedule</span>
+              </Button>
+
+              <Button
+                onClick={() => navigate('/app/student-stats')}
+                variant="outline"
+                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+              >
+                <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">Student Stats</span>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card className="panel-slide-in">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Zap className="h-5 w-5 text-primary" />
-            <span>Quick Actions</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button
-              onClick={() => navigate('/app/teacher/grades/create')}
-              variant="outline"
-              className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
-            >
-              <Plus className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">Create Grade</span>
-            </Button>
-
-            <Button
-              onClick={() => navigate('/app/teacher/grades/manage')}
-              variant="outline"
-              className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
-            >
-              <Edit className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">Manage Grades</span>
-            </Button>
-
-            <Button
-              onClick={() => navigate('/app/teacher/notifications/create')}
-              variant="outline"
-              className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
-            >
-              <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">Send Notifications</span>
-            </Button>
-
-            <Button
-              onClick={() => navigate('/app/teacher/notifications')}
-              variant="outline"
-              className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
-            >
-              <MessageSquare className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">View Notifications</span>
-            </Button>
-
-            <Button
-              onClick={() => navigate('/app/schedule')}
-              variant="outline"
-              className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
-            >
-              <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">Schedule</span>
-            </Button>
-
-            <Button
-              onClick={() => navigate('/app/student-stats')}
-              variant="outline"
-              className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
-            >
-              <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">Student Stats</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Recent Notifications */}
       <Card className="panel-slide-in">
@@ -388,7 +362,7 @@ const TeacherDashboard = () => {
         <CardContent>
           {panelLoading.notifications ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <Spinner className="text-primary" />
             </div>
           ) : dashboardData.notifications.length > 0 ? (
             <div className="space-y-4">

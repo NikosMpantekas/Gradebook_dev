@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
 import NotificationsList from '../../components/notifications/NotificationsList';
 import NotificationEditDialog from '../../components/notifications/NotificationEditDialog';
@@ -242,7 +243,7 @@ const TeacherNotifications = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <Spinner className="text-primary" />
           <p className="text-muted-foreground">Loading notifications...</p>
         </div>
       </div>

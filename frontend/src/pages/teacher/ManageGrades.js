@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { Checkbox } from '../../components/ui/checkbox';
 import { EditGradeDialog } from '../../components/grades/GradeDialogs';
+import { Spinner } from '../../components/ui/spinner';
 
 // Icons
 import { BookOpen, Plus, Trash2, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
@@ -447,7 +448,7 @@ const ManageGrades = () => {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Spinner className="text-primary" />
           <p className="text-muted-foreground">Loading grades...</p>
         </div>
       </div>

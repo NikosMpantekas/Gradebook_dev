@@ -166,7 +166,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
     <TooltipProvider>
       <div className="space-y-4">
         {messages.map((message) => (
-          <Card key={message._id} className="overflow-hidden">
+          <Card key={message._id} className="overflow-hidden border-2 border-gray-600 dark:border-gray-400">
             <Collapsible open={expandedPanel === message._id}>
               <CollapsibleTrigger asChild>
                 <CardHeader 

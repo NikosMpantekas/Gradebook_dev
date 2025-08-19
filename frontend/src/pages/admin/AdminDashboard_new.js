@@ -28,6 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Separator } from '../../../components/ui/separator';
+import { Spinner } from '../../../components/ui/spinner';
 import { useFeatureToggles } from '../../../context/FeatureToggleContext';
 import axios from 'axios';
 import { API_URL } from '../../../config/appConfig';
@@ -218,7 +219,7 @@ const AdminDashboard = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+          <Spinner className="text-primary" />
         </div>
       </div>
     );
@@ -365,7 +366,7 @@ const AdminDashboard = () => {
           <CardContent>
             {panelLoading.notifications ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <Spinner className="text-primary" />
               </div>
             ) : dashboardData.notifications.length > 0 ? (
               <div className="space-y-3">

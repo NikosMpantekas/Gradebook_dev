@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Spinner } from '../ui/spinner';
 
 const GradesTable = ({ 
   grades = [], 
@@ -128,7 +129,7 @@ const GradesTable = ({
     return (
       <Card>
         <CardContent className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Spinner className="text-primary" />
         </CardContent>
       </Card>
     );

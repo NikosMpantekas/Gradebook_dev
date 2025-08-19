@@ -185,7 +185,7 @@ const ContactMessages = () => {
       ];
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden">
+    <div className="container mx-auto px-4 py-6 max-w-6xl overflow-x-hidden">
       <Card className="p-4 md:p-6 lg:p-8 mt-4 md:mt-6 mb-4 md:mb-6 overflow-x-hidden">
         <CardHeader>
           <CardTitle className="text-xl md:text-2xl font-bold">Support & Announcements</CardTitle>
@@ -221,7 +221,7 @@ const ContactMessages = () => {
           {/* Desktop: Tabs */}
           <div className="hidden md:block">
             <Tabs value={tabValue} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className={`grid w-full ${isAdminRole ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 {tabDefs.map((tab) => (
                   <TabsTrigger key={tab.key} value={tab.key} className="flex items-center gap-2">
                     {tab.icon}
