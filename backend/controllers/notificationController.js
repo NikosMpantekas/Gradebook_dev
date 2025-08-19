@@ -911,8 +911,28 @@ const createPushSubscription = asyncHandler(async (req, res) => {
         subscriptionData.expirationTime = expirationTime;
       }
       
-      subscription = await PushSubscription.create(subscriptionData);
-      console.log(`[SUBSCRIPTION_CREATE] ✅ NEW SUBSCRIPTION CREATED FOR USER ${req.user._id}`);
+      // Use upsert to update existing or create new subscription
+      subscription = await PushSubscription.findOneAndUpdate(
+        { 
+          $or: [
+            { userId: req.user._id, endpoint: endpoint },
+            { endpoint: endpoint }
+          ]
+        },
+        {
+          ...subscriptionData,
+          userId: req.user._id, // Ensure userId is always set to current user
+          isActive: true,
+          updatedAt: new Date()
+        },
+        { 
+          new: true, 
+          upsert: true,
+          runValidators: true
+        }
+      );
+      
+      console.log(`[SUBSCRIPTION_CREATE] ✅ SUBSCRIPTION SAVED FOR USER ${req.user._id}`);
       console.log(`[SUBSCRIPTION_CREATE] Subscription ID: ${subscription._id}`);
       console.log(`[SUBSCRIPTION_CREATE] Endpoint: ${subscription.endpoint.substring(0, 50)}...`);
     }
