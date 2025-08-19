@@ -816,18 +816,33 @@ const deleteNotification = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Get VAPID public key for push notifications
+// @desc    Get VAPID public key
 // @route   GET /api/notifications/vapid-public-key
 // @access  Private
 const getVapidPublicKey = asyncHandler(async (req, res) => {
-  // In a production app, these would be stored securely in environment variables
-  // For this app, we'll use a default public key that works for development
-  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 
-    'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+  console.log('[NOTIFICATIONS] VAPID public key request from user:', req.user._id);
   
-  console.log('Providing VAPID public key for push notifications');
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
   
-  res.json({ vapidPublicKey });
+  console.log('[NOTIFICATIONS] VAPID key check:', {
+    hasKey: !!publicKey,
+    keyLength: publicKey ? publicKey.length : 0,
+    userId: req.user._id
+  });
+  
+  if (!publicKey) {
+    console.error('[NOTIFICATIONS] VAPID_PUBLIC_KEY environment variable not set');
+    return res.status(500).json({ 
+      success: false,
+      error: 'Push notifications not configured on server' 
+    });
+  }
+
+  console.log('[NOTIFICATIONS] Returning VAPID public key to client');
+  res.status(200).json({ 
+    success: true,
+    vapidPublicKey: publicKey 
+  });
 });
 
 // @desc    Create or update push subscription

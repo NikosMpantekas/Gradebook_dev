@@ -67,6 +67,55 @@ const registerSchemaModels = (connection) => {
     }, {
       timestamps: true
     });
+
+    // Create PushSubscription schema
+    const pushSubscriptionSchema = new mongoose.Schema({
+      userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User', index: true },
+      schoolId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'School', index: true },
+      endpoint: { type: String, required: true, unique: true, index: true },
+      keys: {
+        p256dh: { type: String, required: true },
+        auth: { type: String, required: true }
+      },
+      expirationTime: { type: Date, default: null },
+      userAgent: { type: String, default: '' },
+      platform: {
+        isIOS: { type: Boolean, default: false },
+        isAndroid: { type: Boolean, default: false },
+        isWindows: { type: Boolean, default: false },
+        isSafari: { type: Boolean, default: false },
+        isChrome: { type: Boolean, default: false },
+        isFirefox: { type: Boolean, default: false },
+        isPWA: { type: Boolean, default: false },
+        browserName: { type: String, default: '' },
+        osName: { type: String, default: '' }
+      },
+      isActive: { type: Boolean, default: true, index: true },
+      preferences: {
+        grades: { type: Boolean, default: true },
+        assignments: { type: Boolean, default: true },
+        announcements: { type: Boolean, default: true },
+        events: { type: Boolean, default: true },
+        urgent: { type: Boolean, default: true }
+      },
+      stats: {
+        totalPushes: { type: Number, default: 0 },
+        successfulPushes: { type: Number, default: 0 },
+        failedPushes: { type: Number, default: 0 },
+        lastPushSent: { type: Date, default: null },
+        lastPushSuccess: { type: Date, default: null },
+        lastError: {
+          message: String,
+          timestamp: Date,
+          statusCode: Number
+        }
+      },
+      createdAt: { type: Date, default: Date.now, index: true },
+      lastUpdated: { type: Date, default: Date.now },
+      lastUsed: { type: Date, default: Date.now }
+    }, {
+      timestamps: true
+    });
     
     // Step 2: Register models in correct dependency order
     
@@ -92,6 +141,12 @@ const registerSchemaModels = (connection) => {
     if (!connection.models['Notification']) {
       connection.model('Notification', notificationSchema);
       console.log('✅ Notification model registered');
+    }
+
+    // 5. Register PushSubscription model (depends on User, School)
+    if (!connection.models['PushSubscription']) {
+      connection.model('PushSubscription', pushSubscriptionSchema);
+      console.log('✅ PushSubscription model registered');
     }
     
     console.log('Schema models registration complete ✅');
