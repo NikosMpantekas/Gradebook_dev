@@ -7,15 +7,19 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
 import OfflineDetector from '../OfflineDetector';
+import { useIsMobile } from '../hooks/use-mobile';
 
 const Layout = () => {
   const location = useLocation();
+  
+  // Use the mobile detection hook for consistent behavior
+  const isMobile = useIsMobile();
   
   // Retrieve previous mobileOpen state from localStorage to prevent it from resetting on navigation
   const [mobileOpen, setMobileOpen] = useState(() => {
     const savedState = localStorage.getItem('sidebarOpen');
     // Always default to false for mobile, false for desktop (mobile sidebar should never be open on desktop)
-    return window.innerWidth < 600 ? false : false;
+    return false;
   });
 
   const { darkMode } = useSelector((state) => state.ui);
@@ -73,7 +77,7 @@ const Layout = () => {
   useEffect(() => {
     const handleResize = () => {
       // If window is resized to desktop size, close mobile sidebar
-      if (window.innerWidth >= 1024 && mobileOpen) {
+      if (!isMobile && mobileOpen) {
         setMobileOpen(false);
         localStorage.setItem('sidebarOpen', 'false');
       }
@@ -81,7 +85,7 @@ const Layout = () => {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [mobileOpen]);
+  }, [mobileOpen, isMobile]);
 
   return (
     <div className={cn(

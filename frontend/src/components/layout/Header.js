@@ -25,6 +25,7 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { getMyNotifications, markNotificationAsRead } from '../../features/notifications/notificationSlice';
+import { useIsMobile } from '../hooks/use-mobile';
 
 // Custom hook to fetch latest version from patch notes
 const useLatestVersion = () => {
@@ -71,6 +72,9 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
   const { notifications } = useSelector((state) => state.notifications);
+  
+  // Use the mobile detection hook instead of Tailwind breakpoints
+  const isMobile = useIsMobile();
   
   // Get latest version from patch notes
   const { version: latestVersion } = useLatestVersion();
@@ -200,15 +204,17 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
       >
         <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
           {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-3 sm:hidden"
-            onClick={handleDrawerToggle}
-            aria-label="open drawer"
-          >
-            <MenuIcon className="h-6 w-6" />
-          </Button>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-3"
+              onClick={handleDrawerToggle}
+              aria-label="open drawer"
+            >
+              <MenuIcon className="h-6 w-6" />
+            </Button>
+          )}
 
           {/* Logo */}
           <div className="flex flex-1 items-center">
