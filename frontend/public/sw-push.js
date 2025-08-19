@@ -144,6 +144,14 @@ class NotificationHandler {
         }
       }
 
+      // CRITICAL: Check user receiving preference before showing notification
+      const shouldReceiveNotifications = await this._checkUserReceivingPreference();
+      
+      if (!shouldReceiveNotifications) {
+        console.log(`[${SW_NAME}] User has disabled receiving notifications - service active but not showing notification`);
+        return; // Service stays active but doesn't show notification
+      }
+
       // Show notification
       await this._showNotification(notificationData);
 
@@ -151,6 +159,30 @@ class NotificationHandler {
       console.error(`[${SW_NAME}] Error handling push event:`, error);
       // Show fallback notification
       await this._showFallbackNotification();
+    }
+  }
+
+  /**
+   * Check if user wants to receive notifications (preference only)
+   */
+  async _checkUserReceivingPreference() {
+    try {
+      // Get user preference from IndexedDB or localStorage
+      const userPreference = localStorage.getItem('pushNotificationEnabled');
+      
+      // Default to true if not set (user hasn't disabled)
+      if (userPreference === null) {
+        console.log(`[${SW_NAME}] No preference set, defaulting to receive notifications`);
+        return true;
+      }
+      
+      const shouldReceive = userPreference === 'true';
+      console.log(`[${SW_NAME}] User receiving preference:`, shouldReceive);
+      return shouldReceive;
+      
+    } catch (error) {
+      console.error(`[${SW_NAME}] Error checking user preference, defaulting to show:`, error);
+      return true; // Default to showing on error
     }
   }
 

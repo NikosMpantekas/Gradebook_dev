@@ -285,19 +285,19 @@ const createNotification = asyncHandler(async (req, res) => {
     // SECURITY FIX: Find web push subscriptions for ONLY intended recipients
     console.log('[PUSH_SECURITY] Filtering push subscriptions for intended recipients only');
     
-    // Filter users who have push notifications enabled
-    const usersWithPushEnabled = await User.find({
-      _id: { $in: uniqueRecipients },
-      pushNotificationEnabled: true
-    }).select('_id');
+    // CRITICAL: ALWAYS send to validated recipients (tied to user ID)
+    // Push service is always active - user preference controls receiving only
+    console.log('[PUSH_SECURITY] Processing ALL validated recipients for push notifications');
+    const recipientUserIds = validatedRecipients.map(recipient => {
+      console.log(`[PUSH_SECURITY] User ${recipient._id} (${recipient.name}): will receive push if subscribed`);
+      return recipient._id;
+    });
     
-    const enabledUserIds = usersWithPushEnabled.map(user => user._id);
-    console.log('[PUSH_SECURITY]', `Found ${enabledUserIds.length} users with push notifications enabled out of ${uniqueRecipients.length} total recipients`);
-    console.log('[PUSH_SECURITY] Enabled user IDs:', enabledUserIds.map(id => id.toString()));
+    console.log('[PUSH_SECURITY] All recipient user IDs:', recipientUserIds.map(id => id.toString()));
     
-    // CRITICAL FIX: Use correct PushSubscription model and filter by actual recipients
+    // CRITICAL FIX: Find subscriptions for ALL validated recipients (always active service)
     const subscriptions = await PushSubscription.find({
-      userId: { $in: enabledUserIds },
+      userId: { $in: recipientUserIds },
       isActive: true
     });
 
@@ -804,15 +804,27 @@ const getVapidPublicKey = asyncHandler(async (req, res) => {
 // @route   POST /api/notifications/subscription
 // @access  Private
 const createPushSubscription = asyncHandler(async (req, res) => {
+  console.log('[SUBSCRIPTION_CREATE] ===== PUSH SUBSCRIPTION REQUEST RECEIVED =====');
+  console.log('[SUBSCRIPTION_CREATE] User:', req.user._id, req.user.name, req.user.role);
+  console.log('[SUBSCRIPTION_CREATE] Request body:', {
+    hasEndpoint: !!req.body.endpoint,
+    endpointStart: req.body.endpoint?.substring(0, 50),
+    hasKeys: !!req.body.keys,
+    hasP256dh: !!req.body.keys?.p256dh,
+    hasAuth: !!req.body.keys?.auth,
+    expirationTime: req.body.expirationTime
+  });
+  
   const { endpoint, keys, expirationTime } = req.body;
   
   if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+    console.error('[SUBSCRIPTION_CREATE] VALIDATION FAILED - Missing required fields');
     res.status(400);
     throw new Error('Invalid subscription data - missing required fields');
   }
   
   try {
-    console.log(`Creating/updating push subscription for user ${req.user._id}`);
+    console.log(`[SUBSCRIPTION_CREATE] Creating/updating push subscription for user ${req.user._id}`);
     
     // Find existing subscription for this user and endpoint
     let subscription = await PushSubscription.findOne({
@@ -858,15 +870,32 @@ const createPushSubscription = asyncHandler(async (req, res) => {
       }
       
       subscription = await PushSubscription.create(subscriptionData);
-      console.log(`Created new subscription for user ${req.user._id}`);
+      console.log(`[SUBSCRIPTION_CREATE] ✅ NEW SUBSCRIPTION CREATED FOR USER ${req.user._id}`);
+      console.log(`[SUBSCRIPTION_CREATE] Subscription ID: ${subscription._id}`);
+      console.log(`[SUBSCRIPTION_CREATE] Endpoint: ${subscription.endpoint.substring(0, 50)}...`);
     }
+    
+    // CRITICAL: Verify subscription was actually saved
+    const verifySubscription = await PushSubscription.findById(subscription._id);
+    if (verifySubscription) {
+      console.log(`[SUBSCRIPTION_CREATE] ✅ VERIFICATION SUCCESSFUL - Subscription exists in database`);
+    } else {
+      console.error(`[SUBSCRIPTION_CREATE] ❌ VERIFICATION FAILED - Subscription not found in database after save!`);
+    }
+    
+    // Count total subscriptions for this user  
+    const userSubCount = await PushSubscription.countDocuments({ userId: req.user._id, isActive: true });
+    console.log(`[SUBSCRIPTION_CREATE] User ${req.user._id} now has ${userSubCount} active subscriptions`);
     
     res.status(201).json({
       success: true,
-      message: 'Push subscription saved successfully'
+      message: 'Push subscription saved successfully',
+      subscriptionId: subscription._id.toString(),
+      totalUserSubscriptions: userSubCount
     });
   } catch (error) {
-    console.error('Error saving push subscription:', error);
+    console.error('[SUBSCRIPTION_CREATE] ❌ ERROR SAVING PUSH SUBSCRIPTION:', error);
+    console.error('[SUBSCRIPTION_CREATE] Error stack:', error.stack);
     res.status(500);
     throw new Error('Failed to save push subscription: ' + error.message);
   }
