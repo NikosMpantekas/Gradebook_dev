@@ -297,18 +297,19 @@ const createNotification = asyncHandler(async (req, res) => {
     
     // CRITICAL FIX: Use correct PushSubscription model and filter by actual recipients
     const subscriptions = await PushSubscription.find({
-      user: { $in: enabledUserIds }
+      userId: { $in: enabledUserIds },
+      isActive: true
     });
 
     console.log('[PUSH_SECURITY]', `Found ${subscriptions.length} push subscriptions for intended recipients only`);
-    console.log('[PUSH_SECURITY] Subscription user IDs:', subscriptions.map(sub => sub.user.toString()));
+    console.log('[PUSH_SECURITY] Subscription user IDs:', subscriptions.map(sub => sub.userId.toString()));
 
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
       const webpush = require('web-push');
       
       const pushPromises = subscriptions.map(subscription => {
-        console.log('[PUSH_SECURITY] Sending push to user:', subscription.user.toString(), 'subscription:', subscription._id.toString());
+        console.log('[PUSH_SECURITY] Sending push to user:', subscription.userId.toString(), 'subscription:', subscription._id.toString());
         
         const payload = JSON.stringify({
           title: newNotification.title,
@@ -323,10 +324,10 @@ const createNotification = asyncHandler(async (req, res) => {
 
         return webpush.sendNotification(subscription, payload)
           .then(() => {
-            console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.user.toString());
+            console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.userId.toString());
           })
           .catch(error => {
-            console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.user.toString(), 'error:', error.message);
+            console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.userId.toString(), 'error:', error.message);
           });
       });
 
@@ -814,8 +815,8 @@ const createPushSubscription = asyncHandler(async (req, res) => {
     console.log(`Creating/updating push subscription for user ${req.user._id}`);
     
     // Find existing subscription for this user and endpoint
-    let subscription = await Subscription.findOne({
-      user: req.user._id,
+    let subscription = await PushSubscription.findOne({
+      userId: req.user._id,
       endpoint
     });
     
@@ -831,21 +832,32 @@ const createPushSubscription = asyncHandler(async (req, res) => {
     } else {
       // Create new subscription
       const subscriptionData = {
-        user: req.user._id,
+        userId: req.user._id,
         endpoint,
         keys: {
           p256dh: keys.p256dh,
           auth: keys.auth
         },
         schoolId: req.user.schoolId, // Add schoolId for multi-tenancy
-        isSuperadmin: req.user.role === 'superadmin'
+        userAgent: req.headers['user-agent'] || '',
+        platform: {
+          isIOS: /iPad|iPhone|iPod/.test(req.headers['user-agent'] || ''),
+          isAndroid: /Android/.test(req.headers['user-agent'] || ''),
+          isWindows: /Windows/.test(req.headers['user-agent'] || ''),
+          isSafari: /Safari/.test(req.headers['user-agent'] || '') && !/Chrome/.test(req.headers['user-agent'] || ''),
+          isChrome: /Chrome/.test(req.headers['user-agent'] || ''),
+          isFirefox: /Firefox/.test(req.headers['user-agent'] || ''),
+          isPWA: req.headers['user-agent']?.includes('PWA') || false,
+          browserName: req.headers['user-agent'] || '',
+          osName: req.headers['user-agent'] || ''
+        }
       };
       
       if (expirationTime) {
         subscriptionData.expirationTime = expirationTime;
       }
       
-      subscription = await Subscription.create(subscriptionData);
+      subscription = await PushSubscription.create(subscriptionData);
       console.log(`Created new subscription for user ${req.user._id}`);
     }
     
@@ -860,6 +872,136 @@ const createPushSubscription = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get user push subscriptions
+// @route   GET /api/notifications/subscriptions
+// @access  Private
+const getUserSubscriptions = asyncHandler(async (req, res) => {
+  try {
+    console.log(`[SUBSCRIPTIONS] Getting subscriptions for user ${req.user._id}`);
+    
+    const subscriptions = await PushSubscription.find({
+      userId: req.user._id,
+      isActive: true
+    }).select('endpoint platform createdAt lastUsed stats');
+    
+    console.log(`[SUBSCRIPTIONS] Found ${subscriptions.length} active subscriptions`);
+    
+    res.status(200).json({
+      success: true,
+      subscriptions,
+      count: subscriptions.length
+    });
+  } catch (error) {
+    console.error('[SUBSCRIPTIONS] Error getting user subscriptions:', error);
+    res.status(500);
+    throw new Error('Failed to get subscriptions: ' + error.message);
+  }
+});
+
+// @desc    Delete push subscription
+// @route   DELETE /api/notifications/subscription
+// @access  Private
+const deletePushSubscription = asyncHandler(async (req, res) => {
+  const { endpoint } = req.body;
+  
+  if (!endpoint) {
+    res.status(400);
+    throw new Error('Endpoint is required');
+  }
+  
+  try {
+    console.log(`[SUBSCRIPTIONS] Deleting subscription for user ${req.user._id}, endpoint: ${endpoint.substring(0, 50)}...`);
+    
+    const result = await PushSubscription.deleteOne({
+      userId: req.user._id,
+      endpoint
+    });
+    
+    if (result.deletedCount === 0) {
+      res.status(404);
+      throw new Error('Subscription not found');
+    }
+    
+    console.log(`[SUBSCRIPTIONS] Successfully deleted subscription`);
+    res.status(200).json({
+      success: true,
+      message: 'Push subscription deleted successfully'
+    });
+  } catch (error) {
+    console.error('[SUBSCRIPTIONS] Error deleting subscription:', error);
+    res.status(500);
+    throw new Error('Failed to delete subscription: ' + error.message);
+  }
+});
+
+// @desc    Send test push notification
+// @route   POST /api/notifications/test
+// @access  Private
+const sendTestPush = asyncHandler(async (req, res) => {
+  try {
+    console.log(`[TEST_PUSH] Sending test notification to user ${req.user._id}`);
+    
+    const subscriptions = await PushSubscription.find({
+      userId: req.user._id,
+      isActive: true
+    });
+    
+    if (subscriptions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No active push subscriptions found'
+      });
+    }
+    
+    const webpush = require('web-push');
+    const { title = 'Test Notification', body = 'This is a test push notification from GradeBook' } = req.body;
+    
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/logo192.png',
+      badge: '/logo192.png',
+      data: {
+        url: '/notifications',
+        timestamp: Date.now()
+      }
+    });
+    
+    let successful = 0;
+    let failed = 0;
+    
+    const pushPromises = subscriptions.map(async (subscription) => {
+      try {
+        await webpush.sendNotification(subscription, payload);
+        await subscription.updateStats(true);
+        successful++;
+        console.log(`[TEST_PUSH] Success for subscription ${subscription._id}`);
+      } catch (error) {
+        await subscription.updateStats(false, error);
+        failed++;
+        console.error(`[TEST_PUSH] Failed for subscription ${subscription._id}:`, error.message);
+      }
+    });
+    
+    await Promise.allSettled(pushPromises);
+    
+    console.log(`[TEST_PUSH] Test completed: ${successful} successful, ${failed} failed`);
+    res.status(200).json({
+      success: true,
+      message: 'Test notifications sent',
+      results: {
+        total: subscriptions.length,
+        successful,
+        failed
+      }
+    });
+  } catch (error) {
+    console.error('[TEST_PUSH] Error sending test notification:', error);
+    res.status(500);
+    throw new Error('Failed to send test notification: ' + error.message);
+  }
+});
+
 module.exports = {
   createNotification,
   getAllNotifications,
@@ -869,5 +1011,8 @@ module.exports = {
   getNotificationById,
   deleteNotification,
   getVapidPublicKey,
-  createPushSubscription
+  createPushSubscription,
+  getUserSubscriptions,
+  deletePushSubscription,
+  sendTestPush
 };
