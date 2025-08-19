@@ -22,6 +22,20 @@ async function testSubscriptions() {
     const totalSubs = await PushSubscription.countDocuments();
     console.log(`📊 Total subscriptions in database: ${totalSubs}`);
     
+    // Check users with push notifications enabled
+    const User = require('./models/userModel');
+    const usersWithPushEnabled = await User.countDocuments({ pushNotificationEnabled: true });
+    console.log(`👥 Users with push notifications enabled: ${usersWithPushEnabled}`);
+    
+    if (usersWithPushEnabled > 0) {
+      const enabledUsers = await User.find({ pushNotificationEnabled: true }).select('_id name email role');
+      console.log('📋 Users with push enabled:');
+      enabledUsers.forEach(user => {
+        console.log(`  - ${user.name} (${user.email}) - ${user.role} - ID: ${user._id}`);
+      });
+    }
+    console.log(`📊 Total subscriptions in database: ${totalSubs}`);
+    
     if (totalSubs === 0) {
       console.log('\n❌ NO SUBSCRIPTIONS FOUND!');
       console.log('\n🔧 SOLUTION:');

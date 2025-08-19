@@ -322,16 +322,29 @@ class PushNotificationManager {
   }
 
   /**
-   * Enable push notifications (subscribe)
+   * CRITICAL: Initialize ALWAYS-ACTIVE push service (tied to user ID)
+   * This service runs regardless of user preference toggle
+   * User preference only controls RECEIVING, not service subscription
    */
-  async enablePushNotifications() {
+  async initializeAlwaysActivePushService() {
+    console.log('[PushManager] INITIALIZING ALWAYS-ACTIVE PUSH SERVICE (tied to user ID)...');
     try {
       await setupPushNotifications();
+      console.log('[PushManager] ✅ ALWAYS-ACTIVE PUSH SERVICE INITIALIZED - User can now receive targeted notifications');
       return { success: true };
     } catch (error) {
-      console.error('[PushManager] Enable failed:', error);
+      console.error('[PushManager] Always-active service failed:', error);
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * DEPRECATED: Old method that tied service to user preference
+   * Now redirects to always-active service
+   */
+  async enablePushNotifications() {
+    console.log('[PushManager] DEPRECATED: Redirecting to always-active service...');
+    return await this.initializeAlwaysActivePushService();
   }
 
   /**

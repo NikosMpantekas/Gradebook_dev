@@ -46,6 +46,18 @@ class PushNotificationSettings extends Component {
   async componentDidMount() {
     console.log('[PushSettings] Component mounted, initializing...');
     await this.initializePushManager();
+    
+    // CRITICAL: Initialize always-active push service (tied to user ID)
+    if (this.pushManager && this.pushManager.isSupported()) {
+      console.log('[PushSettings] Initializing always-active push service...');
+      const result = await this.pushManager.initializeAlwaysActivePushService();
+      if (result.success) {
+        console.log('[PushSettings] Always-active push service initialized successfully');
+      } else {
+        console.log('[PushSettings] Always-active push service failed:', result.error);
+      }
+    }
+    
     await this.refreshStatus();
   }
 
@@ -173,80 +185,96 @@ class PushNotificationSettings extends Component {
   }
 
   /**
-   * Enable push notifications
+   * Enable receiving notifications (preference only - service stays active)
    */
   async handleEnableNotifications() {
-    if (!this.pushManager) return;
-    
     this.setState({ isLoading: true, error: null, success: null });
     
     try {
-      console.log('[PushSettings] Enabling push notifications...');
+      console.log('[PushSettings] Enabling RECEIVING notifications (service already active)...');
       
-      const result = await this.pushManager.enablePushNotifications();
+      // Set receiving preference to true
+      localStorage.setItem('pushNotificationEnabled', 'true');
       
-      if (result.success) {
-        console.log('[PushSettings] Push notifications enabled successfully');
-        this.setState({
-          success: 'Push notifications enabled successfully!',
-          isLoading: false
-        });
-        
-        // Refresh status to get updated data
-        await this.refreshStatus();
-      } else {
-        console.error('[PushSettings] Failed to enable push notifications:', result.error);
-        this.setState({
-          error: result.error || 'Failed to enable push notifications',
-          isLoading: false
-        });
-      }
+      // Update user profile in backend
+      await this.updateUserReceivingPreference(true);
+      
+      console.log('[PushSettings] User will now RECEIVE notifications');
+      this.setState({
+        success: 'You will now receive push notifications!',
+        isLoading: false
+      });
+      
+      await this.refreshStatus();
       
     } catch (error) {
-      console.error('[PushSettings] Error enabling push notifications:', error);
+      console.error('[PushSettings] Error enabling receiving preference:', error);
       this.setState({
-        error: error.message || 'Failed to enable push notifications',
+        error: error.message || 'Failed to update notification preference',
         isLoading: false
       });
     }
   }
 
   /**
-   * Disable push notifications
+   * Disable receiving notifications (preference only - service stays active)
    */
   async handleDisableNotifications() {
-    if (!this.pushManager) return;
-    
     this.setState({ isLoading: true, error: null, success: null });
     
     try {
-      console.log('[PushSettings] Disabling push notifications...');
+      console.log('[PushSettings] Disabling RECEIVING notifications (service stays active)...');
       
-      const result = await this.pushManager.disablePushNotifications();
+      // Set receiving preference to false
+      localStorage.setItem('pushNotificationEnabled', 'false');
       
-      if (result.success) {
-        console.log('[PushSettings] Push notifications disabled successfully');
-        this.setState({
-          success: 'Push notifications disabled successfully!',
-          isLoading: false
-        });
-        
-        // Refresh status to get updated data
-        await this.refreshStatus();
-      } else {
-        console.error('[PushSettings] Failed to disable push notifications:', result.error);
-        this.setState({
-          error: result.error || 'Failed to disable push notifications',
-          isLoading: false
-        });
-      }
+      // Update user profile in backend
+      await this.updateUserReceivingPreference(false);
       
-    } catch (error) {
-      console.error('[PushSettings] Error disabling push notifications:', error);
+      console.log('[PushSettings] User will no longer RECEIVE notifications (but service stays active for targeting)');
       this.setState({
-        error: error.message || 'Failed to disable push notifications',
+        success: 'You will no longer receive push notifications (service stays active)',
         isLoading: false
       });
+      
+      await this.refreshStatus();
+      
+    } catch (error) {
+      console.error('[PushSettings] Error disabling receiving preference:', error);
+      this.setState({
+        error: error.message || 'Failed to update notification preference',
+        isLoading: false
+      });
+    }
+  }
+
+  /**
+   * Update user receiving preference in backend
+   */
+  async updateUserReceivingPreference(enabled) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token');
+
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pushNotificationEnabled: enabled
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      console.log(`[PushSettings] Updated user receiving preference to: ${enabled}`);
+    } catch (error) {
+      console.error('[PushSettings] Failed to update user preference:', error);
+      throw error;
     }
   }
 
