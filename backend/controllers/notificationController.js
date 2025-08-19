@@ -284,11 +284,22 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // Find web push subscriptions for recipients using Subscription model
     const Subscription = require('../models/subscriptionModel');
+    const User = require('../models/userModel');
+    
+    // Filter users who have push notifications enabled
+    const usersWithPushEnabled = await User.find({
+      _id: { $in: uniqueRecipients },
+      pushNotificationEnabled: true
+    }).select('_id');
+    
+    const enabledUserIds = usersWithPushEnabled.map(user => user._id);
+    console.log('NOTIFICATION_CREATE', `Found ${enabledUserIds.length} users with push notifications enabled out of ${uniqueRecipients.length} total recipients`);
+    
     const subscriptions = await Subscription.find({
-      user: { $in: uniqueRecipients }
+      user: { $in: enabledUserIds }
     });
 
-    console.log('NOTIFICATION_CREATE', `Found ${subscriptions.length} push subscriptions`);
+    console.log('NOTIFICATION_CREATE', `Found ${subscriptions.length} push subscriptions for enabled users`);
 
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {

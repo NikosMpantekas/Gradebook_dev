@@ -505,9 +505,25 @@ const updatePushNotificationPreference = async (enabled) => {
   try {
     console.log('[AuthService] Updating push notification preference to:', enabled);
     
-    const response = await axios.put('/api/users/push-notification-preference', {
+    // Get stored token
+    const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+    const token = user?.token;
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    const response = await axios.put(`${API_USERS}/push-notification-preference`, {
       enabled
-    });
+    }, config);
     
     console.log('[AuthService] Push notification preference updated successfully');
     return response.data;
