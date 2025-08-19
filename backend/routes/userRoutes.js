@@ -157,27 +157,27 @@ router.get('/teacher-students', protect, async (req, res) => {
   }
 });
 
-router.get('/:id', protect, getUserById);
-router.put('/:id', protect, canManageUsers, updateUser);
-router.delete('/:id', protect, admin, deleteUser);
-
-// Routes to get users filtered by role - accessible to authenticated users
-// router.get('/role/:role', protect, getUsersByRole); // DISABLED - function not implemented
-
-// Route to get all teachers - accessible to authenticated users  
-// router.get('/teachers', protect, getTeachers); // DISABLED - function not implemented
-
+// IMPORTANT: Specific routes must come BEFORE parameterized routes
 // Parent account management routes
 router.post('/create-parent', protect, admin, createParentAccount);
-router.get('/student/:studentId/parents', protect, admin, getParentsByStudent);
 router.get('/parent/students-data', protect, getStudentsDataForParent);
-router.get('/parent/:parentId/students', protect, admin, getStudentsByParent);
-router.delete('/parent/:parentId/students', protect, admin, unlinkParentFromStudents);
 
 // New parent-student linking routes
 router.post('/link-parent', protect, admin, linkParentToStudent);
 router.post('/unlink-parent', protect, admin, unlinkParentFromStudent);
 router.get('/available-parents', protect, admin, getAvailableParents);
+
+// Routes with student parameter
+router.get('/student/:studentId/parents', protect, admin, getParentsByStudent);
 router.get('/student/:id/parents', protect, admin, getStudentParents);
+
+// Routes with parent parameter
+router.get('/parent/:parentId/students', protect, admin, getStudentsByParent);
+router.delete('/parent/:parentId/students', protect, admin, unlinkParentFromStudents);
+
+// Generic parameterized routes (MUST BE LAST)
+router.get('/:id', protect, getUserById);
+router.put('/:id', protect, canManageUsers, updateUser);
+router.delete('/:id', protect, admin, deleteUser);
 
 module.exports = router;

@@ -1420,11 +1420,15 @@ const EditUser = () => {
                   ))}
               </Select>
             </FormControl>
-            {availableParents.filter(parent => !linkedParents.some(linked => linked._id === parent._id)).length === 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                No available parents to link. All parents in this school are already linked to this student.
+            {availableParents.length === 0 ? (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                No parent accounts found in this school. Create parent accounts first.
               </Alert>
-            )}
+            ) : availableParents.filter(parent => !linkedParents.some(linked => linked._id === parent._id)).length === 0 ? (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                All available parents are already linked to this student.
+              </Alert>
+            ) : null}
           </Box>
         </DialogContent>
         <DialogActions>
