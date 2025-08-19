@@ -9,17 +9,13 @@ const {
   markNotificationRead,
   markNotificationSeen,
   getNotificationById,
-  deleteNotification
-} = require('../controllers/notificationController');
-
-// Import the modern push controller
-const {
+  deleteNotification,
   getVapidPublicKey,
   createPushSubscription,
+  getUserSubscriptions,
   deletePushSubscription,
-  sendTestPush,
-  getUserSubscriptions
-} = require('../controllers/pushController');
+  sendTestPush
+} = require('../controllers/notificationController');
 const { protect, admin, teacher, canSendNotifications } = require('../middleware/authMiddleware');
 
 // Modern push notification endpoints

@@ -2,7 +2,6 @@ import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 
 const API_NOTIFICATIONS = `${API_URL}/api/notifications`;
-const API_SUBSCRIPTIONS = `${API_URL}/api/subscriptions`;
 
 // Create new notification
 const createNotification = async (notificationData, token) => {
@@ -223,7 +222,8 @@ const subscribeToPushNotifications = async (subscription, token) => {
     throw new Error('Authentication token is missing');
   }
   
-  console.log('Push subscription request with token:', token ? 'Valid token' : 'Missing token');
+  console.log('[PUSH_SUBSCRIPTION] Registering push subscription with backend');
+  console.log('[PUSH_SUBSCRIPTION] Subscription endpoint:', subscription?.endpoint?.substring(0, 50) + '...');
   
   const config = {
     headers: {
@@ -232,8 +232,10 @@ const subscribeToPushNotifications = async (subscription, token) => {
     },
   };
 
-  const response = await axiosInstance.post(API_SUBSCRIPTIONS, subscription, config);
+  // Use the correct backend notification subscription endpoint
+  const response = await axiosInstance.post(`${API_NOTIFICATIONS}/subscription`, subscription, config);
 
+  console.log('[PUSH_SUBSCRIPTION] Successfully registered with backend');
   return response.data;
 };
 

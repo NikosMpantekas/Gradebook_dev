@@ -74,7 +74,7 @@ export const setupPushNotifications = async () => {
     let registration;
     try {
       // Specifically register the push notification service worker
-      registration = await navigator.serviceWorker.register('/push-service-worker.js', {
+      registration = await navigator.serviceWorker.register('/sw-push.js', {
         scope: '/'
       });
       
