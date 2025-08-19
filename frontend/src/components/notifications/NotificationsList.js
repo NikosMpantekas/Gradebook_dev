@@ -8,6 +8,7 @@ import {
   Trash2, 
   Edit, 
   MailOpen,
+  Eye,
   AlertCircle
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -22,6 +23,7 @@ const NotificationsList = ({
   tabValue, 
   user,
   onMarkAsRead,
+  onMarkAsSeen,
   onEdit,
   onDelete,
   onNavigate 
@@ -146,6 +148,7 @@ const NotificationsList = ({
             title: notification.title || 'Untitled',
             message: notification.message || 'No message',
             isRead: Boolean(notification.isRead),
+            isSeen: Boolean(notification.isSeen),
             isImportant: Boolean(notification.isImportant || notification.urgent),
             sender: notification.sender || { name: 'Unknown sender' },
             createdAt: notification.createdAt || new Date().toISOString()
@@ -213,6 +216,27 @@ const NotificationsList = ({
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Mark as read</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    
+                    {!safeNotification.isSeen && onMarkAsSeen && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMarkAsSeen(safeNotification._id);
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Mark as seen</p>
                         </TooltipContent>
                       </Tooltip>
                     )}

@@ -18,6 +18,14 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
+import { 
+  getMyNotifications, 
+  getSentNotifications,
+  markNotificationAsRead,
+  markNotificationAsSeen,
+  deleteNotification,
+  updateNotification
+} from '../../features/notifications/notificationSlice';
 import NotificationsList from '../../components/notifications/NotificationsList';
 import NotificationEditDialog from '../../components/notifications/NotificationEditDialog';
 
@@ -126,6 +134,38 @@ const TeacherNotifications = () => {
     } catch (error) {
       console.error('Error marking notification as read:', error);
       toast.error('Failed to mark notification as read');
+    }
+  };
+
+  const handleMarkAsSeen = async (notificationId) => {
+    try {
+      const config = {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const response = await fetch(`${API_URL}/api/notifications/${notificationId}/seen`, config);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif._id === notificationId 
+            ? { ...notif, seen: true }
+            : notif
+        )
+      );
+      
+      toast.success('Notification marked as seen');
+    } catch (error) {
+      console.error('Error marking notification as seen:', error);
+      toast.error('Failed to mark notification as seen');
     }
   };
 
@@ -296,6 +336,7 @@ const TeacherNotifications = () => {
                     tabValue={0}
                     user={user}
                     onMarkAsRead={handleMarkAsRead}
+                    onMarkAsSeen={handleMarkAsSeen}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onNavigate={handleNavigate}
@@ -323,6 +364,7 @@ const TeacherNotifications = () => {
                     tabValue={1}
                     user={user}
                     onMarkAsRead={handleMarkAsRead}
+                    onMarkAsSeen={handleMarkAsSeen}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onNavigate={handleNavigate}
@@ -347,6 +389,7 @@ const TeacherNotifications = () => {
                     tabValue={2}
                     user={user}
                     onMarkAsRead={handleMarkAsRead}
+                    onMarkAsSeen={handleMarkAsSeen}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onNavigate={handleNavigate}

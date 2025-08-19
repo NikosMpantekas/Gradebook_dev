@@ -6,6 +6,7 @@ import {
   getMyNotifications, 
   getSentNotifications,
   markNotificationAsRead,
+  markNotificationAsSeen,
   deleteNotification,
   updateNotification
 } from '../features/notifications/notificationSlice';
@@ -124,6 +125,22 @@ const Notifications = () => {
       .catch((error) => {
         console.error('Failed to mark notification as read:', error);
         toast.error('Failed to mark notification as read');
+      });
+  }, [dispatch]);
+
+  // Handle mark as seen
+  const handleMarkAsSeen = useCallback((notificationId) => {
+    console.log(`Marking notification ${notificationId} as seen`);
+    dispatch(markNotificationAsSeen(notificationId))
+      .unwrap()
+      .then(() => {
+        toast.success('Notification marked as seen');
+        // Dispatch custom event to refresh header counts
+        window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+      })
+      .catch((error) => {
+        console.error('Failed to mark notification as seen:', error);
+        toast.error('Failed to mark notification as seen');
       });
   }, [dispatch]);
 
@@ -249,6 +266,7 @@ const Notifications = () => {
                 tabValue="received"
                 user={user}
                 onMarkAsRead={handleMarkAsRead}
+                onMarkAsSeen={handleMarkAsSeen}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onNavigate={handleNavigate}
@@ -262,6 +280,7 @@ const Notifications = () => {
                   tabValue="sent"
                   user={user}
                   onMarkAsRead={handleMarkAsRead}
+                  onMarkAsSeen={handleMarkAsSeen}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onNavigate={handleNavigate}
