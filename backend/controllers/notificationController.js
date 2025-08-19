@@ -465,14 +465,52 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       const notificationObj = notification.toObject();
       
       // Check if current user has read/seen this notification in recipients array
-      const recipient = notification.recipients?.find(r => 
-        r.user && r.user.toString() === user._id.toString()
-      );
+      // Handle both ObjectId and populated user objects
+      const recipient = notification.recipients?.find(r => {
+        if (!r.user) return false;
+        
+        // Handle populated user object (has _id property)
+        if (r.user._id) {
+          return r.user._id.toString() === user._id.toString();
+        }
+        
+        // Handle ObjectId
+        return r.user.toString() === user._id.toString();
+      });
       
       // Debug logging for seen status extraction
       console.log(`NOTIFICATION_STATUS Processing notification ${notification._id}:`);
+      console.log(`NOTIFICATION_STATUS - User ID: ${user._id.toString()}`);
+      console.log(`NOTIFICATION_STATUS - Raw recipients:`, JSON.stringify(notification.recipients, null, 2));
+      
+      // Try different approaches to find recipient
+      const attempts = [];
+      
+      notification.recipients?.forEach((r, index) => {
+        if (r.user) {
+          // Method 1: Direct ObjectId comparison
+          const directMatch = r.user.toString() === user._id.toString();
+          
+          // Method 2: _id property comparison
+          const idMatch = r.user._id ? r.user._id.toString() === user._id.toString() : false;
+          
+          attempts.push({
+            index,
+            userType: typeof r.user,
+            userValue: r.user.toString(),
+            hasIdProp: !!r.user._id,
+            idValue: r.user._id ? r.user._id.toString() : null,
+            directMatch,
+            idMatch,
+            isRead: r.isRead,
+            isSeen: r.isSeen
+          });
+        }
+      });
+      
+      console.log(`NOTIFICATION_STATUS - Match attempts:`, attempts);
       console.log(`NOTIFICATION_STATUS - Found recipient:`, recipient ? {
-        user: recipient.user.toString(),
+        user: recipient.user._id ? recipient.user._id.toString() : recipient.user.toString(),
         isRead: recipient.isRead,
         isSeen: recipient.isSeen
       } : 'NO RECIPIENT FOUND');
