@@ -128,48 +128,55 @@ class NotificationHandler {
 
       // Parse push data if available
       if (event.data) {
+        console.log(`[${SW_NAME}] 📋 Parsing push event data...`);
         try {
-          const pushData = event.data.json();
-          notificationData = { ...notificationData, ...pushData };
-          console.log(`[${SW_NAME}] Parsed push data:`, notificationData);
+          notificationData = event.data.json();
+          console.log(`[${SW_NAME}] 📋 RAW PUSH DATA:`, JSON.stringify(notificationData, null, 2));
         } catch (parseError) {
-          console.error(`[${SW_NAME}] Failed to parse push data:`, parseError);
-          // Use text content as fallback
-          try {
-            const textData = event.data.text();
-            notificationData.body = textData || notificationData.body;
-          } catch (textError) {
-            console.error(`[${SW_NAME}] Failed to parse as text:`, textError);
-          }
+          console.error(`[${SW_NAME}] Error parsing push data:`, parseError);
         }
       }
-
-      // CRITICAL: Check if notification is intended for current user
+      
+      // SECURITY: Check if notification is intended for current user
+      console.log(`[${SW_NAME}] 🔐 STARTING USER ID SECURITY CHECK...`);
       const currentUserId = await this._getCurrentUserId();
       const targetUserId = notificationData.data?.targetUserId;
       
-      console.log(`[${SW_NAME}] SECURITY CHECK - Current User: ${currentUserId} | Target User: ${targetUserId}`);
+      console.log(`[${SW_NAME}] 🔐 SECURITY CHECK RESULTS:`);
+      console.log(`[${SW_NAME}] - Current user ID: ${currentUserId}`);
+      console.log(`[${SW_NAME}] - Target user ID: ${targetUserId}`);
+      console.log(`[${SW_NAME}] - User ID match: ${currentUserId === targetUserId}`);
       
       if (targetUserId && currentUserId && targetUserId !== currentUserId) {
-        console.log(`[${SW_NAME}] 🛡️ SECURITY: Notification not for current user - BLOCKED`);
+        console.log(`[${SW_NAME}] 🛡️ SECURITY: Blocking notification not intended for current user`);
+        console.log(`[${SW_NAME}] 🛡️ Expected: ${targetUserId}, Got: ${currentUserId}`);
         return; // Don't show notification not intended for this user
       }
       
-      // CRITICAL: Check user receiving preference before showing notification
-      const shouldReceiveNotifications = await this._checkUserReceivingPreference();
+      console.log(`[${SW_NAME}] ✅ SECURITY CHECK PASSED - Notification is for current user`);
       
-      if (!shouldReceiveNotifications) {
-        console.log(`[${SW_NAME}] User has disabled receiving notifications - service active but not showing notification`);
-        return; // Service stays active but doesn't show notification
+      // Check if user wants to receive notifications (preference only)
+      console.log(`[${SW_NAME}] 📋 Checking user receiving preference...`);
+      const userWantsNotifications = await this._checkUserReceivingPreference();
+      console.log(`[${SW_NAME}] 📋 User wants notifications: ${userWantsNotifications}`);
+      
+      if (!userWantsNotifications) {
+        console.log(`[${SW_NAME}] 📵 User disabled notification receiving - not showing notification`);
+        return;
       }
-
-      console.log(`[${SW_NAME}] ✅ SECURITY PASSED - Showing notification for user: ${currentUserId}`);
-      // Show notification
+      
+      console.log(`[${SW_NAME}] ✅ ALL CHECKS PASSED - Proceeding to show notification`);
+      console.log(`[${SW_NAME}] 🔔 Calling _showNotification with data:`, notificationData);
+      
       await this._showNotification(notificationData);
+      
+      console.log(`[${SW_NAME}] ✅ PUSH EVENT HANDLING COMPLETED SUCCESSFULLY`);
 
     } catch (error) {
-      console.error(`[${SW_NAME}] Error handling push event:`, error);
+      console.error(`[${SW_NAME}] ❌ ERROR IN PUSH EVENT HANDLER:`, error);
+      console.error(`[${SW_NAME}] ❌ Error stack:`, error.stack);
       // Show fallback notification
+      console.log(`[${SW_NAME}] 🔄 Showing fallback notification due to error`);
       await this._showFallbackNotification();
     }
   }
