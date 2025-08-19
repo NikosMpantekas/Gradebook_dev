@@ -13,6 +13,7 @@ const Layout = () => {
   const location = useLocation();
   
   // Use the mobile detection hook for consistent behavior
+  // This hook returns true for screens up to 1023px (mobile, tablet, small desktop)
   const isMobile = useIsMobile();
   
   // Retrieve previous mobileOpen state from localStorage to prevent it from resetting on navigation
