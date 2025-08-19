@@ -391,12 +391,12 @@ const requireSchoolFeature = (featureName) => {
       return next();
     }
 
-    // Get user's school permissions from database
+    // Get user's school permissions from new schoolpermissions collection
     try {
-      const School = require('../models/schoolModel');
-      const userSchool = await School.findById(req.user.schoolId);
+      const SchoolPermissions = require('../models/schoolPermissionsModel');
+      const schoolPermissions = await SchoolPermissions.findOne({ schoolId: req.user.schoolId });
       
-      if (!userSchool || !userSchool.features || !userSchool.features[featureName]) {
+      if (!schoolPermissions || !schoolPermissions.features || !schoolPermissions.features[featureName]) {
         console.log(`🚫 Feature '${featureName}' disabled for school ${req.user.schoolId}`);
         return res.status(403).json({ 
           success: false, 
