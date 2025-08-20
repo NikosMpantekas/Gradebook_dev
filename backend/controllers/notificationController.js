@@ -108,8 +108,8 @@ const createNotification = asyncHandler(async (req, res) => {
       if (req.user.role === 'admin') {
         allowedRoles = ['student', 'teacher', 'admin'];
       } else if (req.user.role === 'teacher') {
-        allowedRoles = ['student']; // Teachers can only mass-notify students
-        console.log('[SECURITY] Teacher sendToAll restricted to students only');
+        allowedRoles = ['student']; // STRICT: Teachers can ONLY notify students
+        console.log('[SECURITY] Teacher sendToAll STRICTLY limited to students only');
       } else {
         console.error(`[SECURITY] Unauthorized role ${req.user.role} attempted sendToAll - BLOCKED`);
         res.status(403);
@@ -145,11 +145,11 @@ const createNotification = asyncHandler(async (req, res) => {
         
         const validatedRecipients = [];
         for (const recipient of recipientUsers) {
-          // SECURITY CHECK: Teachers cannot send directly to admins
-          if (req.user.role === 'teacher' && recipient.role === 'admin') {
-            console.error(`[SECURITY] Teacher ${req.user._id} attempted to send notification directly to admin ${recipient._id} (${recipient.name}) - BLOCKED`);
+          // STRICT SECURITY CHECK: Teachers can ONLY send to students
+          if (req.user.role === 'teacher' && recipient.role !== 'student') {
+            console.error(`[SECURITY] Teacher ${req.user._id} attempted to send notification to ${recipient.role} ${recipient._id} (${recipient.name}) - BLOCKED`);
             res.status(403);
-            throw new Error(`Teachers cannot send notifications directly to administrators (${recipient.name})`);
+            throw new Error(`Teachers can only send notifications to students. Cannot send to ${recipient.role}: ${recipient.name}`);
           }
           // SECURITY CHECK: Students cannot send notifications at all
           if (req.user.role === 'student') {
@@ -509,13 +509,22 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       console.log(`[SECURITY] Teacher ${req.user._id} restricted to sent notifications and direct recipient notifications`);
     }
     else if (req.user.role === 'admin') {
-      // ADMINS: Can see notifications they sent OR where they are direct recipients
-      // This prevents "NO RECIPIENT FOUND" errors when admins view notifications they're not recipients of
+      // ADMINS: Can see notifications they sent, direct recipients, AND teacher-to-student notifications for safety monitoring
+      const User = mongoose.model('User');
+      const teacherIds = await User.find({ 
+        schoolId: req.user.schoolId, 
+        role: 'teacher' 
+      }).select('_id');
+      
       query.$or = [
         { sender: req.user._id }, // Notifications they created
-        { 'recipients.user': req.user._id } // Directly addressed to this admin
+        { 'recipients.user': req.user._id }, // Directly addressed to this admin
+        { 
+          sender: { $in: teacherIds.map(t => t._id) }, // SAFETY: Teacher-to-student notifications for monitoring
+          'recipients.user': { $in: await User.find({ schoolId: req.user.schoolId, role: 'student' }).select('_id').then(students => students.map(s => s._id)) }
+        }
       ];
-      console.log(`[SECURITY] Admin ${req.user._id} restricted to sent notifications and direct recipient notifications`);
+      console.log(`[SECURITY] Admin ${req.user._id} can see: sent notifications, direct recipient notifications, and teacher-to-student notifications for safety monitoring`);
     }
     else if (req.user.role === 'parent') {
       // PARENTS: Can ONLY see notifications where they are direct recipients
