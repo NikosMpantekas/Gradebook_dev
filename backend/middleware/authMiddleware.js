@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const User = require('../models/userModel');
 const School = require('../models/schoolModel');
+const SystemMaintenance = require('../models/systemMaintenanceModel');
 const logger = require('../utils/logger');
 
 // Helper function to safely parse JSON without crashing
@@ -346,6 +347,65 @@ const superadmin = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Maintenance mode enforcement middleware
+const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
+  try {
+    // Skip maintenance check for certain routes
+    const skipMaintenanceRoutes = [
+      '/api/system/maintenance/status',
+      '/api/users/login',
+      '/api/users/refresh-token'
+    ];
+    
+    if (skipMaintenanceRoutes.some(route => req.originalUrl.includes(route))) {
+      console.log(`[MAINTENANCE] Skipping maintenance check for route: ${req.originalUrl}`);
+      return next();
+    }
+    
+    // Get current maintenance status
+    const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
+    
+    console.log(`[MAINTENANCE] Checking maintenance mode for ${req.originalUrl}`, {
+      isMaintenanceMode: maintenanceDoc.isMaintenanceMode,
+      userRole: req.user?.role || 'anonymous',
+      userId: req.user?._id
+    });
+    
+    // If maintenance mode is not active, continue normally
+    if (!maintenanceDoc.isMaintenanceMode) {
+      console.log(`[MAINTENANCE] Maintenance mode disabled - allowing request`);
+      return next();
+    }
+    
+    // If maintenance mode is active, check if user can bypass
+    if (req.user && maintenanceDoc.canBypassMaintenance(req.user.role)) {
+      console.log(`[MAINTENANCE] User ${req.user.role} can bypass maintenance - allowing request`);
+      return next();
+    }
+    
+    // Block the request - maintenance mode is active and user cannot bypass
+    console.log(`[MAINTENANCE] Blocking request - maintenance mode active and user cannot bypass`, {
+      userRole: req.user?.role || 'anonymous',
+      path: req.originalUrl
+    });
+    
+    res.status(503).json({
+      success: false,
+      message: 'System is currently under maintenance',
+      isMaintenanceMode: true,
+      maintenanceMessage: maintenanceDoc.maintenanceMessage,
+      estimatedCompletion: maintenanceDoc.estimatedCompletion,
+      error: 'Service temporarily unavailable'
+    });
+    
+  } catch (error) {
+    console.error('[MAINTENANCE] Error checking maintenance mode:', error);
+    // If there's an error checking maintenance, allow the request to continue
+    // This ensures the system doesn't break if maintenance checking fails
+    next();
+  }
+});
+
 // Middleware to check if user is admin or secretary with specific permission
 const adminOrSecretary = (permissionKey) => {
   return asyncHandler(async (req, res, next) => {
@@ -603,6 +663,8 @@ module.exports = {
   superadmin,
   teacher, 
   student,
+  // Maintenance mode middleware
+  checkMaintenanceMode,
   // NEW: School permission-based middleware
   requireSchoolFeature,
   canManageGrades,
