@@ -9,6 +9,13 @@ const {
 } = require('../controllers/systemMaintenanceController');
 const { protect, superadmin } = require('../middleware/authMiddleware');
 
+// Debug middleware to log all maintenance route requests
+router.use((req, res, next) => {
+  console.log(`[MAINTENANCE ROUTES] ${req.method} ${req.originalUrl} - Full path: ${req.baseUrl}${req.path}`);
+  console.log(`[MAINTENANCE ROUTES] User authenticated: ${!!req.user}, Role: ${req.user?.role}`);
+  next();
+});
+
 // @desc    Get current maintenance status (public)
 // @route   GET /api/system/maintenance/status
 // @access  Public
