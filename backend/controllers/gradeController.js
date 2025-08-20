@@ -390,12 +390,10 @@ const getGradesBySubject = asyncHandler(async (req, res) => {
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getGradesBySubject controller:', error.message);
-    res.status(500);
-    throw new Error('Error retrieving subject grades');
   }
 });
 
-// @desc    Get grades assigned by a specific teacher
+// @desc    Get grades by teacher
 // @route   GET /api/grades/teacher/:id
 // @access  Private
 const getGradesByTeacher = asyncHandler(async (req, res) => {
@@ -406,15 +404,55 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
       throw new Error('Not authorized to view grades assigned by other teachers');
     }
     
-    // Find all grades assigned by this teacher in this school
-    const grades = await Grade.find({
+    console.log(`[GetTeacherGrades] Fetching grades for teacher ${req.params.id}, role: ${req.user.role}`);
+    
+    let gradeQuery = {
       teacher: req.params.id,
       schoolId: req.user.schoolId // Multi-tenancy: Only find grades in the same school
-    })
+    };
+    
+    // For teachers: only show grades for subjects they teach in classes with students
+    if (req.user.role === 'teacher') {
+      // Get all classes where this teacher teaches
+      const teacherClasses = await Class.find({
+        teachers: req.user._id,
+        schoolId: req.user.schoolId
+      });
+      
+      console.log(`[GetTeacherGrades] Found ${teacherClasses.length} classes for teacher`);
+      
+      if (teacherClasses.length === 0) {
+        console.log(`[GetTeacherGrades] No classes found for teacher ${req.user._id}`);
+        return res.status(200).json([]);
+      }
+      
+      // Extract subject names from classes
+      const teacherSubjects = [...new Set(teacherClasses.map(cls => cls.subject))];
+      console.log(`[GetTeacherGrades] Teacher subjects: [${teacherSubjects.join(', ')}]`);
+      
+      // Get subject IDs from names
+      const subjectObjects = await Subject.find({
+        name: { $in: teacherSubjects },
+        schoolId: req.user.schoolId
+      });
+      const subjectIds = subjectObjects.map(s => s._id);
+      
+      // Extract all student IDs from teacher's classes
+      const allStudentIds = [...new Set(teacherClasses.flatMap(cls => cls.students))];
+      console.log(`[GetTeacherGrades] Teacher has ${allStudentIds.length} students across all classes`);
+      
+      // Filter grades by teacher's subjects and students
+      gradeQuery.subject = { $in: subjectIds };
+      gradeQuery.student = { $in: allStudentIds };
+    }
+    
+    // Find all grades matching the query
+    const grades = await Grade.find(gradeQuery)
       .populate('student', 'name')
       .populate('subject', 'name')
       .sort({ date: -1 });
     
+    console.log(`[GetTeacherGrades] Returning ${grades.length} grades for teacher ${req.params.id}`);
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getGradesByTeacher controller:', error.message);

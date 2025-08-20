@@ -36,9 +36,11 @@ const NotificationRecipients = ({
   parents = [],
   loading = false
 }) => {
-  const [expandedSections, setExpandedSections] = useState(new Set(['students', 'teachers', 'parents']));
+  // TEACHER RESTRICTION: Only show students section for teachers
+  const availableSections = currentUserRole === 'teacher' ? ['students'] : ['students', 'teachers', 'parents'];
+  const [expandedSections, setExpandedSections] = useState(new Set(availableSections));
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [filterRole, setFilterRole] = useState(currentUserRole === 'teacher' ? 'student' : 'all');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'cards'
 
   // Remove the API fetching logic - data comes from props now
@@ -162,22 +164,28 @@ const NotificationRecipients = ({
               <SelectTrigger className="w-36 h-9 bg-background border-border hover:border-primary/50 hover:bg-background/80 transition-all duration-200 shadow-sm">
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="All Roles" />
+                  <SelectValue placeholder={currentUserRole === 'teacher' ? 'Students' : 'All Roles'} />
                 </div>
               </SelectTrigger>
               <SelectContent className="bg-background border-border shadow-lg">
-                <SelectItem value="all" className="hover:bg-muted/50 cursor-pointer">
-                  All Roles
-                </SelectItem>
+                {currentUserRole !== 'teacher' && (
+                  <SelectItem value="all" className="hover:bg-muted/50 cursor-pointer">
+                    All Roles
+                  </SelectItem>
+                )}
                 <SelectItem value="student" className="hover:bg-muted/50 cursor-pointer">
                   Students
                 </SelectItem>
-                <SelectItem value="teacher" className="hover:bg-muted/50 cursor-pointer">
-                  Teachers
-                </SelectItem>
-                <SelectItem value="parent" className="hover:bg-muted/50 cursor-pointer">
-                  Parents
-                </SelectItem>
+                {currentUserRole !== 'teacher' && (
+                  <SelectItem value="teacher" className="hover:bg-muted/50 cursor-pointer">
+                    Teachers
+                  </SelectItem>
+                )}
+                {currentUserRole !== 'teacher' && (
+                  <SelectItem value="parent" className="hover:bg-muted/50 cursor-pointer">
+                    Parents
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -257,149 +265,153 @@ const NotificationRecipients = ({
             </Card>
           </Collapsible>
 
-          {/* Teachers Section */}
-          <Collapsible open={expandedSections.has('teachers')}>
-            <Card>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Teachers</CardTitle>
-                      {getRecipientCount('teacher') && (
-                        <Badge variant="secondary">{getRecipientCount('teacher')}</Badge>
+          {/* Teachers Section - HIDDEN for teacher users */}
+          {currentUserRole !== 'teacher' && (
+            <Collapsible open={expandedSections.has('teachers')}>
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <User className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-base">Teachers</CardTitle>
+                        {getRecipientCount('teacher') && (
+                          <Badge variant="secondary">{getRecipientCount('teacher')}</Badge>
+                        )}
+                      </div>
+                      {expandedSections.has('teachers') ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
-                    {expandedSections.has('teachers') ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="flex items-center space-x-2 mb-3">
-            <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => selectAllInSection(getFilteredTeachers(), 'teacher')}
-                      disabled={disabled}
-                    >
-                      Select All
-            </Button>
-            <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => deselectAllInSection(getFilteredTeachers(), 'teacher')}
-                      disabled={disabled}
-                    >
-                      Deselect All
-            </Button>
-                  </div>
-                  
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {getFilteredTeachers().map((teacher) => (
-                      <div key={teacher._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
-                        <Checkbox
-                          id={`teacher-${teacher._id}`}
-                          checked={isRecipientSelected(teacher._id, 'teacher')}
-                          onCheckedChange={() => handleRecipientToggle(teacher._id, 'teacher')}
-                          disabled={disabled}
-                        />
-                        <Label htmlFor={`teacher-${teacher._id}`} className="flex-1 cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{teacher.name}</span>
-                            <span className="text-sm text-muted-foreground">{teacher.email}</span>
-                          </div>
-                          {teacher.subjects && teacher.subjects.length > 0 && (
-                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                              <BookOpen className="h-3 w-3" />
-                              <span>{teacher.subjects.map(s => s.name).join(', ')}</span>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center space-x-2 mb-3">
+              <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => selectAllInSection(getFilteredTeachers(), 'teacher')}
+                        disabled={disabled}
+                      >
+                        Select All
+              </Button>
+              <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deselectAllInSection(getFilteredTeachers(), 'teacher')}
+                        disabled={disabled}
+                      >
+                        Deselect All
+              </Button>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {getFilteredTeachers().map((teacher) => (
+                        <div key={teacher._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                          <Checkbox
+                            id={`teacher-${teacher._id}`}
+                            checked={isRecipientSelected(teacher._id, 'teacher')}
+                            onCheckedChange={() => handleRecipientToggle(teacher._id, 'teacher')}
+                            disabled={disabled}
+                          />
+                          <Label htmlFor={`teacher-${teacher._id}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{teacher.name}</span>
+                              <span className="text-sm text-muted-foreground">{teacher.email}</span>
                             </div>
-                          )}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                            {teacher.subjects && teacher.subjects.length > 0 && (
+                              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                <BookOpen className="h-3 w-3" />
+                                <span>{teacher.subjects.map(s => s.name).join(', ')}</span>
+                              </div>
+                            )}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
 
-          {/* Parents Section */}
-          <Collapsible open={expandedSections.has('parents')}>
-            <Card>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Parents</CardTitle>
-                      {getRecipientCount('parent') && (
-                        <Badge variant="secondary">{getRecipientCount('parent')}</Badge>
+          {/* Parents Section - HIDDEN for teacher users */}
+          {currentUserRole !== 'teacher' && (
+            <Collapsible open={expandedSections.has('parents')}>
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <User className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-base">Parents</CardTitle>
+                        {getRecipientCount('parent') && (
+                          <Badge variant="secondary">{getRecipientCount('parent')}</Badge>
+                        )}
+                      </div>
+                      {expandedSections.has('parents') ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
-                    {expandedSections.has('parents') ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => selectAllInSection(getFilteredParents(), 'parent')}
-                      disabled={disabled}
-                    >
-                      Select All
+                  </CardHeader>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => selectAllInSection(getFilteredParents(), 'parent')}
+                        disabled={disabled}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deselectAllInSection(getFilteredParents(), 'parent')}
+                        disabled={disabled}
+                      >
+                        Deselect All
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => deselectAllInSection(getFilteredParents(), 'parent')}
-                      disabled={disabled}
-                    >
-                      Deselect All
-                  </Button>
-                  </div>
-                  
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {getFilteredParents().map((parent) => (
-                      <div key={parent._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
-                        <Checkbox
-                          id={`parent-${parent._id}`}
-                          checked={isRecipientSelected(parent._id, 'parent')}
-                          onCheckedChange={() => handleRecipientToggle(parent._id, 'parent')}
-                          disabled={disabled}
-                        />
-                        <Label htmlFor={`parent-${parent._id}`} className="flex-1 cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{parent.name}</span>
-                            <span className="text-sm text-muted-foreground">{parent.email}</span>
-                          </div>
-                          {parent.students && parent.students.length > 0 && (
-                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              <span>{parent.students.map(s => s.name).join(', ')}</span>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {getFilteredParents().map((parent) => (
+                        <div key={parent._id} className="flex items-center space-x-3 p-2 border rounded hover:bg-muted/50">
+                          <Checkbox
+                            id={`parent-${parent._id}`}
+                            checked={isRecipientSelected(parent._id, 'parent')}
+                            onCheckedChange={() => handleRecipientToggle(parent._id, 'parent')}
+                            disabled={disabled}
+                          />
+                          <Label htmlFor={`parent-${parent._id}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{parent.name}</span>
+                              <span className="text-sm text-muted-foreground">{parent.email}</span>
                             </div>
-                          )}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                            {parent.students && parent.students.length > 0 && (
+                              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                <User className="h-3 w-3" />
+                                <span>{parent.students.map(s => s.name).join(', ')}</span>
+                              </div>
+                            )}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
         </div>
 
         {/* Summary */}
