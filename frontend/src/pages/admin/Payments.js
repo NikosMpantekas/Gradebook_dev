@@ -66,7 +66,9 @@ const Payments = () => {
   
   // Form states
   const [paymentForm, setPaymentForm] = useState({
+    parentId: '',
     studentId: '',
+    linkedStudents: [],
     paymentPeriod: '',
     status: 'pending',
     paymentMethod: '',
@@ -114,15 +116,35 @@ const Payments = () => {
     }
   };
 
-  // Fetch students for dropdown
+  // Fetch parents with their linked students for dropdown
   const fetchStudents = async () => {
     try {
-      console.log('[PAYMENTS] Fetching students...');
-      const response = await api.get('/api/users?role=student&limit=1000');
-      console.log('[PAYMENTS] Students response:', response.data);
-      setStudents(response.data.users || response.data || []);
+      console.log('[PAYMENTS] Fetching parents with students...');
+      const parentsResponse = await api.get('/api/users?role=parent&limit=1000');
+      const studentsResponse = await api.get('/api/users?role=student&limit=1000');
+      
+      const parents = parentsResponse.data.users || parentsResponse.data || [];
+      const allStudents = studentsResponse.data.users || studentsResponse.data || [];
+      
+      console.log('[PAYMENTS] Parents response:', parents.length);
+      console.log('[PAYMENTS] Students response:', allStudents.length);
+      
+      // Create parent-student mapping for display
+      const parentsWithStudents = parents.map(parent => {
+        const linkedStudents = allStudents.filter(student => 
+          student.parentIds && student.parentIds.includes(parent._id)
+        );
+        return {
+          ...parent,
+          linkedStudents,
+          displayName: `${parent.name} (${linkedStudents.map(s => s.name).join(', ')})`
+        };
+      }).filter(parent => parent.linkedStudents.length > 0); // Only show parents with linked students
+      
+      setStudents(parentsWithStudents);
+      console.log('[PAYMENTS] Processed parents with students:', parentsWithStudents.length);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error('Error fetching parents/students:', error);
       setStudents([]);
     }
   };
@@ -193,7 +215,9 @@ const Payments = () => {
   // Reset form
   const resetPaymentForm = () => {
     setPaymentForm({
+      parentId: '',
       studentId: '',
+      linkedStudents: [],
       paymentPeriod: '',
       status: 'pending',
       paymentMethod: '',
@@ -366,20 +390,41 @@ const Payments = () => {
                 {!selectedPayment && (
                   <>
                     <div>
-                      <Label htmlFor="student">Student</Label>
-                      <Select value={paymentForm.studentId} onValueChange={(value) => setPaymentForm({...paymentForm, studentId: value})}>
+                      <Label htmlFor="student">Parent (Students)</Label>
+                      <Select value={paymentForm.parentId} onValueChange={(value) => {
+                        const selectedParent = students.find(p => p._id === value);
+                        setPaymentForm({...paymentForm, parentId: value, linkedStudents: selectedParent?.linkedStudents || []});
+                      }}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select student" />
+                          <SelectValue placeholder="Select parent" />
                         </SelectTrigger>
                         <SelectContent>
-                          {students.map((student) => (
-                            <SelectItem key={student._id} value={student._id}>
-                              {student.name}
+                          {students.map((parent) => (
+                            <SelectItem key={parent._id} value={parent._id}>
+                              {parent.displayName}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    {paymentForm.linkedStudents && paymentForm.linkedStudents.length > 0 && (
+                      <div>
+                        <Label htmlFor="specificStudent">Select Student</Label>
+                        <Select value={paymentForm.studentId} onValueChange={(value) => setPaymentForm({...paymentForm, studentId: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select specific student" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {paymentForm.linkedStudents.map((student) => (
+                              <SelectItem key={student._id} value={student._id}>
+                                {student.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     
                     <div>
                       <Label htmlFor="period">Payment Period</Label>
