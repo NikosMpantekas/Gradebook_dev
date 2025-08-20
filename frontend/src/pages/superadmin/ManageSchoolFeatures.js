@@ -10,6 +10,7 @@ import {
 import SchoolIcon from '@mui/icons-material/School';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import StarRateIcon from '@mui/icons-material/StarRate';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 import { toast } from 'react-toastify';
 
 const ManageSchoolFeatures = () => {
@@ -61,7 +62,8 @@ const ManageSchoolFeatures = () => {
               ...school,
               features: permissionsResponse.data?.features || {
                 enableCalendar: false,
-                enableRatingSystem: false
+                enableRatingSystem: false,
+                enablePayments: false
               }
             };
           } catch (error) {
@@ -70,7 +72,8 @@ const ManageSchoolFeatures = () => {
               ...school,
               features: {
                 enableCalendar: false,
-                enableRatingSystem: false
+                enableRatingSystem: false,
+                enablePayments: false
               }
             };
           }
@@ -220,6 +223,24 @@ const ManageSchoolFeatures = () => {
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <StarRateIcon sx={{ mr: 1, fontSize: '1rem' }} />
                             <Typography variant="body2">Rating System</Typography>
+                          </Box>
+                        }
+                      />
+                    </Box>
+                    
+                    <Box sx={{ mt: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={school.features?.enablePayments === true}
+                            onChange={(e) => handleToggleFeature(school._id, 'enablePayments', e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <CreditCardIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                            <Typography variant="body2">Payment Management</Typography>
                           </Box>
                         }
                       />
