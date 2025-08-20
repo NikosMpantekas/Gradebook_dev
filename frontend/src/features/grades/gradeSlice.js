@@ -66,7 +66,17 @@ export const getStudentGrades = createAsyncThunk(
   'grades/getStudentGrades',
   async (studentId, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
+      const { auth } = thunkAPI.getState();
+      const user = auth.user;
+      const token = user.token;
+      
+      // CRITICAL BLOCK: Prevent parents from using this endpoint
+      if (user.role === 'parent') {
+        console.error('[GRADE_SLICE] 🚫 BLOCKED: Parent users cannot use getStudentGrades');
+        console.error('[GRADE_SLICE] 💡 Parents should use ParentDashboard component with /api/grades/parent/students');
+        throw new Error('Parent users should use the parent dashboard to view grades');
+      }
+      
       return await gradeService.getStudentGrades(studentId, token);
     } catch (error) {
       const message =

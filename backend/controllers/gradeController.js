@@ -226,7 +226,18 @@ const getStudentGrades = asyncHandler(async (req, res) => {
     
     // Parent authorization: check if requesting grades for their linked student
     if (req.user.role === 'parent') {
-      console.log(`[GRADES] Parent ${req.user.id} requesting grades. Linked students:`, req.user.linkedStudentIds);
+      console.log(`[GRADES] ⚠️  PARENT ATTEMPTING INDIVIDUAL GRADE ACCESS`);
+      console.log(`[GRADES] Parent ID: ${req.user.id}`);
+      console.log(`[GRADES] Student ID requested: ${req.params.id}`);
+      console.log(`[GRADES] Parent linkedStudentIds:`, req.user.linkedStudentIds);
+      
+      // CRITICAL BLOCK: Parent requesting grades for themselves (wrong usage)
+      if (req.params.id === req.user.id) {
+        console.log(`[GRADES] 🚫 BLOCKED: Parent ${req.user.id} tried to access grades using their own ID`);
+        console.log(`[GRADES] 💡 SOLUTION: Parents should use /api/grades/parent/students endpoint`);
+        res.status(400);
+        throw new Error('Parent users should use /api/grades/parent/students endpoint instead of individual student grade calls');
+      }
       
       // Check if the requested student ID is in the parent's linkedStudentIds
       const hasAccess = req.user.linkedStudentIds && req.user.linkedStudentIds.some(
