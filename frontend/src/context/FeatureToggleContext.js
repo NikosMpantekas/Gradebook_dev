@@ -27,7 +27,8 @@ const defaultFeatures = {
   enableBugReports: false,
   enableDirections: false,
   enablePatchNotes: false,
-  enableStudentProgress: false
+  enableStudentProgress: false,
+  enablePayments: false
 };
 
 /**

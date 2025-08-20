@@ -9,6 +9,7 @@ import {
   Calendar, 
   Bell, 
   TrendingUp, 
+  CreditCard,
   BarChart3,
   ChevronRight,
   Eye,
@@ -246,7 +247,7 @@ const ParentDashboard = () => {
                   Check Notifications
                 </Button>
                 <Button onClick={navigateToPayments} variant="outline" className="h-20 flex-col">
-                  <Card className="h-6 w-6 mb-2" />
+                  <CreditCard className="h-6 w-6 mb-2" />
                   View Payments
                 </Button>
               </div>
