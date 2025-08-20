@@ -95,8 +95,10 @@ const UnifiedDashboard = () => {
       // Fetch recent notifications and grades
       await dispatch(getMyNotifications()).unwrap();
       if (user.role === 'student') {
-        await dispatch(getStudentGrades()).unwrap();
+        await dispatch(getStudentGrades(user._id || user.id)).unwrap();
       }
+      // CRITICAL FIX: Parents should NOT fetch grades here - handled by ParentDashboard component
+      // Parent grades are fetched via /api/grades/parent/students endpoint
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
