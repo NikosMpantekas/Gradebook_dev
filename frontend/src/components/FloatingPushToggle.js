@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Bell, BellOff } from 'lucide-react';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 import PushNotificationManager from '../services/PushNotificationManager';
 import authService from '../features/auth/authService';
 
@@ -96,36 +97,55 @@ const FloatingPushToggle = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <Button
-        onClick={handleToggle}
-        disabled={isLoading}
-        size="lg"
-        className={`
-          h-14 w-14 rounded-full shadow-lg transition-all duration-200 hover:scale-105
-          ${isEnabled 
-            ? 'bg-green-500 hover:bg-green-600 text-white' 
-            : 'bg-gray-500 hover:bg-gray-600 text-white'
-          }
-          ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-        `}
-        title={isEnabled ? 'Disable Push Notifications' : 'Enable Push Notifications'}
-      >
-        {isLoading ? (
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
-        ) : isEnabled ? (
-          <Bell className="h-6 w-6" />
-        ) : (
-          <BellOff className="h-6 w-6" />
-        )}
-      </Button>
-      
-      {/* Status indicator dot */}
-      <div className={`
-        absolute -top-1 -right-1 h-4 w-4 rounded-full border-2 border-white
-        ${isEnabled ? 'bg-green-400' : 'bg-red-400'}
-      `} />
-    </div>
+    <TooltipProvider>
+      <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-2 duration-500">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleToggle}
+              disabled={isLoading}
+              size="icon"
+              variant="ghost"
+              className={`
+                h-12 w-12 rounded-full 
+                bg-background/80 backdrop-blur-sm border border-border/50
+                shadow-lg shadow-black/10
+                transition-all duration-300 ease-out
+                hover:scale-110 hover:shadow-xl hover:shadow-black/20
+                hover:bg-background/90 hover:border-border
+                active:scale-95
+                ${isLoading ? 'cursor-not-allowed animate-pulse' : ''}
+              `}
+            >
+              {isLoading ? (
+                <div className="relative h-5 w-5">
+                  {/* Pulsing ring animation */}
+                  <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
+                  {/* Spinning loader */}
+                  <div className="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                </div>
+              ) : isEnabled ? (
+                <Bell className="h-5 w-5 text-primary transition-colors duration-200" />
+              ) : (
+                <BellOff className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-background/95 backdrop-blur-sm border-border">
+            <p className="text-sm">
+              {isLoading 
+                ? 'Processing...' 
+                : isEnabled 
+                  ? 'Click to disable push notifications' 
+                  : 'Click to enable push notifications'
+              }
+            </p>
+          </TooltipContent>
+        </Tooltip>
+        
+
+      </div>
+    </TooltipProvider>
   );
 };
 
