@@ -342,7 +342,9 @@ const createNotification = asyncHandler(async (req, res) => {
       const pushPromises = subscriptions.map(subscription => {
         console.log('[PUSH_SECURITY] Sending push to user:', subscription.userId.toString(), 'subscription:', subscription._id.toString());
         
-        const payload = JSON.stringify({
+        // Apple-specific payload optimization
+        const isAppleEndpoint = subscription.endpoint.includes('web.push.apple.com');
+        const basePayload = {
           title: newNotification.title,
           body: newNotification.message,
           icon: '/logo192.png',
@@ -351,10 +353,28 @@ const createNotification = asyncHandler(async (req, res) => {
           data: {
             notificationId: newNotification._id,
             url: '/app/notifications',
-            targetUserId: subscription.userId.toString(), // CRITICAL: Add target user ID for filtering
+            targetUserId: subscription.userId.toString(),
             senderName: newNotification.senderName,
             urgent: newNotification.urgent || false
           }
+        };
+        
+        // Apple push notifications need smaller payloads and specific formatting
+        const payload = JSON.stringify(isAppleEndpoint ? {
+          title: newNotification.title.substring(0, 50), // Limit title length for Apple
+          body: newNotification.message.substring(0, 200), // Limit body length for Apple
+          icon: '/logo192.png',
+          tag: `notification-${newNotification._id}`,
+          data: {
+            notificationId: newNotification._id.toString(),
+            url: '/app/notifications'
+          }
+        } : basePayload);
+        
+        console.log('[PUSH_PAYLOAD] Payload for user:', subscription.userId.toString(), {
+          isAppleEndpoint,
+          payloadSize: payload.length,
+          platform: subscription.platform || 'unknown'
         });
 
         return webpush.sendNotification(
@@ -365,11 +385,72 @@ const createNotification = asyncHandler(async (req, res) => {
               auth: subscription.keys.auth
             }
           },
-          payload
-        ).then(() => {
-          console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.userId.toString());
+          payload,
+          {
+            TTL: 86400, // 24 hours
+            urgency: newNotification.urgent ? 'high' : 'normal'
+          }
+        ).then((result) => {
+          console.log('[PUSH_SECURITY] Push notification SUCCESS for user:', subscription.userId.toString(), {
+            endpoint: subscription.endpoint.substring(0, 50) + '...',
+            statusCode: result?.statusCode,
+            platform: subscription.platform || 'unknown'
+          });
         }).catch(error => {
-          console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.userId.toString(), 'error:', error.message);
+          const isAppleEndpoint = subscription.endpoint.includes('web.push.apple.com');
+          const isParentUser = subscription.userId.toString() === '6897ace5d6b1c27e343f78ae';
+          
+          console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.userId.toString(), {
+            error: error.message,
+            statusCode: error.statusCode,
+            endpoint: subscription.endpoint.substring(0, 50) + '...',
+            isAppleEndpoint,
+            isParentUser,
+            platform: subscription.platform || 'unknown',
+            errorBody: error.body || 'No error body',
+            headers: error.headers || 'No headers'
+          });
+          
+          // Apple-specific error handling
+          if (isAppleEndpoint) {
+            console.error('[APPLE_PUSH_DEBUG] Apple push failed:', {
+              userId: subscription.userId.toString(),
+              subscriptionId: subscription._id.toString(),
+              fullEndpoint: subscription.endpoint,
+              errorDetails: {
+                message: error.message,
+                statusCode: error.statusCode,
+                body: error.body,
+                headers: error.headers,
+                stack: error.stack?.substring(0, 500)
+              },
+              subscriptionDetails: {
+                hasP256dh: !!subscription.keys?.p256dh,
+                hasAuth: !!subscription.keys?.auth,
+                p256dhLength: subscription.keys?.p256dh?.length || 0,
+                authLength: subscription.keys?.auth?.length || 0,
+                createdAt: subscription.createdAt,
+                lastUpdated: subscription.lastUpdated,
+                userAgent: subscription.userAgent
+              }
+            });
+          }
+          
+          // Handle expired/invalid subscriptions - immediate cleanup
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            console.log('[PUSH_CLEANUP] Removing expired/invalid subscription:', subscription._id.toString());
+            PushSubscription.findByIdAndDelete(subscription._id).catch(cleanupError => {
+              console.error('[PUSH_CLEANUP] Failed to remove expired subscription:', cleanupError.message);
+            });
+          }
+          
+          // Handle Apple-specific errors that might indicate subscription issues
+          if (isAppleEndpoint && (error.statusCode >= 400 && error.statusCode < 500)) {
+            console.log('[APPLE_PUSH_DEBUG] Apple client error - potential subscription issue:', {
+              statusCode: error.statusCode,
+              subscriptionAge: subscription.createdAt ? Math.floor((Date.now() - new Date(subscription.createdAt).getTime()) / (1000 * 60 * 60 * 24)) + ' days' : 'unknown'
+            });
+          }
         });
       });
 
