@@ -23,11 +23,17 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Separator } from '../components/ui/separator';
+import { useTheme } from '../components/theme-provider';
 
 const ContactMessages = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
+  const { darkMode } = useTheme();
+  
+  // Debug dark mode state
+  console.log('ContactMessages - Dark mode state:', darkMode);
+  console.log('ContactMessages - HTML dark class:', document.documentElement.classList.contains('dark'));
   
   // Check if this is the superadmin patch notes route
   const isSuperadminPatchNotesRoute = location.pathname === '/superadmin/patch-notes';
@@ -176,17 +182,17 @@ const ContactMessages = () => {
   const tabDefs = isAdminRole
     ? [
         { key: 'all', label: 'All Messages', icon: <BugIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <AdminMessagesList messages={allMessages} user={user} onMessagesChanged={fetchAllMessages} />) },
-        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<><div className="mb-4 md:mb-6"><Button onClick={handleOpenContact} className="w-full sm:w-auto"><EmailIcon className="mr-2 h-4 w-4" />Contact Support</Button></div>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
         { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
       ]
     : [
-        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<><div className="mb-4 md:mb-6"><Button onClick={handleOpenContact} className="w-full sm:w-auto"><EmailIcon className="mr-2 h-4 w-4" />Contact Support</Button></div>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
         { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
       ];
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl overflow-x-hidden">
-      <Card className="p-4 md:p-6 lg:p-8 mt-4 md:mt-6 mb-4 md:mb-6 overflow-x-hidden">
+    <div className="w-full mx-auto p-4 sm:p-6">
+      <Card className="mt-4 md:mt-6 mb-4 md:mb-6">
         <CardHeader>
           <CardTitle className="text-xl md:text-2xl font-bold">Support & Announcements</CardTitle>
         </CardHeader>
@@ -221,7 +227,7 @@ const ContactMessages = () => {
           {/* Desktop: Tabs */}
           <div className="hidden md:block">
             <Tabs value={tabValue} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${isAdminRole ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              <TabsList className={`grid w-full ${isAdminRole ? 'grid-cols-3' : 'grid-cols-2'} bg-gray-100 dark:bg-gray-800`}>
                 {tabDefs.map((tab) => (
                   <TabsTrigger key={tab.key} value={tab.key} className="flex items-center gap-2">
                     {tab.icon}
@@ -248,8 +254,23 @@ const ContactMessages = () => {
               </div>
             ))}
           </div>
+          
+          {/* Contact Support Button - Only visible on "My Messages" tab */}
+          {tabValue === 'my' && (
+            <div className="flex justify-end mt-6 pt-4 border-t border-border">
+              <Button 
+                onClick={handleOpenContact} 
+                className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-primary/30 hover:bg-primary/20 hover:border-primary/60 group bg-background border-2 border-border shadow-lg text-foreground"
+                size="lg"
+              >
+                <EmailIcon className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                Contact Support
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+      
       <ContactDeveloper open={contactOpen} onClose={handleCloseContact} />
     </div>
   );

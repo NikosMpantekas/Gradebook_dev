@@ -383,6 +383,7 @@ const AdminDashboard = () => {
                                   notification.type === 'error' ? '#ef4444' : 'hsl(var(--background))',
                       animationDelay: `${(index + 1) * 0.1}s`
                     }}
+                    onClick={() => navigate(`/app/admin/notifications/${notification._id}`)}
                   >
                     <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
                       {notification.type === 'info' && <Info className="h-5 w-5 text-blue-500" />}
