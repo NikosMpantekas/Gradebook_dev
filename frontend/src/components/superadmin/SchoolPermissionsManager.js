@@ -258,7 +258,8 @@ const SchoolPermissionsManager = () => {
     'Grade Management': ['enableGrades', 'enableAnalytics', 'enableRatings'],
     'Notification Management': ['enableNotifications'],
     'School Administration': ['enableSchedule', 'enableSchoolSettings'],
-    'Communication': ['enableContact']
+    'Communication': ['enableContact'],
+    'Payments': ['enablePayments']
   };
 
   const getFeatureName = (featureKey) => {
@@ -271,7 +272,8 @@ const SchoolPermissionsManager = () => {
       enableNotifications: 'Notifications',
       enableSchedule: 'Schedule Management',
       enableSchoolSettings: 'School Settings',
-      enableContact: 'Contact System'
+      enableContact: 'Contact System',
+      enablePayments: 'Payments'
     };
     return names[featureKey] || featureKey;
   };
@@ -279,7 +281,7 @@ const SchoolPermissionsManager = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Feature Usage Statistics</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Permission Manager</h1>
       </div>
 
       {Array.isArray(schools) && schools.map((schoolData) => {
