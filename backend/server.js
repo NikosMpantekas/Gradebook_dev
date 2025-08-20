@@ -512,11 +512,7 @@ app.get("/api/stats/overview", protect, async (req, res) => {
 });
 
 // Migration routes removed - migration system has been discontinued
-app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
-app.use("/api/system", require("./routes/systemMaintenanceRoutes")); // System maintenance routes
-app.use("/api/ratings", require("./routes/ratingRoutes")); // Rating system for teachers and subjects
-
-// Debug middleware to log all requests
+// Debug middleware to log all requests - MOVED BEFORE ROUTES
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   if (req.body && Object.keys(req.body).length > 0) {
@@ -527,6 +523,10 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
+app.use("/api/system", require("./routes/systemMaintenanceRoutes")); // System maintenance routes
+app.use("/api/ratings", require("./routes/ratingRoutes")); // Rating system for teachers and subjects
 
 // Add AGGRESSIVE rate limiting middleware for security under attack
 app.use(

@@ -531,6 +531,11 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       query['recipients.user'] = req.user._id;
       console.log(`[SECURITY] Parent ${req.user._id} restricted to direct recipient notifications only`);
     }
+    else if (req.user.role === 'superadmin') {
+      // SUPERADMIN: Can see ALL notifications across all schools
+      // No additional filters needed - they have system-wide access
+      console.log(`[SECURITY] Superadmin ${req.user._id} has system-wide notification access`);
+    }
     else {
       // SECURITY: Unknown role - deny access
       console.error(`[SECURITY] Unknown user role: ${req.user.role} - denying access`);
@@ -974,16 +979,17 @@ const createPushSubscription = asyncHandler(async (req, res) => {
       await subscription.save();
       console.log(`Updated existing subscription for user ${req.user._id}`);
     } else {
-      // Create new subscription
+      // Handle push subscriptions with proper schoolId logic for all roles including superadmin
       const subscriptionData = {
         userId: req.user._id,
-        endpoint,
+        schoolId: req.user.role === 'superadmin' ? null : req.user.schoolId, // Allow null for superadmin
+        endpoint: endpoint,
         keys: {
           p256dh: keys.p256dh,
           auth: keys.auth
         },
-        schoolId: req.user.schoolId, // Add schoolId for multi-tenancy
-        userAgent: req.headers['user-agent'] || '',
+        expirationTime: expirationTime,
+        userAgent: req.get('User-Agent'),
         platform: {
           isIOS: /iPad|iPhone|iPod/.test(req.headers['user-agent'] || ''),
           isAndroid: /Android/.test(req.headers['user-agent'] || ''),

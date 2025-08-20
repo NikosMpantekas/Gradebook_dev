@@ -15,7 +15,7 @@ const pushSubscriptionSchema = mongoose.Schema({
   },
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
+    required: false, // Allow null for superadmin users
     ref: 'School',
     index: true
   },
