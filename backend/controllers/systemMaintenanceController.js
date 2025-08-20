@@ -6,14 +6,19 @@ const SystemMaintenance = require('../models/systemMaintenanceModel');
 // @access  Public (needed for maintenance check)
 const getMaintenanceStatus = asyncHandler(async (req, res) => {
   try {
-    console.log('[MAINTENANCE] Getting current maintenance status');
-    console.log('[MAINTENANCE] Request headers:', {
+    console.log('[MAINTENANCE] ==> Getting current maintenance status');
+    console.log('[MAINTENANCE] ==> Request URL:', req.originalUrl);
+    console.log('[MAINTENANCE] ==> Request method:', req.method);
+    console.log('[MAINTENANCE] ==> Request headers:', {
       origin: req.headers.origin,
       referer: req.headers.referer,
-      userAgent: req.headers['user-agent']?.substring(0, 100)
+      accept: req.headers.accept
     });
-    console.log('[MAINTENANCE] SystemMaintenance model available:', !!SystemMaintenance);
-    console.log('[MAINTENANCE] SystemMaintenance.getCurrentStatus available:', typeof SystemMaintenance.getCurrentStatus);
+    console.log('[MAINTENANCE] ==> SystemMaintenance model available:', !!SystemMaintenance);
+    console.log('[MAINTENANCE] ==> SystemMaintenance.getCurrentStatus available:', typeof SystemMaintenance.getCurrentStatus);
+    
+    // Force JSON response
+    res.setHeader('Content-Type', 'application/json');
     
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
     console.log('[MAINTENANCE] Retrieved maintenance document:', {
