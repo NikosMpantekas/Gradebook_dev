@@ -287,13 +287,21 @@ const getParentStudentsGrades = asyncHandler(async (req, res) => {
       throw new Error('Access denied - parents only');
     }
     
-    // Check if parent has any linked students
-    if (!req.user.linkedStudentIds || req.user.linkedStudentIds.length === 0) {
-      console.log(`[PARENT_GRADES] Parent ${req.user.id} has no linked students`);
-      return res.status(200).json({
-        students: [],
-        message: 'No students linked to your account'
-      });
+    // Check if user is parent and trying to access student grades
+    if (req.user.role === 'parent') {
+      // CRITICAL LOG: Track parent grade access attempts
+      console.log(`[PARENT_GRADE_ACCESS] Parent ${req.user._id} (${req.user.name}) requesting grades for students`);
+      console.log(`[PARENT_GRADE_ACCESS] Parent linkedStudentIds:`, req.user.linkedStudentIds);
+      
+      // Parent can only access grades for their linked students
+      if (!req.user.linkedStudentIds || req.user.linkedStudentIds.length === 0) {
+        console.log(`[PARENT_ACCESS_DENIED] Parent ${req.user._id} tried to access grades, but has no linked students:`, req.user.linkedStudentIds);
+        return res.status(200).json({
+          students: [],
+          message: 'No students linked to your account'
+        });
+      }
+      console.log(`[PARENT_ACCESS_GRANTED] Parent ${req.user._id} accessing grades for linked students`);
     }
     
     console.log(`[PARENT_GRADES] Parent has ${req.user.linkedStudentIds.length} linked students:`, req.user.linkedStudentIds);

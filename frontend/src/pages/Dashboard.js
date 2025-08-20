@@ -286,19 +286,24 @@ const Dashboard = () => {
           errors.subjects = true;
         }
         
-        // Only try to load grades for students
+        // Load grades for student users only - NEVER for parents
         if (user.role === 'student') {
           try {
-            await dispatch(getStudentGrades()).unwrap();
+            await dispatch(getStudentGrades(user.id));
+            console.log('Student grades loaded successfully');
           } catch (error) {
-            console.error('Failed to load grades:', error);
-            errors.grades = true;
+            console.error('Error loading student grades:', error);
+            toast.error('Failed to load grades');
           }
+        } else if (user.role === 'parent') {
+          // CRITICAL FIX: Parents should NOT call getStudentGrades with their own ID
+          // Parent grades are handled by ParentDashboard component using /api/grades/parent/students
+          console.log('[DASHBOARD] Parent user detected - skipping individual grade fetch (handled by ParentDashboard)');
         }
         
-        // Set loading errors if any occurred
+        // Update error state
+        setLoadingErrors(errors);
         if (Object.keys(errors).length > 0) {
-          setLoadingErrors(errors);
           setShowErrorWarning(true);
         }
       };
