@@ -252,24 +252,24 @@ const TeacherDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Stats */}
         <div className="space-y-4 h-full flex flex-col justify-center">
-          <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1">
+          <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1 flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Students</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="flex flex-col justify-center flex-1">
-              <div className="text-2xl font-bold">{dashboardData.stats.totalStudents}</div>
+            <CardContent className="flex flex-col justify-center flex-1 pt-0">
+              <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalStudents}</div>
               <p className="text-xs text-muted-foreground">Enrolled students</p>
             </CardContent>
           </Card>
 
-          <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1">
+          <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1 flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="flex flex-col justify-center flex-1">
-              <div className="text-2xl font-bold">{dashboardData.stats.totalClasses}</div>
+            <CardContent className="flex flex-col justify-center flex-1 pt-0">
+              <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalClasses}</div>
               <p className="text-xs text-muted-foreground">Current classes</p>
             </CardContent>
           </Card>
