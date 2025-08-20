@@ -47,14 +47,25 @@ const getMaintenanceDetails = asyncHandler(async (req, res) => {
     console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} requesting full maintenance details`);
     
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
-    await maintenanceDoc.populate('lastModifiedBy', 'name email role');
-    await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
     
+    // Safely populate references with fallback handling
+    try {
+      await maintenanceDoc.populate('lastModifiedBy', 'name email role');
+      await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
+    } catch (populateError) {
+      console.warn('[MAINTENANCE] Populate error (non-fatal):', populateError.message);
+      // Continue without population if users don't exist
+    }
+    
+    console.log('[MAINTENANCE] Successfully retrieved maintenance details');
     res.json(maintenanceDoc);
   } catch (error) {
-    console.error('[MAINTENANCE] Error getting details:', error);
-    res.status(500);
-    throw new Error('Failed to get maintenance details');
+    console.error('[MAINTENANCE] Error getting details:', error.message);
+    console.error('[MAINTENANCE] Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Failed to get maintenance details',
+      message: error.message
+    });
   }
 });
 
@@ -138,21 +149,32 @@ const getMaintenanceHistory = asyncHandler(async (req, res) => {
     console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} requesting maintenance history`);
     
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
-    await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
+    
+    // Safely populate history references with fallback handling
+    try {
+      await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
+    } catch (populateError) {
+      console.warn('[MAINTENANCE] History populate error (non-fatal):', populateError.message);
+      // Continue without population if users don't exist
+    }
     
     // Sort history by timestamp (newest first)
     const sortedHistory = maintenanceDoc.maintenanceHistory.sort((a, b) => 
       new Date(b.timestamp) - new Date(a.timestamp)
     );
     
+    console.log('[MAINTENANCE] Successfully retrieved maintenance history');
     res.json({
       history: sortedHistory,
       totalEntries: sortedHistory.length
     });
   } catch (error) {
-    console.error('[MAINTENANCE] Error getting history:', error);
-    res.status(500);
-    throw new Error('Failed to get maintenance history');
+    console.error('[MAINTENANCE] Error getting history:', error.message);
+    console.error('[MAINTENANCE] Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Failed to get maintenance history',
+      message: error.message
+    });
   }
 });
 

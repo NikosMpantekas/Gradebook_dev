@@ -76,17 +76,27 @@ systemMaintenanceSchema.index({}, { unique: true });
 
 // Static method to get current maintenance status
 systemMaintenanceSchema.statics.getCurrentStatus = async function() {
-  let maintenanceDoc = await this.findOne();
-  
-  // Create default document if none exists
-  if (!maintenanceDoc) {
-    maintenanceDoc = await this.create({
-      isMaintenanceMode: false,
-      lastModifiedBy: new mongoose.Types.ObjectId() // Placeholder, will be updated
-    });
+  try {
+    let maintenanceDoc = await this.findOne();
+    
+    // Create default document if none exists
+    if (!maintenanceDoc) {
+      // Create a placeholder ObjectId for system initialization
+      const placeholderAdminId = new mongoose.Types.ObjectId('000000000000000000000001');
+      maintenanceDoc = await this.create({
+        isMaintenanceMode: false,
+        lastModifiedBy: placeholderAdminId,
+        maintenanceMessage: 'The system is currently under maintenance. Please be patient while we work to improve your experience.',
+        maintenanceHistory: []
+      });
+      console.log('[MAINTENANCE] Created default maintenance document');
+    }
+    
+    return maintenanceDoc;
+  } catch (error) {
+    console.error('[MAINTENANCE] Error in getCurrentStatus:', error);
+    throw error;
   }
-  
-  return maintenanceDoc;
 };
 
 // Static method to update maintenance status
