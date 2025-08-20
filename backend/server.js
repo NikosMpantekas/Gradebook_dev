@@ -337,7 +337,7 @@ const { addPushNotificationEnabledField } = require("./migrations/addPushNotific
 app.use("/api/users", require("./routes/userRoutes"));
 
 // Setup global middleware for the main routes - all routes here need auth & school context
-const { protect } = require("./middleware/authMiddleware");
+const { protect, checkMaintenanceMode } = require("./middleware/authMiddleware");
 const {
   addFeatureFlags,
   checkCalendarEnabled,
@@ -349,6 +349,7 @@ const {
 app.use(
   "/api/contacts",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/contactRoutes")
@@ -400,6 +401,7 @@ app.use(
 app.use(
   "/api/students",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/studentRoutes")
@@ -408,6 +410,7 @@ app.use(
 app.use(
   "/api/grades",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/gradeAnalysisRoutes")
@@ -415,6 +418,7 @@ app.use(
 app.use(
   "/api/grades",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/gradeRoutes")
@@ -422,6 +426,7 @@ app.use(
 app.use(
   "/api/classes",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/classRoutes")
@@ -429,6 +434,7 @@ app.use(
 app.use(
   "/api/schedule",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/scheduleRoutes")
@@ -436,6 +442,7 @@ app.use(
 app.use(
   "/api/stats",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/studentStatsRoutes")
@@ -443,6 +450,7 @@ app.use(
 app.use(
   "/api/notifications",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   require("./routes/notificationRoutes")
@@ -450,6 +458,7 @@ app.use(
 app.use(
   "/api/payments",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   require("./routes/paymentRoutes")
 ); // Payments API
@@ -458,6 +467,7 @@ app.use(
 app.use(
   "/api/ratings",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   checkRatingEnabled,
@@ -466,6 +476,7 @@ app.use(
 app.use(
   "/api/events",
   protect,
+  checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
   checkCalendarEnabled,
@@ -514,10 +525,11 @@ app.use("/api/schools", require("./routes/schoolRoutes")); // School routes have
 app.use(
   "/api/school-permissions",
   protect,
+  checkMaintenanceMode,
   require("./routes/schoolPermissionsRoutes")
 ); // School permissions management
-app.use("/api/branches", protect, require("./routes/branchRoutes")); // School branch name lookups
-app.use("/api/contact", protect, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
+app.use("/api/branches", protect, checkMaintenanceMode, require("./routes/branchRoutes")); // School branch name lookups
+app.use("/api/contact", protect, checkMaintenanceMode, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes")); // Push notification subscriptions (includes VAPID public key)
 app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
 app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes")); // System maintenance routes
