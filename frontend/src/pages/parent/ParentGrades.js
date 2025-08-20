@@ -34,7 +34,7 @@ const ParentGrades = () => {
           
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h3 className="text-lg font-bold mb-2 sm:mb-0">
-              {grade.subject}
+              {grade.subject?.name || grade.subject}
             </h3>
             <Badge variant="default" className="font-bold">
               Grade: {grade.value}
@@ -45,7 +45,7 @@ const ParentGrades = () => {
             <div className="flex items-center gap-2 flex-1">
               <BookOpen className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                Teacher: {grade.teacher}
+                Teacher: {grade.teacher?.name || grade.teacher}
               </span>
             </div>
             <span className="text-sm text-muted-foreground">
@@ -206,7 +206,7 @@ const ParentGrades = () => {
                         <p className="text-sm font-medium">Recent Grades:</p>
                         {student.grades.slice(0, 3).map((grade, index) => (
                           <div key={index} className="flex justify-between items-center text-sm">
-                            <span className="truncate">{grade.subject}</span>
+                            <span className="truncate">{grade.subject?.name || grade.subject}</span>
                             <Badge variant="outline">{grade.value}</Badge>
                           </div>
                         ))}
