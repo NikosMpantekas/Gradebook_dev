@@ -6,15 +6,20 @@ import {
   Button,
   Grid,
   Card,
+  CardContent,
+  Chip,
+  Divider,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import axios from "../app/axios";
 
 import SettingsIcon from "@mui/icons-material/Settings";
 import WarningIcon from "@mui/icons-material/Warning";
 import RefreshIcon from "@mui/icons-material/Refresh";
-
-
+import InfoIcon from "@mui/icons-material/Info";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import HistoryIcon from "@mui/icons-material/History";
 
 // Animated Cog Component
 const AnimatedCog = ({ size = 120, position = "bottom-right" }) => {
@@ -377,9 +382,74 @@ const DashboardMockup = () => (
 const Maintenance = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const [maintenanceInfo, setMaintenanceInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch maintenance status
+  const fetchMaintenanceStatus = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('[MAINTENANCE PAGE] Fetching maintenance status...');
+      
+      const response = await axios.get('/api/system/maintenance/status');
+      console.log('[MAINTENANCE PAGE] Status response:', response.data);
+      
+      setMaintenanceInfo(response.data);
+    } catch (err) {
+      console.error('[MAINTENANCE PAGE] Error fetching maintenance status:', err);
+      setError('Failed to load maintenance information');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaintenanceStatus();
+    
+    // Poll for status updates every 30 seconds
+    const interval = setInterval(fetchMaintenanceStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleRetry = () => {
-    window.history.back();
+    window.location.reload();
+  };
+
+  const formatEstimatedCompletion = (estimatedCompletion) => {
+    if (!estimatedCompletion) return 'Δεν έχει καθοριστεί';
+    
+    try {
+      const date = new Date(estimatedCompletion);
+      const now = new Date();
+      
+      if (date <= now) {
+        return 'Σύντομα';
+      }
+      
+      const diffMs = date - now;
+      const diffMins = Math.ceil(diffMs / (1000 * 60));
+      const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+      
+      if (diffMins <= 60) {
+        return `${diffMins} λεπτά`;
+      } else if (diffHours <= 24) {
+        return `${diffHours} ώρες`;
+      } else {
+        return date.toLocaleDateString('el-GR', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Δεν έχει καθοριστεί';
+    }
   };
 
   // Color palette for dark mode (maintenance page is always dark)
@@ -529,6 +599,192 @@ const Maintenance = () => {
             </Grid>
           </Grid>
         </Container>
+
+        {/* Maintenance Information Sections */}
+        {maintenanceInfo && !loading && (
+          <Container maxWidth="md" sx={{ mt: 6 }}>
+            <Grid container spacing={4}>
+              {/* Maintenance Message */}
+              <Grid item xs={12}>
+                <Card
+                  sx={{
+                    bgcolor: colors.card,
+                    border: colors.border,
+                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                      <InfoIcon sx={{ color: colors.icon, fontSize: 28 }} />
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          color: colors.text,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Μήνυμα Συντήρησης
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: colors.subText,
+                        fontSize: 16,
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {maintenanceInfo.maintenanceMessage || "Το σύστημα βρίσκεται υπό συντήρηση για βελτιώσεις και ενημερώσεις."}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Estimated Completion Time */}
+              <Grid item xs={12} md={6}>
+                <Card
+                  sx={{
+                    bgcolor: colors.card,
+                    border: colors.border,
+                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.1)",
+                    height: "100%",
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                      <AccessTimeIcon sx={{ color: colors.icon, fontSize: 24 }} />
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: colors.text,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Εκτιμώμενη Ολοκλήρωση
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label={formatEstimatedCompletion(maintenanceInfo.estimatedCompletion)}
+                        sx={{
+                          bgcolor: "rgba(51, 122, 183, 0.2)",
+                          color: colors.icon,
+                          fontWeight: "bold",
+                          fontSize: 14,
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: colors.subText,
+                        mt: 1,
+                        fontSize: 13,
+                      }}
+                    >
+                      Η ώρα είναι κατά προσέγγιση και μπορεί να αλλάξει
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Reason for Change */}
+              <Grid item xs={12} md={6}>
+                <Card
+                  sx={{
+                    bgcolor: colors.card,
+                    border: colors.border,
+                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.1)",
+                    height: "100%",
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                      <HistoryIcon sx={{ color: colors.icon, fontSize: 24 }} />
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: colors.text,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Αιτία Συντήρησης
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: colors.subText,
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {maintenanceInfo.reason || "Προγραμματισμένη συντήρηση συστήματος"}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Refresh Button */}
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: "center", mt: 2 }}>
+                  <Button
+                    variant="outlined"
+                    size="medium"
+                    onClick={fetchMaintenanceStatus}
+                    disabled={loading}
+                    startIcon={<RefreshIcon />}
+                    sx={{
+                      borderColor: colors.icon,
+                      color: colors.icon,
+                      borderRadius: 6,
+                      px: 4,
+                      py: 1.2,
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        bgcolor: "rgba(51, 122, 183, 0.1)",
+                        borderColor: colors.buttonHover,
+                        transform: "translateY(-1px)",
+                      },
+                    }}
+                  >
+                    {loading ? "Ανανέωση..." : "Ελέγξτε Ξανά"}
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </Container>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <Container maxWidth="md" sx={{ mt: 6, textAlign: "center" }}>
+            <Typography variant="body1" sx={{ color: colors.subText }}>
+              Φόρτωση πληροφοριών συντήρησης...
+            </Typography>
+          </Container>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Container maxWidth="md" sx={{ mt: 6, textAlign: "center" }}>
+            <Typography variant="body1" sx={{ color: colors.warning }}>
+              {error}
+            </Typography>
+            <Button
+              variant="text"
+              onClick={fetchMaintenanceStatus}
+              sx={{ mt: 1, color: colors.icon }}
+            >
+              Δοκιμάστε ξανά
+            </Button>
+          </Container>
+        )}
       </Box>
       <Box
         sx={{
