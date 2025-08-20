@@ -90,45 +90,64 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 mt-4">
+      <div className="space-y-4 mt-4 w-full overflow-hidden">
         {patchNotes.map((note) => (
-          <Card key={note._id} className="overflow-hidden border-2 border-gray-600 dark:border-gray-400">
+          <Card key={note._id} className="overflow-hidden border-2 border-gray-600 dark:border-gray-400 w-full">
             <Collapsible open={expandedNote === note._id}>
               <CollapsibleTrigger asChild>
                 <CardHeader 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="cursor-pointer hover:bg-muted/50 transition-colors p-4"
                   onClick={() => toggleNote(note._id)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                  {/* Mobile: Show only title and chevron */}
+                  <div className="block sm:hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        {getTypeIcon(note.type)}
+                        <h3 className="font-semibold text-foreground break-words min-w-0 flex-1">
+                          {note.title}
+                        </h3>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${
+                        expandedNote === note._id ? 'rotate-180' : ''
+                      }`} />
+                    </div>
+                  </div>
+                  
+                  {/* Desktop: Show full header with all info */}
+                  <div className="hidden sm:flex sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-start space-x-3 min-w-0 flex-1">
                       {getTypeIcon(note.type)}
-                      <div className="flex flex-col items-start">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold text-foreground">
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <div className="flex items-center gap-2 w-full">
+                          <h3 className="font-semibold text-foreground break-words min-w-0 flex-1">
                             {note.title}
                           </h3>
-                          <Badge className={getTypeColor(note.type)}>
-                            {getTypeLabel(note.type)}
-                          </Badge>
-                          {note.version && (
-                            <Badge variant="outline">
-                              v{note.version}
-                            </Badge>
-                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <Badge className={getTypeColor(note.type)}>
+                          {getTypeLabel(note.type)}
+                        </Badge>
+                        {note.version && (
+                          <Badge variant="outline">
+                            v{note.version}
+                          </Badge>
+                        )}
+                      </div>
+                      
                       <ChevronDown className={`h-4 w-4 transition-transform ${
                         expandedNote === note._id ? 'rotate-180' : ''
                       }`} />
                       
-                      {user && (user.role === 'admin' || user.role === 'superadmin') && (
-                        <>
+                      {user && user.role === 'superadmin' && (
+                        <div className="flex items-center gap-1">
                           {onEdit && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -170,7 +189,7 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
                               </TooltipContent>
                             </Tooltip>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -178,10 +197,62 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 px-4 pb-4">
                   <div className="space-y-4">
+                    {/* Mobile: Show badges, version, and timestamp when expanded */}
+                    <div className="block sm:hidden">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <Badge className={getTypeColor(note.type)}>
+                          {getTypeLabel(note.type)}
+                        </Badge>
+                        {note.version && (
+                          <Badge variant="outline">
+                            v{note.version}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+                      </p>
+                      
+                      {/* Mobile action buttons */}
+                      {user && user.role === 'superadmin' && (
+                        <div className="flex items-center gap-2 mb-3">
+                          {onEdit && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(note);
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                          )}
+                          
+                          {onDelete && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(note._id);
+                              }}
+                              className="flex items-center gap-2 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
                     {note.content && (
-                      <div className="prose prose-sm max-w-none text-muted-foreground">
+                      <div className="prose prose-sm max-w-none text-muted-foreground break-words">
                         <ReactMarkdown>{note.content}</ReactMarkdown>
                       </div>
                     )}
