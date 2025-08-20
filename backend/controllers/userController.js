@@ -1513,6 +1513,7 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
         email: parent.email,
         role: parent.role,
         linkedStudentIds: parent.linkedStudentIds,
+        totalLinkedStudents: parent.linkedStudentIds ? parent.linkedStudentIds.length : 0, // CRITICAL FIX: Add count for EditUser UI
         mobilePhone: parent.mobilePhone,
         personalEmail: parent.personalEmail,
         active: parent.active,

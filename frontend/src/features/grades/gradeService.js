@@ -82,6 +82,13 @@ const getStudentGrades = async (studentId, token) => {
     },
   };
 
+  // CRITICAL FIX: For parent users, don't make individual student calls
+  // Parent grades should be fetched using the parent-specific endpoint
+  if (!studentId) {
+    console.warn('[GRADE_SERVICE] getStudentGrades called without studentId - this should not happen for parents');
+    throw new Error('Student ID is required for getStudentGrades');
+  }
+
   const response = await axios.get(API_GRADES + 'student/' + studentId, config);
 
   return response.data;
