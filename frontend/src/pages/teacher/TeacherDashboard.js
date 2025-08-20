@@ -322,7 +322,7 @@ const TeacherDashboard = () => {
               </Button>
 
               <Button
-                onClick={() => navigate('/app/schedule')}
+                onClick={() => navigate('/app/teacher/schedule')}
                 variant="outline"
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
@@ -331,7 +331,7 @@ const TeacherDashboard = () => {
               </Button>
 
               <Button
-                onClick={() => navigate('/app/student-stats')}
+                onClick={() => navigate('/app/teacher/student-stats')}
                 variant="outline"
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >

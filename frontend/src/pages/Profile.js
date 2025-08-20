@@ -299,10 +299,10 @@ const Profile = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className={errors.email ? 'border-destructive' : ''}
+                    disabled={true}
+                    className="bg-muted"
                   />
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  <p className="text-sm text-muted-foreground">Email cannot be changed after account creation</p>
                 </div>
                 
                 <div className="space-y-2">
@@ -313,7 +313,7 @@ const Profile = () => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="6912345678"
                   />
                 </div>
                 

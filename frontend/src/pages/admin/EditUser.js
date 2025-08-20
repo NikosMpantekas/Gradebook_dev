@@ -971,8 +971,8 @@ const EditUser = () => {
                 value={formData.email}
                 onChange={handleChange}
                 error={!!formErrors.email}
-                helperText={formErrors.email}
-                disabled={isLoading}
+                helperText={formErrors.email || 'Email cannot be changed after creation'}
+                disabled={true}
               />
             </Grid>
             
@@ -1021,10 +1021,8 @@ const EditUser = () => {
                   value={formData.role}
                   onChange={handleChange}
                   label="Role"
-                  disabled={userData?.role === 'admin'}
+                  disabled={userData?.role === 'admin' || userData?.role === 'secretary'}
                 >
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="secretary">Secretary</MenuItem>
                   <MenuItem value="teacher">Teacher</MenuItem>
                   <MenuItem value="student">Student</MenuItem>
                   <MenuItem value="parent">Parent</MenuItem>
@@ -1193,60 +1191,6 @@ const EditUser = () => {
               </Grid>
             )}
             
-            {/* Teacher permissions */}
-            {formData.role === 'teacher' && (
-              <Grid item xs={12}>
-                <Paper elevation={1} sx={{ p: 2, mt: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                    Teacher Permissions
-                  </Typography>
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <FormControl component="fieldset">
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={formData.canSendNotifications}
-                              onChange={(e) => {
-                                setFormData({
-                                  ...formData,
-                                  canSendNotifications: e.target.checked
-                                });
-                              }}
-                              color="primary"
-                            />
-                          }
-                          label="Can Send Notifications"
-                        />
-                        <FormHelperText>Allow this teacher to send notifications to students</FormHelperText>
-                      </FormControl>
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <FormControl component="fieldset">
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={formData.canAddGradeDescriptions}
-                              onChange={(e) => {
-                                setFormData({
-                                  ...formData,
-                                  canAddGradeDescriptions: e.target.checked
-                                });
-                              }}
-                              color="primary"
-                            />
-                          }
-                          label="Can Add Grade Descriptions"
-                        />
-                        <FormHelperText>Allow this teacher to add descriptions to grades</FormHelperText>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
             
             {/* Parent Account Management Section */}
             {formData.role === 'student' && (

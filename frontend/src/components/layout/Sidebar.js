@@ -143,7 +143,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     if (isStudent) {
       // Student items - check permissions for each feature
       if (isFeatureEnabled('enableGrades')) {
-        items.push({ icon: BookOpen, label: 'My Grades', path: '/app/grades' });
+        items.push({ icon: BookOpen, label: 'My Grades', path: '/app/student/grades' });
       }
       
       if (isFeatureEnabled('enableNotifications')) {
@@ -151,11 +151,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       }
       
       if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock, label: 'Schedule', path: '/app/schedule' });
+        items.push({ icon: Clock, label: 'Schedule', path: '/app/student/schedule' });
       }
       
       if (isFeatureEnabled('enableRatings')) {
-        items.push({ icon: Star, label: 'Submit Ratings', path: '/app/ratings' });
+        items.push({ icon: Star, label: 'Submit Ratings', path: '/app/student/ratings' });
       }
       
       if (isFeatureEnabled('enableContact')) {
