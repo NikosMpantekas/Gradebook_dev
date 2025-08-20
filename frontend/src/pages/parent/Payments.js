@@ -55,24 +55,57 @@ const ParentPayments = () => {
   // Fetch linked students for this parent
   const fetchLinkedStudents = async () => {
     try {
+      console.log('[PARENT PAYMENTS] Fetching linked students for parent:', user.id);
       const response = await api.get('/api/users/me');
       const parentData = response.data;
       
-      if (parentData.linkedStudents && parentData.linkedStudents.length > 0) {
-        setStudents(parentData.linkedStudents);
+      console.log('[PARENT PAYMENTS] Parent data received:', {
+        id: parentData.id,
+        role: parentData.role,
+        hasLinkedStudentIds: !!parentData.linkedStudentIds,
+        linkedStudentIdsCount: parentData.linkedStudentIds?.length || 0
+      });
+      
+      // Use linkedStudentIds from parent data
+      if (parentData.linkedStudentIds && parentData.linkedStudentIds.length > 0) {
+        // Check if linkedStudentIds contains populated student objects or just IDs
+        const firstItem = parentData.linkedStudentIds[0];
+        if (typeof firstItem === 'object' && firstItem._id) {
+          // Already populated with student objects
+          console.log('[PARENT PAYMENTS] Using populated student objects from linkedStudentIds');
+          setStudents(parentData.linkedStudentIds);
+        } else {
+          // Contains only IDs, need to fetch student details
+          console.log('[PARENT PAYMENTS] Fetching student details for IDs:', parentData.linkedStudentIds);
+          try {
+            const studentPromises = parentData.linkedStudentIds.map(studentId => 
+              api.get(`/api/users/${studentId}`)
+            );
+            const studentResponses = await Promise.all(studentPromises);
+            const studentData = studentResponses.map(res => res.data);
+            console.log('[PARENT PAYMENTS] Fetched student details:', studentData.map(s => ({ id: s._id, name: s.name })));
+            setStudents(studentData);
+          } catch (fetchError) {
+            console.error('[PARENT PAYMENTS] Error fetching individual student details:', fetchError);
+            // Set empty array if we can't fetch student details
+            setStudents([]);
+            toast({
+              title: 'Error',
+              description: 'Failed to fetch student details. Please contact school administration.',
+              variant: 'destructive'
+            });
+          }
+        }
       } else {
-        // Fallback: fetch students where parent is linked
-        const studentsResponse = await api.get('/api/users?role=student');
-        const linkedStudents = studentsResponse.data.users?.filter(student => 
-          student.parentIds?.includes(user._id)
-        ) || [];
-        setStudents(linkedStudents);
+        console.log('[PARENT PAYMENTS] No linked students found for parent');
+        setStudents([]);
       }
     } catch (error) {
-      console.error('Error fetching linked students:', error);
+      console.error('[PARENT PAYMENTS] Error fetching parent data:', error);
+      setStudents([]);
       toast({
         title: 'Error',
-        description: 'Failed to fetch linked students',
+        description: 'Failed to fetch linked students. Please contact school administration.',
         variant: 'destructive'
       });
     }
@@ -84,29 +117,76 @@ const ParentPayments = () => {
       setLoading(true);
       let allPayments = [];
 
+      console.log('[PARENT PAYMENTS] Fetching payments for:', {
+        selectedStudent,
+        selectedYear,
+        studentsCount: students.length,
+        studentNames: students.map(s => s.name)
+      });
+
       if (selectedStudent === 'all') {
         // Fetch payments for all linked students
-        const paymentPromises = students.map(student => 
-          api.get(`/api/payments/student/${student._id}?year=${selectedYear}`)
-        );
-        const responses = await Promise.all(paymentPromises);
-        allPayments = responses.flatMap(response => response.data);
+        console.log('[PARENT PAYMENTS] Fetching payments for all linked students');
+        const paymentPromises = students.map(student => {
+          console.log(`[PARENT PAYMENTS] Fetching payments for student: ${student.name} (${student._id})`);
+          return api.get(`/api/payments/student/${student._id}?year=${selectedYear}`);
+        });
+        
+        try {
+          const responses = await Promise.all(paymentPromises);
+          allPayments = responses.flatMap((response, index) => {
+            const payments = response.data.payments || response.data || [];
+            console.log(`[PARENT PAYMENTS] Student ${students[index].name} has ${payments.length} payments`);
+            return payments;
+          });
+        } catch (fetchError) {
+          console.error('[PARENT PAYMENTS] Error fetching payments for multiple students:', fetchError);
+          // Try individual requests if batch fails
+          for (const student of students) {
+            try {
+              console.log(`[PARENT PAYMENTS] Trying individual request for student: ${student.name}`);
+              const response = await api.get(`/api/payments/student/${student._id}?year=${selectedYear}`);
+              const payments = response.data.payments || response.data || [];
+              allPayments.push(...payments);
+            } catch (individualError) {
+              console.error(`[PARENT PAYMENTS] Failed to fetch payments for student ${student.name}:`, individualError);
+            }
+          }
+        }
       } else {
         // Fetch payments for specific student
+        console.log(`[PARENT PAYMENTS] Fetching payments for specific student: ${selectedStudent}`);
         const response = await api.get(`/api/payments/student/${selectedStudent}?year=${selectedYear}`);
-        allPayments = response.data;
+        allPayments = response.data.payments || response.data || [];
+        console.log(`[PARENT PAYMENTS] Received ${allPayments.length} payments for student`);
       }
 
       // Sort by payment period (newest first)
       allPayments.sort((a, b) => b.paymentPeriod.localeCompare(a.paymentPeriod));
+      console.log('[PARENT PAYMENTS] Final payments count:', allPayments.length);
       setPayments(allPayments);
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      console.error('[PARENT PAYMENTS] Error fetching payments:', {
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        selectedStudent,
+        selectedYear
+      });
+      
+      let errorMessage = 'Failed to fetch payment history';
+      if (error.response?.status === 403) {
+        errorMessage = 'You are not authorized to view these payment records. Please contact school administration.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'No payment records found for the selected criteria.';
+      }
+      
       toast({
         title: 'Error',
-        description: 'Failed to fetch payment history',
+        description: errorMessage,
         variant: 'destructive'
       });
+      setPayments([]);
     } finally {
       setLoading(false);
     }
