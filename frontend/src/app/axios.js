@@ -45,6 +45,8 @@ logApiCall('Target host', getHostFromUrl(API_URL));
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
+  // CRITICAL FIX: Set baseURL to backend API
+  baseURL: API_URL,
   // Base configuration
   timeout: 30000, // 30 second timeout
   headers: {

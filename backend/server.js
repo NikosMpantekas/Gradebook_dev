@@ -451,7 +451,6 @@ app.use(
   "/api/payments",
   protect,
   setSchoolContext,
-  addFeatureFlags,
   require("./routes/paymentRoutes")
 ); // Payments API
 
