@@ -111,13 +111,30 @@ const createOrUpdatePayment = asyncHandler(async (req, res) => {
   }
 
   // Verify student exists and belongs to same school
+  console.log('[PAYMENTS] Looking for student with ID:', studentId);
   const student = await User.findById(studentId);
-  if (!student || student.schoolId.toString() !== req.user.schoolId.toString()) {
+  console.log('[PAYMENTS] Found user:', student ? {
+    id: student._id,
+    name: student.name,
+    role: student.role,
+    schoolId: student.schoolId?.toString(),
+    requestingUserSchoolId: req.user.schoolId?.toString()
+  } : 'null');
+  
+  if (!student) {
+    console.log('[PAYMENTS] Student not found in database');
+    res.status(404);
+    throw new Error('Student not found');
+  }
+
+  if (student.schoolId.toString() !== req.user.schoolId.toString()) {
+    console.log('[PAYMENTS] School mismatch - student school:', student.schoolId.toString(), 'user school:', req.user.schoolId.toString());
     res.status(404);
     throw new Error('Student not found');
   }
 
   if (student.role !== 'student') {
+    console.log('[PAYMENTS] User role mismatch - expected: student, found:', student.role);
     res.status(400);
     throw new Error('Invalid student ID');
   }
