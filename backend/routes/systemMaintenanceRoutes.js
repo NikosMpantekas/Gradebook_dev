@@ -7,7 +7,7 @@ const {
   getMaintenanceHistory,
   clearMaintenanceHistory
 } = require('../controllers/systemMaintenanceController');
-const { protect, superAdmin } = require('../middleware/authMiddleware');
+const { protect, superadmin } = require('../middleware/authMiddleware');
 
 // @desc    Get current maintenance status (public)
 // @route   GET /api/system/maintenance/status
@@ -17,21 +17,21 @@ router.get('/status', getMaintenanceStatus);
 // @desc    Get full maintenance details (SuperAdmin only)
 // @route   GET /api/system/maintenance
 // @access  Private/SuperAdmin
-router.get('/', protect, superAdmin, getMaintenanceDetails);
+router.get('/', protect, superadmin, getMaintenanceDetails);
 
 // @desc    Update maintenance mode (SuperAdmin only)
 // @route   PUT /api/system/maintenance
 // @access  Private/SuperAdmin
-router.put('/', protect, superAdmin, updateMaintenanceMode);
+router.put('/', protect, superadmin, updateMaintenanceMode);
 
 // @desc    Get maintenance history (SuperAdmin only)
 // @route   GET /api/system/maintenance/history
 // @access  Private/SuperAdmin
-router.get('/history', protect, superAdmin, getMaintenanceHistory);
+router.get('/history', protect, superadmin, getMaintenanceHistory);
 
 // @desc    Clear maintenance history (SuperAdmin only)
 // @route   DELETE /api/system/maintenance/history
 // @access  Private/SuperAdmin
-router.delete('/history', protect, superAdmin, clearMaintenanceHistory);
+router.delete('/history', protect, superadmin, clearMaintenanceHistory);
 
 module.exports = router;
