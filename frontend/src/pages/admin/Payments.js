@@ -598,14 +598,14 @@ const Payments = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.length === 0 ? (
+                {(payments || []).length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
                       No payment records found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  payments.map((payment) => (
+                  (payments || []).map((payment) => (
                     <TableRow key={payment._id}>
                       <TableCell className="font-medium">
                         {payment.student?.name || 'Unknown Student'}
