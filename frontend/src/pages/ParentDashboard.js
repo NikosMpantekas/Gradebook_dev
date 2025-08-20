@@ -118,15 +118,15 @@ const ParentDashboard = () => {
   };
 
   const navigateToGrades = () => {
-    navigate('/parent/grades');
+    navigate('/app/parent/grades');
   };
 
   const navigateToNotifications = () => {
-    navigate('/notifications');
+    navigate('/app/parent/notifications');
   };
 
-  const navigateToCalendar = () => {
-    navigate('/calendar');
+  const navigateToPayments = () => {
+    navigate('/app/parent/payments');
   };
 
   if (loading) {
@@ -165,8 +165,6 @@ const ParentDashboard = () => {
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="grades">Recent Grades</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -247,9 +245,9 @@ const ParentDashboard = () => {
                   <Bell className="h-6 w-6 mb-2" />
                   Check Notifications
                 </Button>
-                <Button onClick={navigateToCalendar} variant="outline" className="h-20 flex-col">
-                  <Calendar className="h-6 w-6 mb-2" />
-                  View Calendar
+                <Button onClick={navigateToPayments} variant="outline" className="h-20 flex-col">
+                  <Card className="h-6 w-6 mb-2" />
+                  View Payments
                 </Button>
               </div>
             </CardContent>
@@ -280,7 +278,7 @@ const ParentDashboard = () => {
                       <span>{student.direction?.name || 'Direction not specified'}</span>
                     </div>
                     <Button 
-                      onClick={() => navigate(`/parent/grades?student=${student._id}`)}
+                      onClick={() => navigate(`/app/parent/grades?student=${student._id}`)}
                       variant="outline" 
                       size="sm" 
                       className="w-full"
