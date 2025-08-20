@@ -183,13 +183,15 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: Bell, label: 'Notifications', path: '/app/parent/notifications' });
       }
       
+      if (isFeatureEnabled('enablePayments')) {
+        items.push({ icon: CreditCard, label: 'Payments', path: '/app/parent/payments' });
+      }
+      
       if (isFeatureEnabled('enableContact')) {
         items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/parent/contact' });
       }
       
-      if (isFeatureEnabled('enablePayments')) {
-        items.push({ icon: CreditCard, label: 'Payments', path: '/app/parent/payments' });
-      }
+      
     }
 
     console.log('🔍 SIDEBAR MENU DEBUG: Final items count:', items.length);
