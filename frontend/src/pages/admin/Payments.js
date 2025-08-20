@@ -36,7 +36,7 @@ import { Badge } from '../../components/ui/badge';
 import { Textarea } from '../../components/ui/textarea';
 import { useToast } from '../../hooks/use-toast';
 import { Plus, Search, Filter, Calendar, CheckCircle, XCircle, Clock, Download, Users, Lock } from 'lucide-react';
-import api from '../../api/api';
+import api from '../../app/axios';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 
 const Payments = () => {
