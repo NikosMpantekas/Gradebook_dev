@@ -145,13 +145,13 @@ axiosInstance.interceptors.response.use(
     const signature = `${method}:${url}:${JSON.stringify(response.config.data || {})}`;
     
     // Clean up the request cache
-    requestCache.delete(signature);
     
-    // Log successful response with request ID for tracing
-    const requestId = response.config.headers['x-request-id'];
-    console.log(`[RESPONSE ${requestId}] ${method} ${url} - Status: ${response.status}`);
+    // Clear the request from cache after completion
+    if (response.config.method && ['GET', 'POST', 'PUT', 'DELETE'].includes(response.config.method.toUpperCase())) {
+      const signature = `${response.config.method.toUpperCase()}:${response.config.url}:${JSON.stringify(response.config.data || {})}`;
+      requestCache.delete(signature);
+    }
     
-    // Return successful responses
     return response;
   },
   (error) => {
@@ -183,6 +183,26 @@ axiosInstance.interceptors.response.use(
       }
     }
     
+    // Handle maintenance mode (503 Service Unavailable)
+    if (error.response && error.response.status === 503) {
+      console.log('[MAINTENANCE DETECTED] System is in maintenance mode, redirecting...');
+      
+      // Check if the response indicates maintenance mode
+      const responseData = error.response.data;
+      if (responseData && responseData.isMaintenanceMode) {
+        console.log('[MAINTENANCE] Redirecting to maintenance page:', {
+          message: responseData.maintenanceMessage,
+          estimatedCompletion: responseData.estimatedCompletion
+        });
+        
+        // Redirect to maintenance page if not already there
+        if (!window.location.pathname.includes('/maintenance')) {
+          window.location.href = '/maintenance';
+          return Promise.reject(error);
+        }
+      }
+    }
+
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
       console.error('Authentication error:', error.response.data);

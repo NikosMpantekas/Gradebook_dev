@@ -350,11 +350,12 @@ const superadmin = asyncHandler(async (req, res, next) => {
 // Maintenance mode enforcement middleware
 const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
   try {
-    // Skip maintenance check for certain routes
+    // Skip maintenance check for certain routes that must remain accessible during maintenance
     const skipMaintenanceRoutes = [
       '/api/system/maintenance/status',
       '/api/users/login',
-      '/api/users/refresh-token'
+      '/api/users/refresh-token',
+      '/api/patch-notes/public'  // Allow public patch notes during maintenance
     ];
     
     if (skipMaintenanceRoutes.some(route => req.originalUrl.includes(route))) {
