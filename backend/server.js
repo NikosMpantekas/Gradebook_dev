@@ -474,6 +474,41 @@ app.use(
 
 logger.info("SERVER", "Routes configured with proper middleware ordering");
 
+// Add essential middleware AFTER route definitions but BEFORE frontend serving
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Add API request validation middleware for production
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api', (req, res, next) => {
+    const referer = req.headers.referer || '';
+    const origin = req.headers.origin || '';
+    
+    const isValidReferer = referer.includes('grademanager.netlify.app') ||
+                          referer.includes('gradebook.pro') ||
+                          referer.includes('gradebookbeta.netlify.app');
+                          
+    const isValidOrigin = origin.includes('grademanager.netlify.app') ||
+                         origin.includes('gradebook.pro') ||
+                         origin.includes('gradebookbeta.netlify.app');
+
+    console.log(`[API Security] ${req.method} ${req.originalUrl} - Valid: ${isValidReferer || isValidOrigin}`);
+
+    if (!isValidReferer && !isValidOrigin) {
+      console.error('[API Security] Blocked direct API access without proper headers');
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Direct API access not permitted'
+      });
+    }
+    
+    next();
+  });
+}
+
 // Routes that may access multiple schools or don't require schoolId filtering
 app.use("/api/schools", require("./routes/schoolRoutes")); // School routes have special handling
 app.use(
@@ -484,6 +519,18 @@ app.use(
 app.use("/api/branches", protect, require("./routes/branchRoutes")); // School branch name lookups
 app.use("/api/contact", protect, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes")); // Push notification subscriptions (includes VAPID public key)
+app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
+app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes")); // System maintenance routes
+
+// Add catch-all for unmatched API routes to return proper JSON errors
+app.use('/api/*', (req, res) => {
+  console.log(`[API 404] Unmatched API route: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+    error: 'Route not found'
+  });
+});
 
 // Add stats overview endpoint for admin dashboard
 app.get("/api/stats/overview", protect, async (req, res) => {
@@ -512,74 +559,6 @@ app.get("/api/stats/overview", protect, async (req, res) => {
 });
 
 // Migration routes removed - migration system has been discontinued
-// Debug middleware to log all requests - MOVED BEFORE ROUTES
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  if (req.body && Object.keys(req.body).length > 0) {
-    // Log request body but hide sensitive info
-    const sanitizedBody = { ...req.body };
-    if (sanitizedBody.password) sanitizedBody.password = "[HIDDEN]";
-    console.log("Request body:", JSON.stringify(sanitizedBody));
-  }
-  next();
-});
-
-app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
-app.use("/api/system", require("./routes/systemMaintenanceRoutes")); // System maintenance routes
-app.use("/api/ratings", require("./routes/ratingRoutes")); // Rating system for teachers and subjects
-
-// Add AGGRESSIVE rate limiting middleware for security under attack
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: process.env.NODE_ENV === 'production' ? 100 : 500, // STRICT limit in production
-    message: "Rate limit exceeded - access temporarily restricted",
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => {
-      // Never skip rate limiting in production
-      return false;
-    }
-  })
-);
-
-// Add API request validation middleware
-app.use('/api', (req, res, next) => {
-  // Only allow requests with proper headers in production
-  if (process.env.NODE_ENV === 'production') {
-    // Check for required custom header or referer from our frontend
-    const referer = req.headers.referer || '';
-    const origin = req.headers.origin || '';
-    
-    const isValidReferer = referer.includes('grademanager.netlify.app') ||
-                          referer.includes('gradebook.pro') ||
-                          referer.includes('gradebookbeta.netlify.app');
-                          
-    const isValidOrigin = origin.includes('grademanager.netlify.app') ||
-                         origin.includes('gradebook.pro') ||
-                         origin.includes('gradebookbeta.netlify.app');
-
-    // Log detailed info for debugging
-    console.log(`[API Security] Request referer: ${referer}`);
-    console.log(`[API Security] Request origin: ${origin}`);
-    console.log(`[API Security] Valid referer: ${isValidReferer}`);
-    console.log(`[API Security] Valid origin: ${isValidOrigin}`);
-
-    // Allow requests with valid referer OR valid origin
-    if (!isValidReferer && !isValidOrigin) {
-      console.error('[API Security] Blocked direct API access without proper headers');
-      console.error(`[API Security] Referer: "${referer}", Origin: "${origin}"`);
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied: Direct API access not permitted'
-      });
-    }
-    
-    console.log('[API Security] Request allowed - valid headers detected');
-  }
-
-  next();
-});
 
 // Serve frontend in production
 if (process.env.NODE_ENV === "production") {
@@ -724,28 +703,23 @@ if (process.env.NODE_ENV === "production") {
       return res.redirect("/app/dashboard");
     });
 
-    // IMPORTANT: Fix the order of middleware - this must be the LAST middleware registered!
-    // For all other routes, serve index.html
-    app.use("*", (req, res, next) => {
-      // CRITICAL: Don't intercept API routes - they should be handled by their own handlers
+    // IMPORTANT: This catch-all must be the LAST middleware registered!
+    // For all other NON-API routes, serve index.html
+    app.get("*", (req, res) => {
+      // Only handle GET requests that are NOT API routes
       if (req.originalUrl.startsWith("/api/")) {
-        console.log(
-          `API route detected, skipping catch-all for: ${req.originalUrl}`
-        );
-        return next();
+        console.log(`API route ${req.originalUrl} not found - returning 404`);
+        return res.status(404).json({
+          success: false,
+          message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+        });
       }
 
-      console.log(
-        `Serving index.html for client-side route: ${req.originalUrl}`
-      );
+      console.log(`Serving index.html for client-side route: ${req.originalUrl}`);
 
       if (!fs.existsSync(indexPath)) {
         console.error("ERROR: index.html does not exist at path:", indexPath);
-        return res
-          .status(500)
-          .send(
-            "Frontend build files not found. Please check server configuration."
-          );
+        return res.status(500).send("Frontend build files not found. Please check server configuration.");
       }
 
       // Send the React app's index.html for all client-side routes
