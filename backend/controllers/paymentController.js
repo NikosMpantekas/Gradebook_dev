@@ -79,7 +79,15 @@ const getStudentPayments = asyncHandler(async (req, res) => {
     .populate('recordedBy', 'name')
     .sort({ paymentPeriod: -1 });
 
-  res.status(200).json(payments);
+  res.status(200).json({
+    payments,
+    pagination: {
+      page: 1,
+      limit: payments.length,
+      total: payments.length,
+      pages: 1
+    }
+  });
 });
 
 // @desc    Create or update payment record (Admin only)

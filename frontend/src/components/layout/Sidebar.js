@@ -22,6 +22,10 @@ import {
   LogOut,
   MessageSquare,
   CreditCard,
+  Home,
+  GraduationCap,
+  School,
+  Mail,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback} from '../ui/avatar';
@@ -72,6 +76,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         { icon: Shield, label: 'Super Admin', path: '/superadmin/dashboard' },
         { icon: Building, label: 'School Management', path: '/superadmin/school-permissions' },
         { icon: Users, label: 'User Management', path: '/superadmin/create-school-owner' },
+        { icon: Mail, label: 'Contact Messages', path: '/superadmin/contact' },
         { icon: BarChart3, label: 'System Logs', path: '/superadmin/system-logs' },
         { icon: Megaphone, label: 'Patch Notes', path: '/superadmin/patch-notes' },
       ];

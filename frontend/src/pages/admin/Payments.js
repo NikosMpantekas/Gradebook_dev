@@ -532,7 +532,7 @@ const Payments = () => {
                   <SelectValue placeholder="All students" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Students</SelectItem>
+                  <SelectItem value="all">All Students</SelectItem>
                   {students.map((student) => (
                     <SelectItem key={student._id} value={student._id}>
                       {student.name}
@@ -552,7 +552,7 @@ const Payments = () => {
                   <SelectValue placeholder="All periods" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Periods</SelectItem>
+                  <SelectItem value="all">All Periods</SelectItem>
                   {periodOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
