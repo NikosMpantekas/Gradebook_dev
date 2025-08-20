@@ -695,7 +695,7 @@ function App() {
             } />
             <Route path="/app/parent/grades" element={
               <ParentRoute>
-                <StudentGrades />
+                <ParentGrades />
               </ParentRoute>
             } />
             <Route path="/app/parent/notifications" element={

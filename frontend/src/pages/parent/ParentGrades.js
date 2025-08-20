@@ -89,7 +89,8 @@ const ParentGrades = () => {
       setLoading(true);
       setError('');
 
-      const response = await fetch(`${API_URL}/api/users/my-students`, {
+      // CRITICAL FIX: Use correct parent grades endpoint
+      const response = await fetch(`${API_URL}/api/grades/parent/students`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -99,16 +100,21 @@ const ParentGrades = () => {
       console.log('[ParentGrades] Response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[ParentGrades] Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       console.log('[ParentGrades] Received data:', data);
 
-      if (data.success && data.students) {
+      // CRITICAL FIX: Handle correct response format from parent grades endpoint
+      if (data.students) {
         setStudentsData(data.students);
+        console.log(`[ParentGrades] Successfully loaded ${data.students.length} students`);
       } else {
-        throw new Error(data.message || 'Failed to fetch students data');
+        console.warn('[ParentGrades] No students in response:', data);
+        setStudentsData([]);
       }
     } catch (error) {
       console.error('[ParentGrades] Error fetching students data:', error);
