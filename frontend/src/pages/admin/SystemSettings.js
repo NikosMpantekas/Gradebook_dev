@@ -291,7 +291,7 @@ const SystemSettings = () => {
                 name="schoolPhone"
                 value={settings.schoolPhone}
                 onChange={handleInputChange}
-                placeholder="+1 (555) 123-4567"
+                placeholder="6912345678"
               />
             </div>
             

@@ -337,7 +337,7 @@ const StudentDashboard = () => {
           <CardContent className="flex-1 flex flex-col justify-center">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
-                onClick={() => navigate('/app/grades')}
+                onClick={() => navigate('/app/student/grades')}
                 variant="outline"
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
@@ -346,7 +346,7 @@ const StudentDashboard = () => {
               </Button>
 
               <Button
-                onClick={() => navigate('/app/schedule')}
+                onClick={() => navigate('/app/student/schedule')}
                 variant="outline"
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
@@ -355,7 +355,7 @@ const StudentDashboard = () => {
               </Button>
 
               <Button
-                onClick={() => navigate('/app/notifications')}
+                onClick={() => navigate('/app/student/notifications')}
                 variant="outline"
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
@@ -363,7 +363,7 @@ const StudentDashboard = () => {
                 <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
-                onClick={() => navigate('/app/student-stats')}
+                onClick={() => navigate('/app/student/grades')}
                 variant="outline"
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
