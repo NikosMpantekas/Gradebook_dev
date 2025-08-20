@@ -715,16 +715,17 @@ function App() {
                 <NotificationDetail />
               </ParentRoute>
             } />
-            <Route path="/app/parent/contact" element={
-              <ParentRoute>
-                <UserContactMessages />
-              </ParentRoute>
-            } />
             <Route path="/app/parent/payments" element={
               <ParentRoute>
                 <ParentPayments />
               </ParentRoute>
             } />
+            <Route path="/app/parent/contact" element={
+              <ParentRoute>
+                <UserContactMessages />
+              </ParentRoute>
+            } />
+            
 
           </Route>
 
