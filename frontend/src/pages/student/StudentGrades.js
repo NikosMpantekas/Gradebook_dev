@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useTheme } from '../../components/theme-provider';
 import { 
   Search,
   Eye,
@@ -36,6 +37,7 @@ const StudentGrades = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { darkMode } = useTheme();
   
   const { user } = useSelector((state) => state.auth);
   const { grades, isLoading } = useSelector((state) => state.grades);
@@ -164,10 +166,10 @@ const StudentGrades = () => {
   };
 
   const getGradeColor = (grade) => {
-    if (grade >= 80) return 'bg-green-500 text-white';
-    if (grade >= 60) return 'bg-blue-500 text-white';
-    if (grade >= 50) return 'bg-yellow-500 text-white';
-    return 'bg-red-500 text-white';
+    if (grade >= 80) return 'bg-green-500 text-white font-semibold';
+    if (grade >= 60) return 'bg-blue-500 text-white font-semibold';
+    if (grade >= 50) return 'bg-yellow-500 text-white font-semibold';
+    return 'bg-red-500 text-white font-semibold';
   };
 
   if (isLoading) {
@@ -253,8 +255,41 @@ const StudentGrades = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div className="h-80 flex justify-center items-center">
-                      <Pie data={pieData} />
+                    <div className="h-80 flex justify-center items-center relative">
+                      {isLoading ? (
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                          <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                          <p className="text-sm">{t('student.loadingChart')}</p>
+                        </div>
+                      ) : !grades || grades.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                          <BookOpen className="h-12 w-12 mb-2 opacity-50" />
+                          <p className="text-sm">{t('student.noGradesForChart')}</p>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Pie 
+                            data={pieData} 
+                            options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              animation: {
+                                duration: 1000,
+                                easing: 'easeInOutQuart'
+                              },
+                              plugins: {
+                                legend: {
+                                  position: 'bottom',
+                                  labels: {
+                                    usePointStyle: true,
+                                    padding: 20
+                                  }
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -296,7 +331,11 @@ const StudentGrades = () => {
                       {filteredGrades
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                         .map((grade) => (
-                          <TableRow key={grade._id}>
+                          <TableRow key={grade._id} className={`border-b hover:bg-gray-50 ${
+                            darkMode 
+                              ? 'border-gray-600 hover:bg-gray-900' 
+                              : 'border-gray-200'
+                          }`}>
                             <TableCell className="font-medium">
                               {grade.subject?.name || 'N/A'}
                             </TableCell>
@@ -317,7 +356,9 @@ const StudentGrades = () => {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleViewGrade(grade._id)}
-                                    className="h-8 w-8 p-0"
+                                    className={`h-8 w-8 p-0 hover:bg-gray-100 ${
+                                      darkMode ? 'hover:bg-gray-700' : ''
+                                    }`}
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>

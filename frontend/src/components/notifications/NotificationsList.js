@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
 import { Separator } from '../ui/separator';
+import { useTheme } from '../../components/theme-provider';
 
 const NotificationsList = ({ 
   notifications, 
@@ -28,6 +29,7 @@ const NotificationsList = ({
   onDelete,
   onNavigate 
 }) => {
+  const { darkMode } = useTheme();
   // Safely validate notification data
   const validateNotification = (notification) => {
     if (!notification || typeof notification !== 'object') {
@@ -179,7 +181,7 @@ const NotificationsList = ({
               key={safeNotification._id}
               className={`cursor-pointer transition-all hover:shadow-md ${
                 safeNotification.isRead ? 'opacity-75' : 'border-primary/20'
-              }`}
+              } ${darkMode ? 'border-gray-600 hover:shadow-gray-600/50' : ''}`}
               onClick={() => handleNotificationClick(safeNotification._id)}
             >
               <CardHeader className="pb-3">
