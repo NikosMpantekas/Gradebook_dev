@@ -472,7 +472,7 @@ const ManageGrades = () => {
           </div>
           <Button 
             onClick={() => navigate(user.role === 'admin' ? '/app/admin/grades/create' : '/app/teacher/grades/create')}
-            className="flex items-center gap-2 text-foreground"
+            className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Create Grade
@@ -633,7 +633,7 @@ const ManageGrades = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
+                  <tr className="border-b border-gray-200 dark:border-gray-600">
                     <th className="text-left p-2">
                       <Checkbox 
                         checked={selectedGrades.length === filteredGrades.length}
@@ -647,16 +647,16 @@ const ManageGrades = () => {
                       />
                     </th>
                     <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('student')}
                     >
                       Student
-                      {sortConfig.field === 'student' && (
+                      {sortConfig.field === 'subject' && (
                         <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </th>
                     <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('subject')}
                     >
                       Subject
@@ -665,7 +665,7 @@ const ManageGrades = () => {
                       )}
                     </th>
                     <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('value')}
                     >
                       Grade
@@ -674,7 +674,7 @@ const ManageGrades = () => {
                       )}
                     </th>
                     <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50"
+                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('createdAt')}
                     >
                       Date
@@ -688,7 +688,7 @@ const ManageGrades = () => {
                 </thead>
                 <tbody>
                   {filteredGrades.map((grade) => (
-                    <tr key={grade._id} className="border-b hover:bg-muted/50">
+                    <tr key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
                       <td className="p-2">
                         <Checkbox 
                           checked={selectedGrades.includes(grade._id)}

@@ -361,7 +361,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Logout Confirmation Dialog */}
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent className="sm:max-w-md fade-in">
+        <DialogContent className="w-[90vw] max-w-sm sm:max-w-md fade-in">
           <DialogHeader>
             <DialogTitle>Confirm Logout</DialogTitle>
             <DialogDescription>
