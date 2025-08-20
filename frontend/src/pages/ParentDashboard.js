@@ -30,7 +30,8 @@ const ParentDashboard = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { user, token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  const token = user?.token; // CRITICAL FIX: Extract token from user object
   const navigate = useNavigate();
 
   useEffect(() => {

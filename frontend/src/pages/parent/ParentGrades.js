@@ -15,7 +15,8 @@ const ParentGrades = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedTab, setSelectedTab] = useState('overview');
-  const { user, token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  const token = user?.token; // CRITICAL FIX: Extract token from user object
 
   // Mobile-friendly grade card component
   const GradeCard = ({ grade, showStudentName = false }) => (
