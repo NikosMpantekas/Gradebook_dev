@@ -33,6 +33,7 @@ import {
   CheckCircle as DoneIcon,
   Refresh as RefreshIcon,
   Reply as ReplyIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import LoadingState from '../../components/common/LoadingState';
 import ErrorState from '../../components/common/ErrorState';
@@ -44,6 +45,8 @@ const ContactMessages = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
   const { user } = useSelector((state) => state.auth);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -134,6 +137,41 @@ const ContactMessages = () => {
       console.error('Error updating message status:', err);
       throw err; // Rethrow to allow caller to handle the error
     }
+  };
+
+  // Delete message function
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      await axios.delete(`${API_URL}/api/contact/${messageId}`, config);
+      
+      // Remove message from local state
+      setMessages(messages.filter(msg => msg._id !== messageId));
+      
+      // Close confirmation dialog
+      setDeleteConfirmOpen(false);
+      setMessageToDelete(null);
+      
+      alert('Message deleted successfully');
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      alert(`Error deleting message: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
+  const handleOpenDeleteConfirm = (message) => {
+    setMessageToDelete(message);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setMessageToDelete(null);
   };
 
   // Handle reply dialog
@@ -342,6 +380,22 @@ const ContactMessages = () => {
                   >
                     Reply
                   </Button>
+                  
+                  {/* Delete button - only for superadmin */}
+                  {user?.role === 'superadmin' && (
+                    <Button
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleOpenDeleteConfirm(message)}
+                      sx={{ 
+                        width: { xs: '100%', sm: 'auto' },
+                        fontSize: { xs: '0.875rem', sm: '1rem' }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </CardActions>
               </Card>
             </Grid>
@@ -406,6 +460,39 @@ const ContactMessages = () => {
             }}
           >
             Mark as Replied
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleCloseDeleteConfirm}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Delete Contact Message
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this message from <strong>{messageToDelete?.userName}</strong>?
+            <br />
+            Subject: <strong>{messageToDelete?.subject}</strong>
+            <br /><br />
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteConfirm}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => handleDeleteMessage(messageToDelete?._id)} 
+            color="error"
+            variant="contained"
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

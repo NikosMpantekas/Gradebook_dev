@@ -95,6 +95,9 @@ const Payments = () => {
       });
       
       const response = await api.get(`/api/payments?${params}`);
+      console.log('[PAYMENTS] API URL:', api.defaults.baseURL);
+      console.log('[PAYMENTS] Request URL:', `/api/payments?${params}`);
+      console.log('[PAYMENTS] Frontend response type:', typeof response.data);
       console.log('[PAYMENTS] Frontend response:', response.data);
       
       setPayments(response.data.payments || []);
@@ -114,10 +117,13 @@ const Payments = () => {
   // Fetch students for dropdown
   const fetchStudents = async () => {
     try {
+      console.log('[PAYMENTS] Fetching students...');
       const response = await api.get('/api/users?role=student&limit=1000');
-      setStudents(response.data.users || []);
+      console.log('[PAYMENTS] Students response:', response.data);
+      setStudents(response.data.users || response.data || []);
     } catch (error) {
       console.error('Error fetching students:', error);
+      setStudents([]);
     }
   };
 
