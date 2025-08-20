@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Grade = require('../models/gradeModel');
 const User = require('../models/userModel');
 const Class = require('../models/classModel');
+const Subject = require('../models/subjectModel');
 
 // @desc    Get student grade analysis for a specific period
 // @route   GET /api/grades/student-period-analysis
@@ -30,8 +31,9 @@ const getStudentPeriodAnalysis = asyncHandler(async (req, res) => {
     }
 
     // Check permission - admin can see all, teacher only their students
+    let teacherSubjects = [];
     if (req.user.role === 'teacher') {
-      // Check if teacher teaches this student (through classes)
+      // Check if teacher teaches this student (through classes) and get shared subjects
       const sharedClasses = await Class.find({
         teachers: req.user._id,
         students: studentId,
@@ -42,6 +44,10 @@ const getStudentPeriodAnalysis = asyncHandler(async (req, res) => {
         res.status(403);
         throw new Error('Access denied - you do not teach this student');
       }
+      
+      // Extract subjects that teacher teaches for this student
+      teacherSubjects = sharedClasses.map(cls => cls.subject);
+      console.log(`[GradeAnalysis] Teacher ${req.user._id} teaches subjects [${teacherSubjects.join(', ')}] to student ${studentId}`);
     }
 
     // Parse date range from query parameters
@@ -64,12 +70,26 @@ const getStudentPeriodAnalysis = asyncHandler(async (req, res) => {
 
     console.log(`[GradeAnalysis] Date range:`, { startDate: parsedStartDate, endDate: parsedEndDate });
 
-    // Get all grades for student in the specified period
-    const studentGrades = await Grade.find({
+    // Get grades for student in the specified period
+    // For teachers: only grades for subjects they teach to this student
+    let gradeQuery = {
       student: studentId,
       schoolId: req.user.schoolId,
       date: { $gte: parsedStartDate, $lte: parsedEndDate }
-    })
+    };
+    
+    // Filter by teacher's subjects if not admin
+    if (req.user.role === 'teacher' && teacherSubjects.length > 0) {
+      const subjectObjects = await Subject.find({
+        name: { $in: teacherSubjects },
+        schoolId: req.user.schoolId
+      });
+      const subjectIds = subjectObjects.map(s => s._id);
+      gradeQuery.subject = { $in: subjectIds };
+      console.log(`[GradeAnalysis] Filtering grades to teacher's subjects: [${teacherSubjects.join(', ')}]`);
+    }
+    
+    const studentGrades = await Grade.find(gradeQuery)
     .populate('subject', 'name')
     .populate('teacher', 'name')
     .sort({ date: -1 });
