@@ -31,9 +31,7 @@ const ContactMessages = () => {
   const location = useLocation();
   const { darkMode } = useTheme();
   
-  // Debug dark mode state
-  console.log('ContactMessages - Dark mode state:', darkMode);
-  console.log('ContactMessages - HTML dark class:', document.documentElement.classList.contains('dark'));
+  
   
   // Check if this is the superadmin patch notes route
   const isSuperadminPatchNotesRoute = location.pathname === '/superadmin/patch-notes';
