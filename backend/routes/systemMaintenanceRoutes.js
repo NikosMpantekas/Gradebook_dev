@@ -19,7 +19,15 @@ router.use((req, res, next) => {
 // @desc    Get current maintenance status (public)
 // @route   GET /api/system/maintenance/status
 // @access  Public
-router.get('/status', getMaintenanceStatus);
+router.get('/status', (req, res, next) => {
+  console.log('[MAINTENANCE STATUS] Public status endpoint accessed');
+  console.log('[MAINTENANCE STATUS] Request headers:', {
+    contentType: req.headers['content-type'],
+    accept: req.headers.accept,
+    origin: req.headers.origin
+  });
+  next();
+}, getMaintenanceStatus);
 
 // @desc    Get full maintenance details (SuperAdmin only)
 // @route   GET /api/system/maintenance

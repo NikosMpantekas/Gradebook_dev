@@ -333,6 +333,10 @@ app.use('/api', (req, res, next) => {
 const { updateAllAdminPermissions } = require("./utils/migrations");
 const { addPushNotificationEnabledField } = require("./migrations/addPushNotificationEnabled");
 
+// CRITICAL: System maintenance routes MUST be registered FIRST
+// This ensures the public status endpoint works without interference
+app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes"));
+
 // User routes - No global middleware for auth checking, each route will handle individually
 app.use("/api/users", require("./routes/userRoutes"));
 
@@ -522,6 +526,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Routes that may access multiple schools or don't require schoolId filtering
 app.use("/api/schools", require("./routes/schoolRoutes")); // School routes have special handling
+
 app.use(
   "/api/school-permissions",
   protect,
@@ -532,7 +537,6 @@ app.use("/api/branches", protect, checkMaintenanceMode, require("./routes/branch
 app.use("/api/contact", protect, checkMaintenanceMode, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes")); // Push notification subscriptions (includes VAPID public key)
 app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
-app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes")); // System maintenance routes
 
 // Add catch-all for unmatched API routes to return proper JSON errors
 app.use('/api/*', (req, res) => {
@@ -718,16 +722,17 @@ if (process.env.NODE_ENV === "production") {
     // IMPORTANT: This catch-all must be the LAST middleware registered!
     // For all other NON-API routes, serve index.html
     app.get("*", (req, res) => {
-      // Only handle GET requests that are NOT API routes
+      // CRITICAL: Never intercept API routes - they should have been handled by now
       if (req.originalUrl.startsWith("/api/")) {
-        console.log(`API route ${req.originalUrl} not found - returning 404`);
+        console.error(`[FRONTEND CATCH-ALL] API route ${req.originalUrl} reached catch-all - this should not happen!`);
         return res.status(404).json({
           success: false,
-          message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+          message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+          error: 'Route not registered properly'
         });
       }
 
-      console.log(`Serving index.html for client-side route: ${req.originalUrl}`);
+      console.log(`[FRONTEND] Serving index.html for client-side route: ${req.originalUrl}`);
 
       if (!fs.existsSync(indexPath)) {
         console.error("ERROR: index.html does not exist at path:", indexPath);
