@@ -103,10 +103,11 @@ const SystemMaintenance = () => {
   };
 
   const handleToggleMaintenance = async () => {
-    if (!formData.reason.trim()) {
+    // Only require reason when ENABLING maintenance, not when disabling (emergency action)
+    if (!formData.isMaintenanceMode && !formData.reason.trim()) {
       toast({
         title: 'Reason Required',
-        description: 'Please provide a reason for this maintenance action',
+        description: 'Please provide a reason for enabling maintenance mode',
         variant: 'destructive'
       });
       return;
@@ -118,7 +119,7 @@ const SystemMaintenance = () => {
         isMaintenanceMode: !formData.isMaintenanceMode,
         maintenanceMessage: formData.maintenanceMessage,
         estimatedCompletion: formData.estimatedCompletion || null,
-        reason: formData.reason,
+        reason: formData.reason || (formData.isMaintenanceMode ? 'Emergency disable' : 'Maintenance enabled'),
         allowedRoles: formData.allowedRoles
       };
 
