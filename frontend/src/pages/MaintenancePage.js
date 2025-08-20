@@ -7,7 +7,9 @@ const MaintenancePage = () => {
   const [maintenanceData, setMaintenanceData] = useState({
     isMaintenanceMode: true,
     maintenanceMessage: 'The system is currently under maintenance. Please be patient while we work to improve your experience.',
-    estimatedCompletion: null
+    estimatedCompletion: null,
+    allowedRoles: [],
+    canBypass: false
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,23 +51,22 @@ const MaintenancePage = () => {
       const diffMs = date - now;
       const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
       
-      if (diffHours < 1) return 'Within the hour';
-      if (diffHours === 1) return 'In about 1 hour';
-      if (diffHours < 24) return `In about ${diffHours} hours`;
+      if (diffHours < 1) return 'Less than 1 hour';
+      if (diffHours === 1) return '1 hour';
+      if (diffHours < 24) return `${diffHours} hours`;
       
       const diffDays = Math.ceil(diffHours / 24);
-      if (diffDays === 1) return 'Tomorrow';
-      return `In ${diffDays} days`;
+      if (diffDays === 1) return '1 day';
+      return `${diffDays} days`;
     } catch (error) {
-      console.error('Error formatting estimated time:', error);
-      return null;
+      return 'Soon';
     }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md shadow-xl">
           <CardContent className="p-8 text-center">
             <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
             <p className="text-gray-600">Checking system status...</p>
@@ -77,85 +78,144 @@ const MaintenancePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-xl">
-        <CardContent className="p-8 text-center">
-          {/* Icon and Title */}
-          <div className="mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
-              <Wrench className="h-8 w-8 text-yellow-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              System Maintenance
-            </h1>
-            <div className="flex items-center justify-center text-yellow-600 mb-4">
-              <AlertTriangle className="h-5 w-5 mr-2" />
-              <span className="font-medium">Service Temporarily Unavailable</span>
-            </div>
-          </div>
+      <div className="w-full max-w-4xl space-y-6">
+        {/* Header Section */}
+        <Card className="shadow-xl">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <div className="bg-orange-100 p-4 rounded-full">
+                  <Wrench className="h-12 w-12 text-orange-600" />
+                </div>
+              </div>
+              
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  System Under Maintenance
+                </h1>
+                <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
+                  {maintenanceData.maintenanceMessage || 'The system is currently under maintenance. Please be patient while we work to improve your experience.'}
+                </p>
+              </div>
 
-          {/* Maintenance Message */}
-          <div className="mb-8">
-            <p className="text-lg text-gray-700 leading-relaxed mb-4">
-              {maintenanceData.maintenanceMessage}
-            </p>
+              {maintenanceData.estimatedCompletion && (
+                <div className="inline-flex items-center bg-blue-50 rounded-lg px-4 py-2 text-blue-800 border border-blue-200">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-medium">
+                    Expected completion: {formatEstimatedTime(maintenanceData.estimatedCompletion)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Maintenance Controls Information */}
+        <Card className="shadow-lg">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">
+              Maintenance Controls
+            </h2>
             
-            {/* Estimated Completion Time */}
+            {/* Disable Maintenance Mode Info */}
+            <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+              <h3 className="font-medium text-red-800 mb-2">Disable Maintenance Mode</h3>
+              <p className="text-red-700 text-sm">
+                Turn off maintenance mode to allow users back into the system
+              </p>
+            </div>
+
+            {/* Maintenance Message */}
+            <div>
+              <h3 className="font-medium text-gray-700 mb-2">Maintenance Message</h3>
+              <div className="bg-gray-50 p-3 rounded border">
+                <p className="text-gray-700">
+                  {maintenanceData.maintenanceMessage || 'The system is currently under maintenance. Please be patient while we work to improve your experience.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Estimated Completion */}
             {maintenanceData.estimatedCompletion && (
-              <div className="inline-flex items-center bg-blue-50 rounded-lg px-4 py-2 text-blue-800 border border-blue-200">
-                <Clock className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">
-                  Expected completion: {formatEstimatedTime(maintenanceData.estimatedCompletion)}
-                </span>
+              <div>
+                <h3 className="font-medium text-gray-700 mb-2">Estimated Completion Time (Optional)</h3>
+                <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                  <p className="text-blue-700 flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    {formatEstimatedTime(maintenanceData.estimatedCompletion)}
+                  </p>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* What's happening section */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-8 text-left">
-            <h3 className="font-semibold text-gray-900 mb-3">What's happening?</h3>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                We're performing important system updates and improvements
-              </li>
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                Database optimization and security enhancements are in progress
-              </li>
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                Your data is safe and will be available once maintenance is complete
-              </li>
-            </ul>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="space-y-4">
-            <Button 
-              onClick={handleRefresh}
-              className="w-full sm:w-auto px-8"
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Checking...' : 'Check Again'}
-            </Button>
-            
-            <div className="text-sm text-gray-500">
-              <p>Page will automatically refresh in a few moments</p>
+            {/* Roles Allowed During Maintenance */}
+            <div>
+              <h3 className="font-medium text-gray-700 mb-2">Roles Allowed During Maintenance</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {['admin', 'teacher', 'student', 'parent'].map(role => (
+                  <div key={role} className="flex items-center p-3 bg-gray-50 rounded-lg border">
+                    <div className={`w-3 h-3 rounded-full mr-3 ${
+                      maintenanceData.allowedRoles?.includes(role) ? 'bg-green-500' : 'bg-gray-300'
+                    }`}></div>
+                    <span className="capitalize font-medium text-gray-700">{role}s</span>
+                    <span className={`ml-auto text-xs px-2 py-1 rounded ${
+                      maintenanceData.allowedRoles?.includes(role) 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {maintenanceData.allowedRoles?.includes(role) ? '✓ Enabled' : '✗ Disabled'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                SuperAdmins always have access during maintenance
+              </p>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              Thank you for your patience. We'll be back online shortly.
-            </p>
-            <p className="text-xs text-gray-400 mt-2">
-              If you have urgent questions, please contact your system administrator.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+            {/* Reason for Change */}
+            <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+              <h3 className="font-medium text-yellow-800 mb-2">Reason for Change *</h3>
+              <p className="text-yellow-700 text-sm">
+                A reason is required for maintenance actions for audit purposes
+              </p>
+            </div>
+
+            {/* User Bypass Status */}
+            {maintenanceData.canBypass && (
+              <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                <p className="text-green-700 font-medium">
+                  ✓ Your account has been granted access during maintenance
+                </p>
+                <p className="text-green-600 text-sm mt-1">
+                  You may continue using the system with limited functionality.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Action Button */}
+        <div className="text-center">
+          <Button 
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Checking...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Check Again
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

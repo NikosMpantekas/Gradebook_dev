@@ -333,8 +333,11 @@ app.use('/api', (req, res, next) => {
 const { updateAllAdminPermissions } = require("./utils/migrations");
 const { addPushNotificationEnabledField } = require("./migrations/addPushNotificationEnabled");
 
-// CRITICAL: System maintenance routes MUST be registered FIRST
-// This ensures the public status endpoint works without interference
+// CRITICAL: System maintenance STATUS route must be completely public
+// Register the public status endpoint BEFORE any auth middleware
+app.get('/api/system/maintenance/status', require('./controllers/systemMaintenanceController').getMaintenanceStatus);
+
+// System maintenance admin routes (protected)
 app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes"));
 
 // User routes - No global middleware for auth checking, each route will handle individually

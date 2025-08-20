@@ -16,7 +16,7 @@ router.use((req, res, next) => {
   next();
 });
 
-// @desc    Get current maintenance status (public)
+// @desc    Get current maintenance status (public - no auth required)
 // @route   GET /api/system/maintenance/status
 // @access  Public
 router.get('/status', (req, res, next) => {
@@ -24,8 +24,11 @@ router.get('/status', (req, res, next) => {
   console.log('[MAINTENANCE STATUS] Request headers:', {
     contentType: req.headers['content-type'],
     accept: req.headers.accept,
-    origin: req.headers.origin
+    origin: req.headers.origin,
+    hasAuth: !!req.headers.authorization
   });
+  // Skip authentication for this public endpoint
+  req.skipAuth = true;
   next();
 }, getMaintenanceStatus);
 
