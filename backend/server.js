@@ -549,20 +549,33 @@ app.use('/api', (req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
     // Check for required custom header or referer from our frontend
     const referer = req.headers.referer || '';
+    const origin = req.headers.origin || '';
+    
     const isValidReferer = referer.includes('grademanager.netlify.app') ||
-                          referer.includes('gradebook.pro');
+                          referer.includes('gradebook.pro') ||
+                          referer.includes('gradebookbeta.netlify.app');
+                          
+    const isValidOrigin = origin.includes('grademanager.netlify.app') ||
+                         origin.includes('gradebook.pro') ||
+                         origin.includes('gradebookbeta.netlify.app');
 
-    // Log referer info for debugging
+    // Log detailed info for debugging
     console.log(`[API Security] Request referer: ${referer}`);
+    console.log(`[API Security] Request origin: ${origin}`);
+    console.log(`[API Security] Valid referer: ${isValidReferer}`);
+    console.log(`[API Security] Valid origin: ${isValidOrigin}`);
 
-    // Block requests without proper origin/referer in production
-    if (!isValidReferer && !req.headers.origin) {
+    // Allow requests with valid referer OR valid origin
+    if (!isValidReferer && !isValidOrigin) {
       console.error('[API Security] Blocked direct API access without proper headers');
+      console.error(`[API Security] Referer: "${referer}", Origin: "${origin}"`);
       return res.status(403).json({
         success: false,
         message: 'Access denied: Direct API access not permitted'
       });
     }
+    
+    console.log('[API Security] Request allowed - valid headers detected');
   }
 
   next();

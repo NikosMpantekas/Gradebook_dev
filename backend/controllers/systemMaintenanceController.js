@@ -7,8 +7,20 @@ const SystemMaintenance = require('../models/systemMaintenanceModel');
 const getMaintenanceStatus = asyncHandler(async (req, res) => {
   try {
     console.log('[MAINTENANCE] Getting current maintenance status');
+    console.log('[MAINTENANCE] Request headers:', {
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent']?.substring(0, 100)
+    });
+    console.log('[MAINTENANCE] SystemMaintenance model available:', !!SystemMaintenance);
+    console.log('[MAINTENANCE] SystemMaintenance.getCurrentStatus available:', typeof SystemMaintenance.getCurrentStatus);
     
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
+    console.log('[MAINTENANCE] Retrieved maintenance document:', {
+      exists: !!maintenanceDoc,
+      isMaintenanceMode: maintenanceDoc?.isMaintenanceMode,
+      message: maintenanceDoc?.maintenanceMessage?.substring(0, 50)
+    });
     
     // Public response (limited info for security)
     const publicResponse = {
@@ -21,19 +33,25 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
     if (req.user) {
       publicResponse.canBypass = maintenanceDoc.canBypassMaintenance(req.user.role);
       publicResponse.userRole = req.user.role;
+      console.log('[MAINTENANCE] User authenticated:', {
+        userId: req.user._id,
+        role: req.user.role,
+        canBypass: publicResponse.canBypass
+      });
     }
     
-    console.log('[MAINTENANCE] Status response:', {
-      isMaintenanceMode: publicResponse.isMaintenanceMode,
-      userRole: req.user?.role || 'anonymous',
-      canBypass: publicResponse.canBypass || false
-    });
-    
+    console.log('[MAINTENANCE] Status response prepared successfully');
     res.json(publicResponse);
   } catch (error) {
-    console.error('[MAINTENANCE] Error getting status:', error);
+    console.error('[MAINTENANCE] Error getting status - Full details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
     res.status(500).json({ 
       error: 'Failed to get maintenance status',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       isMaintenanceMode: false // Fail safely
     });
   }
