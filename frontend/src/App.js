@@ -59,6 +59,7 @@ import RatingSubmission from './pages/student/RatingSubmission';
 // Parent Pages
 import ParentDashboard from './pages/ParentDashboard';
 import ParentGrades from './pages/parent/ParentGrades';
+import ParentPayments from './pages/parent/Payments';
 
 // Teacher Pages
 import ManageGrades from './pages/teacher/ManageGrades';
@@ -81,6 +82,7 @@ import SchoolBranchManager from './pages/admin/SchoolBranchManager';
 import RatingManager from './pages/admin/RatingManager';
 import RatingStatistics from './pages/admin/RatingStatistics';
 import SystemMaintenance from './pages/admin/SystemMaintenance';
+import AdminPayments from './pages/admin/Payments';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // SuperAdmin Pages
@@ -675,6 +677,11 @@ function App() {
                 <StudentStats />
               </AdminRoute>
             } />
+            <Route path="/app/admin/payments" element={
+              <AdminRoute>
+                <AdminPayments />
+              </AdminRoute>
+            } />
             <Route path="/app/teacher/student-stats" element={
               <TeacherRoute>
                 <StudentStats />
@@ -711,6 +718,11 @@ function App() {
             <Route path="/app/parent/contact" element={
               <ParentRoute>
                 <UserContactMessages />
+              </ParentRoute>
+            } />
+            <Route path="/app/parent/payments" element={
+              <ParentRoute>
+                <ParentPayments />
               </ParentRoute>
             } />
 

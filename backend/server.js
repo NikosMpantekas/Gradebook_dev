@@ -447,6 +447,13 @@ app.use(
   addFeatureFlags,
   require("./routes/notificationRoutes")
 ); // Notifications API
+app.use(
+  "/api/payments",
+  protect,
+  setSchoolContext,
+  addFeatureFlags,
+  require("./routes/paymentRoutes")
+); // Payments API
 
 // Feature-toggled routes - these routes require specific features to be enabled
 app.use(

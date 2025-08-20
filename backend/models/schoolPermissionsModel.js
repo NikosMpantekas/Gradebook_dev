@@ -128,6 +128,11 @@ const schoolPermissionsSchema = mongoose.Schema(
         type: Boolean,
         default: true,
         description: 'Allow student progress tracking'
+      },
+      enablePayments: {
+        type: Boolean,
+        default: true,
+        description: 'Allow payment tracking and management'
       }
     },
     
@@ -185,7 +190,8 @@ schoolPermissionsSchema.statics.getAvailableFeatures = function() {
     enableBugReports: 'Bug Reports',
     enableDirections: 'Direction Management',
     enablePatchNotes: 'Patch Notes',
-    enableStudentProgress: 'Student Progress'
+    enableStudentProgress: 'Student Progress',
+    enablePayments: 'Payment Management'
   };
 };
 
@@ -233,7 +239,8 @@ schoolPermissionsSchema.statics.createDefaultPermissions = async function(school
         enableBugReports: true,
         enableDirections: true,
         enablePatchNotes: true,
-        enableStudentProgress: true
+        enableStudentProgress: true,
+        enablePayments: true
       }
     });
     
