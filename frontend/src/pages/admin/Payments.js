@@ -95,8 +95,10 @@ const Payments = () => {
       });
       
       const response = await api.get(`/api/payments?${params}`);
-      setPayments(response.data.payments);
-      setTotalPages(response.data.pagination.pages);
+      console.log('[PAYMENTS] Frontend response:', response.data);
+      
+      setPayments(response.data.payments || []);
+      setTotalPages(response.data.pagination?.pages || 1);
     } catch (error) {
       console.error('Error fetching payments:', error);
       toast({

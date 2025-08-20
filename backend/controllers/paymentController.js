@@ -37,7 +37,7 @@ const getPayments = asyncHandler(async (req, res) => {
 
   const total = await Payment.countDocuments(query);
 
-  res.status(200).json({
+  const responseData = {
     payments,
     pagination: {
       page,
@@ -45,7 +45,16 @@ const getPayments = asyncHandler(async (req, res) => {
       total,
       pages: Math.ceil(total / limit)
     }
+  };
+
+  console.log('[PAYMENTS] getPayments response:', {
+    paymentsCount: payments.length,
+    pagination: responseData.pagination,
+    userId: req.user._id,
+    schoolId: req.user.schoolId
   });
+
+  res.status(200).json(responseData);
 });
 
 // @desc    Get payment history for a specific student (Admin & Parent)

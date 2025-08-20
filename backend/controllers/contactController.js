@@ -155,10 +155,10 @@ const getContactMessages = asyncHandler(async (req, res) => {
     });
 
     // Superadmins can see all messages including public ones
-    // Regular admins see all messages within their school
+    // Regular admins see only their own messages within their school
     const filter = req.user.role === 'superadmin' 
       ? {} 
-      : { schoolId: req.user.schoolId };
+      : { user: req.user._id, schoolId: req.user.schoolId };
 
     console.log('[CONTACT] Using filter', filter);
         

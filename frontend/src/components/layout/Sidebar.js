@@ -118,12 +118,12 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: Clock, label: 'Schedule', path: '/app/admin/schedule' });
       }
       
-      if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/admin/contact' });
-      }
-      
       if (isFeatureEnabled('enablePayments')) {
         items.push({ icon: CreditCard, label: 'Payments', path: '/app/admin/payments' });
+      }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/admin/contact' });
       }
     }
 
