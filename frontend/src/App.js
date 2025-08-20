@@ -28,6 +28,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
+import { MaintenanceStatusChecker } from './pages/MaintenancePage';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import PasswordChange from './components/PasswordChange';
@@ -81,7 +82,7 @@ import ManageSubjects from './pages/admin/ManageSubjects';
 import SchoolBranchManager from './pages/admin/SchoolBranchManager';
 import RatingManager from './pages/admin/RatingManager';
 import RatingStatistics from './pages/admin/RatingStatistics';
-import SystemMaintenance from './pages/admin/SystemMaintenance';
+import SystemMaintenance from './pages/superadmin/SystemMaintenance';
 import AdminPayments from './pages/admin/Payments';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
@@ -331,17 +332,18 @@ function App() {
 
   return (
     <ErrorBoundary fallback={<DiagnosticPage />} componentName="Application Root">
-    <ThemeProvider>
-      <ScrollFix /> {/* Fix for Safari elastic scroll */}
-      <FeatureToggleProvider>
-        <HomeScreenPrompt />
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/home" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
+      <ThemeProvider>
+        <ScrollFix /> {/* Fix for Safari elastic scroll */}
+        <FeatureToggleProvider>
+          <HomeScreenPrompt />
+          <MaintenanceStatusChecker>
+            <Router>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/home" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<Login />} />
             <Route path="/change-password" element={<PasswordChange />} />
             <Route path="/register" element={<Register />} />
             <Route path="/diagnostics" element={<DiagnosticPage />} />
@@ -661,12 +663,6 @@ function App() {
                 </ErrorBoundary>
               </AdminRoute>
             } />
-            {/* System Maintenance - SuperAdmin Only */}
-            <Route path="/app/admin/system-maintenance" element={
-              <SuperAdminRoute>
-                <SystemMaintenance />
-              </SuperAdminRoute>
-            } />
             <Route path="/app/admin/schedule" element={
               <AdminRoute>
                 <Schedule />
@@ -786,6 +782,11 @@ function App() {
                 <SystemLogs />
               </SuperAdminRoute>
             } />
+            <Route path="/superadmin/maintenance" element={
+              <SuperAdminRoute>
+                <SystemMaintenance />
+              </SuperAdminRoute>
+            } />
           </Route>
           
           {/* Print Grade Page - Standalone route without layout */}
@@ -794,17 +795,14 @@ function App() {
           {/* Student Stats Print Page - Standalone route without layout */}
           <Route path="/student-stats/print" element={<StudentStatsPrint />} />
           
+          
           {/* 404 Page */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-      <Toaster position="top-right" />
-      {/* Modern Push notification settings component is now embedded in other pages when needed */}
-      {/* Android PWA Installation Prompt */}
-      <AndroidInstallPrompt />
-      {/* Floating Push Notification Toggle */}
-      <FloatingPushToggle />
+            </Routes>
+          </Router>
+        </MaintenanceStatusChecker>
       </FeatureToggleProvider>
+      <Toaster />
     </ThemeProvider>
     </ErrorBoundary>
   );
