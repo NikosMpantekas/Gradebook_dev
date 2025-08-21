@@ -5,6 +5,7 @@ const {
   getSchoolOwners,
   getSchoolOwnerById,
   updateSchoolOwnerStatus,
+  updateAdminPack,
   deleteSchoolOwner,
   createFirstSuperAdmin,
   updateSchoolOwnerPermissions,
@@ -28,6 +29,7 @@ router.post('/create-school-owner', createSchoolOwner);
 router.get('/school-owners', getSchoolOwners);
 router.get('/school-owners/:id', getSchoolOwnerById);
 router.put('/school-owners/:id/status', updateSchoolOwnerStatus);
+router.put('/school-owners/:id/pack', updateAdminPack);
 router.put('/school-owners/:id/permissions', updateSchoolOwnerPermissions);
 router.delete('/school-owners/:id', deleteSchoolOwner);
 

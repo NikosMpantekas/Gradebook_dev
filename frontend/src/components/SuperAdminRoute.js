@@ -47,9 +47,9 @@ const SuperAdminRoute = ({ children }) => {
     });
   }
   
-  // Role-based access control check
-  if (user.role !== 'superadmin') {
-    logger.warn('ROUTE', `SuperAdminRoute access denied: User is not a superadmin`, {
+  // Role-based access control check - Allow admin and superadmin for maintenance
+  if (user.role !== 'superadmin' && user.role !== 'admin') {
+    logger.warn('ROUTE', `SuperAdminRoute access denied: User is not admin or superadmin`, {
       actualRole: user.role,
       userId: user._id || user.id
     });
