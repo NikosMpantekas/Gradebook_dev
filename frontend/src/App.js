@@ -783,7 +783,7 @@ function App() {
                 <SystemLogs />
               </SuperAdminRoute>
             } />
-            <Route path="/superadmin/maintenance" element={
+            <Route path="/superadmin/maintenance-announcements" element={
               <SuperAdminRoute>
                 <MaintenanceAnnouncements />
               </SuperAdminRoute>
