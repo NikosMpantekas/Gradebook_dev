@@ -36,6 +36,8 @@ const MaintenanceNotifications = () => {
       if (!user?.token) return;
       
       const response = await axios.get(`${API_URL}/api/maintenance-announcements/active`, getAuthConfig());
+      console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Fetched data:', response.data);
+      console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Count:', response.data?.length || 0);
       setAnnouncements(response.data);
     } catch (error) {
       console.error('Error fetching maintenance announcements:', error);
@@ -158,18 +160,14 @@ const MaintenanceNotifications = () => {
     }
   };
 
-  // Filter out dismissed announcements
-  const visibleAnnouncements = announcements.filter(
-    announcement => !dismissedAnnouncements.has(announcement._id)
-  );
-
-  if (loading || visibleAnnouncements.length === 0) {
+  // Show all announcements since dismiss functionality is removed
+  if (loading || announcements.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-2 mb-6">
-      {visibleAnnouncements.map((announcement) => {
+      {announcements.map((announcement) => {
         const styles = getTypeStyles(announcement.type);
         const isExpanded = expandedAnnouncements.has(announcement._id);
         

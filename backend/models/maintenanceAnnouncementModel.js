@@ -110,6 +110,7 @@ maintenanceAnnouncementSchema.index({ scheduledStart: 1, scheduledEnd: 1 });
 maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(userRole = null) {
   try {
     const currentTime = new Date();
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Searching for announcements for role: ${userRole} at time: ${currentTime}`);
     
     const query = {
       isActive: true,
@@ -123,11 +124,22 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
       query.targetRoles = { $in: [userRole] };
     }
     
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Query:`, JSON.stringify(query, null, 2));
+    
     const announcements = await this.find(query)
       .populate('createdBy', 'name role')
       .populate('lastModifiedBy', 'name role')
       .sort({ scheduledStart: -1 })
       .limit(5); // Limit to 5 most recent active announcements
+    
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Found ${announcements.length} announcements matching query`);
+    
+    // Also check what announcements exist without filtering
+    const allAnnouncements = await this.find({ isActive: true }).select('title targetRoles scheduledStart scheduledEnd showOnDashboard');
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Total active announcements in DB: ${allAnnouncements.length}`);
+    allAnnouncements.forEach(ann => {
+      console.log(`  - "${ann.title}" | roles: ${ann.targetRoles} | start: ${ann.scheduledStart} | end: ${ann.scheduledEnd} | showOnDashboard: ${ann.showOnDashboard}`);
+    });
     
     return announcements;
   } catch (error) {
