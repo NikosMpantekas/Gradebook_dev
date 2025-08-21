@@ -18,7 +18,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
+import { Spinner } from '../../components/ui/spinner';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
@@ -285,6 +288,9 @@ const StudentDashboard = () => {
         <h1 className="text-3xl font-light tracking-wide">{t('student.welcomeBack')}, {user?.name}!</h1>
         <p className="text-muted-foreground">{t('student.trackProgress')}</p>
       </div>
+
+      {/* Maintenance Notifications */}
+      <MaintenanceNotifications />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

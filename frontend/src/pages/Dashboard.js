@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Assignment, Notifications, School } from 'lucide-react';
+import MaintenanceNotifications from '../components/MaintenanceNotifications';
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -481,6 +482,9 @@ const Dashboard = () => {
         </Card>
       )}
       
+      {/* Maintenance Notifications */}
+      <MaintenanceNotifications />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         {/* Welcome Section */}
         <div className="md:col-span-1">

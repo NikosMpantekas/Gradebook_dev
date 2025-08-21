@@ -536,7 +536,7 @@ const loginUser = asyncHandler(async (req, res) => {
       schoolId: user.schoolId
     });
 
-    res.json({
+    const responseData = {
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -551,7 +551,15 @@ const loginUser = asyncHandler(async (req, res) => {
       requirePasswordChange: user.requirePasswordChange,
       isFirstLogin: user.isFirstLogin,
       token,
-    });
+    };
+
+    // Add pack information for admin users
+    if (user.role === 'admin') {
+      responseData.packType = user.packType || 'lite';
+      responseData.monthlyPrice = user.monthlyPrice || 0;
+    }
+
+    res.json(responseData);
     
   } catch (error) {
     console.error(`Login error: ${error.message}`);
@@ -692,7 +700,16 @@ const getMe = asyncHandler(async (req, res) => {
     .populate('subjects', 'name');  // Multiple subjects array (both roles)
 
   if (user) {
-    res.status(200).json(user);
+    // Convert to plain object to add pack fields if needed
+    const userResponse = user.toObject();
+    
+    // Add pack information for admin users
+    if (user.role === 'admin') {
+      userResponse.packType = user.packType || 'lite';
+      userResponse.monthlyPrice = user.monthlyPrice || 0;
+    }
+    
+    res.status(200).json(userResponse);
   } else {
     res.status(404);
     throw new Error('User not found');
@@ -722,7 +739,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
     const updatedUser = await user.save();
 
-    res.json({
+    const responseData = {
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
@@ -731,7 +748,15 @@ const updateProfile = asyncHandler(async (req, res) => {
       saveCredentials: updatedUser.saveCredentials,
       avatar: updatedUser.avatar,
       token: generateToken(updatedUser._id, updatedUser.schoolId),
-    });
+    };
+
+    // Add pack information for admin users
+    if (updatedUser.role === 'admin') {
+      responseData.packType = updatedUser.packType || 'lite';
+      responseData.monthlyPrice = updatedUser.monthlyPrice || 0;
+    }
+
+    res.json(responseData);
   } else {
     res.status(404);
     throw new Error('User not found');

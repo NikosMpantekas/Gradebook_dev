@@ -17,9 +17,11 @@ import {
   Mail
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Badge } from '../components/ui/badge';
+import { Spinner } from '../components/ui/spinner';
+import { useFeatureToggles } from '../context/FeatureToggleContext';
+import MaintenanceNotifications from '../components/MaintenanceNotifications';
 import { Spinner } from '../components/ui/spinner';
 import { API_URL } from '../config/appConfig';
 
@@ -161,6 +163,9 @@ const ParentDashboard = () => {
           Welcome back! Monitor your children's academic progress and stay updated.
         </p>
       </div>
+
+      {/* Maintenance Notifications */}
+      <MaintenanceNotifications />
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 mb-6">
