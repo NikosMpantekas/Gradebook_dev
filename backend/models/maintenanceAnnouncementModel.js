@@ -112,11 +112,28 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
     const currentTime = new Date();
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Searching for announcements for role: ${userRole} at time: ${currentTime}`);
     
+    // Modified query to show announcements that are either:
+    // 1. Currently active (between scheduledStart and scheduledEnd)
+    // 2. Starting within the next 24 hours (upcoming announcements)
+    const next24Hours = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
+    
     const query = {
       isActive: true,
       showOnDashboard: true,
-      scheduledStart: { $lte: currentTime },
-      scheduledEnd: { $gte: currentTime }
+      $or: [
+        // Currently active announcements
+        {
+          scheduledStart: { $lte: currentTime },
+          scheduledEnd: { $gte: currentTime }
+        },
+        // Future announcements starting within 24 hours
+        {
+          scheduledStart: { 
+            $gt: currentTime, 
+            $lte: next24Hours 
+          }
+        }
+      ]
     };
     
     // Filter by user role if specified
@@ -129,16 +146,18 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
     const announcements = await this.find(query)
       .populate('createdBy', 'name role')
       .populate('lastModifiedBy', 'name role')
-      .sort({ scheduledStart: -1 })
-      .limit(5); // Limit to 5 most recent active announcements
+      .sort({ scheduledStart: 1 }) // Sort by start time ascending to show upcoming first
+      .limit(10); // Increased limit to show more announcements
     
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Found ${announcements.length} announcements matching query`);
     
-    // Also check what announcements exist without filtering
+    // Enhanced logging for debugging
     const allAnnouncements = await this.find({ isActive: true }).select('title targetRoles scheduledStart scheduledEnd showOnDashboard');
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Total active announcements in DB: ${allAnnouncements.length}`);
     allAnnouncements.forEach(ann => {
-      console.log(`  - "${ann.title}" | roles: ${ann.targetRoles} | start: ${ann.scheduledStart} | end: ${ann.scheduledEnd} | showOnDashboard: ${ann.showOnDashboard}`);
+      const status = ann.scheduledStart <= currentTime && ann.scheduledEnd >= currentTime ? 'ACTIVE' :
+                    ann.scheduledStart > currentTime ? 'UPCOMING' : 'EXPIRED';
+      console.log(`  - "${ann.title}" | roles: ${ann.targetRoles} | start: ${ann.scheduledStart} | end: ${ann.scheduledEnd} | status: ${status} | showOnDashboard: ${ann.showOnDashboard}`);
     });
     
     return announcements;
