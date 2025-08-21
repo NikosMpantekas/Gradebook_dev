@@ -22,7 +22,6 @@ import { Badge } from '../components/ui/badge';
 import { Spinner } from '../components/ui/spinner';
 import { useFeatureToggles } from '../context/FeatureToggleContext';
 import MaintenanceNotifications from '../components/MaintenanceNotifications';
-import { Spinner } from '../components/ui/spinner';
 import { API_URL } from '../config/appConfig';
 
 const ParentDashboard = () => {
