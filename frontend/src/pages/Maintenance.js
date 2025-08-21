@@ -12,7 +12,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import axios from "../app/axios";
+import { API_URL } from '../config/appConfig';
 
 import SettingsIcon from "@mui/icons-material/Settings";
 import WarningIcon from "@mui/icons-material/Warning";
@@ -393,10 +393,22 @@ const Maintenance = () => {
       setError(null);
       console.log('[MAINTENANCE PAGE] Fetching maintenance status...');
       
-      const response = await axios.get('/api/system/maintenance/status');
-      console.log('[MAINTENANCE PAGE] Status response:', response.data);
+      // Use fetch instead of axios to avoid credentials being sent to public endpoint
+      const response = await fetch(`${API_URL}/api/system/maintenance/status`);
       
-      setMaintenanceInfo(response.data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response is not JSON');
+      }
+      
+      const data = await response.json();
+      console.log('[MAINTENANCE PAGE] Status response:', data);
+      
+      setMaintenanceInfo(data);
     } catch (err) {
       console.error('[MAINTENANCE PAGE] Error fetching maintenance status:', err);
       setError('Failed to load maintenance information');
