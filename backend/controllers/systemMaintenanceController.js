@@ -31,10 +31,12 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
     const publicResponse = {
       isMaintenanceMode: maintenanceDoc.isMaintenanceMode,
       maintenanceMessage: maintenanceDoc.maintenanceMessage,
-      estimatedCompletion: maintenanceDoc.estimatedCompletion
+      estimatedCompletion: maintenanceDoc.estimatedCompletion,
+      allowedRoles: maintenanceDoc.allowedRoles,
+      reason: maintenanceDoc.reason || '',
+      canBypass: false
     };
     
-    // If user is authenticated, check if they can bypass
     if (req.user) {
       publicResponse.canBypass = maintenanceDoc.canBypassMaintenance(req.user.role);
       publicResponse.userRole = req.user.role;

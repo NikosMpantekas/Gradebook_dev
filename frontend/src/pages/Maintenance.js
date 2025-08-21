@@ -413,6 +413,15 @@ const Maintenance = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Redirect to app when maintenance is disabled
+  useEffect(() => {
+    if (maintenanceInfo && !maintenanceInfo.isMaintenanceMode && !loading) {
+      console.log('[MAINTENANCE PAGE] Maintenance disabled, redirecting to app...');
+      // Use window.location.href to fully reload and clear maintenance state
+      window.location.href = '/';
+    }
+  }, [maintenanceInfo, loading]);
+
   const handleRetry = () => {
     window.location.reload();
   };
@@ -722,7 +731,7 @@ const Maintenance = () => {
                         lineHeight: 1.5,
                       }}
                     >
-                      {maintenanceInfo.reason || "Προγραμματισμένη συντήρηση συστήματος"}
+                      {maintenanceInfo.reason || "Δεν έχει καθοριστεί αιτία"}
                     </Typography>
                   </CardContent>
                 </Card>
