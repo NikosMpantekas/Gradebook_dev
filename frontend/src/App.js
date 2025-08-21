@@ -92,6 +92,7 @@ import CreateSchoolOwner from './pages/superadmin/CreateSchoolOwner';
 import SchoolOwnerDetails from './pages/superadmin/SchoolOwnerDetails';
 import ManageSchoolFeatures from './pages/superadmin/ManageSchoolFeatures';
 import SuperAdminNotifications from './pages/superadmin/SuperAdminNotifications';
+import MaintenanceAnnouncements from './pages/superadmin/MaintenanceAnnouncements';
 import SchoolPermissionsManager from './components/superadmin/SchoolPermissionsManager';
 import SystemLogs from './pages/superadmin/SystemLogs';
 
@@ -785,6 +786,11 @@ function App() {
             <Route path="/superadmin/maintenance" element={
               <SuperAdminRoute>
                 <SystemMaintenance />
+              </SuperAdminRoute>
+            } />
+            <Route path="/superadmin/announcements" element={
+              <SuperAdminRoute>
+                <MaintenanceAnnouncements />
               </SuperAdminRoute>
             } />
           </Route>

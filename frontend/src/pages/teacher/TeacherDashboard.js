@@ -31,6 +31,7 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Spinner } from '../../components/ui/spinner';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 
@@ -247,6 +248,9 @@ const TeacherDashboard = () => {
         <h1 className="text-3xl font-light tracking-wide">Welcome back, {user?.name}!</h1>
         <p className="text-muted-foreground">Manage your classes, grades, and student communications.</p>
       </div>
+
+      {/* Maintenance Notifications */}
+      <MaintenanceNotifications />
 
       {/* Quick Stats and Actions - Side by Side on Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

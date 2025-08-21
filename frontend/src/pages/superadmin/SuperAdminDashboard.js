@@ -41,6 +41,7 @@ import {
 } from '@mui/icons-material';
 import { getSchoolOwners, updateSchoolOwnerStatus, updateAdminPack, reset } from '../../features/superadmin/superAdminSlice';
 import LoadingState from '../../components/common/LoadingState';
+import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 
 function SuperAdminDashboard() {
   const navigate = useNavigate();
@@ -139,6 +140,9 @@ function SuperAdminDashboard() {
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
         Welcome to the Super Admin Control Panel
       </Typography>
+
+      {/* Maintenance Notifications */}
+      <MaintenanceNotifications />
       
       {/* School Owner Statistics */}
       <Grid container spacing={3} sx={{ mt: 2, mb: 4 }}>

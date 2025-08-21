@@ -17,6 +17,10 @@ import {
   EyeOff,
   Shield,
   Bell,
+  Package,
+  Euro,
+  Star,
+  Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -268,6 +272,72 @@ const Profile = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Pack Information - Admin Only */}
+          {user?.role === 'admin' && (
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                  <Package className="h-5 w-5" />
+                  Current Plan & Pricing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      {user.packType === 'pro' ? (
+                        <Star className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      ) : (
+                        <Package className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Pack Type</p>
+                      <p className="font-semibold text-purple-700 dark:text-purple-300">
+                        {user.packType === 'pro' ? 'PRO Package' : 'LITE Package'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <Euro className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Monthly Price</p>
+                      <p className="font-semibold text-green-700 dark:text-green-300">
+                        €{user.monthlyPrice || 0}/month
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Plan Status</p>
+                      <Badge variant={user.packType === 'pro' ? 'default' : 'secondary'} className="text-xs">
+                        {user.packType === 'pro' ? 'Premium Active' : 'Basic Active'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                
+                {user.packType === 'lite' && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Info className="h-4 w-4" />
+                      <span className="text-sm">
+                        Contact your system administrator to upgrade to PRO for additional features and increased capacity.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Main Profile Form */}
