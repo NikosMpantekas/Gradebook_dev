@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { AlertTriangle, Clock, Wrench, RefreshCw } from 'lucide-react';
+import { API_URL } from '../config/appConfig';
 
 const MaintenancePage = () => {
   const [maintenanceData, setMaintenanceData] = useState({
@@ -20,7 +21,17 @@ const MaintenancePage = () => {
   const fetchMaintenanceStatus = async () => {
     try {
       console.log('[MAINTENANCE PAGE] Fetching maintenance status');
-      const response = await fetch('/api/system/maintenance/status');
+      const response = await fetch(`${API_URL}/api/system/maintenance/status`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response is not JSON');
+      }
+      
       const data = await response.json();
       console.log('[MAINTENANCE PAGE] Maintenance status:', data);
       setMaintenanceData(data);
@@ -237,7 +248,19 @@ export const MaintenanceStatusChecker = ({ children }) => {
   const checkMaintenanceStatus = async () => {
     try {
       console.log('[MAINTENANCE CHECKER] Checking maintenance status');
-      const response = await fetch('/api/system/maintenance/status');
+      const response = await fetch(`${API_URL}/api/system/maintenance/status`);
+      
+      if (!response.ok) {
+        console.log('[MAINTENANCE CHECKER] HTTP error:', response.status, response.statusText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('[MAINTENANCE CHECKER] Response is not JSON, content-type:', contentType);
+        throw new Error('Response is not JSON');
+      }
+      
       const data = await response.json();
       
       console.log('[MAINTENANCE CHECKER] Status response:', {
@@ -249,7 +272,7 @@ export const MaintenanceStatusChecker = ({ children }) => {
       setIsMaintenanceMode(data.isMaintenanceMode && !data.canBypass);
     } catch (error) {
       console.error('[MAINTENANCE CHECKER] Error checking maintenance status:', error);
-      // Don't show maintenance page on API errors
+      // Don't show maintenance page on API errors - fail safely
       setIsMaintenanceMode(false);
     } finally {
       setIsLoading(false);
