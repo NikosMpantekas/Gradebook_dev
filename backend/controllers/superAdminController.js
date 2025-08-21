@@ -850,11 +850,8 @@ module.exports = {
   updateAdminPack,
   createFirstSuperAdmin,
   getSystemLogs,
-  getUsersByRole,
-  resetUserPassword,
   sendSuperAdminNotification,
   getSchoolsForNotifications,
   searchUsersForNotifications,
-  getSystemLogs,
   getPM2Status
 };
