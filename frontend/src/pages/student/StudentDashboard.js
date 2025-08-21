@@ -25,7 +25,6 @@ import MaintenanceNotifications from '../../components/MaintenanceNotifications'
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
-import { Spinner } from '../../components/ui/spinner';
 import { GradesGraph } from "../../components/GradesGraph";
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
 
