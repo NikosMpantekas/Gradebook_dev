@@ -120,12 +120,29 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
 // @route   GET /api/superadmin/school-owners
 // @access  Private/SuperAdmin
 const getSchoolOwners = asyncHandler(async (req, res) => {
-  // Find all admin users with their associated schools
+  // Find all admin users with their associated schools and pack information
   const schoolOwners = await User.find({ role: 'admin' })
     .select('-password')
     .populate('school', 'name address email emailDomain active');
 
-  res.status(200).json(schoolOwners);
+  // Get user counts for each school
+  const ownersWithUserCounts = await Promise.all(
+    schoolOwners.map(async (owner) => {
+      const userCount = await User.countDocuments({ 
+        schoolId: owner.schoolId || owner.school?._id 
+      });
+      
+      return {
+        ...owner.toObject(),
+        userCount,
+        schoolName: owner.school?.name || 'No School',
+        packType: owner.packType || 'lite',
+        monthlyPrice: owner.monthlyPrice || 0
+      };
+    })
+  );
+
+  res.status(200).json(ownersWithUserCounts);
 });
 
 // @desc    Get school owner by ID
@@ -180,6 +197,38 @@ const updateSchoolOwnerStatus = asyncHandler(async (req, res) => {
     _id: user.id,
     name: user.name,
     active: user.active,
+  });
+});
+
+// @desc    Update admin pack information
+// @route   PUT /api/superadmin/school-owners/:id/pack
+// @access  Private/SuperAdmin
+const updateAdminPack = asyncHandler(async (req, res) => {
+  const { packType, monthlyPrice } = req.body;
+
+  if (!packType || monthlyPrice === undefined) {
+    res.status(400);
+    throw new Error('Please provide packType and monthlyPrice');
+  }
+
+  const user = await User.findById(req.params.id);
+
+  if (!user || user.role !== 'admin') {
+    res.status(404);
+    throw new Error('Admin user not found');
+  }
+
+  // Update pack information
+  user.packType = packType;
+  user.monthlyPrice = monthlyPrice;
+  await user.save();
+
+  res.status(200).json({
+    message: 'Pack updated successfully',
+    _id: user.id,
+    name: user.name,
+    packType: user.packType,
+    monthlyPrice: user.monthlyPrice,
   });
 });
 
@@ -798,9 +847,11 @@ module.exports = {
   getSchoolOwners,
   getSchoolOwnerById,
   updateSchoolOwnerStatus,
-  deleteSchoolOwner,
+  updateAdminPack,
   createFirstSuperAdmin,
-  updateSchoolOwnerPermissions,
+  getSystemLogs,
+  getUsersByRole,
+  resetUserPassword,
   sendSuperAdminNotification,
   getSchoolsForNotifications,
   searchUsersForNotifications,
