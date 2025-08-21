@@ -251,14 +251,6 @@ const MaintenanceNotifications = () => {
                   </div>
                 </div>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`${styles.text} hover:bg-black/5 dark:hover:bg-white/5 p-1 h-auto ml-2`}
-                  onClick={() => handleDismiss(announcement._id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             </CardContent>
           </Card>

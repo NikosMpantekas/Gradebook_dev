@@ -62,7 +62,27 @@ const Profile = () => {
       return;
     }
     
-    // Profile data will be refreshed through normal Redux flow
+    // Force refresh user data on profile page load
+    const refreshUserData = async () => {
+      try {
+        const response = await authService.getProfile();
+        if (response) {
+          // Store fresh data in localStorage to trigger Redux update
+          localStorage.setItem('user', JSON.stringify(response));
+          // Force page reload to pick up new data
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+      }
+    };
+    
+    // Only refresh if this is an admin and we haven't refreshed recently
+    if (user.role === 'admin' && !sessionStorage.getItem('profileRefreshed')) {
+      sessionStorage.setItem('profileRefreshed', 'true');
+      refreshUserData();
+      return;
+    }
     
     // Initialize form data with user info
     setFormData({
@@ -78,7 +98,7 @@ const Profile = () => {
       newPassword: '',
       confirmPassword: ''
     });
-  }, [user, navigate, dispatch]);
+  }, [user, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
