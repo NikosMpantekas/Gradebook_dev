@@ -163,6 +163,9 @@ const MaintenancePage = () => {
 export const MaintenanceStatusChecker = ({ children }) => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Get user from Redux to check if superadmin
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
     checkMaintenanceStatus();
@@ -176,6 +179,16 @@ export const MaintenanceStatusChecker = ({ children }) => {
   const checkMaintenanceStatus = async () => {
     try {
       console.log('[MAINTENANCE CHECKER] Checking maintenance status');
+      console.log('[MAINTENANCE CHECKER] Current user role:', user?.role);
+      
+      // SUPERADMIN BYPASS: Always allow superadmin users to access the system
+      if (user?.role === 'superadmin') {
+        console.log('[MAINTENANCE CHECKER] Superadmin detected - bypassing maintenance mode');
+        setIsMaintenanceMode(false);
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/api/system/maintenance/status`);
       
       if (!response.ok) {
@@ -193,7 +206,8 @@ export const MaintenanceStatusChecker = ({ children }) => {
       
       console.log('[MAINTENANCE CHECKER] Status response:', {
         isMaintenanceMode: data.isMaintenanceMode,
-        canBypass: data.canBypass
+        canBypass: data.canBypass,
+        userRole: user?.role
       });
       
       // Show maintenance page if maintenance is enabled and user cannot bypass
