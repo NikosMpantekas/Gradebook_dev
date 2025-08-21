@@ -97,6 +97,14 @@ if (process.env.NODE_ENV === 'production') {
 console.log('[CORS] Allowed origins:', allowedOrigins.filter(origin => origin));
 
 // Configure enhanced CORS with better security & compatibility
+// Special CORS handling for public endpoints
+app.use('/api/system/maintenance/status', cors({
+  origin: '*', // Allow all origins for maintenance status (public endpoint)
+  methods: ["GET", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+  credentials: false
+}));
+
 const corsOptions = {
   origin: function (origin, callback) {
     console.log('[CORS] Request from origin:', origin);
