@@ -707,6 +707,7 @@ const getMe = asyncHandler(async (req, res) => {
     if (user.role === 'admin') {
       userResponse.packType = user.packType || 'lite';
       userResponse.monthlyPrice = user.monthlyPrice || 0;
+      console.log(`[USER PROFILE] Admin pack info: packType=${userResponse.packType}, monthlyPrice=${userResponse.monthlyPrice}`);
     }
     
     res.status(200).json(userResponse);

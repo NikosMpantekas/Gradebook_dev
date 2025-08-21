@@ -81,7 +81,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         { icon: Mail, label: 'Contact Messages', path: '/superadmin/contact' },
         { icon: BarChart3, label: 'System Logs', path: '/superadmin/system-logs' },
         { icon: Wrench, label: 'Maintenance Announcements', path: '/superadmin/maintenance-announcements' },
-        { icon: BadgeAlert, label: 'Maintenance ', path: '/superadmin/maintenance' },
+        { icon: BadgeAlert, label: 'Maintenance ', path: '/superadmin/system-maintenance' },
         { icon: Megaphone, label: 'Patch Notes', path: '/superadmin/patch-notes' },
       ];
     }
