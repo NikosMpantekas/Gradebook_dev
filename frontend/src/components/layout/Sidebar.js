@@ -26,6 +26,7 @@ import {
   GraduationCap,
   School,
   Mail,
+  BadgeAlert,
   Wrench,
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -79,7 +80,8 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         { icon: Users, label: 'User Management', path: '/superadmin/create-school-owner' },
         { icon: Mail, label: 'Contact Messages', path: '/superadmin/contact' },
         { icon: BarChart3, label: 'System Logs', path: '/superadmin/system-logs' },
-        { icon: Wrench, label: 'System Maintenance', path: '/superadmin/maintenance' },
+        { icon: Wrench, label: 'Maintenance Announcements', path: '/superadmin/maintenance-announcements' },
+        { icon: BadgeAlert, label: 'Maintenance ', path: '/superadmin/maintenance' },
         { icon: Megaphone, label: 'Patch Notes', path: '/superadmin/patch-notes' },
       ];
     }
