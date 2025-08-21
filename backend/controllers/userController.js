@@ -1940,6 +1940,116 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get all admin users with user counts (SuperAdmin only)
+// @route   GET /api/users/superadmin/school-owners
+// @access  Private/SuperAdmin
+const getSchoolOwnersWithUserCounts = asyncHandler(async (req, res) => {
+  try {
+    console.log(`[SUPERADMIN] SuperAdmin ${req.user._id} requesting school owners with user counts`);
+    
+    // Get all admin users
+    const adminUsers = await User.find({ role: 'admin' })
+      .select('name email schoolId packType monthlyPrice active createdAt')
+      .populate('schoolId', 'name');
+    
+    // Get user counts for each admin's school
+    const adminUsersWithCounts = await Promise.all(
+      adminUsers.map(async (admin) => {
+        let userCount = 0;
+        if (admin.schoolId) {
+          userCount = await User.countDocuments({ 
+            schoolId: admin.schoolId._id,
+            role: { $in: ['teacher', 'student', 'parent', 'secretary'] }
+          });
+        }
+        
+        return {
+          _id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          schoolName: admin.schoolId?.name || 'No School Assigned',
+          schoolId: admin.schoolId?._id,
+          packType: admin.packType || 'lite',
+          monthlyPrice: admin.monthlyPrice || 0,
+          active: admin.active,
+          userCount,
+          createdAt: admin.createdAt
+        };
+      })
+    );
+
+    console.log(`[SUPERADMIN] Found ${adminUsersWithCounts.length} school owners`);
+    res.json(adminUsersWithCounts);
+    
+  } catch (error) {
+    console.error('[SUPERADMIN] Error getting school owners:', error.message);
+    res.status(500);
+    throw new Error('Failed to get school owners data');
+  }
+});
+
+// @desc    Update admin pack and pricing (SuperAdmin only)  
+// @route   PUT /api/users/superadmin/admin-pack/:id
+// @access  Private/SuperAdmin
+const updateAdminPack = asyncHandler(async (req, res) => {
+  try {
+    const { packType, monthlyPrice } = req.body;
+    const adminId = req.params.id;
+    
+    console.log(`[SUPERADMIN] SuperAdmin ${req.user._id} updating pack for admin ${adminId}:`, { packType, monthlyPrice });
+    
+    // Validate inputs
+    if (!['lite', 'pro'].includes(packType)) {
+      res.status(400);
+      throw new Error('Pack type must be either "lite" or "pro"');
+    }
+    
+    if (typeof monthlyPrice !== 'number' || monthlyPrice < 0) {
+      res.status(400);
+      throw new Error('Monthly price must be a non-negative number');
+    }
+    
+    // Find and update admin user
+    const adminUser = await User.findById(adminId);
+    if (!adminUser) {
+      res.status(404);
+      throw new Error('Admin user not found');
+    }
+    
+    if (adminUser.role !== 'admin') {
+      res.status(400);
+      throw new Error('User is not an admin');
+    }
+    
+    // Update pack information
+    adminUser.packType = packType;
+    adminUser.monthlyPrice = monthlyPrice;
+    await adminUser.save();
+    
+    // Populate school information for response
+    await adminUser.populate('schoolId', 'name');
+    
+    console.log(`[SUPERADMIN] Successfully updated pack for admin ${adminUser.name}: ${packType} - €${monthlyPrice}/month`);
+    
+    const response = {
+      _id: adminUser._id,
+      name: adminUser.name,
+      email: adminUser.email,
+      schoolName: adminUser.schoolId?.name || 'No School Assigned',
+      packType: adminUser.packType,
+      monthlyPrice: adminUser.monthlyPrice,
+      active: adminUser.active
+    };
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('[SUPERADMIN] Error updating admin pack:', error.message);
+    res.status(500);
+    throw new Error(`Failed to update admin pack: ${error.message}`);
+  }
+});
+
 // Export functions
 module.exports = {
   registerUser,
@@ -1961,6 +2071,7 @@ module.exports = {
   unlinkParentFromStudents,
   generateToken,
   generateRefreshToken,
-  // NEW export
   forgotPasswordRequest,
+  getSchoolOwnersWithUserCounts,
+  updateAdminPack,
 };

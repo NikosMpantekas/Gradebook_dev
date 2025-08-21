@@ -80,6 +80,23 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Pack system for admin users only
+    packType: {
+      type: String,
+      enum: ['lite', 'pro'],
+      default: 'lite',
+      required: function() {
+        return this.role === 'admin';
+      }
+    },
+    monthlyPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+      required: function() {
+        return this.role === 'admin';
+      }
+    },
     // Store school domain for email validation
     schoolDomain: {
       type: String,

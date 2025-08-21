@@ -18,7 +18,9 @@ const {
   getStudentsDataForParent,
   getStudentsByParent,
   unlinkParentFromStudents,
-  forgotPasswordRequest
+  forgotPasswordRequest,
+  getSchoolOwnersWithUserCounts,
+  updateAdminPack
 } = require('../controllers/userController');
 
 const {
@@ -27,7 +29,7 @@ const {
   getAvailableParents,
   getStudentParents,
 } = require('../controllers/parentController');
-const { protect, admin, canManageUsers } = require('../middleware/authMiddleware');
+const { protect, admin, canManageUsers, superadmin } = require('../middleware/authMiddleware');
 
 // Public routes
 router.post('/', registerUser);
@@ -174,6 +176,10 @@ router.get('/student/:id/parents', protect, admin, getStudentParents);
 // Routes with parent parameter
 router.get('/parent/:parentId/students', protect, admin, getStudentsByParent);
 router.delete('/parent/:parentId/students', protect, admin, unlinkParentFromStudents);
+
+// SuperAdmin routes for pack management
+router.get('/superadmin/school-owners', protect, superadmin, getSchoolOwnersWithUserCounts);
+router.put('/superadmin/admin-pack/:id', protect, superadmin, updateAdminPack);
 
 // Generic parameterized routes (MUST BE LAST)
 router.get('/:id', protect, getUserById);

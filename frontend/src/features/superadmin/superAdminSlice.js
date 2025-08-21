@@ -86,6 +86,25 @@ export const updateSchoolOwnerStatus = createAsyncThunk(
   }
 );
 
+// Update admin pack and pricing
+export const updateAdminPack = createAsyncThunk(
+  'superAdmin/updateAdminPack',
+  async ({ adminId, packData }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.user.token;
+      return await superAdminService.updateAdminPack(adminId, packData, token);
+    } catch (error) {
+      const message =
+        (error.response && 
+          error.response.data && 
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 // Create first superadmin
 export const createFirstSuperAdmin = createAsyncThunk(
   'superAdmin/createFirstSuperAdmin',
@@ -182,6 +201,24 @@ export const superAdminSlice = createSlice({
         state.isSuccess = true;
       })
       .addCase(createFirstSuperAdmin.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(updateAdminPack.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateAdminPack.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        // Update the specific admin in the schoolOwners array
+        state.schoolOwners = state.schoolOwners.map((owner) =>
+          owner._id === action.payload._id 
+            ? { ...owner, packType: action.payload.packType, monthlyPrice: action.payload.monthlyPrice }
+            : owner
+        );
+      })
+      .addCase(updateAdminPack.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
