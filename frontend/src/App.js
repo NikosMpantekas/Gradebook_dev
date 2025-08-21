@@ -785,12 +785,12 @@ function App() {
             } />
             <Route path="/superadmin/maintenance" element={
               <SuperAdminRoute>
-                <SystemMaintenance />
+                <MaintenanceAnnouncements />
               </SuperAdminRoute>
             } />
-            <Route path="/superadmin/announcements" element={
+            <Route path="/superadmin/system-maintenance" element={
               <SuperAdminRoute>
-                <MaintenanceAnnouncements />
+                <SystemMaintenance />
               </SuperAdminRoute>
             } />
           </Route>
