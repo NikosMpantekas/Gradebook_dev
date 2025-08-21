@@ -20,7 +20,7 @@ const createSchoolOwner = async (schoolOwnerData, token) => {
   return response.data;
 };
 
-// Get all school owners
+// Get all school owners with user counts and pack info
 const getSchoolOwners = async (token) => {
   const config = {
     headers: {
@@ -28,7 +28,24 @@ const getSchoolOwners = async (token) => {
     },
   };
 
-  const response = await axios.get(API_SUPERADMIN + 'school-owners', config);
+  const response = await axios.get(`${API_URL}/api/users/superadmin/school-owners`, config);
+
+  return response.data;
+};
+
+// Update admin pack and pricing
+const updateAdminPack = async (adminId, packData, token) => {
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+
+  const response = await axios.put(
+    `${API_URL}/api/users/superadmin/admin-pack/${adminId}`,
+    packData,
+    config
+  );
 
   return response.data;
 };
@@ -78,6 +95,7 @@ const superAdminService = {
   getSchoolOwners,
   getSchoolOwnerById,
   updateSchoolOwnerStatus,
+  updateAdminPack,
   createFirstSuperAdmin,
 };
 
