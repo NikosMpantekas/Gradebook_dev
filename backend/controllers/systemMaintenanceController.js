@@ -34,6 +34,8 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
       estimatedCompletion: maintenanceDoc.estimatedCompletion,
       allowedRoles: maintenanceDoc.allowedRoles,
       reason: maintenanceDoc.reason || '',
+      scheduledStart: maintenanceDoc.scheduledStart,
+      scheduledEnd: maintenanceDoc.scheduledEnd,
       canBypass: false
     };
     

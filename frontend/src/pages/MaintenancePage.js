@@ -179,7 +179,15 @@ export const MaintenanceStatusChecker = ({ children }) => {
   const checkMaintenanceStatus = async () => {
     try {
       console.log('[MAINTENANCE CHECKER] Checking maintenance status');
-      console.log('[MAINTENANCE CHECKER] Current user role:', user?.role);
+      console.log('[MAINTENANCE CHECKER] Current user:', user?.role || 'Not logged in');
+      
+      // POST-LOGIN CHECK: Only check maintenance for logged-in users
+      if (!user) {
+        console.log('[MAINTENANCE CHECKER] No user logged in - allowing access to /home and /login');
+        setIsMaintenanceMode(false);
+        setIsLoading(false);
+        return;
+      }
       
       // SUPERADMIN BYPASS: Always allow superadmin users to access the system
       if (user?.role === 'superadmin') {
