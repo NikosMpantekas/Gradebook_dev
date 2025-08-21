@@ -195,12 +195,19 @@ export const authSlice = createSlice({
       state.isError = false;
       state.message = '';
     },
-    updatePermissions: (state, action) => {
-      // Only update if this is the current user
+    updateUserPermissions: (state, action) => {
       if (state.user && state.user._id === action.payload.userId) {
         state.user = {
           ...state.user,
           ...action.payload.permissions
+        };
+      }
+    },
+    updateUserProfile: (state, action) => {
+      if (state.user) {
+        state.user = {
+          ...state.user,
+          ...action.payload
         };
       }
     },

@@ -533,14 +533,26 @@ const updatePushNotificationPreference = async (enabled) => {
   }
 };
 
+// Get user profile
+const getProfile = async () => {
+  try {
+    const response = await axios.get(API_USERS + '/me');
+    return response.data;
+  } catch (error) {
+    console.error('Get profile error:', error);
+    throw error;
+  }
+};
+
 const authService = {
   register,
   login,
+  forgotPasswordRequest,
   logout,
   refreshToken: refreshTokenFunction,
   updateProfile,
+  getProfile,
   changePassword: updateProfile, // Using updateProfile for profile changes including password
-  forgotPassword: forgotPasswordRequest,
   updatePushNotificationPreference,
 };
 

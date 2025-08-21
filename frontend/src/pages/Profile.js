@@ -62,6 +62,21 @@ const Profile = () => {
       return;
     }
     
+    // Fetch fresh user data to ensure pack info is up to date
+    const fetchUserData = async () => {
+      try {
+        const response = await authService.getProfile();
+        if (response) {
+          // Update Redux store with fresh data
+          dispatch({ type: 'auth/updateUserProfile', payload: response });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    
+    fetchUserData();
+    
     // Initialize form data with user info
     setFormData({
       name: user.name || '',
@@ -76,7 +91,7 @@ const Profile = () => {
       newPassword: '',
       confirmPassword: ''
     });
-  }, [user, navigate]);
+  }, [user, navigate, dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
