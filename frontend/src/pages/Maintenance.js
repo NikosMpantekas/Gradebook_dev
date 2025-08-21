@@ -578,8 +578,8 @@ const Maintenance = () => {
                     fontSize: { xs: 16, md: 18 },
                   }}
                 >
-                  Το GradeBook ή η συγκεκριμένη σελίδα βρίσκεται υπό συντήρηση για να προσθέσουμε νέες λειτουργίες 
-                  ή να επιδιορθώσουμε τεχνικά προβλήματα. Ελπίζουμε ότι θα διαρκέσει μόλις μερικά λεπτά. Ευχαριστούμε για την υπομονή σας.
+                  Το GradeBook βρίσκεται υπό συντήρηση για να προσθέσουμε νέες λειτουργίες 
+                  ή να επιδιορθώσουμε τεχνικά προβλήματα. Ευχαριστούμε για την υπομονή σας.
                 </Typography>
                 <Button
                   variant="contained"
@@ -687,59 +687,13 @@ const Maintenance = () => {
                     </Box>
                     <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
                     
-                    {/* Start Time */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
-                        Έναρξη:
-                      </Typography>
-                      <Chip
-                        label={maintenanceInfo.scheduledStart ? 
-                          new Date(maintenanceInfo.scheduledStart).toLocaleString('el-GR', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : 'Δεν έχει καθοριστεί'
-                        }
-                        sx={{
-                          bgcolor: "rgba(255, 107, 53, 0.2)",
-                          color: colors.warning,
-                          fontWeight: "bold",
-                          fontSize: 12,
-                        }}
-                      />
-                    </Box>
-
-                    {/* End Time */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
-                        Λήξη:
-                      </Typography>
-                      <Chip
-                        label={maintenanceInfo.scheduledEnd ? 
-                          new Date(maintenanceInfo.scheduledEnd).toLocaleString('el-GR', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : 'Δεν έχει καθοριστεί'
-                        }
-                        sx={{
-                          bgcolor: "rgba(51, 122, 183, 0.2)",
-                          color: colors.icon,
-                          fontWeight: "bold",
-                          fontSize: 12,
-                        }}
-                      />
-                    </Box>
+                    
 
                     {/* Estimated Completion */}
                     {maintenanceInfo.estimatedCompletion && (
                       <Box>
                         <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
-                          Εκτιμώμενη ολοκλήρωση:
+                          Εκτιμώμενος χρόνος ολοκλήρωσης:
                         </Typography>
                         <Chip
                           label={formatEstimatedCompletion(maintenanceInfo.estimatedCompletion)}

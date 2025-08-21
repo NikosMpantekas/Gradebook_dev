@@ -115,7 +115,7 @@ const Notifications = () => {
     dispatch(markNotificationAsRead(notificationId))
       .unwrap()
       .then(() => {
-        toast.success('Notification marked as read');
+        toast.success('Η ειδοποίηση σημειώθηκε ως αναγνωσμένη');
         // CRITICAL FIX: Don't immediately refresh - Redux state already updated
         // dispatch(getMyNotifications()); // REMOVED: Causes race condition with stale cache
         
@@ -124,7 +124,7 @@ const Notifications = () => {
       })
       .catch((error) => {
         console.error('Failed to mark notification as read:', error);
-        toast.error('Failed to mark notification as read');
+        toast.error('Αποτυχία σήμανσης ειδοποίησης ως αναγνωσμένη');
       });
   }, [dispatch]);
 
@@ -134,7 +134,7 @@ const Notifications = () => {
     dispatch(markNotificationAsSeen(notificationId))
       .unwrap()
       .then(() => {
-        toast.success('Notification marked as seen');
+        toast.success('Η ειδοποίηση σημειώθηκε ως προβληθείσα');
         // Force refresh notifications to get updated state
         if (tabValue === 'received') {
           dispatch(getMyNotifications());
@@ -146,7 +146,7 @@ const Notifications = () => {
       })
       .catch((error) => {
         console.error('Failed to mark notification as seen:', error);
-        toast.error('Failed to mark notification as seen');
+        toast.error('Αποτυχία σήμανσης ειδοποίησης ως προβληθείσα');
       });
   }, [dispatch, tabValue]);
 
@@ -165,17 +165,17 @@ const Notifications = () => {
 
   // Handle delete notification
   const handleDelete = useCallback((notificationId) => {
-    if (window.confirm('Are you sure you want to delete this notification?')) {
+    if (window.confirm('Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτή την ειδοποίηση;')) {
       console.log(`Deleting notification ${notificationId}`);
       dispatch(deleteNotification(notificationId))
         .unwrap()
         .then(() => {
-          toast.success('Notification deleted successfully');
+          toast.success('Η ειδοποίηση διαγράφηκε επιτυχώς');
           handleRefresh();
         })
         .catch((error) => {
           console.error('Failed to delete notification:', error);
-          toast.error('Failed to delete notification');
+          toast.error('Αποτυχία διαγραφής ειδοποίησης');
         });
     }
   }, [dispatch, handleRefresh]);
@@ -191,14 +191,14 @@ const Notifications = () => {
     }))
       .unwrap()
       .then(() => {
-        toast.success('Notification updated successfully');
+        toast.success('Η ειδοποίηση ενημερώθηκε επιτυχώς');
         setEditDialogOpen(false);
         setCurrentNotification(null);
         handleRefresh();
       })
       .catch((error) => {
         console.error('Failed to update notification:', error);
-        toast.error('Failed to update notification');
+        toast.error('Αποτυχία ενημέρωσης ειδοποίησης');
       });
   }, [currentNotification, editForm, dispatch, handleRefresh]);
 
@@ -231,7 +231,7 @@ const Notifications = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle className="text-xl sm:text-2xl font-bold">
-              Notifications
+              Ειδοποιήσεις
             </CardTitle>
             
             <Button
@@ -245,7 +245,7 @@ const Notifications = () => {
               className="w-full sm:w-auto"
             >
               <RefreshCw className="mr-2 w-4 h-4" />
-              Refresh
+              Ανανέωση
             </Button>
           </div>
         </CardHeader>
@@ -254,7 +254,7 @@ const Notifications = () => {
           <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
             <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <TabsTrigger value="received" className="relative flex items-center justify-center">
-                <span>Received</span>
+                <span>Ληφθέντα</span>
                 {unreadCount > 0 && (
                   <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -262,7 +262,7 @@ const Notifications = () => {
                 )}
               </TabsTrigger>
               {(user?.role === 'teacher' || user?.role === 'admin') && (
-                <TabsTrigger value="sent">Sent</TabsTrigger>
+                <TabsTrigger value="sent">Απεσταλμένα</TabsTrigger>
               )}
             </TabsList>
             

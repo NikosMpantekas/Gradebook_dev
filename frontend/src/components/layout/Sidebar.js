@@ -76,13 +76,13 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     if (isSuperAdmin) {
       return [
         { icon: Shield, label: 'Super Admin', path: '/superadmin/dashboard' },
-        { icon: Building, label: 'School Management', path: '/superadmin/school-permissions' },
-        { icon: Users, label: 'User Management', path: '/superadmin/create-school-owner' },
-        { icon: Mail, label: 'Contact Messages', path: '/superadmin/contact' },
-        { icon: BarChart3, label: 'System Logs', path: '/superadmin/system-logs' },
-        { icon: Wrench, label: 'Maintenance Announcements', path: '/superadmin/maintenance-announcements' },
-        { icon: BadgeAlert, label: 'Maintenance ', path: '/superadmin/system-maintenance' },
-        { icon: Megaphone, label: 'Patch Notes', path: '/superadmin/patch-notes' },
+        { icon: Building, label: 'Διαχείριση Σχολείων', path: '/superadmin/school-permissions' },
+        { icon: Users, label: 'Διαχείριση Χρηστών', path: '/superadmin/create-school-owner' },
+        { icon: Mail, label: 'Μηνύματα Επικοινωνίας', path: '/superadmin/contact' },
+        { icon: BarChart3, label: 'Αρχεία Συστήματος', path: '/superadmin/system-logs' },
+        { icon: Wrench, label: 'Ανακοινώσεις Συντήρησης', path: '/superadmin/maintenance-announcements' },
+        { icon: BadgeAlert, label: 'Συντήρηση', path: '/superadmin/system-maintenance' },
+        { icon: Megaphone, label: 'Σημειώσεις Ενημερώσεων', path: '/superadmin/patch-notes' },
       ];
     }
 
@@ -91,108 +91,108 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     if (isAdmin) {
       // Admin items - check permissions for each feature
       if (isFeatureEnabled('enableUserManagement')) {
-        items.push({ icon: Users, label: 'Manage Users', path: '/app/admin/users' });
+        items.push({ icon: Users, label: 'Διαχείριση Χρηστών', path: '/app/admin/users' });
       }
       
       if (isFeatureEnabled('enableClasses')) {
-        items.push({ icon: Users2, label: 'Manage Classes', path: '/app/admin/classes' });
+        items.push({ icon: Users2, label: 'Διαχείριση Τάξεων', path: '/app/admin/classes' });
       }
       
       if (isFeatureEnabled('enableSchoolSettings')) {
-        items.push({ icon: Building, label: 'School Branches', path: '/app/admin/schools' });
+        items.push({ icon: Building, label: 'Υποκαταστήματα Σχολείου', path: '/app/admin/schools' });
       }
       
       if (isFeatureEnabled('enableGrades')) {
-        items.push({ icon: BookOpen, label: 'Grade Management', path: '/app/admin/grades/manage' });
+        items.push({ icon: BookOpen, label: 'Διαχείριση Βαθμών', path: '/app/admin/grades/manage' });
       }
       
       if (isFeatureEnabled('enableAnalytics')) {
-        items.push({ icon: BarChart3, label: 'Student Progress', path: '/app/admin/student-stats' });
+        items.push({ icon: BarChart3, label: 'Πρόοδος Μαθητών', path: '/app/admin/student-stats' });
       }
       
       if (isFeatureEnabled('enableNotifications')) {
-        items.push({ icon: Bell, label: 'Notifications', path: '/app/admin/notifications' });
+        items.push({ icon: Bell, label: 'Ειδοποιήσεις', path: '/app/admin/notifications' });
       }
       
       if (isFeatureEnabled('enableRatings')) {
-        items.push({ icon: Star, label: 'Ratings', path: '/app/admin/ratings' });
+        items.push({ icon: Star, label: 'Αξιολογήσεις', path: '/app/admin/ratings' });
       }
       
       if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock, label: 'Schedule', path: '/app/admin/schedule' });
+        items.push({ icon: Clock, label: 'Πρόγραμμα', path: '/app/admin/schedule' });
       }
       
       if (isFeatureEnabled('enablePayments')) {
-        items.push({ icon: CreditCard, label: 'Payments', path: '/app/admin/payments' });
+        items.push({ icon: CreditCard, label: 'Πληρωμές', path: '/app/admin/payments' });
       }
       
       if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/admin/contact' });
+        items.push({ icon: MessageSquare, label: 'Μηνύματα Επικοινωνίας', path: '/app/admin/contact' });
       }
     }
 
     if (isTeacher) {
       // Teacher items - check permissions for each feature
       if (isFeatureEnabled('enableGrades')) {
-        items.push({ icon: BookOpen, label: 'Manage Grades', path: '/app/teacher/grades/manage' });
+        items.push({ icon: BookOpen, label: 'Διαχείριση Βαθμών', path: '/app/teacher/grades/manage' });
       }
       
       if (isFeatureEnabled('enableNotifications')) {
-        items.push({ icon: Bell, label: 'Notifications', path: '/app/teacher/notifications' });
+        items.push({ icon: Bell, label: 'Ειδοποιήσεις', path: '/app/teacher/notifications' });
       }
       
       if (isFeatureEnabled('enableAnalytics')) {
-        items.push({ icon: BarChart3, label: 'Student Stats', path: '/app/teacher/student-stats' });
+        items.push({ icon: BarChart3, label: 'Στατιστικά Μαθητών', path: '/app/teacher/student-stats' });
       }
       
       if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock, label: 'Schedule', path: '/app/teacher/schedule' });
+        items.push({ icon: Clock, label: 'Πρόγραμμα', path: '/app/teacher/schedule' });
       }
       
       if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/teacher/contact' });
+        items.push({ icon: MessageSquare, label: 'Μηνύματα Επικοινωνίας', path: '/app/teacher/contact' });
       }
     }
 
     if (isStudent) {
       // Student items - check permissions for each feature
       if (isFeatureEnabled('enableGrades')) {
-        items.push({ icon: BookOpen, label: 'My Grades', path: '/app/student/grades' });
+        items.push({ icon: BookOpen, label: 'Οι Βαθμοί Μου', path: '/app/student/grades' });
       }
       
       if (isFeatureEnabled('enableNotifications')) {
-        items.push({ icon: Bell, label: 'Notifications', path: '/app/student/notifications' });
+        items.push({ icon: Bell, label: 'Ειδοποιήσεις', path: '/app/student/notifications' });
       }
       
       if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock, label: 'Schedule', path: '/app/student/schedule' });
+        items.push({ icon: Clock, label: 'Πρόγραμμα', path: '/app/student/schedule' });
       }
       
       if (isFeatureEnabled('enableRatings')) {
-        items.push({ icon: Star, label: 'Submit Ratings', path: '/app/student/ratings' });
+        items.push({ icon: Star, label: 'Υποβολή Αξιολογήσεων', path: '/app/student/ratings' });
       }
       
       if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/student/contact' });
+        items.push({ icon: MessageSquare, label: 'Μηνύματα Επικοινωνίας', path: '/app/student/contact' });
       }
     }
 
     if (isParent) {
       // Parent items - check permissions for each feature
       if (isFeatureEnabled('enableGrades')) {
-        items.push({ icon: BookOpen, label: 'Child Grades', path: '/app/parent/grades' });
+        items.push({ icon: BookOpen, label: 'Βαθμοί Παιδιού', path: '/app/parent/grades' });
       }
       
       if (isFeatureEnabled('enableNotifications')) {
-        items.push({ icon: Bell, label: 'Notifications', path: '/app/parent/notifications' });
+        items.push({ icon: Bell, label: 'Ειδοποιήσεις', path: '/app/parent/notifications' });
       }
       
       if (isFeatureEnabled('enablePayments')) {
-        items.push({ icon: CreditCard, label: 'Payments', path: '/app/parent/payments' });
+        items.push({ icon: CreditCard, label: 'Πληρωμές', path: '/app/parent/payments' });
       }
       
       if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: 'Contact Messages', path: '/app/parent/contact' });
+        items.push({ icon: MessageSquare, label: 'Μηνύματα Επικοινωνίας', path: '/app/parent/contact' });
       }
       
       
@@ -268,7 +268,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           <div className="text-center">
             <h3 className="font-semibold text-sm">{user?.name || 'User'}</h3>
             <p className="text-xs text-muted-foreground capitalize">
-              {user?.role || 'User'} Account
+              Λογαριασμός {user?.role === 'admin' ? 'Διαχειριστή' : user?.role === 'teacher' ? 'Καθηγητή' : user?.role === 'student' ? 'Μαθητή' : user?.role === 'parent' ? 'Γονέα' : 'Χρήστη'}
             </p>
             <p className="text-xs text-muted-foreground truncate max-w-[180px]">
               {user?.email}
@@ -297,7 +297,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           onClick={() => handleNavigation(getDashboardPath())}
         >
           <LayoutDashboard className="mr-3 h-5 w-5 flex-shrink-0" />
-          <span className="text-sm font-medium">Dashboard</span>
+          <span className="text-sm font-medium">Πίνακας Ελέγχου</span>
         </Button>
 
         {/* Role-specific navigation items */}
@@ -344,7 +344,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           onClick={() => handleNavigation('/app/profile')}
         >
           <User className="mr-3 h-5 w-5" />
-          <span className="text-sm font-medium">Profile</span>
+          <span className="text-sm font-medium">Προφίλ</span>
         </Button>
 
         {/* Logout Button */}
@@ -354,7 +354,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           onClick={handleLogoutClick}
         >
           <LogOut className="mr-3 h-5 w-5" />
-          <span className="text-sm font-medium">Logout</span>
+          <span className="text-sm font-medium">Αποσύνδεση</span>
         </Button>
       </div>
     </div>
@@ -383,20 +383,20 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
         <DialogContent className="w-[90vw] max-w-sm sm:max-w-md fade-in">
           <DialogHeader>
-            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogTitle>Επιβεβαίωση Αποσύνδεσης</DialogTitle>
             <DialogDescription>
-              Are you sure you want to logout? Any unsaved changes will be lost.
+              Είστε σίγουροι ότι θέλετε να αποσυνδεθείτε; Τυχόν μη αποθηκευμένες αλλαγές θα χαθούν.
             </DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to logout? You will be redirected to the login page.
+            Είστε σίγουροι ότι θέλετε να αποσυνδεθείτε; Θα ανακατευθυνθείτε στη σελίδα σύνδεσης.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={handleLogoutCancel}>
-              Cancel
+              Ακύρωση
             </Button>
             <Button variant="destructive" onClick={handleLogoutConfirm}>
-              Logout
+              Αποσύνδεση
             </Button>
           </DialogFooter>
         </DialogContent>
