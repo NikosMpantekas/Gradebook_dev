@@ -650,7 +650,7 @@ const Maintenance = () => {
                 </Card>
               </Grid>
 
-              {/* Estimated Completion Time */}
+              {/* Maintenance Schedule */}
               <Grid item xs={12} md={6}>
                 <Card
                   sx={{
@@ -670,31 +670,76 @@ const Maintenance = () => {
                           fontWeight: "bold",
                         }}
                       >
-                        Εκτιμώμενη Ολοκλήρωση
+                        Πρόγραμμα Συντήρησης
                       </Typography>
                     </Box>
                     <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    
+                    {/* Start Time */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
+                        Έναρξη:
+                      </Typography>
                       <Chip
-                        label={formatEstimatedCompletion(maintenanceInfo.estimatedCompletion)}
+                        label={maintenanceInfo.scheduledStart ? 
+                          new Date(maintenanceInfo.scheduledStart).toLocaleString('el-GR', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'Δεν έχει καθοριστεί'
+                        }
+                        sx={{
+                          bgcolor: "rgba(255, 107, 53, 0.2)",
+                          color: colors.warning,
+                          fontWeight: "bold",
+                          fontSize: 12,
+                        }}
+                      />
+                    </Box>
+
+                    {/* End Time */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
+                        Λήξη:
+                      </Typography>
+                      <Chip
+                        label={maintenanceInfo.scheduledEnd ? 
+                          new Date(maintenanceInfo.scheduledEnd).toLocaleString('el-GR', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'Δεν έχει καθοριστεί'
+                        }
                         sx={{
                           bgcolor: "rgba(51, 122, 183, 0.2)",
                           color: colors.icon,
                           fontWeight: "bold",
-                          fontSize: 14,
+                          fontSize: 12,
                         }}
                       />
                     </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: colors.subText,
-                        mt: 1,
-                        fontSize: 13,
-                      }}
-                    >
-                      Η ώρα είναι κατά προσέγγιση και μπορεί να αλλάξει
-                    </Typography>
+
+                    {/* Estimated Completion */}
+                    {maintenanceInfo.estimatedCompletion && (
+                      <Box>
+                        <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
+                          Εκτιμώμενη ολοκλήρωση:
+                        </Typography>
+                        <Chip
+                          label={formatEstimatedCompletion(maintenanceInfo.estimatedCompletion)}
+                          sx={{
+                            bgcolor: "rgba(76, 175, 80, 0.2)",
+                            color: "#4caf50",
+                            fontWeight: "bold",
+                            fontSize: 12,
+                          }}
+                        />
+                      </Box>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>

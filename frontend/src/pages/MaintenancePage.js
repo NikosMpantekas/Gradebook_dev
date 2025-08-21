@@ -3,6 +3,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { AlertTriangle, Clock, Wrench, RefreshCw } from 'lucide-react';
 import { API_URL } from '../config/appConfig';
+import Maintenance from './Maintenance';
 
 const MaintenancePage = () => {
   const [maintenanceData, setMaintenanceData] = useState({
@@ -89,8 +90,8 @@ const MaintenancePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl space-y-6">
-        {/* Header Section */}
+      <div className="w-full max-w-md space-y-6">
+        {/* Simple Maintenance Message */}
         <Card className="shadow-xl">
           <CardContent className="p-8 text-center">
             <div className="space-y-4">
@@ -104,8 +105,8 @@ const MaintenancePage = () => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   System Under Maintenance
                 </h1>
-                <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
-                  {maintenanceData.maintenanceMessage || 'The system is currently under maintenance. Please be patient while we work to improve your experience.'}
+                <p className="text-gray-600 leading-relaxed">
+                  {maintenanceData.maintenanceMessage || 'We are currently performing scheduled maintenance to improve your experience. Please check back shortly.'}
                 </p>
               </div>
 
@@ -117,96 +118,23 @@ const MaintenancePage = () => {
                   </span>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Maintenance Controls Information */}
-        <Card className="shadow-lg">
-          <CardContent className="p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">
-              Maintenance Controls
-            </h2>
-            
-            {/* Disable Maintenance Mode Info */}
-            <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-              <h3 className="font-medium text-red-800 mb-2">Disable Maintenance Mode</h3>
-              <p className="text-red-700 text-sm">
-                Turn off maintenance mode to allow users back into the system
-              </p>
-            </div>
-
-            {/* Maintenance Message */}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-2">Maintenance Message</h3>
-              <div className="bg-gray-50 p-3 rounded border">
-                <p className="text-gray-700">
-                  {maintenanceData.maintenanceMessage || 'The system is currently under maintenance. Please be patient while we work to improve your experience.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Estimated Completion */}
-            {maintenanceData.estimatedCompletion && (
-              <div>
-                <h3 className="font-medium text-gray-700 mb-2">Estimated Completion Time (Optional)</h3>
-                <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-                  <p className="text-blue-700 flex items-center">
-                    <Clock className="h-4 w-4 mr-2" />
-                    {formatEstimatedTime(maintenanceData.estimatedCompletion)}
+              {/* User Bypass Status */}
+              {maintenanceData.canBypass && (
+                <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                  <p className="text-green-700 font-medium">
+                    ✓ Your account has been granted access during maintenance
+                  </p>
+                  <p className="text-green-600 text-sm mt-1">
+                    You may continue using the system with limited functionality.
                   </p>
                 </div>
-              </div>
-            )}
-
-            {/* Roles Allowed During Maintenance */}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-2">Roles Allowed During Maintenance</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {['admin', 'teacher', 'student', 'parent'].map(role => (
-                  <div key={role} className="flex items-center p-3 bg-gray-50 rounded-lg border">
-                    <div className={`w-3 h-3 rounded-full mr-3 ${
-                      maintenanceData.allowedRoles?.includes(role) ? 'bg-green-500' : 'bg-gray-300'
-                    }`}></div>
-                    <span className="capitalize font-medium text-gray-700">{role}s</span>
-                    <span className={`ml-auto text-xs px-2 py-1 rounded ${
-                      maintenanceData.allowedRoles?.includes(role) 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {maintenanceData.allowedRoles?.includes(role) ? '✓ Enabled' : '✗ Disabled'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                SuperAdmins always have access during maintenance
-              </p>
+              )}
             </div>
-
-            {/* Reason for Change */}
-            <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-              <h3 className="font-medium text-yellow-800 mb-2">Reason for Change *</h3>
-              <p className="text-yellow-700 text-sm">
-                A reason is required for maintenance actions for audit purposes
-              </p>
-            </div>
-
-            {/* User Bypass Status */}
-            {maintenanceData.canBypass && (
-              <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                <p className="text-green-700 font-medium">
-                  ✓ Your account has been granted access during maintenance
-                </p>
-                <p className="text-green-600 text-sm mt-1">
-                  You may continue using the system with limited functionality.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Action Button */}
+        {/* Simple Action Button */}
         <div className="text-center">
           <Button 
             onClick={handleRefresh}
@@ -288,7 +216,8 @@ export const MaintenanceStatusChecker = ({ children }) => {
   }
 
   if (isMaintenanceMode) {
-    return <MaintenancePage />;
+    // Show the Greek maintenance page for all users (not the admin controls page)
+    return <Maintenance />;
   }
 
   return children;
