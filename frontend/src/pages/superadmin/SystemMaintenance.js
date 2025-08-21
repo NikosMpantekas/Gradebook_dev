@@ -164,6 +164,7 @@ const SystemMaintenance = () => {
     setUpdating(true);
     try {
       const updateData = {
+        isMaintenanceMode: formData.isMaintenanceMode,
         maintenanceMessage: formData.maintenanceMessage,
         estimatedCompletion: formData.estimatedCompletion || null,
         reason: formData.reason,

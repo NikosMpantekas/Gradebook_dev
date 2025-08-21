@@ -124,21 +124,21 @@ const Profile = () => {
     const newErrors = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Το όνομα είναι υποχρεωτικό';
     }
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Το email είναι υποχρεωτικό';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Το email δεν είναι έγκυρο';
     }
     
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Οι κωδικοί δεν ταιριάζουν';
     }
     
     if (formData.newPassword && formData.newPassword.length < 6) {
-      newErrors.newPassword = 'Password must be at least 6 characters';
+      newErrors.newPassword = 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες';
     }
     
     setErrors(newErrors);
@@ -170,7 +170,7 @@ const Profile = () => {
       const response = await authService.updateProfile(updateData);
       
       if (response.success) {
-        toast.success('Profile updated successfully');
+        toast.success('Το προφίλ ενημερώθηκε επιτυχώς');
         setIsEditing(false);
         // Reset password fields
         setFormData(prev => ({
@@ -180,11 +180,11 @@ const Profile = () => {
           confirmPassword: ''
         }));
       } else {
-        toast.error(response.message || 'Failed to update profile');
+        toast.error(response.message || 'Αποτυχία ενημέρωσης προφίλ');
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      toast.error('Failed to update profile. Please try again.');
+      toast.error('Αποτυχία ενημέρωσης προφίλ. Παρακαλώ δοκιμάστε ξανά.');
     }
   };
 
@@ -226,24 +226,24 @@ const Profile = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-light tracking-wide">Profile</h1>
-          <p className="text-muted-foreground">Manage your account information and settings</p>
+          <h1 className="text-3xl font-light tracking-wide">Προφίλ</h1>
+          <p className="text-muted-foreground">Διαχειριστείτε τις πληροφορίες και τις ρυθμίσεις του λογαριασμού σας</p>
         </div>
         <div className="flex space-x-2">
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)} className="flex items-center space-x-2">
               <Edit className="h-4 w-4" />
-              <span>Edit Profile</span>
+              <span>Επεξεργασία Προφίλ</span>
             </Button>
           ) : (
             <>
               <Button variant="outline" onClick={handleCancel} className="flex items-center space-x-2">
                 <X className="h-4 w-4" />
-                <span>Cancel</span>
+                <span>Ακύρωση</span>
               </Button>
               <Button onClick={handleSave} className="flex items-center space-x-2">
                 <Save className="h-4 w-4" />
-                <span>Save Changes</span>
+                <span>Αποθήκευση Αλλαγών</span>
               </Button>
             </>
           )}
@@ -255,7 +255,7 @@ const Profile = () => {
         <div className="lg:col-span-1 space-y-4">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle>Profile Picture</CardTitle>
+              <CardTitle>Φωτογραφία Προφίλ</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <Avatar className="h-32 w-32 mx-auto mb-4">
@@ -264,7 +264,7 @@ const Profile = () => {
                 </AvatarFallback>
               </Avatar>
               <p className="text-sm text-muted-foreground">
-                Profile pictures are managed by your administrator
+                Οι φωτογραφίες προφίλ διαχειρίζονται από τον διαχειριστή σας
               </p>
             </CardContent>
           </Card>
@@ -273,26 +273,26 @@ const Profile = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Shield className="h-5 w-5" />
-                <span>Account Information</span>
+                <span>Πληροφορίες Λογαριασμού</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Role:</span>
+                <span className="text-sm font-medium">Ρόλος:</span>
                 <Badge variant="secondary" className="capitalize">
                   {user.role}
                 </Badge>
               </div>
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">School:</span>
-                <span className="text-sm">{user.school || 'Not specified'}</span>
+                <span className="text-sm font-medium">Σχολείο:</span>
+                <span className="text-sm">{user.school || 'Δεν έχει καθοριστεί'}</span>
               </div>
               {user.department && (
                 <div className="flex items-center space-x-2">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Department:</span>
+                  <span className="text-sm font-medium">Τμήμα:</span>
                   <span className="text-sm">{user.department}</span>
                 </div>
               )}
@@ -305,7 +305,7 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                   <Package className="h-5 w-5" />
-                  Current Plan & Pricing
+                  Τρέχον Πλάνο & Τιμολόγηση
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -319,9 +319,9 @@ const Profile = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Pack Type</p>
+                      <p className="text-sm text-muted-foreground">Τύπος Πακέτου</p>
                       <p className="font-semibold text-purple-700 dark:text-purple-300">
-                        {user.packType === 'pro' ? 'PRO Package' : 'LITE Package'}
+                        {user.packType === 'pro' ? 'Πακέτο PRO' : 'Πακέτο LITE'}
                       </p>
                     </div>
                   </div>
@@ -331,9 +331,9 @@ const Profile = () => {
                       <Euro className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Monthly Price</p>
+                      <p className="text-sm text-muted-foreground">Μηνιαία Τιμή</p>
                       <p className="font-semibold text-green-700 dark:text-green-300">
-                        €{user.monthlyPrice || 0}/month
+                        €{user.monthlyPrice || 0}/μήνα
                       </p>
                     </div>
                   </div>
@@ -343,9 +343,9 @@ const Profile = () => {
                       <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Plan Status</p>
+                      <p className="text-sm text-muted-foreground">Κατάσταση Πλάνου</p>
                       <Badge variant={user.packType === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                        {user.packType === 'pro' ? 'Premium Active' : 'Basic Active'}
+                        {user.packType === 'pro' ? 'Premium Ενεργό' : 'Βασικό Ενεργό'}
                       </Badge>
                     </div>
                   </div>
@@ -356,7 +356,7 @@ const Profile = () => {
                     <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                       <Info className="h-4 w-4" />
                       <span className="text-sm">
-                        Contact your system administrator to upgrade to PRO for additional features and increased capacity.
+                        Επικοινωνήστε με τον διαχειριστή συστήματος για αναβάθμιση σε PRO για επιπλέον δυνατότητες και αυξημένη χωρητικότητα.
                       </span>
                     </div>
                   </div>
@@ -370,12 +370,12 @@ const Profile = () => {
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
+              <CardTitle>Προσωπικές Πληροφορίες</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name">Πλήρες Όνομα *</Label>
                   <Input
                     id="name"
                     name="name"
@@ -384,7 +384,7 @@ const Profile = () => {
                     disabled={!isEditing}
                     className={errors.name ? 'border-destructive' : ''}
                   />
-                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                  {errors.name && <p className="text-sm text-destructive">{errors.name === 'Name is required' ? 'Το όνομα είναι υποχρεωτικό' : errors.name}</p>}
                 </div>
                 
                 <div className="space-y-2">
@@ -398,11 +398,11 @@ const Profile = () => {
                     disabled={true}
                     className="bg-muted"
                   />
-                  <p className="text-sm text-muted-foreground">Email cannot be changed after account creation</p>
+                  <p className="text-sm text-muted-foreground">Το email δεν μπορεί να αλλάξει μετά τη δημιουργία του λογαριασμού</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Αριθμός Τηλεφώνου</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -414,7 +414,7 @@ const Profile = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Contact Email</Label>
+                  <Label htmlFor="contactEmail">Email Επικοινωνίας</Label>
                   <Input
                     id="contactEmail"
                     name="contactEmail"
@@ -422,13 +422,13 @@ const Profile = () => {
                     value={formData.contactEmail}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    placeholder="Enter your contact email"
+                    placeholder="Εισάγετε το email επικοινωνίας σας"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Label htmlFor="dateOfBirth">Ημερομηνία Γέννησης</Label>
                 <Input
                   id="dateOfBirth"
                   name="dateOfBirth"
@@ -445,12 +445,12 @@ const Profile = () => {
           {isEditing && (
             <Card>
               <CardHeader>
-                <CardTitle>Change Password</CardTitle>
+                <CardTitle>Αλλαγή Κωδικού Πρόσβασης</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Label htmlFor="currentPassword">Τρέχων Κωδικός Πρόσβασης</Label>
                     <div className="relative">
                       <Input
                         id="currentPassword"
@@ -458,7 +458,7 @@ const Profile = () => {
                         type={showPassword ? 'text' : 'password'}
                         value={formData.currentPassword}
                         onChange={handleInputChange}
-                        placeholder="Enter current password"
+                        placeholder="Εισάγετε τον τρέχοντα κωδικό"
                       />
                       <Button
                         type="button"
@@ -473,36 +473,36 @@ const Profile = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword">Νέος Κωδικός Πρόσβασης</Label>
                     <Input
                       id="newPassword"
                       name="newPassword"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.newPassword}
                       onChange={handleInputChange}
-                      placeholder="Enter new password"
+                      placeholder="Εισάγετε νέο κωδικό"
                       className={errors.newPassword ? 'border-destructive' : ''}
                     />
-                    {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
+                    {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword === 'Password must be at least 6 characters' ? 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες' : errors.newPassword}</p>}
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword">Επιβεβαίωση Νέου Κωδικού</Label>
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    placeholder="Confirm new password"
+                    placeholder="Επιβεβαιώστε τον νέο κωδικό"
                     className={errors.confirmPassword ? 'border-destructive' : ''}
                   />
-                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword === 'Passwords do not match' ? 'Οι κωδικοί δεν ταιριάζουν' : errors.confirmPassword}</p>}
                 </div>
                 
                 <p className="text-sm text-muted-foreground">
-                  Leave password fields empty if you don't want to change your password.
+                  Αφήστε τα πεδία κωδικού κενά αν δεν θέλετε να αλλάξετε τον κωδικό σας.
                 </p>
               </CardContent>
             </Card>

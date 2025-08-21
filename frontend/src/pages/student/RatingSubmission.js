@@ -147,7 +147,7 @@ const RatingSubmission = () => {
     );
 
     if (missingAnswers.length > 0) {
-      toast.error('Please answer all required questions');
+      toast.error('Παρακαλώ απαντήστε σε όλες τις υποχρεωτικές ερωτήσεις');
       return;
     }
 
@@ -164,9 +164,9 @@ const RatingSubmission = () => {
       await dispatch(submitRating(ratingData)).unwrap();
       
       setSubmitted(true);
-      toast.success('Rating submitted successfully!');
+      toast.success('Η αξιολόγηση υποβλήθηκε επιτυχώς!');
     } catch (error) {
-      toast.error(error.message || 'Failed to submit rating');
+      toast.error(error.message || 'Αποτυχία υποβολής αξιολόγησης');
     } finally {
       setSubmitting(false);
     }
@@ -182,14 +182,14 @@ const RatingSubmission = () => {
 
   // Render loading state
   if (isLoading) {
-    return <LoadingScreen message="Loading rating periods..." />;
+    return <LoadingScreen message="Φόρτωση περιόδων αξιολόγησης..." />;
   }
 
   // Render error state
   if (isError) {
     return (
       <ErrorState 
-        message={message || "Failed to load rating periods"}
+        message={message || "Αποτυχία φόρτωσης περιόδων αξιολόγησης"}
         onRetry={() => dispatch(getActiveRatingPeriods())}
       />
     );
@@ -199,8 +199,8 @@ const RatingSubmission = () => {
   if (!activePeriods || activePeriods.length === 0) {
     return (
       <EmptyState 
-        title="No Active Rating Periods"
-        description="There are currently no active rating periods. Please check back later."
+        title="Δεν Υπάρχουν Ενεργές Περίοδοι Αξιολόγησης"
+        description="Δεν υπάρχουν αυτή τη στιγμή ενεργές περίοδοι αξιολόγησης. Παρακαλώ ελέγξτε ξανά αργότερα."
       />
     );
   }
@@ -214,11 +214,11 @@ const RatingSubmission = () => {
             <div className="flex justify-center mb-4">
               <CheckCircle className="h-16 w-16 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Rating Submitted!</CardTitle>
+            <CardTitle className="text-2xl">Η Αξιολόγηση Υποβλήθηκε!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Thank you for your feedback. Your rating has been submitted successfully.
+              Ευχαριστούμε για τα σχόλιά σας. Η αξιολόγησή σας υποβλήθηκε επιτυχώς.
             </p>
             <Button 
               onClick={() => {
@@ -230,7 +230,7 @@ const RatingSubmission = () => {
               }}
               className="w-full"
             >
-              Submit Another Rating
+              Υποβολή Άλλης Αξιολόγησης
             </Button>
           </CardContent>
         </Card>
@@ -244,10 +244,10 @@ const RatingSubmission = () => {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Student Rating Submission
+            Υποβολή Αξιολόγησης Μαθητή
           </h1>
           <p className="text-muted-foreground">
-            Rate your teachers and subjects for the current period
+            Αξιολογήστε τους καθηγητές και τα μαθήματά σας για την τρέχουσα περίοδο
           </p>
         </div>
 
@@ -259,7 +259,7 @@ const RatingSubmission = () => {
             }`}>
               1
             </div>
-            <span>Select Period</span>
+            <span>Επιλογή Περιόδου</span>
           </div>
           
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -270,7 +270,7 @@ const RatingSubmission = () => {
             }`}>
               2
             </div>
-            <span>Select Target</span>
+            <span>Επιλογή Στόχου</span>
           </div>
           
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -281,14 +281,14 @@ const RatingSubmission = () => {
             }`}>
               3
             </div>
-            <span>Submit Rating</span>
+            <span>Υποβολή Αξιολόγησης</span>
           </div>
         </div>
 
         {/* Step 1: Period Selection */}
         {activeStep === 0 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Select Rating Period</h2>
+            <h2 className="text-xl font-semibold text-foreground">Επιλογή Περιόδου Αξιολόγησης</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activePeriods.map((period) => (
                 <Card 
@@ -309,7 +309,7 @@ const RatingSubmission = () => {
                       </span>
                     </div>
                     <Badge variant={isPeriodActive(period) ? "default" : "secondary"}>
-                      {isPeriodActive(period) ? "Active" : "Inactive"}
+                      {isPeriodActive(period) ? "Ενεργή" : "Ανενεργή"}
                     </Badge>
                   </CardContent>
                 </Card>
@@ -331,10 +331,10 @@ const RatingSubmission = () => {
         {activeStep === 1 && selectedPeriod && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">Select Target to Rate</h2>
+              <h2 className="text-xl font-semibold text-foreground">Επιλογή Στόχου για Αξιολόγηση</h2>
               <Button variant="outline" onClick={handleBack}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
-                Back
+                Πίσω
               </Button>
             </div>
             
@@ -380,11 +380,11 @@ const RatingSubmission = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-foreground">
-                Rate {selectedTarget.name}
+                Αξιολόγηση {selectedTarget.name}
               </h2>
               <Button variant="outline" onClick={handleBack}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
-                Back
+                Πίσω
               </Button>
             </div>
             
@@ -415,13 +415,13 @@ const RatingSubmission = () => {
                           ))}
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Poor</span>
-                          <span>Excellent</span>
+                          <span>Κακή</span>
+                          <span>Εξαιρετική</span>
                         </div>
                       </div>
                     ) : (
                       <Textarea
-                        placeholder="Enter your answer..."
+                        placeholder="Εισάγετε την απάντησή σας..."
                         value={answer.answer}
                         onChange={(e) => handleAnswerChange(answer.questionId, e.target.value)}
                         rows={3}
@@ -445,12 +445,12 @@ const RatingSubmission = () => {
                 {submitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Submitting...
+                    Υποβολή...
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Submit Rating
+                    Υποβολή Αξιολόγησης
                   </>
                 )}
               </Button>

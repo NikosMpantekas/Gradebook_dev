@@ -57,7 +57,7 @@ const Schedule = () => {
   // Get token from user object or localStorage as fallback
   const authToken = user?.token || localStorage.getItem('token');
   
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const daysOfWeek = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
   const timeSlots = [
     '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
     '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', 
@@ -553,13 +553,13 @@ const Schedule = () => {
             {teacherCount > 0 && (
               <Badge variant="secondary" className="text-xs">
                 <User className="w-3 h-3 mr-1" />
-                {teacherCount} Teacher{teacherCount > 1 ? 's' : ''}
+                {teacherCount} Καθηγητ{teacherCount > 1 ? 'ές' : 'ής'}
               </Badge>
             )}
             {studentCount > 0 && (
               <Badge variant="secondary" className="text-xs">
                 <Users className="w-3 h-3 mr-1" />
-                {studentCount} Student{studentCount > 1 ? 's' : ''}
+                {studentCount} Μαθητ{studentCount > 1 ? 'ές' : 'ής'}
               </Badge>
             )}
           </div>
@@ -677,11 +677,11 @@ if (loading) {
               <Calendar className="h-8 w-8 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-light">Weekly Schedule</CardTitle>
+              <CardTitle className="text-3xl font-light">Εβδομαδιαίο Πρόγραμμα</CardTitle>
               <p className="text-muted-foreground">
-                {user?.role === 'student' && 'Your class timetable for the week'}
-                {user?.role === 'teacher' && 'Your teaching schedule and classes'}
-                {user?.role === 'admin' && 'School-wide class schedules and timetables'}
+                {user?.role === 'student' && 'Το πρόγραμμα μαθημάτων σας για την εβδομάδα'}
+                {user?.role === 'teacher' && 'Το πρόγραμμα διδασκαλίας και τα μαθήματά σας'}
+                {user?.role === 'admin' && 'Προγράμματα μαθημάτων όλου του σχολείου'}
               </p>
             </div>
           </div>
@@ -691,22 +691,22 @@ if (loading) {
             <div className="mt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">Filter Schedule</h3>
+                <h3 className="text-lg font-semibold">Φίλτρα Προγράμματος</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* School Branch Filter */}
                 <div className="space-y-2">
-                  <Label htmlFor="schoolBranch">School Branch</Label>
+                  <Label htmlFor="schoolBranch">Κλάδος Σχολείου</Label>
                   <Select
                     value={filters.schoolBranch}
                     onValueChange={(value) => handleFilterChange('schoolBranch', value)}
                     disabled={loadingFilters}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All Branches" />
+                      <SelectValue placeholder="Όλοι οι Κλάδοι" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Branches</SelectItem>
+                      <SelectItem value="all">Όλοι οι Κλάδοι</SelectItem>
                       {filterOptions.schoolBranches.map((branch) => (
                         <SelectItem key={branch.value} value={branch.value}>
                           {branchNames[branch.value] || branch.label}
@@ -719,17 +719,17 @@ if (loading) {
                 {/* Teacher Filter (Admin only) */}
                 {user?.role === 'admin' && (
                   <div className="space-y-2">
-                    <Label htmlFor="teacher">Teacher</Label>
+                    <Label htmlFor="teacher">Καθηγητής</Label>
                     <Select
                       value={filters.teacher}
                       onValueChange={(value) => handleFilterChange('teacher', value)}
                       disabled={loadingFilters}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="All Teachers" />
+                        <SelectValue placeholder="Όλοι οι Καθηγητές" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Teachers</SelectItem>
+                        <SelectItem value="all">Όλοι οι Καθηγητές</SelectItem>
                         {filterOptions.teachers.map((teacher) => (
                           <SelectItem key={teacher.value} value={teacher.value}>
                             {teacher.label}
@@ -753,7 +753,7 @@ if (loading) {
               {/* Time column header */}
               <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border">
                 <div className="p-2 h-[50px] flex items-center justify-center text-sm font-semibold">
-                  Time
+                  Ώρα
                 </div>
               </div>
 
@@ -819,7 +819,7 @@ if (loading) {
             {daysOfWeek.every(day => getAllEventsForDay(day).length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No classes scheduled for this week</p>
+                <p>Δεν υπάρχουν προγραμματισμένα μαθήματα για αυτή την εβδομάδα</p>
               </div>
             )}
           </div>
@@ -831,7 +831,7 @@ if (loading) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Class Details
+              Λεπτομέρειες Μαθήματος
             </DialogTitle>
           </DialogHeader>
           {selectedEvent && (
@@ -840,27 +840,27 @@ if (loading) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Subject: {selectedEvent.subject}</span>
+                    <span className="font-medium">Μάθημα: {selectedEvent.subject}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>Time: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
+                    <span>Ώρα: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span>School Branch: {selectedEvent.schoolBranch ? (
+                    <span>Κλάδος Σχολείου: {selectedEvent.schoolBranch ? (
                       branchNames[selectedEvent.schoolBranch] || selectedEvent.schoolBranchName || selectedEvent.schoolBranch
-                    ) : 'Unknown Branch'}</span>
+                    ) : 'Άγνωστος Κλάδος'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>Direction: {selectedEvent.direction}</span>
+                    <span>Κατεύθυνση: {selectedEvent.direction}</span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div>
                     <h4 className="font-medium mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      Teachers ({selectedEvent.teacherCount || 0}):
+                      Καθηγητές ({selectedEvent.teacherCount || 0}):
                     </h4>
                     {selectedEvent.teacherNames && selectedEvent.teacherNames.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
@@ -871,14 +871,14 @@ if (loading) {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No teachers assigned</p>
+                      <p className="text-sm text-muted-foreground">Δεν έχουν ανατεθεί καθηγητές</p>
                     )}
                   </div>
                   
                   <div>
                     <h4 className="font-medium mb-2">
                       <Users className="h-4 w-4 inline mr-2" />
-                      Students ({selectedEvent.studentCount || 0}):
+                      Μαθητές ({selectedEvent.studentCount || 0}):
                     </h4>
                     {selectedEvent.studentNames && selectedEvent.studentNames.length > 0 ? (
                       <div className="max-h-[200px] overflow-auto">
@@ -891,12 +891,12 @@ if (loading) {
                         </div>
                         {selectedEvent.studentNames.length > 10 && (
                           <p className="text-xs text-muted-foreground mt-2">
-                            and {selectedEvent.studentNames.length - 10} more students...
+                            και {selectedEvent.studentNames.length - 10} ακόμη μαθητές...
                           </p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No students enrolled</p>
+                      <p className="text-sm text-muted-foreground">Δεν έχουν εγγραφεί μαθητές</p>
                     )}
                   </div>
                 </div>
