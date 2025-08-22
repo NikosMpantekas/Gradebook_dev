@@ -60,6 +60,16 @@ const Schedule = () => {
   const authToken = user?.token || localStorage.getItem('token');
   
   const daysOfWeek = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
+  const englishDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const dayMapping = {
+    'Monday': 'Δευτέρα',
+    'Tuesday': 'Τρίτη', 
+    'Wednesday': 'Τετάρτη',
+    'Thursday': 'Πέμπτη',
+    'Friday': 'Παρασκευή',
+    'Saturday': 'Σάββατο',
+    'Sunday': 'Κυριακή'
+  };
   const timeSlots = [
     '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
     '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', 
@@ -256,19 +266,30 @@ const Schedule = () => {
       console.log('Fetching branch names for IDs:', branchIds);
       const response = await axios.post(`${API_URL}/api/branches/batch`, { branchIds }, config);
       
+      console.log('Branch API response structure:', response.data);
+      
+      // Handle different response formats from the API
+      let branches = [];
       if (response.data && Array.isArray(response.data)) {
-        const branchNameMap = {};
-        response.data.forEach(branch => {
-          if (branch && branch._id && branch.name) {
-            branchNameMap[branch._id] = branch.name;
-          }
-        });
-        
-        setBranchNames(prev => ({ ...prev, ...branchNameMap }));
-        console.log('Branch names loaded:', branchNameMap);
+        branches = response.data;
+      } else if (response.data && response.data.branches && Array.isArray(response.data.branches)) {
+        branches = response.data.branches;
+        console.log('Using branches array from response.data.branches');
       } else {
         console.warn('Invalid branch data format received:', response.data);
+        return;
       }
+      
+      const branchNameMap = {};
+      branches.forEach(branch => {
+        if (branch && branch._id && branch.name) {
+          branchNameMap[branch._id] = branch.name;
+          console.log(`Mapped branch: ${branch._id} -> ${branch.name}`);
+        }
+      });
+      
+      setBranchNames(prev => ({ ...prev, ...branchNameMap }));
+      console.log('Branch names loaded:', branchNameMap);
     } catch (error) {
       console.error('Error fetching branch names:', error);
       // Set fallback branch names to avoid showing IDs
@@ -314,34 +335,66 @@ const Schedule = () => {
       if (response.data && response.data.schedule) {
         console.log('Schedule - API success, raw data:', response.data);
         console.log('Schedule - Total classes reported by API:', response.data.totalClasses || 0);
+        console.log('Schedule - Raw schedule keys (English days):', Object.keys(response.data.schedule));
         
         // Check if we have any classes at all
         let totalEvents = 0;
-        Object.keys(response.data.schedule).forEach(day => {
-          const events = response.data.schedule[day];
+        Object.keys(response.data.schedule).forEach(englishDay => {
+          const events = response.data.schedule[englishDay];
           if (Array.isArray(events)) {
             totalEvents += events.length;
-            console.log(`Schedule - Day ${day}: ${events.length} events`);
+            console.log(`Schedule - Day ${englishDay}: ${events.length} events`);
+            
+            // Log first event details for debugging
+            if (events.length > 0) {
+              console.log(`Schedule - Sample event for ${englishDay}:`, {
+                subject: events[0].subject,
+                startTime: events[0].startTime,
+                endTime: events[0].endTime,
+                teacherNames: events[0].teacherNames,
+                studentNames: events[0].studentNames
+              });
+            }
           }
         });
         console.log('Schedule - Total events across all days:', totalEvents);
         
         // Process schedule data and ensure each event has a unique ID
         const processedSchedule = {};
-        Object.keys(response.data.schedule).forEach(day => {
-          const events = response.data.schedule[day];
-          if (Array.isArray(events)) {
-            processedSchedule[day] = events.map((event, index) => {
+        
+        // Initialize empty arrays for all Greek day names
+        daysOfWeek.forEach(greekDay => {
+          processedSchedule[greekDay] = [];
+        });
+        
+        // Map English day names from API to Greek day names for UI
+        Object.keys(response.data.schedule).forEach(englishDay => {
+          const events = response.data.schedule[englishDay];
+          const greekDay = dayMapping[englishDay] || englishDay; // Fallback to original if no mapping
+          
+          console.log(`Processing day: ${englishDay} -> ${greekDay}, events:`, events?.length || 0);
+          
+          if (Array.isArray(events) && events.length > 0) {
+            processedSchedule[greekDay] = events.map((event, index) => {
               // Ensure each event has a unique ID for rendering
-              return { 
+              const processedEvent = { 
                 ...event,
-                _id: event._id || event.classId || `event-${day}-${index}`
+                _id: event._id || event.classId || `event-${greekDay}-${index}`,
+                originalDay: englishDay, // Keep track of original day for debugging
+                displayDay: greekDay
               };
+              console.log(`Event processed for ${greekDay}:`, {
+                subject: processedEvent.subject,
+                startTime: processedEvent.startTime,
+                endTime: processedEvent.endTime,
+                _id: processedEvent._id
+              });
+              return processedEvent;
             });
-          } else {
-            processedSchedule[day] = [];
           }
         });
+        
+        console.log('Final processed schedule structure:', Object.keys(processedSchedule).map(day => `${day}: ${processedSchedule[day].length} events`));
         
         // Extract branch IDs from schedule data for name resolution
         const branchIds = new Set();
@@ -364,6 +417,23 @@ const Schedule = () => {
         
         setScheduleData(processedSchedule);
         console.log('Schedule - Data processed and set to state');
+        console.log('Schedule - Final state data structure:', processedSchedule);
+        
+        // Verify events are properly mapped
+        let finalEventCount = 0;
+        Object.keys(processedSchedule).forEach(greekDay => {
+          finalEventCount += processedSchedule[greekDay].length;
+          if (processedSchedule[greekDay].length > 0) {
+            console.log(`Schedule - ${greekDay} has ${processedSchedule[greekDay].length} events ready for rendering`);
+          }
+        });
+        console.log(`Schedule - Total events ready for UI: ${finalEventCount}`);
+        
+        if (finalEventCount === 0) {
+          console.error('Schedule - WARNING: No events mapped to Greek days for UI rendering!');
+          console.error('Schedule - Debug - processedSchedule keys:', Object.keys(processedSchedule));
+          console.error('Schedule - Debug - API schedule keys:', Object.keys(response.data.schedule));
+        }
       } else {
         console.warn('Schedule - Unexpected data format received:', response.data);
         console.warn('Schedule - Expected data.schedule object, got:', typeof response.data, Object.keys(response.data || {}));
