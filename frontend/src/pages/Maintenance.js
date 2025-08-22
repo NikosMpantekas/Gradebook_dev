@@ -693,7 +693,7 @@ const Maintenance = () => {
                     {maintenanceInfo.estimatedCompletion && (
                       <Box>
                         <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
-                          Εκτιμώμενος χρόνος ολοκλήρωσης:
+                          Εκτιμώμενη ολοκλήρωση:
                         </Typography>
                         <Chip
                           label={formatEstimatedCompletion(maintenanceInfo.estimatedCompletion)}
@@ -722,7 +722,7 @@ const Maintenance = () => {
                 >
                   <CardContent>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                      <HistoryIcon sx={{ color: colors.icon, fontSize: 24 }} />
+                      <HistoryIcon sx={{ color: colors.icon, fontSize: 22 }} />
                       <Typography
                         variant="h6"
                         sx={{
@@ -730,7 +730,7 @@ const Maintenance = () => {
                           fontWeight: "bold",
                         }}
                       >
-                        Αιτία Συντήρησης
+                        Ζωντανές ενημερώσεις
                       </Typography>
                     </Box>
                     <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />

@@ -28,9 +28,8 @@ const Login = () => {
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
   
   // Animation states
-  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'validating', 'welcome', 'scaling', 'zooming'
+  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'validating', 'scaling', 'zooming'
   const [gapPosition, setGapPosition] = useState({ top: 0, left: 0 });
-  const [showWelcome, setShowWelcome] = useState(false);
   const [dashboardPreloaded, setDashboardPreloaded] = useState(false);
   const containerRef = useRef(null);
   const formRef = useRef(null);
@@ -134,26 +133,20 @@ const Login = () => {
     // Start preloading dashboard data immediately
     preloadDashboard(user);
     
-    // Step 2: Show welcome screen (800ms)
+    // Step 2: Calculate gap position and start scaling (600ms)
     setTimeout(() => {
-      setShowWelcome(true);
-      setAnimationStep('welcome');
+      calculateGapPosition();
+      setAnimationStep('scaling');
       
-      // Step 3: Calculate gap position and start scaling (600ms)
+      // Step 3: Zoom into the gap (800ms)
       setTimeout(() => {
-        calculateGapPosition();
-        setAnimationStep('scaling');
+        setAnimationStep('zooming');
         
-        // Step 4: Zoom into the gap (800ms)
+        // Step 4: Navigate after zoom completes (800ms)
         setTimeout(() => {
-          setAnimationStep('zooming');
-          
-          // Step 5: Navigate after zoom completes (800ms)
-          setTimeout(() => {
-            performNavigation(user);
-          }, 800); // Faster zoom completion
-        }, 600); // Faster scaling
-      }, 800); // Show welcome for 800ms
+          performNavigation(user);
+        }, 800); // Faster zoom completion
+      }, 600); // Faster scaling
     }, 200); // Brief validation delay
   };
   
@@ -332,34 +325,11 @@ const Login = () => {
                    'transform 200ms linear'
       }}
     >
-      {/* Welcome Screen Overlay */}
-      {showWelcome && (
-        <div className={cn(
-          "fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 transition-all duration-300 ease-linear",
-          animationStep === 'welcome' ? "opacity-100" : "opacity-0"
-        )}>
-          <div className={cn(
-            "text-center text-white transition-all duration-300 ease-linear",
-            animationStep === 'welcome' ? "scale-100 opacity-100" : "scale-75 opacity-0"
-          )}>
-            <h1 className="text-4xl font-bold mb-4 animate-pulse">
-              Welcome back!
-            </h1>
-            <p className="text-xl font-medium">
-              {user?.name || user?.email || 'User'}
-            </p>
-            <div className="mt-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-            </div>
-          </div>
-        </div>
-      )}
       <Card 
         ref={formRef}
         className={cn(
           "w-full",
           animationStep === 'validating' && "scale-105 shadow-lg transition-all duration-200 ease-linear",
-          animationStep === 'welcome' && "scale-100 opacity-50 transition-all duration-300 ease-linear",
           animationStep === 'scaling' && "scale-110 shadow-xl transition-all duration-600 ease-linear",
           animationStep === 'zooming' && "scale-100 transition-all duration-800 ease-linear"
         )}
@@ -368,14 +338,11 @@ const Login = () => {
           <Avatar className={cn(
             "bg-primary transition-all ease-linear",
             animationStep === 'validating' && "animate-pulse bg-blue-500 duration-200",
-            animationStep === 'welcome' && "bg-purple-500 scale-110 duration-300",
             animationStep === 'scaling' && "bg-green-500 scale-125 duration-600",
             animationStep === 'zooming' && "bg-green-600 scale-150 duration-800"
           )}>
             <AvatarFallback>
               {animationStep === 'validating' ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
-              ) : animationStep === 'welcome' ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
               ) : (animationStep === 'scaling' || animationStep === 'zooming') ? (
                 <Check className="h-6 w-6 animate-pulse" />
@@ -387,11 +354,9 @@ const Login = () => {
           <CardTitle className={cn(
             "text-2xl font-normal transition-all ease-linear",
             animationStep === 'validating' && "text-blue-600 duration-200",
-            animationStep === 'welcome' && "text-purple-600 duration-300",
             (animationStep === 'scaling' || animationStep === 'zooming') && "text-green-600 duration-600"
           )}>
             {animationStep === 'validating' ? 'Validating...' : 
-             animationStep === 'welcome' ? 'Welcome!' :
              (animationStep === 'scaling' || animationStep === 'zooming') ? 'Logging in...' : 
              t('auth.loginTitle')}
           </CardTitle>

@@ -409,7 +409,7 @@ const SystemMaintenance = () => {
 
           {/* Reason */}
           <div className="space-y-2">
-            <Label htmlFor="reason">Reason for Change *</Label>
+            <Label htmlFor="reason">Reason for Change *(live messages)</Label>
             <Input
               id="reason"
               placeholder="e.g., Server updates, Database maintenance, Security patches..."
