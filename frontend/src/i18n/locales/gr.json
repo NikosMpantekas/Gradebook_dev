@@ -106,7 +106,8 @@
     "studentStats": "Στατιστικά Μαθητών",
     "myGrades": "Οι Βαθμοί Μου",
     "ratingSubmission": "Υποβολή Αξιολογήσεων",
-    "childGrades": "Βαθμοί Παιδιού"
+    "childGrades": "Βαθμοί Παιδιού",
+    "payments": "Πληρωμές"
   },
   "ratings": {
     "answerRequiredQuestions": "Παρακαλώ απαντήστε σε όλες τις υποχρεωτικές ερωτήσεις",
