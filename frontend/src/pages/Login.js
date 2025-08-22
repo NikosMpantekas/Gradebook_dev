@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { Lock, ArrowLeft } from 'lucide-react';
+import { Lock, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -26,6 +26,12 @@ const Login = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
+  
+  // Animation states
+  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'validating', 'success', 'zooming'
+  const [showTick, setShowTick] = useState(false);
+  const containerRef = useRef(null);
+  const formRef = useRef(null);
 
   const { email, password, saveCredentials } = formData;
 
@@ -54,44 +60,15 @@ const Login = () => {
     }
 
     if (isSuccess || user) {
-      console.log('=== LOGIN SUCCESSFUL - DETERMINING REDIRECT ===');
+      console.log('=== LOGIN SUCCESSFUL - STARTING ANIMATION SEQUENCE ===');
       console.log('User role:', user?.role);
       console.log('Password change required:', user?.requirePasswordChange);
       console.log('Is first login:', user?.isFirstLogin);
       
-      // Check if password change is required
-      if (user?.requirePasswordChange || user?.isFirstLogin) {
-        console.log('PASSWORD CHANGE REQUIRED - Redirecting to password change page');
-        navigate('/change-password');
-        return;
+      // Start the success animation sequence
+      if (animationStep === 'idle' || animationStep === 'validating') {
+        startSuccessAnimation(user);
       }
-      
-      // Navigate directly to role-specific route instead of /app/dashboard
-      // This prevents redirect loops through /app/dashboard
-      let redirectPath;
-      switch (user?.role) {
-        case 'superadmin':
-          redirectPath = '/superadmin/dashboard';
-          break;
-        case 'admin':
-          redirectPath = '/app/admin';
-          break;
-        case 'teacher':
-          redirectPath = '/app/teacher';
-          break;
-        case 'student':
-          redirectPath = '/app/student';
-          break;
-        case 'parent':
-          redirectPath = '/app/parent';
-          break;
-        default:
-          console.error('Unknown user role:', user?.role);
-          redirectPath = '/app/dashboard'; // Fallback
-      }
-      
-      console.log('LOGIN REDIRECT: Navigating to', redirectPath);
-      navigate(redirectPath);
     }
 
     return () => {
@@ -109,8 +86,70 @@ const Login = () => {
     }));
   };
 
+  // Success animation sequence
+  const startSuccessAnimation = async (user) => {
+    console.log('Starting success animation sequence');
+    
+    // Step 1: Show validation state
+    setAnimationStep('validating');
+    
+    // Step 2: Show success tick after brief delay
+    setTimeout(() => {
+      setShowTick(true);
+      setAnimationStep('success');
+      
+      // Step 3: Start zoom effect
+      setTimeout(() => {
+        setAnimationStep('zooming');
+        
+        // Step 4: Navigate after zoom completes
+        setTimeout(() => {
+          performNavigation(user);
+        }, 1200); // Allow zoom animation to complete
+      }, 800); // Show tick for 800ms
+    }, 500); // Brief validation delay
+  };
+  
+  const performNavigation = (user) => {
+    // Check if password change is required
+    if (user?.requirePasswordChange || user?.isFirstLogin) {
+      console.log('PASSWORD CHANGE REQUIRED - Redirecting to password change page');
+      navigate('/change-password');
+      return;
+    }
+    
+    // Navigate directly to role-specific route
+    let redirectPath;
+    switch (user?.role) {
+      case 'superadmin':
+        redirectPath = '/superadmin/dashboard';
+        break;
+      case 'admin':
+        redirectPath = '/app/admin';
+        break;
+      case 'teacher':
+        redirectPath = '/app/teacher';
+        break;
+      case 'student':
+        redirectPath = '/app/student';
+        break;
+      case 'parent':
+        redirectPath = '/app/parent';
+        break;
+      default:
+        console.error('Unknown user role:', user?.role);
+        redirectPath = '/app/dashboard';
+    }
+    
+    console.log('LOGIN REDIRECT: Navigating to', redirectPath);
+    navigate(redirectPath);
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
+    
+    // Start validation animation
+    setAnimationStep('validating');
 
     const userData = {
       email,
@@ -232,16 +271,99 @@ const Login = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4">
-      <Card className="w-full">
+    <div 
+      ref={containerRef}
+      className={cn(
+        "container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden transition-all duration-1000 ease-in-out",
+        animationStep === 'zooming' && "scale-150 opacity-0"
+      )}
+    >
+      {/* Netflix/F1 Style Success Animation Overlay */}
+      {showTick && (
+        <div className={cn(
+          "fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-600 via-green-500 to-green-400 transition-all duration-800 ease-out",
+          animationStep === 'success' ? "opacity-100 scale-100" : "opacity-0 scale-75",
+          animationStep === 'zooming' && "scale-125 blur-sm"
+        )}>
+          <div className={cn(
+            "relative flex items-center justify-center transition-all duration-1000 ease-out",
+            animationStep === 'success' ? "scale-100 rotate-0" : "scale-0 rotate-45"
+          )}>
+            {/* Animated background ring */}
+            <div className="absolute w-32 h-32 border-4 border-white/30 rounded-full animate-pulse" />
+            <div className="absolute w-24 h-24 border-2 border-white/50 rounded-full animate-spin" style={{animationDuration: '3s'}} />
+            
+            {/* Success tick icon */}
+            <div className={cn(
+              "w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 ease-out",
+              animationStep === 'success' ? "scale-100" : "scale-0"
+            )}>
+              <Check className="w-8 h-8 text-green-600 animate-pulse" strokeWidth={3} />
+            </div>
+            
+            {/* Success text */}
+            <div className={cn(
+              "absolute top-24 text-white text-xl font-bold tracking-wide transition-all duration-700 delay-300 ease-out",
+              animationStep === 'success' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            )}>
+              Welcome back!
+            </div>
+          </div>
+          
+          {/* Particle effects */}
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "absolute w-2 h-2 bg-white rounded-full animate-bounce",
+                  animationStep === 'success' && "opacity-60"
+                )}
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${1 + Math.random() * 2}s`
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      <Card 
+        ref={formRef}
+        className={cn(
+          "w-full transition-all duration-700 ease-in-out",
+          animationStep === 'validating' && "scale-95 opacity-80 blur-sm",
+          animationStep === 'success' && "scale-90 opacity-60 blur-md",
+          animationStep === 'zooming' && "scale-75 opacity-30 blur-lg"
+        )}
+      >
         <CardHeader className="flex flex-col items-center space-y-2">
-          <Avatar className="bg-primary">
+          <Avatar className={cn(
+            "bg-primary transition-all duration-500 ease-in-out",
+            animationStep === 'validating' && "animate-pulse bg-yellow-500",
+            animationStep === 'success' && "bg-green-500 scale-110"
+          )}>
             <AvatarFallback>
-              <Lock className="h-6 w-6" />
+              {animationStep === 'validating' ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
+              ) : animationStep === 'success' ? (
+                <Check className="h-6 w-6 animate-bounce" />
+              ) : (
+                <Lock className="h-6 w-6" />
+              )}
             </AvatarFallback>
           </Avatar>
-          <CardTitle className="text-2xl font-normal">
-            {t('auth.loginTitle')}
+          <CardTitle className={cn(
+            "text-2xl font-normal transition-all duration-500 ease-in-out",
+            animationStep === 'validating' && "text-yellow-600",
+            animationStep === 'success' && "text-green-600"
+          )}>
+            {animationStep === 'validating' ? 'Validating...' : 
+             animationStep === 'success' ? 'Success!' : 
+             t('auth.loginTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -289,10 +411,25 @@ const Login = () => {
             
             <Button
               type="submit"
-              className="w-full"
-              disabled={isLoading}
+              className={cn(
+                "w-full transition-all duration-500 ease-in-out transform",
+                animationStep === 'validating' && "bg-yellow-500 hover:bg-yellow-600 scale-105 shadow-lg",
+                animationStep === 'success' && "bg-green-500 hover:bg-green-600 scale-110 shadow-xl",
+                animationStep === 'zooming' && "scale-95 opacity-70"
+              )}
+              disabled={isLoading || animationStep !== 'idle'}
             >
-              {isLoading ? (
+              {animationStep === 'validating' ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  <span>Validating credentials...</span>
+                </div>
+              ) : animationStep === 'success' ? (
+                <div className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 animate-bounce" />
+                  <span>Login successful!</span>
+                </div>
+              ) : isLoading ? (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   <span>Loading...</span>
