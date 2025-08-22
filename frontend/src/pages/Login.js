@@ -28,10 +28,12 @@ const Login = () => {
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
   
   // Animation states
-  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'validating', 'success', 'zooming'
-  const [showTick, setShowTick] = useState(false);
+  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'validating', 'scaling', 'zooming'
+  const [gapPosition, setGapPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef(null);
   const formRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const { email, password, saveCredentials } = formData;
 
@@ -67,7 +69,7 @@ const Login = () => {
       
       // Start the success animation sequence
       if (animationStep === 'idle' || animationStep === 'validating') {
-        startSuccessAnimation(user);
+        startZoomAnimation(user);
       }
     }
 
@@ -86,28 +88,48 @@ const Login = () => {
     }));
   };
 
-  // Success animation sequence
-  const startSuccessAnimation = async (user) => {
-    console.log('Starting success animation sequence');
+  // Calculate gap position between email and password fields
+  const calculateGapPosition = () => {
+    if (emailRef.current && passwordRef.current && containerRef.current) {
+      const emailRect = emailRef.current.getBoundingClientRect();
+      const passwordRect = passwordRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      // Calculate the center point between email and password fields
+      const gapCenterY = (emailRect.bottom + passwordRect.top) / 2;
+      const gapCenterX = (emailRect.left + emailRect.right) / 2;
+      
+      // Convert to relative position within container
+      const relativeTop = ((gapCenterY - containerRect.top) / containerRect.height) * 100;
+      const relativeLeft = ((gapCenterX - containerRect.left) / containerRect.width) * 100;
+      
+      setGapPosition({ top: relativeTop, left: relativeLeft });
+      console.log('Gap position calculated:', { top: relativeTop, left: relativeLeft });
+    }
+  };
+
+  // Zoom animation sequence
+  const startZoomAnimation = async (user) => {
+    console.log('Starting zoom into gap animation sequence');
     
-    // Step 1: Show validation state
+    // Step 1: Brief validation state
     setAnimationStep('validating');
     
-    // Step 2: Show success tick after brief delay
+    // Step 2: Calculate gap position and start scaling
     setTimeout(() => {
-      setShowTick(true);
-      setAnimationStep('success');
+      calculateGapPosition();
+      setAnimationStep('scaling');
       
-      // Step 3: Start zoom effect
+      // Step 3: Zoom into the gap
       setTimeout(() => {
         setAnimationStep('zooming');
         
         // Step 4: Navigate after zoom completes
         setTimeout(() => {
           performNavigation(user);
-        }, 1200); // Allow zoom animation to complete
-      }, 800); // Show tick for 800ms
-    }, 500); // Brief validation delay
+        }, 1500); // Allow zoom animation to complete
+      }, 1000); // Scale for 1 second
+    }, 300); // Brief validation delay
   };
   
   const performNavigation = (user) => {
@@ -275,82 +297,35 @@ const Login = () => {
       ref={containerRef}
       className={cn(
         "container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden transition-all duration-1000 ease-in-out",
-        animationStep === 'zooming' && "scale-150 opacity-0"
+        animationStep === 'scaling' && "scale-125",
+        animationStep === 'zooming' && "scale-[20] opacity-0"
       )}
+      style={{
+        transformOrigin: animationStep === 'zooming' ? `${gapPosition.left}% ${gapPosition.top}%` : 'center',
+        transition: animationStep === 'zooming' ? 'transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 1.5s ease-out' : 'transform 1s ease-out'
+      }}
     >
-      {/* Netflix/F1 Style Success Animation Overlay */}
-      {showTick && (
-        <div className={cn(
-          "fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-600 via-green-500 to-green-400 transition-all duration-800 ease-out",
-          animationStep === 'success' ? "opacity-100 scale-100" : "opacity-0 scale-75",
-          animationStep === 'zooming' && "scale-125 blur-sm"
-        )}>
-          <div className={cn(
-            "relative flex items-center justify-center transition-all duration-1000 ease-out",
-            animationStep === 'success' ? "scale-100 rotate-0" : "scale-0 rotate-45"
-          )}>
-            {/* Animated background ring */}
-            <div className="absolute w-32 h-32 border-4 border-white/30 rounded-full animate-pulse" />
-            <div className="absolute w-24 h-24 border-2 border-white/50 rounded-full animate-spin" style={{animationDuration: '3s'}} />
-            
-            {/* Success tick icon */}
-            <div className={cn(
-              "w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 ease-out",
-              animationStep === 'success' ? "scale-100" : "scale-0"
-            )}>
-              <Check className="w-8 h-8 text-green-600 animate-pulse" strokeWidth={3} />
-            </div>
-            
-            {/* Success text */}
-            <div className={cn(
-              "absolute top-24 text-white text-xl font-bold tracking-wide transition-all duration-700 delay-300 ease-out",
-              animationStep === 'success' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            )}>
-              Welcome back!
-            </div>
-          </div>
-          
-          {/* Particle effects */}
-          <div className="absolute inset-0 overflow-hidden">
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "absolute w-2 h-2 bg-white rounded-full animate-bounce",
-                  animationStep === 'success' && "opacity-60"
-                )}
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${1 + Math.random() * 2}s`
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      
       <Card 
         ref={formRef}
         className={cn(
-          "w-full transition-all duration-700 ease-in-out",
-          animationStep === 'validating' && "scale-95 opacity-80 blur-sm",
-          animationStep === 'success' && "scale-90 opacity-60 blur-md",
-          animationStep === 'zooming' && "scale-75 opacity-30 blur-lg"
+          "w-full transition-all duration-500 ease-in-out",
+          animationStep === 'validating' && "scale-105 shadow-lg",
+          animationStep === 'scaling' && "scale-110 shadow-xl",
+          animationStep === 'zooming' && "scale-100"
         )}
       >
         <CardHeader className="flex flex-col items-center space-y-2">
           <Avatar className={cn(
             "bg-primary transition-all duration-500 ease-in-out",
-            animationStep === 'validating' && "animate-pulse bg-yellow-500",
-            animationStep === 'success' && "bg-green-500 scale-110"
+            animationStep === 'validating' && "animate-pulse bg-blue-500",
+            animationStep === 'scaling' && "bg-green-500 scale-110",
+            animationStep === 'zooming' && "bg-green-600 scale-125"
           )}>
             <AvatarFallback>
               {animationStep === 'validating' ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
-              ) : animationStep === 'success' ? (
-                <Check className="h-6 w-6 animate-bounce" />
+              ) : (animationStep === 'scaling' || animationStep === 'zooming') ? (
+                <Check className="h-6 w-6 animate-pulse" />
               ) : (
                 <Lock className="h-6 w-6" />
               )}
@@ -358,11 +333,11 @@ const Login = () => {
           </Avatar>
           <CardTitle className={cn(
             "text-2xl font-normal transition-all duration-500 ease-in-out",
-            animationStep === 'validating' && "text-yellow-600",
-            animationStep === 'success' && "text-green-600"
+            animationStep === 'validating' && "text-blue-600",
+            (animationStep === 'scaling' || animationStep === 'zooming') && "text-green-600"
           )}>
             {animationStep === 'validating' ? 'Validating...' : 
-             animationStep === 'success' ? 'Success!' : 
+             (animationStep === 'scaling' || animationStep === 'zooming') ? 'Logging in...' : 
              t('auth.loginTitle')}
           </CardTitle>
         </CardHeader>
@@ -371,6 +346,7 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="email">{t('auth.emailPlaceholder')}</Label>
               <Input
+                ref={emailRef}
                 id="email"
                 name="email"
                 type="email"
@@ -385,6 +361,7 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="password">{t('auth.passwordPlaceholder')}</Label>
               <Input
+                ref={passwordRef}
                 id="password"
                 name="password"
                 type="password"
