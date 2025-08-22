@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
 
 const Profile = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
@@ -124,21 +126,21 @@ const Profile = () => {
     const newErrors = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = 'Το όνομα είναι υποχρεωτικό';
+      newErrors.name = t('profile.nameRequired');
     }
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Το email είναι υποχρεωτικό';
+      newErrors.email = t('profile.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Το email δεν είναι έγκυρο';
+      newErrors.email = t('profile.emailInvalid');
     }
     
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Οι κωδικοί δεν ταιριάζουν';
+      newErrors.confirmPassword = t('profile.passwordMismatch');
     }
     
     if (formData.newPassword && formData.newPassword.length < 6) {
-      newErrors.newPassword = 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες';
+      newErrors.newPassword = t('profile.passwordTooShort');
     }
     
     setErrors(newErrors);
@@ -170,7 +172,7 @@ const Profile = () => {
       const response = await authService.updateProfile(updateData);
       
       if (response.success) {
-        toast.success('Το προφίλ ενημερώθηκε επιτυχώς');
+        toast.success(t('profile.updateSuccess'));
         setIsEditing(false);
         // Reset password fields
         setFormData(prev => ({
@@ -180,11 +182,11 @@ const Profile = () => {
           confirmPassword: ''
         }));
       } else {
-        toast.error(response.message || 'Αποτυχία ενημέρωσης προφίλ');
+        toast.error(response.message || t('profile.updateError'));
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      toast.error('Αποτυχία ενημέρωσης προφίλ. Παρακαλώ δοκιμάστε ξανά.');
+      toast.error(t('profile.updateErrorRetry'));
     }
   };
 
@@ -226,24 +228,24 @@ const Profile = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-light tracking-wide">Προφίλ</h1>
-          <p className="text-muted-foreground">Διαχειριστείτε τις πληροφορίες και τις ρυθμίσεις του λογαριασμού σας</p>
+          <h1 className="text-3xl font-light tracking-wide">{t('profile.title')}</h1>
+          <p className="text-muted-foreground">{t('profile.subtitle')}</p>
         </div>
         <div className="flex space-x-2">
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)} className="flex items-center space-x-2">
               <Edit className="h-4 w-4" />
-              <span>Επεξεργασία Προφίλ</span>
+              <span>{t('profile.editProfile')}</span>
             </Button>
           ) : (
             <>
               <Button variant="outline" onClick={handleCancel} className="flex items-center space-x-2">
                 <X className="h-4 w-4" />
-                <span>Ακύρωση</span>
+                <span>{t('common.cancel')}</span>
               </Button>
               <Button onClick={handleSave} className="flex items-center space-x-2">
                 <Save className="h-4 w-4" />
-                <span>Αποθήκευση Αλλαγών</span>
+                <span>{t('profile.saveChanges')}</span>
               </Button>
             </>
           )}
@@ -255,7 +257,7 @@ const Profile = () => {
         <div className="lg:col-span-1 space-y-4">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle>Φωτογραφία Προφίλ</CardTitle>
+              <CardTitle>{t('profile.profilePicture')}</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <Avatar className="h-32 w-32 mx-auto mb-4">
@@ -264,7 +266,7 @@ const Profile = () => {
                 </AvatarFallback>
               </Avatar>
               <p className="text-sm text-muted-foreground">
-                Οι φωτογραφίες προφίλ διαχειρίζονται από τον διαχειριστή σας
+                {t('profile.pictureManaged')}
               </p>
             </CardContent>
           </Card>
@@ -273,26 +275,26 @@ const Profile = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Shield className="h-5 w-5" />
-                <span>Πληροφορίες Λογαριασμού</span>
+                <span>{t('profile.accountInfo')}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Ρόλος:</span>
+                <span className="text-sm font-medium">{t('profile.role')}:</span>
                 <Badge variant="secondary" className="capitalize">
                   {user.role}
                 </Badge>
               </div>
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Σχολείο:</span>
-                <span className="text-sm">{user.school || 'Δεν έχει καθοριστεί'}</span>
+                <span className="text-sm font-medium">{t('profile.school')}:</span>
+                <span className="text-sm">{user.school || t('profile.notSpecified')}</span>
               </div>
               {user.department && (
                 <div className="flex items-center space-x-2">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Τμήμα:</span>
+                  <span className="text-sm font-medium">{t('profile.department')}:</span>
                   <span className="text-sm">{user.department}</span>
                 </div>
               )}
@@ -305,7 +307,7 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                   <Package className="h-5 w-5" />
-                  Τρέχον Πλάνο & Τιμολόγηση
+                  {t('profile.currentPlan')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -319,9 +321,9 @@ const Profile = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Τύπος Πακέτου</p>
+                      <p className="text-sm text-muted-foreground">{t('profile.packageType')}</p>
                       <p className="font-semibold text-purple-700 dark:text-purple-300">
-                        {user.packType === 'pro' ? 'Πακέτο PRO' : 'Πακέτο LITE'}
+                        {user.packType === 'pro' ? t('profile.proPlan') : t('profile.litePlan')}
                       </p>
                     </div>
                   </div>
@@ -331,9 +333,9 @@ const Profile = () => {
                       <Euro className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Μηνιαία Τιμή</p>
+                      <p className="text-sm text-muted-foreground">{t('profile.monthlyPrice')}</p>
                       <p className="font-semibold text-green-700 dark:text-green-300">
-                        €{user.monthlyPrice || 0}/μήνα
+                        €{user.monthlyPrice || 0}/{t('profile.perMonth')}
                       </p>
                     </div>
                   </div>
@@ -343,9 +345,9 @@ const Profile = () => {
                       <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Κατάσταση Πλάνου</p>
+                      <p className="text-sm text-muted-foreground">{t('profile.planStatus')}</p>
                       <Badge variant={user.packType === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                        {user.packType === 'pro' ? 'Premium Ενεργό' : 'Βασικό Ενεργό'}
+                        {user.packType === 'pro' ? t('profile.premiumActive') : t('profile.basicActive')}
                       </Badge>
                     </div>
                   </div>
@@ -356,7 +358,7 @@ const Profile = () => {
                     <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                       <Info className="h-4 w-4" />
                       <span className="text-sm">
-                        Επικοινωνήστε με τον διαχειριστή συστήματος για αναβάθμιση σε PRO για επιπλέον δυνατότητες και αυξημένη χωρητικότητα.
+                        {t('profile.upgradeMessage')}
                       </span>
                     </div>
                   </div>
@@ -370,12 +372,12 @@ const Profile = () => {
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Προσωπικές Πληροφορίες</CardTitle>
+              <CardTitle>{t('profile.personalInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Πλήρες Όνομα *</Label>
+                  <Label htmlFor="name">{t('profile.fullName')} *</Label>
                   <Input
                     id="name"
                     name="name"
@@ -384,11 +386,11 @@ const Profile = () => {
                     disabled={!isEditing}
                     className={errors.name ? 'border-destructive' : ''}
                   />
-                  {errors.name && <p className="text-sm text-destructive">{errors.name === 'Name is required' ? 'Το όνομα είναι υποχρεωτικό' : errors.name}</p>}
+                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t('common.email')} *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -398,11 +400,11 @@ const Profile = () => {
                     disabled={true}
                     className="bg-muted"
                   />
-                  <p className="text-sm text-muted-foreground">Το email δεν μπορεί να αλλάξει μετά τη δημιουργία του λογαριασμού</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.emailCannotChange')}</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Αριθμός Τηλεφώνου</Label>
+                  <Label htmlFor="phone">{t('profile.phoneNumber')}</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -414,7 +416,7 @@ const Profile = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Email Επικοινωνίας</Label>
+                  <Label htmlFor="contactEmail">{t('profile.contactEmail')}</Label>
                   <Input
                     id="contactEmail"
                     name="contactEmail"
@@ -422,13 +424,13 @@ const Profile = () => {
                     value={formData.contactEmail}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    placeholder="Εισάγετε το email επικοινωνίας σας"
+                    placeholder={t('profile.contactEmailPlaceholder')}
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Ημερομηνία Γέννησης</Label>
+                <Label htmlFor="dateOfBirth">{t('profile.dateOfBirth')}</Label>
                 <Input
                   id="dateOfBirth"
                   name="dateOfBirth"
@@ -445,12 +447,12 @@ const Profile = () => {
           {isEditing && (
             <Card>
               <CardHeader>
-                <CardTitle>Αλλαγή Κωδικού Πρόσβασης</CardTitle>
+                <CardTitle>{t('profile.changePassword')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Τρέχων Κωδικός Πρόσβασης</Label>
+                    <Label htmlFor="currentPassword">{t('profile.currentPassword')}</Label>
                     <div className="relative">
                       <Input
                         id="currentPassword"
@@ -458,7 +460,7 @@ const Profile = () => {
                         type={showPassword ? 'text' : 'password'}
                         value={formData.currentPassword}
                         onChange={handleInputChange}
-                        placeholder="Εισάγετε τον τρέχοντα κωδικό"
+                        placeholder={t('profile.currentPasswordPlaceholder')}
                       />
                       <Button
                         type="button"
@@ -473,36 +475,36 @@ const Profile = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">Νέος Κωδικός Πρόσβασης</Label>
+                    <Label htmlFor="newPassword">{t('profile.newPassword')}</Label>
                     <Input
                       id="newPassword"
                       name="newPassword"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.newPassword}
                       onChange={handleInputChange}
-                      placeholder="Εισάγετε νέο κωδικό"
+                      placeholder={t('profile.newPasswordPlaceholder')}
                       className={errors.newPassword ? 'border-destructive' : ''}
                     />
-                    {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword === 'Password must be at least 6 characters' ? 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες' : errors.newPassword}</p>}
+                    {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Επιβεβαίωση Νέου Κωδικού</Label>
+                  <Label htmlFor="confirmPassword">{t('profile.confirmPassword')}</Label>
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    placeholder="Επιβεβαιώστε τον νέο κωδικό"
+                    placeholder={t('profile.confirmPasswordPlaceholder')}
                     className={errors.confirmPassword ? 'border-destructive' : ''}
                   />
-                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword === 'Passwords do not match' ? 'Οι κωδικοί δεν ταιριάζουν' : errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
                 
                 <p className="text-sm text-muted-foreground">
-                  Αφήστε τα πεδία κωδικού κενά αν δεν θέλετε να αλλάξετε τον κωδικό σας.
+                  {t('profile.passwordChangeNote')}
                 </p>
               </CardContent>
             </Card>

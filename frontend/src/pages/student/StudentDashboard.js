@@ -65,7 +65,7 @@ const StudentDashboard = () => {
     
     if (user.role !== 'student') {
       console.log('StudentDashboard: User is not student, redirecting');
-      toast.error('Δεν έχετε δικαίωμα πρόσβασης σε αυτή τη σελίδα');
+      toast.error(t('student.accessDenied'));
       navigate('/app/dashboard');
       return;
     }
@@ -153,7 +153,7 @@ const StudentDashboard = () => {
       
     } catch (error) {
       console.error('StudentDashboard: Error fetching dashboard data:', error);
-      setError('Αποτυχία φόρτωσης δεδομένων. Παρακαλώ δοκιμάστε ξανά.');
+      setError(t('student.failedToLoad'));
     } finally {
       setLoading(false);
       setPanelLoading({ notifications: false, grades: false, classes: false });
@@ -273,7 +273,7 @@ const StudentDashboard = () => {
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md mb-6">
           <div className="flex items-center space-x-2">
             <XCircle className="h-5 w-5" />
-            <span>Δεν έχετε δικαίωμα πρόσβασης σε αυτή τη σελίδα</span>
+            <span>{t('student.accessDenied')}</span>
           </div>
         </div>
       </div>
@@ -284,8 +284,8 @@ const StudentDashboard = () => {
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-light tracking-wide">Καλώς ήρθες πίσω, {user?.name}!</h1>
-        <p className="text-muted-foreground">Παρακολουθήστε την πρόοδό σας και τις δραστηριότητές σας</p>
+        <h1 className="text-3xl font-light tracking-wide">{t('student.welcomeBack')}, {user?.name}!</h1>
+        <p className="text-muted-foreground">{t('student.trackProgress')}</p>
       </div>
 
       {/* Maintenance Notifications */}
@@ -295,34 +295,34 @@ const StudentDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Συνολικά Μαθήματα</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.stats.totalSubjects}</div>
-            <p className="text-xs text-muted-foreground">Εγγεγραμμένα μαθήματα</p>
+            <p className="text-xs text-muted-foreground">{t('student.enrolledSubjects')}</p>
           </CardContent>
         </Card>
 
         <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Μέσος Όρος Βαθμών</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.stats.averageGrade.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">Τρέχων μέσος όρος</p>
+            <p className="text-xs text-muted-foreground">{t('student.currentAverage')}</p>
           </CardContent>
         </Card>
 
         <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Βαθμοί που Έλαβα</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.stats.gradesReceived}</div>
-            <p className="text-xs text-muted-foreground">Αυτό το εξάμηνο</p>
+            <p className="text-xs text-muted-foreground">{t('student.thisSemester')}</p>
           </CardContent>
         </Card>
       </div>
@@ -336,7 +336,7 @@ const StudentDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
-              <span>Γρήγορες Ενέργειες</span>
+              <span>{t('student.quickActions')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-center">
@@ -347,7 +347,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <BookOpen className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Προβολή Βαθμών</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.viewMyGrades')}</span>
               </Button>
 
               <Button
@@ -356,7 +356,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Το Πρόγραμμά Μου</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.mySchedule')}</span>
               </Button>
 
               <Button
@@ -365,7 +365,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Ειδοποιήσεις</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
                 onClick={() => navigate('/app/student/grades')}
@@ -373,7 +373,7 @@ const StudentDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Τα Στατιστικά Μου</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.myStats')}</span>
               </Button>
             </div>
           </CardContent>
@@ -386,7 +386,7 @@ const StudentDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-primary" />
-              <span>Μηνιαίο Ημερολόγιο</span>
+              <span>{t('student.monthlyCalendar')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -399,7 +399,7 @@ const StudentDashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-primary" />
-              <span>Πρόσφατες Ειδοποιήσεις</span>
+              <span>{t('student.recentNotifications')}</span>
             </CardTitle>
             <Button 
               variant="outline" 
@@ -407,7 +407,7 @@ const StudentDashboard = () => {
               onClick={() => navigate('/app/notifications')}
               className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
             >
-              Προβολή Όλων
+              {t('student.viewAll')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -452,7 +452,7 @@ const StudentDashboard = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground fade-in-up">
                 <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Δεν υπάρχουν ειδοποιήσεις</p>
+                <p>{t('student.noNotifications')}</p>
               </div>
             )}
           </CardContent>
@@ -466,7 +466,7 @@ const StudentDashboard = () => {
             <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
               <Info className="h-5 w-5" />
               <span className="text-sm">
-                Ορισμένες δυνατότητες μπορεί να είναι απενεργοποιημένες από τον διαχειριστή του σχολείου σας.
+                {t('student.featuresDisabledMessage')}
               </span>
             </div>
           </CardContent>
