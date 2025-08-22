@@ -2,6 +2,7 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { API_URL } from '../../config/appConfig';
 import { 
   Calendar, 
@@ -25,6 +26,7 @@ import { Label } from '../../components/ui/label';
 
 
 const Schedule = () => {
+  const { t } = useTranslation();
   const [scheduleData, setScheduleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -154,13 +156,22 @@ const Schedule = () => {
   };
   
   useEffect(() => {
-    // Only load filter options for admin and teacher roles
-    if (user?.role === 'admin' || user?.role === 'teacher') {
-      loadFilterOptions();
+    console.log('Schedule - Initial mount useEffect triggered for role:', user?.role);
+    
+    // For students: simple schedule fetch without filters
+    if (user?.role === 'student') {
+      console.log('Schedule - Student detected, fetching schedule only');
+      fetchScheduleData();
+      return;
     }
-    // Always fetch schedule data for all roles
-    fetchScheduleData();
-  }, []);
+    
+    // For admin/teacher: load filter options then fetch schedule
+    if (user?.role === 'admin' || user?.role === 'teacher') {
+      console.log('Schedule - Admin/Teacher detected, loading filters then schedule');
+      loadFilterOptions();
+      fetchScheduleData();
+    }
+  }, [user?.role]);
 
   // Load filter options for admins and teachers only
   const loadFilterOptions = async () => {
@@ -291,8 +302,13 @@ const Schedule = () => {
       console.log('Schedule - Fetching data for role:', user?.role);
       console.log('Schedule - Request URL:', url);
       console.log('Schedule - Current filters:', filters);
+      console.log('Schedule - Auth token present:', !!authToken);
+      console.log('Schedule - User details:', { id: user?._id, name: user?.name, role: user?.role });
       
       const response = await axios.get(url, config);
+      console.log('Schedule - Raw API response:', response);
+      console.log('Schedule - Response status:', response.status);
+      console.log('Schedule - Response headers:', response.headers);
       
       // Ensure we have the right data structure
       if (response.data && response.data.schedule) {
@@ -350,7 +366,35 @@ const Schedule = () => {
         console.log('Schedule - Data processed and set to state');
       } else {
         console.warn('Schedule - Unexpected data format received:', response.data);
-        setScheduleData({});
+        console.warn('Schedule - Expected data.schedule object, got:', typeof response.data, Object.keys(response.data || {}));
+        
+        // For students, the API might return data in a different format
+        if (user?.role === 'student' && response.data) {
+          console.log('Schedule - Attempting to handle student-specific data format');
+          
+          // Try different possible data structures
+          if (Array.isArray(response.data)) {
+            console.log('Schedule - Data is array, converting to schedule format');
+            const scheduleByDay = {};
+            daysOfWeek.forEach(day => { scheduleByDay[day] = []; });
+            
+            response.data.forEach((event, index) => {
+              if (event.day && scheduleByDay.hasOwnProperty(event.day)) {
+                scheduleByDay[event.day].push({
+                  ...event,
+                  _id: event._id || event.classId || `event-${index}`
+                });
+              }
+            });
+            
+            setScheduleData(scheduleByDay);
+            console.log('Schedule - Converted array data to schedule format:', scheduleByDay);
+          } else {
+            setScheduleData({});
+          }
+        } else {
+          setScheduleData({});
+        }
       }
       
       setError(null);
@@ -368,9 +412,10 @@ const Schedule = () => {
     setFilters(prev => ({ ...prev, [filterType]: value }));
   };
 
-  // Apply filters and trigger data refresh when filters change
+  // Apply filters and trigger data refresh when filters change (admin/teacher only)
   useEffect(() => {
     if (user?.role === 'admin' || user?.role === 'teacher') {
+      console.log('Schedule - Filter change detected, refetching data');
       fetchScheduleData();
       
       // Debug log current filter state
@@ -378,20 +423,6 @@ const Schedule = () => {
       console.log('Current filter options:', filterOptions);
     }
   }, [filters.schoolBranch, filters.teacher]);
-
-  // Clear rendered events ref when schedule data changes
-  useEffect(() => {
-    renderedEventsRef.current = new Set();
-    fetchScheduleData();
-    loadFilterOptions();
-  }, [user?.role, filters]);
-
-  // Load filter options once on component mount
-  useEffect(() => {
-    if (user?.role === 'admin' || user?.role === 'teacher') {
-      loadFilterOptions();
-    }
-  }, [user?.role]);
 
   // Reset rendered events on each render
   useEffect(() => {
