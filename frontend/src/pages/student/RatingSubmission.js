@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { 
   User,
   Building,
@@ -35,6 +36,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 
 const RatingSubmission = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const { 
@@ -147,7 +149,7 @@ const RatingSubmission = () => {
     );
 
     if (missingAnswers.length > 0) {
-      toast.error('Παρακαλώ απαντήστε σε όλες τις υποχρεωτικές ερωτήσεις');
+      toast.error(t('ratings.answerRequiredQuestions'));
       return;
     }
 
@@ -164,9 +166,9 @@ const RatingSubmission = () => {
       await dispatch(submitRating(ratingData)).unwrap();
       
       setSubmitted(true);
-      toast.success('Η αξιολόγηση υποβλήθηκε επιτυχώς!');
+      toast.success(t('ratings.ratingSubmittedSuccessfully'));
     } catch (error) {
-      toast.error(error.message || 'Αποτυχία υποβολής αξιολόγησης');
+      toast.error(error.message || t('ratings.failedToSubmitRating'));
     } finally {
       setSubmitting(false);
     }
@@ -182,14 +184,14 @@ const RatingSubmission = () => {
 
   // Render loading state
   if (isLoading) {
-    return <LoadingScreen message="Φόρτωση περιόδων αξιολόγησης..." />;
+    return <LoadingScreen message={t('ratings.loadingRatingPeriods')} />;
   }
 
   // Render error state
   if (isError) {
     return (
       <ErrorState 
-        message={message || "Αποτυχία φόρτωσης περιόδων αξιολόγησης"}
+        message={message || t('ratings.failedToLoadRatingPeriods')}
         onRetry={() => dispatch(getActiveRatingPeriods())}
       />
     );
@@ -199,8 +201,8 @@ const RatingSubmission = () => {
   if (!activePeriods || activePeriods.length === 0) {
     return (
       <EmptyState 
-        title="Δεν Υπάρχουν Ενεργές Περίοδοι Αξιολόγησης"
-        description="Δεν υπάρχουν αυτή τη στιγμή ενεργές περίοδοι αξιολόγησης. Παρακαλώ ελέγξτε ξανά αργότερα."
+        title={t('ratings.noActiveRatingPeriods')}
+        description={t('ratings.noActiveRatingPeriodsDescription')}
       />
     );
   }
@@ -214,11 +216,11 @@ const RatingSubmission = () => {
             <div className="flex justify-center mb-4">
               <CheckCircle className="h-16 w-16 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Η Αξιολόγηση Υποβλήθηκε!</CardTitle>
+            <CardTitle className="text-2xl">{t('ratings.ratingSubmitted')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Ευχαριστούμε για τα σχόλιά σας. Η αξιολόγησή σας υποβλήθηκε επιτυχώς.
+              {t('ratings.thankYouForFeedback')}
             </p>
             <Button 
               onClick={() => {
@@ -230,7 +232,7 @@ const RatingSubmission = () => {
               }}
               className="w-full"
             >
-              Υποβολή Άλλης Αξιολόγησης
+              {t('ratings.submitAnotherRating')}
             </Button>
           </CardContent>
         </Card>
@@ -244,10 +246,10 @@ const RatingSubmission = () => {
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Υποβολή Αξιολόγησης Μαθητή
+            {t('ratings.studentRatingSubmission')}
           </h1>
           <p className="text-muted-foreground">
-            Αξιολογήστε τους καθηγητές και τα μαθήματά σας για την τρέχουσα περίοδο
+            {t('ratings.rateTeachersAndSubjects')}
           </p>
         </div>
 
@@ -259,7 +261,7 @@ const RatingSubmission = () => {
             }`}>
               1
             </div>
-            <span>Επιλογή Περιόδου</span>
+            <span>{t('ratings.selectPeriod')}</span>
           </div>
           
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -270,7 +272,7 @@ const RatingSubmission = () => {
             }`}>
               2
             </div>
-            <span>Επιλογή Στόχου</span>
+            <span>{t('ratings.selectTarget')}</span>
           </div>
           
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -281,14 +283,14 @@ const RatingSubmission = () => {
             }`}>
               3
             </div>
-            <span>Υποβολή Αξιολόγησης</span>
+            <span>{t('ratings.submitRating')}</span>
           </div>
         </div>
 
         {/* Step 1: Period Selection */}
         {activeStep === 0 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Επιλογή Περιόδου Αξιολόγησης</h2>
+            <h2 className="text-xl font-semibold text-foreground">{t('ratings.selectRatingPeriod')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {activePeriods.map((period) => (
                 <Card 
@@ -309,7 +311,7 @@ const RatingSubmission = () => {
                       </span>
                     </div>
                     <Badge variant={isPeriodActive(period) ? "default" : "secondary"}>
-                      {isPeriodActive(period) ? "Ενεργή" : "Ανενεργή"}
+                      {isPeriodActive(period) ? t('ratings.active') : t('ratings.inactive')}
                     </Badge>
                   </CardContent>
                 </Card>
@@ -319,7 +321,7 @@ const RatingSubmission = () => {
             {selectedPeriod && (
               <div className="flex justify-end">
                 <Button onClick={handleNext}>
-                  Continue
+                  {t('common.continue')}
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -331,10 +333,10 @@ const RatingSubmission = () => {
         {activeStep === 1 && selectedPeriod && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">Επιλογή Στόχου για Αξιολόγηση</h2>
+              <h2 className="text-xl font-semibold text-foreground">{t('ratings.selectTargetForRating')}</h2>
               <Button variant="outline" onClick={handleBack}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
-                Πίσω
+                {t('common.back')}
               </Button>
             </div>
             
@@ -367,7 +369,7 @@ const RatingSubmission = () => {
             {selectedTarget && (
               <div className="flex justify-end">
                 <Button onClick={handleNext}>
-                  Continue
+                  {t('common.continue')}
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -380,11 +382,11 @@ const RatingSubmission = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-foreground">
-                Αξιολόγηση {selectedTarget.name}
+                {t('ratings.rating')} {selectedTarget.name}
               </h2>
               <Button variant="outline" onClick={handleBack}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
-                Πίσω
+                {t('common.back')}
               </Button>
             </div>
             
@@ -415,13 +417,13 @@ const RatingSubmission = () => {
                           ))}
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Κακή</span>
-                          <span>Εξαιρετική</span>
+                          <span>{t('ratings.poor')}</span>
+                          <span>{t('ratings.excellent')}</span>
                         </div>
                       </div>
                     ) : (
                       <Textarea
-                        placeholder="Εισάγετε την απάντησή σας..."
+                        placeholder={t('ratings.enterYourAnswer')}
                         value={answer.answer}
                         onChange={(e) => handleAnswerChange(answer.questionId, e.target.value)}
                         rows={3}
@@ -435,7 +437,7 @@ const RatingSubmission = () => {
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={handleBack}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
-                Back
+                {t('common.back')}
               </Button>
               <Button 
                 onClick={handleSubmit} 
@@ -445,12 +447,12 @@ const RatingSubmission = () => {
                 {submitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Υποβολή...
+                    {t('ratings.submitting')}
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Υποβολή Αξιολόγησης
+                    {t('ratings.submitRatingForm')}
                   </>
                 )}
               </Button>
