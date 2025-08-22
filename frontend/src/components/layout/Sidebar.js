@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -50,12 +50,40 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { isFeatureEnabled, loading: permissionsLoading } = useFeatureToggles();
   
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [logoutAnimating, setLogoutAnimating] = useState(false);
+  const pageRef = useRef(null);
   
   const handleLogoutClick = () => setLogoutDialogOpen(true);
-  const handleLogoutConfirm = () => {
-    dispatch(logout());
-    navigate('/login');
+  
+  const startLogoutAnimation = () => {
+    console.log('Starting logout zoom-out animation');
+    setLogoutAnimating(true);
     setLogoutDialogOpen(false);
+    
+    // Add animation class to document body for full page zoom-out effect
+    document.body.style.overflow = 'hidden';
+    document.body.style.transformOrigin = 'center center';
+    document.body.style.transition = 'transform 1.2s linear, opacity 1.2s linear';
+    document.body.style.transform = 'scale(0.1)';
+    document.body.style.opacity = '0';
+    
+    // Navigate to login after animation completes
+    setTimeout(() => {
+      dispatch(logout());
+      navigate('/login');
+      
+      // Reset body styles
+      document.body.style.overflow = '';
+      document.body.style.transformOrigin = '';
+      document.body.style.transition = '';
+      document.body.style.transform = '';
+      document.body.style.opacity = '';
+      setLogoutAnimating(false);
+    }, 1200);
+  };
+  
+  const handleLogoutConfirm = () => {
+    startLogoutAnimation();
   };
   const handleLogoutCancel = () => setLogoutDialogOpen(false);
   
