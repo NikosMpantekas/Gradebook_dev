@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Container,
@@ -140,6 +141,7 @@ const navLinks = [
 ];
 
 const Contact = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
