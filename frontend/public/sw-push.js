@@ -255,7 +255,7 @@ class NotificationHandler {
       console.log(`[${SW_NAME}] Checking user receiving preference from IndexedDB...`);
       
       // Get user preference from IndexedDB (service workers cannot access localStorage)
-      const dbRequest = indexedDB.open('GradeBookApp', 1);
+      const dbRequest = indexedDB.open('GradeBookApp', 2);
       
       return new Promise((resolve) => {
         dbRequest.onerror = () => {

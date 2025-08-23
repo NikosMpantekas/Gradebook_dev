@@ -422,15 +422,18 @@ class PushNotificationManager {
           }
         };
         
-        request.onupgradeneeded = () => {
-          console.log('[PushManager] Creating IndexedDB stores for user auth and preferences');
-          const db = request.result;
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
           
+          // Create userAuth store if it doesn't exist
           if (!db.objectStoreNames.contains('userAuth')) {
+            console.log('[IndexedDB] Creating userAuth object store');
             db.createObjectStore('userAuth');
           }
           
+          // Create userPreferences store if it doesn't exist
           if (!db.objectStoreNames.contains('userPreferences')) {
+            console.log('[IndexedDB] Creating userPreferences object store');
             db.createObjectStore('userPreferences');
           }
         };
