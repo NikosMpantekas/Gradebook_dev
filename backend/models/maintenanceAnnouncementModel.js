@@ -154,10 +154,20 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
     // Enhanced logging for debugging
     const allAnnouncements = await this.find({ isActive: true }).select('title targetRoles scheduledStart scheduledEnd showOnDashboard');
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Total active announcements in DB: ${allAnnouncements.length}`);
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Current time: ${currentTime}`);
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Next 24 hours: ${next24Hours}`);
+    
     allAnnouncements.forEach(ann => {
-      const status = ann.scheduledStart <= currentTime && ann.scheduledEnd >= currentTime ? 'ACTIVE' :
-                    ann.scheduledStart > currentTime ? 'UPCOMING' : 'EXPIRED';
-      console.log(`  - "${ann.title}" | roles: ${ann.targetRoles} | start: ${ann.scheduledStart} | end: ${ann.scheduledEnd} | status: ${status} | showOnDashboard: ${ann.showOnDashboard}`);
+      const isCurrentlyActive = ann.scheduledStart <= currentTime && ann.scheduledEnd >= currentTime;
+      const isUpcomingIn24h = ann.scheduledStart > currentTime && ann.scheduledStart <= next24Hours;
+      const status = isCurrentlyActive ? 'ACTIVE' : 
+                    isUpcomingIn24h ? 'UPCOMING_24H' :
+                    ann.scheduledStart > currentTime ? 'FUTURE' : 'EXPIRED';
+      
+      const shouldShow = isCurrentlyActive || isUpcomingIn24h;
+      const roleMatch = !userRole || ann.targetRoles.includes(userRole);
+      
+      console.log(`  - "${ann.title}" | roles: [${ann.targetRoles.join(',')}] | start: ${ann.scheduledStart} | end: ${ann.scheduledEnd} | status: ${status} | showOnDashboard: ${ann.showOnDashboard} | shouldShow: ${shouldShow} | roleMatch: ${roleMatch}`);
     });
     
     return announcements;

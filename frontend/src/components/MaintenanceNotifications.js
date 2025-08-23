@@ -188,76 +188,111 @@ const MaintenanceNotifications = () => {
   console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Rendering', announcements.length, 'announcements');
 
   return (
-    <div className="space-y-2 mb-6">
+    <div className="space-y-3 mb-6">
+      <div className="flex items-center space-x-2 mb-2">
+        <AlertTriangle className="h-5 w-5 text-amber-500" />
+        <h3 className="text-lg font-semibold text-foreground">System Maintenance</h3>
+      </div>
       {announcements.map((announcement) => {
         const styles = getTypeStyles(announcement.type);
         const isExpanded = expandedAnnouncements.has(announcement._id);
+        const now = new Date();
+        const start = new Date(announcement.scheduledStart);
+        const end = new Date(announcement.scheduledEnd);
+        
+        // Determine status
+        const isActive = start <= now && end >= now;
+        const isUpcoming = start > now;
+        const statusText = isActive ? 'Active Now' : isUpcoming ? 'Upcoming' : 'Scheduled';
+        const statusColor = isActive ? 'bg-red-100 text-red-800 border-red-200' : 
+                           isUpcoming ? 'bg-amber-100 text-amber-800 border-amber-200' : 
+                           'bg-blue-100 text-blue-800 border-blue-200';
         
         return (
-          <Card key={announcement._id} className={`${styles.border} ${styles.bg}`}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className={`p-2 rounded-lg ${styles.iconBg} flex-shrink-0`}>
-                    <div className={styles.iconColor}>
-                      {getTypeIcon(announcement.type)}
+          <div 
+            key={announcement._id} 
+            className={`relative overflow-hidden rounded-lg border-l-4 ${styles.border} bg-gradient-to-r ${styles.bg} to-background/50 shadow-sm hover:shadow-md transition-all duration-200`}
+          >
+            {/* Status indicator stripe */}
+            <div className={`absolute top-0 right-0 px-2 py-1 text-xs font-medium ${statusColor} rounded-bl-lg`}>
+              {statusText}
+            </div>
+            
+            <div className="p-4 pr-20">
+              <div className="flex items-start space-x-4">
+                <div className={`p-3 rounded-full ${styles.iconBg} flex-shrink-0 shadow-sm`}>
+                  <div className={`${styles.iconColor} [&>svg]:h-5 [&>svg]:w-5`}>
+                    {getTypeIcon(announcement.type)}
+                  </div>
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h4 className={`text-lg font-semibold ${styles.text}`}>
+                      {announcement.title}
+                    </h4>
+                    <Badge variant="outline" className={`text-xs capitalize font-medium ${styles.text} border-current`}>
+                      {announcement.type}
+                    </Badge>
+                  </div>
+                  
+                  <p className={`text-sm leading-relaxed ${styles.text} mb-3 opacity-90`}>
+                    {announcement.message}
+                  </p>
+                  
+                  {/* Quick timing info */}
+                  <div className="flex items-center space-x-4 text-xs text-muted-foreground mb-3">
+                    <div className="flex items-center space-x-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>Starts: {formatDateTime(announcement.scheduledStart)}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-3 w-3" />
+                      <span>Duration: {Math.round((end - start) / (1000 * 60 * 60))}h</span>
                     </div>
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h4 className={`font-medium ${styles.text}`}>
-                        {announcement.title}
-                      </h4>
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {announcement.type}
-                      </Badge>
-                    </div>
+                  {/* Collapsible details */}
+                  <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(announcement._id)}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className={`${styles.text} p-0 h-auto hover:bg-transparent`}>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs font-medium">
+                            {isExpanded ? 'Hide details' : 'Show more details'}
+                          </span>
+                          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </div>
+                      </Button>
+                    </CollapsibleTrigger>
                     
-                    <p className={`text-sm ${styles.text} mb-2`}>
-                      {announcement.message}
-                    </p>
-                    
-                    {/* Collapsible details */}
-                    <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(announcement._id)}>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className={`${styles.text} p-0 h-auto`}>
-                          <div className="flex items-center space-x-1">
-                            <span className="text-xs">
-                              {isExpanded ? 'Hide details' : 'Show details'}
-                            </span>
-                            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </div>
-                        </Button>
-                      </CollapsibleTrigger>
-                      
-                      <CollapsibleContent className="mt-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <CollapsibleContent className="mt-3">
+                      <div className="bg-background/30 rounded-lg p-3 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div className="flex items-center space-x-2">
-                            <Calendar className={`h-3 w-3 ${styles.iconColor}`} />
+                            <Calendar className={`h-4 w-4 ${styles.iconColor}`} />
                             <div>
-                              <span className="font-medium">Starts:</span>
-                              <span className={`ml-1 ${styles.text}`}>
+                              <span className="font-medium text-foreground">Starts:</span>
+                              <div className={`${styles.text} text-sm`}>
                                 {formatDateTime(announcement.scheduledStart)}
-                              </span>
+                              </div>
                             </div>
                           </div>
                           
                           <div className="flex items-center space-x-2">
-                            <Clock className={`h-3 w-3 ${styles.iconColor}`} />
+                            <Clock className={`h-4 w-4 ${styles.iconColor}`} />
                             <div>
-                              <span className="font-medium">Ends:</span>
-                              <span className={`ml-1 ${styles.text}`}>
+                              <span className="font-medium text-foreground">Ends:</span>
+                              <div className={`${styles.text} text-sm`}>
                                 {formatDateTime(announcement.scheduledEnd)}
-                              </span>
+                              </div>
                             </div>
                           </div>
                         </div>
                         
                         {announcement.affectedServices && announcement.affectedServices.length > 0 && (
-                          <div className="mt-2">
-                            <span className="text-xs font-medium">Affected Services:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
+                          <div>
+                            <span className="text-sm font-medium text-foreground">Affected Services:</span>
+                            <div className="flex flex-wrap gap-2 mt-2">
                               {announcement.affectedServices.map((service, index) => (
                                 <Badge key={index} variant="secondary" className="text-xs">
                                   {service}
@@ -266,14 +301,13 @@ const MaintenanceNotifications = () => {
                             </div>
                           </div>
                         )}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
-                
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
     </div>
