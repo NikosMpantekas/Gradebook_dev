@@ -114,8 +114,8 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
     
     // Modified query to show announcements that are either:
     // 1. Currently active (between scheduledStart and scheduledEnd)
-    // 2. Starting within the next 24 hours (upcoming announcements)
-    const next24Hours = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
+    // 2. Starting within the next 25 hours (upcoming announcements - extended for better UX)
+    const next25Hours = new Date(currentTime.getTime() + (25 * 60 * 60 * 1000));
     
     const query = {
       isActive: true,
@@ -126,11 +126,11 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
           scheduledStart: { $lte: currentTime },
           scheduledEnd: { $gte: currentTime }
         },
-        // Future announcements starting within 24 hours
+        // Future announcements starting within 25 hours
         {
           scheduledStart: { 
             $gt: currentTime, 
-            $lte: next24Hours 
+            $lte: next25Hours 
           }
         }
       ]
@@ -154,12 +154,11 @@ maintenanceAnnouncementSchema.statics.getActiveAnnouncements = async function(us
     // Enhanced logging for debugging
     const allAnnouncements = await this.find({ isActive: true }).select('title targetRoles scheduledStart scheduledEnd showOnDashboard');
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Total active announcements in DB: ${allAnnouncements.length}`);
-    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Current time: ${currentTime}`);
-    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Next 24 hours: ${next24Hours}`);
+    console.log(`[MAINTENANCE_ANNOUNCEMENTS] Time window: Current = ${currentTime}, Next 25 hours = ${next25Hours}`);
     
     allAnnouncements.forEach(ann => {
       const isCurrentlyActive = ann.scheduledStart <= currentTime && ann.scheduledEnd >= currentTime;
-      const isUpcomingIn24h = ann.scheduledStart > currentTime && ann.scheduledStart <= next24Hours;
+      const isUpcomingIn24h = ann.scheduledStart > currentTime && ann.scheduledStart <= next25Hours;
       const status = isCurrentlyActive ? 'ACTIVE' : 
                     isUpcomingIn24h ? 'UPCOMING_24H' :
                     ann.scheduledStart > currentTime ? 'FUTURE' : 'EXPIRED';
