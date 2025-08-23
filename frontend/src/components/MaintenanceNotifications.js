@@ -36,12 +36,11 @@ const MaintenanceNotifications = () => {
       if (!user?.token) return;
       
       const response = await axios.get(`${API_URL}/api/maintenance-announcements/active`, getAuthConfig());
-      console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Fetched data:', response.data);
-      console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Count:', response.data?.length || 0);
-      setAnnouncements(response.data);
+      console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Fetched', response.data?.length || 0, 'announcements');
+      setAnnouncements(response.data || []);
     } catch (error) {
       console.error('Error fetching maintenance announcements:', error);
-      // Fail silently for announcements
+      setAnnouncements([]);
     } finally {
       setLoading(false);
     }
@@ -160,10 +159,33 @@ const MaintenanceNotifications = () => {
     }
   };
 
-  // Show all announcements since dismiss functionality is removed
-  if (loading || announcements.length === 0) {
+  // Enhanced debug logging for component rendering decisions
+  console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Component render check:', {
+    loading,
+    announcementsLength: announcements.length,
+    announcements: announcements.map(a => ({ 
+      id: a._id, 
+      title: a.title, 
+      type: a.type,
+      scheduledStart: a.scheduledStart,
+      scheduledEnd: a.scheduledEnd,
+      showOnDashboard: a.showOnDashboard
+    })),
+    willRender: !loading && announcements.length > 0
+  });
+
+  // Show loading state briefly, then show announcements if available
+  if (loading) {
+    console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Still loading, showing nothing');
     return null;
   }
+  
+  if (announcements.length === 0) {
+    console.log('🔧 MAINTENANCE ANNOUNCEMENTS: No announcements to display');
+    return null;
+  }
+
+  console.log('🔧 MAINTENANCE ANNOUNCEMENTS: Rendering', announcements.length, 'announcements');
 
   return (
     <div className="space-y-2 mb-6">
