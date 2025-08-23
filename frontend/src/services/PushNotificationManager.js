@@ -342,11 +342,12 @@ class PushNotificationManager {
   }
 
   /**
-   * Store current user ID in IndexedDB for service worker filtering
+   * Store current user ID and preferences in IndexedDB for service worker filtering
+   * ENHANCED: Now also stores push notification preferences for service worker access
    */
   async _storeUserIdForServiceWorker() {
     try {
-      console.log('[PushManager] Storing user ID in IndexedDB for service worker...');
+      console.log('[PushManager] Storing user ID and preferences in IndexedDB for service worker...');
       
       // Get current user ID from auth state
       const token = localStorage.getItem('token');
@@ -373,6 +374,12 @@ class PushNotificationManager {
         }
       }
       
+      // Get push notification preference from localStorage
+      const pushEnabled = localStorage.getItem('pushNotificationEnabled');
+      const pushPreference = pushEnabled === null ? true : pushEnabled === 'true';
+      
+      console.log('[PushManager] Current push notification preference:', pushPreference);
+      
       if (!userId) {
         console.error('[PushManager] No user ID found to store');
         return;
@@ -390,13 +397,18 @@ class PushNotificationManager {
         request.onsuccess = () => {
           const db = request.result;
           try {
-            const transaction = db.transaction(['userAuth'], 'readwrite');
-            const store = transaction.objectStore('userAuth');
+            const transaction = db.transaction(['userAuth', 'userPreferences'], 'readwrite');
             
-            store.put({ userId: userId, timestamp: Date.now() }, 'currentUser');
+            // Store user ID
+            const authStore = transaction.objectStore('userAuth');
+            authStore.put({ userId: userId, timestamp: Date.now() }, 'currentUser');
+            
+            // Store push notification preference
+            const prefStore = transaction.objectStore('userPreferences');
+            prefStore.put({ value: pushPreference, timestamp: Date.now() }, 'pushNotificationEnabled');
             
             transaction.oncomplete = () => {
-              console.log(`[PushManager] ✅ Stored user ID ${userId} in IndexedDB for service worker`);
+              console.log(`[PushManager] ✅ Stored user ID ${userId} and push preference ${pushPreference} in IndexedDB`);
               resolve();
             };
             
@@ -411,18 +423,78 @@ class PushNotificationManager {
         };
         
         request.onupgradeneeded = () => {
-          console.log('[PushManager] Creating IndexedDB stores for user auth');
+          console.log('[PushManager] Creating IndexedDB stores for user auth and preferences');
           const db = request.result;
           
           if (!db.objectStoreNames.contains('userAuth')) {
             db.createObjectStore('userAuth');
           }
+          
+          if (!db.objectStoreNames.contains('userPreferences')) {
+            db.createObjectStore('userPreferences');
+          }
         };
       });
       
     } catch (error) {
-      console.error('[PushManager] Error storing user ID:', error);
+      console.error('[PushManager] Error storing user data:', error);
       // Don't fail the whole process
+    }
+  }
+
+  /**
+   * Update push notification preference in both localStorage and IndexedDB
+   * CRITICAL: This ensures service worker can access the latest preference
+   */
+  async updatePushNotificationPreference(enabled) {
+    try {
+      console.log(`[PushManager] Updating push notification preference to: ${enabled}`);
+      
+      // Update localStorage (for immediate access)
+      localStorage.setItem('pushNotificationEnabled', enabled.toString());
+      
+      // Update IndexedDB (for service worker access)
+      return new Promise((resolve) => {
+        const request = indexedDB.open('GradeBookApp', 1);
+        
+        request.onerror = () => {
+          console.error('[PushManager] IndexedDB error updating preference:', request.error);
+          resolve(); // Don't fail
+        };
+        
+        request.onsuccess = () => {
+          const db = request.result;
+          try {
+            const transaction = db.transaction(['userPreferences'], 'readwrite');
+            const store = transaction.objectStore('userPreferences');
+            
+            store.put({ value: enabled, timestamp: Date.now() }, 'pushNotificationEnabled');
+            
+            transaction.oncomplete = () => {
+              console.log(`[PushManager] ✅ Updated push preference to ${enabled} in IndexedDB`);
+              resolve();
+            };
+            
+            transaction.onerror = () => {
+              console.error('[PushManager] Transaction error updating preference:', transaction.error);
+              resolve(); // Don't fail
+            };
+          } catch (e) {
+            console.error('[PushManager] Store error updating preference:', e);
+            resolve(); // Don't fail
+          }
+        };
+        
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('userPreferences')) {
+            db.createObjectStore('userPreferences');
+          }
+        };
+      });
+      
+    } catch (error) {
+      console.error('[PushManager] Error updating push preference:', error);
     }
   }
 
