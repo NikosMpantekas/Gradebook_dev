@@ -807,6 +807,10 @@ function App() {
             </Routes>
           </Router>
         </MaintenanceStatusChecker>
+        
+        {/* Floating Push Notification Toggle */}
+        {user && <FloatingPushToggle />}
+        
       </FeatureToggleProvider>
       <Toaster />
     </ThemeProvider>

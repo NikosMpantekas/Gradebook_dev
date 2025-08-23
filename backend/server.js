@@ -548,7 +548,7 @@ app.use("/api/branches", protect, checkMaintenanceMode, require("./routes/branch
 app.use("/api/contact", protect, checkMaintenanceMode, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes")); // Push notification subscriptions (includes VAPID public key)
 app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
-app.use("/api/maintenance-announcements", require("./routes/maintenanceAnnouncementRoutes")); // Maintenance announcements
+app.use("/api/maintenance-announcements", protect, require("./routes/maintenanceAnnouncementRoutes")); // Maintenance announcements
 
 // Add catch-all for unmatched API routes to return proper JSON errors
 app.use('/api/*', (req, res) => {
