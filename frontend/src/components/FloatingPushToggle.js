@@ -51,7 +51,10 @@ const FloatingPushToggle = () => {
         // 1. Update database first
         await authService.updatePushNotificationPreference(false);
         
-        // 2. Unsubscribe from browser (clears subscription)
+        // 2. Update IndexedDB for service worker access
+        await pushManager.updatePushNotificationPreference(false);
+        
+        // 3. Unsubscribe from browser (clears subscription)
         const unsubResult = await pushManager.disablePushNotifications();
         
         if (unsubResult.success) {
@@ -59,8 +62,9 @@ const FloatingPushToggle = () => {
           console.log('[FloatingPushToggle] Successfully disabled push notifications');
         } else {
           console.error('[FloatingPushToggle] Failed to disable notifications:', unsubResult.error);
-          // Revert database change if browser unsubscribe failed
+          // Revert database and IndexedDB changes if browser unsubscribe failed
           await authService.updatePushNotificationPreference(true);
+          await pushManager.updatePushNotificationPreference(true);
         }
         
       } else {
@@ -76,12 +80,17 @@ const FloatingPushToggle = () => {
         if (enableResult.success) {
           // 3. Update database only if browser subscription succeeded
           await authService.updatePushNotificationPreference(true);
+          
+          // 4. Update IndexedDB for service worker access
+          await pushManager.updatePushNotificationPreference(true);
+          
           setIsEnabled(true);
           console.log('[FloatingPushToggle] Successfully enabled push notifications');
         } else {
           console.error('[FloatingPushToggle] Failed to enable notifications:', enableResult.error);
-          // Keep database as false since subscription failed
+          // Keep database and IndexedDB as false since subscription failed
           await authService.updatePushNotificationPreference(false);
+          await pushManager.updatePushNotificationPreference(false);
         }
       }
     } catch (error) {

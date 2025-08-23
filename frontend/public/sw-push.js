@@ -248,21 +248,72 @@ class NotificationHandler {
 
   /**
    * Check if user wants to receive notifications (preference only)
+   * FIXED: Service workers cannot access localStorage directly
    */
   async _checkUserReceivingPreference() {
     try {
-      // Get user preference from IndexedDB or localStorage
-      const userPreference = localStorage.getItem('pushNotificationEnabled');
+      console.log(`[${SW_NAME}] Checking user receiving preference from IndexedDB...`);
       
-      // Default to true if not set (user hasn't disabled)
-      if (userPreference === null) {
-        console.log(`[${SW_NAME}] No preference set, defaulting to receive notifications`);
-        return true;
-      }
+      // Get user preference from IndexedDB (service workers cannot access localStorage)
+      const dbRequest = indexedDB.open('GradeBookApp', 1);
       
-      const shouldReceive = userPreference === 'true';
-      console.log(`[${SW_NAME}] User receiving preference:`, shouldReceive);
-      return shouldReceive;
+      return new Promise((resolve) => {
+        dbRequest.onerror = () => {
+          console.error(`[${SW_NAME}] IndexedDB error for preference check:`, dbRequest.error);
+          console.log(`[${SW_NAME}] Defaulting to show notifications due to error`);
+          resolve(true); // Default to showing on error
+        };
+        
+        dbRequest.onsuccess = () => {
+          const db = dbRequest.result;
+          
+          try {
+            const transaction = db.transaction(['userPreferences'], 'readonly');
+            const store = transaction.objectStore('userPreferences');
+            const request = store.get('pushNotificationEnabled');
+            
+            request.onsuccess = () => {
+              const result = request.result;
+              let shouldReceive = true; // Default to true
+              
+              if (result && typeof result.value !== 'undefined') {
+                shouldReceive = result.value === true || result.value === 'true';
+                console.log(`[${SW_NAME}] User preference from IndexedDB:`, shouldReceive);
+              } else {
+                console.log(`[${SW_NAME}] No preference set in IndexedDB, defaulting to receive notifications`);
+              }
+              
+              resolve(shouldReceive);
+            };
+            
+            request.onerror = () => {
+              console.error(`[${SW_NAME}] Error reading preference from IndexedDB:`, request.error);
+              console.log(`[${SW_NAME}] Defaulting to show notifications due to read error`);
+              resolve(true); // Default to showing on error
+            };
+            
+          } catch (storeError) {
+            console.error(`[${SW_NAME}] IndexedDB store error for preferences:`, storeError);
+            console.log(`[${SW_NAME}] Defaulting to show notifications due to store error`);
+            resolve(true); // Default to showing on error
+          }
+        };
+        
+        dbRequest.onupgradeneeded = () => {
+          console.log(`[${SW_NAME}] Creating IndexedDB stores for preferences`);
+          const db = dbRequest.result;
+          
+          // Create userPreferences store if it doesn't exist
+          if (!db.objectStoreNames.contains('userPreferences')) {
+            db.createObjectStore('userPreferences');
+          }
+          
+          // Create userAuth store if it doesn't exist (from existing code)
+          if (!db.objectStoreNames.contains('userAuth')) {
+            db.createObjectStore('userAuth');
+          }
+        };
+      });
       
     } catch (error) {
       console.error(`[${SW_NAME}] Error checking user preference, defaulting to show:`, error);
