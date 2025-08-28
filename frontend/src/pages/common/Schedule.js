@@ -59,16 +59,25 @@ const Schedule = () => {
   // Get token from user object or localStorage as fallback
   const authToken = user?.token || localStorage.getItem('token');
   
-  const daysOfWeek = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
+  // Localized day labels for display
+  const daysOfWeek = [
+    t('days.monday'),
+    t('days.tuesday'),
+    t('days.wednesday'),
+    t('days.thursday'),
+    t('days.friday'),
+    t('days.saturday'),
+    t('days.sunday')
+  ];
   const englishDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dayMapping = {
-    'Monday': 'Δευτέρα',
-    'Tuesday': 'Τρίτη', 
-    'Wednesday': 'Τετάρτη',
-    'Thursday': 'Πέμπτη',
-    'Friday': 'Παρασκευή',
-    'Saturday': 'Σάββατο',
-    'Sunday': 'Κυριακή'
+    'Monday': t('days.monday'),
+    'Tuesday': t('days.tuesday'),
+    'Wednesday': t('days.wednesday'),
+    'Thursday': t('days.thursday'),
+    'Friday': t('days.friday'),
+    'Saturday': t('days.saturday'),
+    'Sunday': t('days.sunday')
   };
   const timeSlots = [
     '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -654,13 +663,13 @@ const Schedule = () => {
             {teacherCount > 0 && (
               <Badge variant="secondary" className="text-xs">
                 <User className="w-3 h-3 mr-1" />
-                {teacherCount} Καθηγητ{teacherCount > 1 ? 'ές' : 'ής'}
+                {teacherCount} {t('schedule.teachersLower')}
               </Badge>
             )}
             {studentCount > 0 && (
               <Badge variant="secondary" className="text-xs">
                 <Users className="w-3 h-3 mr-1" />
-                {studentCount} Μαθητ{studentCount > 1 ? 'ές' : 'ής'}
+                {studentCount} {t('schedule.studentsLower')}
               </Badge>
             )}
           </div>
@@ -700,7 +709,7 @@ const Schedule = () => {
     return (
       <Card
         key={event._id}
-        className="absolute cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] z-10 overflow-hidden border border-border/20 shadow-sm"
+        className="absolute cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] z-10 hover:z-50 focus:z-50 overflow-hidden border border-border/20 shadow-sm"
         style={{
           top: `${topOffset}px`,
           left: '2px',
@@ -778,11 +787,11 @@ if (loading) {
               <Calendar className="h-8 w-8 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-light">Εβδομαδιαίο Πρόγραμμα</CardTitle>
+              <CardTitle className="text-3xl font-light">{t('schedule.weeklySchedule')}</CardTitle>
               <p className="text-muted-foreground">
-                {user?.role === 'student' && 'Το πρόγραμμα μαθημάτων σας για την εβδομάδα'}
-                {user?.role === 'teacher' && 'Το πρόγραμμα διδασκαλίας και τα μαθήματά σας'}
-                {user?.role === 'admin' && 'Προγράμματα μαθημάτων όλου του σχολείου'}
+                {user?.role === 'student' && t('schedule.header.student')}
+                {user?.role === 'teacher' && t('schedule.header.teacher')}
+                {user?.role === 'admin' && t('schedule.header.admin')}
               </p>
             </div>
           </div>
@@ -792,22 +801,22 @@ if (loading) {
             <div className="mt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">Φίλτρα Προγράμματος</h3>
+                <h3 className="text-lg font-semibold">{t('schedule.filtersTitle')}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* School Branch Filter */}
                 <div className="space-y-2">
-                  <Label htmlFor="schoolBranch">Κλάδος Σχολείου</Label>
+                  <Label htmlFor="schoolBranch">{t('schedule.branch')}</Label>
                   <Select
                     value={filters.schoolBranch}
                     onValueChange={(value) => handleFilterChange('schoolBranch', value)}
                     disabled={loadingFilters}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Όλοι οι Κλάδοι" />
+                      <SelectValue placeholder={t('schedule.allBranches')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Όλοι οι Κλάδοι</SelectItem>
+                      <SelectItem value="all">{t('schedule.allBranches')}</SelectItem>
                       {filterOptions.schoolBranches.map((branch) => (
                         <SelectItem key={branch.value} value={branch.value}>
                           {branchNames[branch.value] || branch.label}
@@ -820,17 +829,17 @@ if (loading) {
                 {/* Teacher Filter (Admin only) */}
                 {user?.role === 'admin' && (
                   <div className="space-y-2">
-                    <Label htmlFor="teacher">Καθηγητής</Label>
+                    <Label htmlFor="teacher">{t('schedule.teacher')}</Label>
                     <Select
                       value={filters.teacher}
                       onValueChange={(value) => handleFilterChange('teacher', value)}
                       disabled={loadingFilters}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Όλοι οι Καθηγητές" />
+                        <SelectValue placeholder={t('schedule.allTeachers')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Όλοι οι Καθηγητές</SelectItem>
+                        <SelectItem value="all">{t('schedule.allTeachers')}</SelectItem>
                         {filterOptions.teachers.map((teacher) => (
                           <SelectItem key={teacher.value} value={teacher.value}>
                             {teacher.label}
@@ -852,15 +861,15 @@ if (loading) {
           <div className="overflow-x-auto">
             <div className="grid grid-cols-1 lg:grid-cols-8 gap-0 min-w-[800px]">
               {/* Time column header */}
-              <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border">
+              <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border dark:border-white/10">
                 <div className="p-2 h-[50px] flex items-center justify-center text-sm font-semibold">
-                  Ώρα
+                  {t('schedule.time')}
                 </div>
               </div>
 
               {/* Day headers */}
               {daysOfWeek.map((day) => (
-                <div key={`header-${day}`} className="border-b-2 border-primary border-r border-border bg-primary text-primary-foreground">
+                <div key={`header-${day}`} className="border-b-2 border-primary border-r border-border dark:border-white/10 bg-primary text-primary-foreground">
                   <div className="p-2 text-center h-[50px] flex items-center justify-center text-sm font-semibold">
                     {day}
                   </div>
@@ -871,7 +880,7 @@ if (loading) {
               {timeSlots.map((timeSlot) => (
                 <Fragment key={timeSlot}>
                   {/* Time label */}
-                  <div className="border-r border-border border-b border-border bg-muted/30 text-foreground sticky left-0 z-10">
+                  <div className="border-r border-border dark:border-white/10 border-b border-border dark:border-white/10 bg-muted/30 text-foreground sticky left-0 z-10">
                     <div className="p-2 text-center text-xs font-medium min-h-[60px] flex items-center justify-center">
                       {formatTime(timeSlot)}
                     </div>
@@ -885,7 +894,7 @@ if (loading) {
                     return (
                       <div
                         key={`${day}-${timeSlot}`}
-                        className="border-r border-border border-b border-border bg-background relative min-h-[60px]"
+                        className="border-r border-border dark:border-white/10 border-b border-border dark:border-white/10 bg-background relative min-h-[60px]"
                       >
                         {mergedEvents.map((event, index) => renderEvent(event, false))}
                       </div>
@@ -920,7 +929,7 @@ if (loading) {
             {daysOfWeek.every(day => getAllEventsForDay(day).length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Δεν υπάρχουν προγραμματισμένα μαθήματα για αυτή την εβδομάδα</p>
+                <p>{t('schedule.noLessonsThisWeek')}</p>
               </div>
             )}
           </div>
@@ -932,7 +941,7 @@ if (loading) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Λεπτομέρειες Μαθήματος
+              {t('schedule.lessonDetails')}
             </DialogTitle>
           </DialogHeader>
           {selectedEvent && (
@@ -941,27 +950,27 @@ if (loading) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Μάθημα: {selectedEvent.subject}</span>
+                    <span className="font-medium">{t('schedule.lesson')}: {selectedEvent.subject}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>Ώρα: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
+                    <span>{t('schedule.time')}: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span>Κλάδος Σχολείου: {selectedEvent.schoolBranch ? (
+                    <span>{t('schedule.branch')}: {selectedEvent.schoolBranch ? (
                       branchNames[selectedEvent.schoolBranch] || selectedEvent.schoolBranchName || selectedEvent.schoolBranch
-                    ) : 'Άγνωστος Κλάδος'}</span>
+                    ) : t('schedule.unknownBranch')}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>Κατεύθυνση: {selectedEvent.direction}</span>
+                    <span>{t('schedule.direction')}: {selectedEvent.direction}</span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div>
                     <h4 className="font-medium mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      Καθηγητές ({selectedEvent.teacherCount || 0}):
+                      {t('schedule.teachers')} ({selectedEvent.teacherCount || 0}):
                     </h4>
                     {selectedEvent.teacherNames && selectedEvent.teacherNames.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
@@ -972,14 +981,14 @@ if (loading) {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Δεν έχουν ανατεθεί καθηγητές</p>
+                      <p className="text-sm text-muted-foreground">{t('schedule.noTeachersAssigned')}</p>
                     )}
                   </div>
                   
                   <div>
                     <h4 className="font-medium mb-2">
                       <Users className="h-4 w-4 inline mr-2" />
-                      Μαθητές ({selectedEvent.studentCount || 0}):
+                      {t('schedule.students')} ({selectedEvent.studentCount || 0}):
                     </h4>
                     {selectedEvent.studentNames && selectedEvent.studentNames.length > 0 ? (
                       <div className="max-h-[200px] overflow-auto">
@@ -992,12 +1001,12 @@ if (loading) {
                         </div>
                         {selectedEvent.studentNames.length > 10 && (
                           <p className="text-xs text-muted-foreground mt-2">
-                            και {selectedEvent.studentNames.length - 10} ακόμη μαθητές...
+                            {t('schedule.andMoreStudents', { count: selectedEvent.studentNames.length - 10 })}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Δεν έχουν εγγραφεί μαθητές</p>
+                      <p className="text-sm text-muted-foreground">{t('schedule.noStudentsRegistered')}</p>
                     )}
                   </div>
                 </div>

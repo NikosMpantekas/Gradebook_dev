@@ -60,26 +60,25 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     setLogoutAnimating(true);
     setLogoutDialogOpen(false);
     
-    // Add animation class to document body for full page zoom-out effect
-    document.body.style.overflow = 'hidden';
-    document.body.style.transformOrigin = 'center center';
-    document.body.style.transition = 'transform 1.2s linear, opacity 1.2s linear';
-    document.body.style.transform = 'scale(0.1)';
-    document.body.style.opacity = '0';
+    // New: Sleek fade + subtle blur overlay (short duration)
+    // Add a class to trigger content fade/blur
+    document.body.classList.add('logout-fade');
+    
+    // Create and mount a temporary overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'logout-overlay';
+    document.body.appendChild(overlay);
     
     // Navigate to login after animation completes
     setTimeout(() => {
       dispatch(logout());
       navigate('/login');
       
-      // Reset body styles
-      document.body.style.overflow = '';
-      document.body.style.transformOrigin = '';
-      document.body.style.transition = '';
-      document.body.style.transform = '';
-      document.body.style.opacity = '';
+      // Cleanup
+      document.body.classList.remove('logout-fade');
+      try { overlay.remove(); } catch (e) {}
       setLogoutAnimating(false);
-    }, 1200);
+    }, 350);
   };
   
   const handleLogoutConfirm = () => {

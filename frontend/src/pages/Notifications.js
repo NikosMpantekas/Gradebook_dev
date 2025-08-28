@@ -72,7 +72,7 @@ const Notifications = () => {
         })
         .catch((error) => {
           console.error('Failed to load notifications:', error);
-          toast.error('Failed to load notifications');
+          toast.error(t('notifications.loadFailed'));
         });
     } else {
       console.log('Dispatching getSentNotifications for tab: Sent');
@@ -83,7 +83,7 @@ const Notifications = () => {
         })
         .catch((error) => {
           console.error('Failed to load sent notifications:', error);
-          toast.error('Failed to load sent notifications');
+          toast.error(t('notifications.loadSentFailed'));
         });
     }
   }, [tabValue, dispatch]);
@@ -117,7 +117,7 @@ const Notifications = () => {
     dispatch(markNotificationAsRead(notificationId))
       .unwrap()
       .then(() => {
-        toast.success('Η ειδοποίηση σημειώθηκε ως αναγνωσμένη');
+        toast.success(t('notifications.markedAsRead'));
         // CRITICAL FIX: Don't immediately refresh - Redux state already updated
         // dispatch(getMyNotifications()); // REMOVED: Causes race condition with stale cache
         
@@ -126,7 +126,7 @@ const Notifications = () => {
       })
       .catch((error) => {
         console.error('Failed to mark notification as read:', error);
-        toast.error('Αποτυχία σήμανσης ειδοποίησης ως αναγνωσμένη');
+        toast.error(t('notifications.markAsReadFailed'));
       });
   }, [dispatch]);
 
@@ -136,7 +136,7 @@ const Notifications = () => {
     dispatch(markNotificationAsSeen(notificationId))
       .unwrap()
       .then(() => {
-        toast.success('Η ειδοποίηση σημειώθηκε ως προβληθείσα');
+        toast.success(t('notifications.markedAsSeen'));
         // Force refresh notifications to get updated state
         if (tabValue === 'received') {
           dispatch(getMyNotifications());
@@ -148,7 +148,7 @@ const Notifications = () => {
       })
       .catch((error) => {
         console.error('Failed to mark notification as seen:', error);
-        toast.error('Αποτυχία σήμανσης ειδοποίησης ως προβληθείσα');
+        toast.error(t('notifications.markAsSeenFailed'));
       });
   }, [dispatch, tabValue]);
 
@@ -167,17 +167,17 @@ const Notifications = () => {
 
   // Handle delete notification
   const handleDelete = useCallback((notificationId) => {
-    if (window.confirm('Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτή την ειδοποίηση;')) {
+    if (window.confirm(t('notifications.deleteConfirm'))) {
       console.log(`Deleting notification ${notificationId}`);
       dispatch(deleteNotification(notificationId))
         .unwrap()
         .then(() => {
-          toast.success('Η ειδοποίηση διαγράφηκε επιτυχώς');
+          toast.success(t('notifications.deleted'));
           handleRefresh();
         })
         .catch((error) => {
           console.error('Failed to delete notification:', error);
-          toast.error('Αποτυχία διαγραφής ειδοποίησης');
+          toast.error(t('notifications.deleteFailed'));
         });
     }
   }, [dispatch, handleRefresh]);
@@ -193,14 +193,14 @@ const Notifications = () => {
     }))
       .unwrap()
       .then(() => {
-        toast.success('Η ειδοποίηση ενημερώθηκε επιτυχώς');
+        toast.success(t('notifications.updated'));
         setEditDialogOpen(false);
         setCurrentNotification(null);
         handleRefresh();
       })
       .catch((error) => {
         console.error('Failed to update notification:', error);
-        toast.error('Αποτυχία ενημέρωσης ειδοποίησης');
+        toast.error(t('notifications.updateFailed'));
       });
   }, [currentNotification, editForm, dispatch, handleRefresh]);
 
@@ -233,7 +233,7 @@ const Notifications = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle className="text-xl sm:text-2xl font-bold">
-              Ειδοποιήσεις
+              {t('notifications.title')}
             </CardTitle>
             
             <Button
@@ -242,12 +242,12 @@ const Notifications = () => {
               onClick={() => {
                 console.log('Manually refreshing notifications');
                 handleRefresh();
-                toast.info('Refreshing notifications...');
+                toast.info(t('notifications.refreshing'));
               }}
               className="w-full sm:w-auto"
             >
               <RefreshCw className="mr-2 w-4 h-4" />
-              Ανανέωση
+              {t('notifications.refresh')}
             </Button>
           </div>
         </CardHeader>
@@ -256,7 +256,7 @@ const Notifications = () => {
           <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
             <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <TabsTrigger value="received" className="relative flex items-center justify-center">
-                <span>Ληφθέντα</span>
+                <span>{t('notifications.received')}</span>
                 {unreadCount > 0 && (
                   <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -264,7 +264,7 @@ const Notifications = () => {
                 )}
               </TabsTrigger>
               {(user?.role === 'teacher' || user?.role === 'admin') && (
-                <TabsTrigger value="sent">Απεσταλμένα</TabsTrigger>
+                <TabsTrigger value="sent">{t('notifications.sent')}</TabsTrigger>
               )}
             </TabsList>
             

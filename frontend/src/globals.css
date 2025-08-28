@@ -378,6 +378,31 @@
   animation: cardHover 0.3s ease-out forwards;
 }
 
+/* ================================
+   Sleek logout transition
+   - Fades content slightly and adds a gentle blur
+   - Shows a dim, subtle overlay
+   ================================ */
+.logout-fade #root {
+  transition: filter 0.35s ease, opacity 0.35s ease;
+  filter: blur(3px);
+  opacity: 0.75;
+}
+
+.logout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.55) 100%);
+  animation: logoutOverlayFade 0.35s ease forwards;
+}
+
+@keyframes logoutOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* No animation class - completely disables animations and transitions */
 .no-animation {
   animation: none !important;
