@@ -189,7 +189,7 @@ const NotificationsList = ({
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4 flex-1">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
+                    <Avatar className="h-10 w-10 flex-shrink-0 border border-border/60 dark:border-white/15">
                       <AvatarFallback className="text-sm">
                         {safeNotification.sender.name?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>

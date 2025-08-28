@@ -16,8 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
+import { useTranslation } from 'react-i18next';
 import { 
   getMyNotifications, 
   getSentNotifications,
@@ -30,8 +32,9 @@ import NotificationsList from '../../components/notifications/NotificationsList'
 import NotificationEditDialog from '../../components/notifications/NotificationEditDialog';
 
 const TeacherNotifications = () => {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({ all: [], sent: [], received: [] });
+  const [panelLoading, setPanelLoading] = useState({ all: false, sent: false, received: false });
+  const [initialized, setInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState(null);
@@ -43,19 +46,24 @@ const TeacherNotifications = () => {
   const [editLoading, setEditLoading] = useState(false);
   const user = useSelector((state) => state.auth.user);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Get token from user object or localStorage as fallback
   const authToken = user?.token || localStorage.getItem('token');
 
   useEffect(() => {
-    if (authToken) {
-      loadNotifications();
+    if (authToken && !initialized) {
+      // Preload default tabs without blocking the page
+      Promise.all([
+        loadTab('all'),
+        loadTab('sent')
+      ]).finally(() => setInitialized(true));
     }
-  }, [authToken, activeTab]);
+  }, [authToken, initialized]);
 
-  const loadNotifications = async () => {
+  const loadTab = async (tab) => {
     try {
-      setLoading(true);
+      setPanelLoading(prev => ({ ...prev, [tab]: true }));
       const config = {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -64,12 +72,8 @@ const TeacherNotifications = () => {
       };
 
       let endpoint = '';
-      if (activeTab === 'sent') {
-        endpoint = `${API_URL}/api/notifications/sent`;
-      } else {
-        // For received and all, use the main notifications endpoint
-        endpoint = `${API_URL}/api/notifications`;
-      }
+      if (tab === 'sent') endpoint = `${API_URL}/api/notifications/sent`;
+      else endpoint = `${API_URL}/api/notifications`;
 
       const response = await fetch(endpoint, config);
       
@@ -78,7 +82,7 @@ const TeacherNotifications = () => {
       }
       
       const data = await response.json();
-      console.log(`API Response for ${activeTab}:`, data);
+      console.log(`API Response for ${tab}:`, data);
       
       // Handle different response formats
       let notificationsArray = [];
@@ -94,13 +98,18 @@ const TeacherNotifications = () => {
       }
       
       console.log(`Processed notifications array:`, notificationsArray);
-      setNotifications(notificationsArray);
+      setData(prev => ({
+        ...prev,
+        [tab]: notificationsArray,
+        // Keep received in sync with all if loaded from the same endpoint
+        ...(tab !== 'sent' ? { received: notificationsArray, all: notificationsArray } : {})
+      }));
     } catch (error) {
       console.error('Error loading notifications:', error);
-      toast.error('Failed to load notifications');
-      setNotifications([]);
+      toast.error(t('teacherNotifications.loadFailed'));
+      setData(prev => ({ ...prev, [tab]: [] }));
     } finally {
-      setLoading(false);
+      setPanelLoading(prev => ({ ...prev, [tab]: false }));
     }
   };
 
@@ -121,19 +130,17 @@ const TeacherNotifications = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif._id === notificationId 
-            ? { ...notif, read: true }
-            : notif
-        )
-      );
+      // Update across tabs
+      setData(prev => ({
+        all: prev.all.map(n => n._id === notificationId ? { ...n, read: true } : n),
+        sent: prev.sent.map(n => n._id === notificationId ? { ...n, read: true } : n),
+        received: prev.received.map(n => n._id === notificationId ? { ...n, read: true } : n),
+      }));
       
-      toast.success('Notification marked as read');
+      toast.success(t('teacherNotifications.markedAsRead'));
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      toast.error('Failed to mark notification as read');
+      toast.error(t('teacherNotifications.markAsReadFailed'));
     }
   };
 
@@ -153,21 +160,19 @@ const TeacherNotifications = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Update local state with both seen and isSeen properties for compatibility
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif._id === notificationId 
-            ? { ...notif, seen: true, isSeen: true }
-            : notif
-        )
-      );
+      // Update across tabs with both seen and isSeen properties for compatibility
+      setData(prev => ({
+        all: prev.all.map(n => n._id === notificationId ? { ...n, seen: true, isSeen: true } : n),
+        sent: prev.sent.map(n => n._id === notificationId ? { ...n, seen: true, isSeen: true } : n),
+        received: prev.received.map(n => n._id === notificationId ? { ...n, seen: true, isSeen: true } : n),
+      }));
       
       console.log('Updated local state - notification marked as seen:', notificationId);
       
-      toast.success('Notification marked as seen');
+      toast.success(t('teacherNotifications.markedAsSeen'));
     } catch (error) {
       console.error('Error marking notification as seen:', error);
-      toast.error('Failed to mark notification as seen');
+      toast.error(t('teacherNotifications.markAsSeenFailed'));
     }
   };
 
@@ -184,7 +189,7 @@ const TeacherNotifications = () => {
   };
 
   const handleDelete = async (notificationId) => {
-    if (!window.confirm('Are you sure you want to delete this notification?')) {
+    if (!window.confirm(t('teacherNotifications.deleteConfirm'))) {
       return;
     }
 
@@ -203,13 +208,17 @@ const TeacherNotifications = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Remove from local state
-      setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
+      // Remove from local state across tabs
+      setData(prev => ({
+        all: prev.all.filter(n => n._id !== notificationId),
+        sent: prev.sent.filter(n => n._id !== notificationId),
+        received: prev.received.filter(n => n._id !== notificationId),
+      }));
       
-      toast.success('Notification deleted successfully');
+      toast.success(t('teacherNotifications.deleted'));
     } catch (error) {
       console.error('Error deleting notification:', error);
-      toast.error('Failed to delete notification');
+      toast.error(t('teacherNotifications.deleteFailed'));
     }
   };
 
@@ -250,22 +259,20 @@ const TeacherNotifications = () => {
       
       const updatedNotification = await response.json();
       
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif._id === editingNotification._id 
-            ? { ...notif, ...updatedNotification }
-            : notif
-        )
-      );
+      // Update across tabs
+      setData(prev => ({
+        all: prev.all.map(n => n._id === editingNotification._id ? { ...n, ...updatedNotification } : n),
+        sent: prev.sent.map(n => n._id === editingNotification._id ? { ...n, ...updatedNotification } : n),
+        received: prev.received.map(n => n._id === editingNotification._id ? { ...n, ...updatedNotification } : n),
+      }));
       
-      toast.success('Notification updated successfully');
+      toast.success(t('teacherNotifications.updated'));
       setEditModalOpen(false);
       setEditingNotification(null);
       setEditForm({ title: '', message: '', isImportant: false });
     } catch (error) {
       console.error('Error updating notification:', error);
-      toast.error('Failed to update notification');
+      toast.error(t('teacherNotifications.updateFailed'));
     } finally {
       setEditLoading(false);
     }
@@ -281,12 +288,12 @@ const TeacherNotifications = () => {
     navigate('/app/teacher/notifications/create');
   };
 
-  if (loading) {
+  if (!initialized) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Spinner className="text-primary" />
-          <p className="text-muted-foreground">Loading notifications...</p>
+          <p className="text-muted-foreground">{t('teacherNotifications.loading')}</p>
         </div>
       </div>
     );
@@ -294,16 +301,16 @@ const TeacherNotifications = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-col sm:flex-row gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('teacherNotifications.title')}</h1>
           <p className="text-muted-foreground">
-            Manage your notifications and communications
+            {t('teacherNotifications.subtitle')}
           </p>
         </div>
-        <Button onClick={handleCreateNew} className="flex items-center gap-2">
+        <Button onClick={handleCreateNew} className="flex items-center gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
-          Create Notification
+          {t('teacherNotifications.create')}
         </Button>
       </div>
 
@@ -311,30 +318,39 @@ const TeacherNotifications = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            Notification Center
+            {t('teacherNotifications.center')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="sent">Sent</TabsTrigger>
-              <TabsTrigger value="received">Received</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="mt-6">
-              <div className="space-y-4">
-                {notifications.length === 0 ? (
+          {/* Mobile: Dropdown Selector */}
+          <div className="block md:hidden mb-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t('contactMessages.selectTab')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('teacherNotifications.all')}</SelectItem>
+                <SelectItem value="sent">{t('teacherNotifications.sent')}</SelectItem>
+                <SelectItem value="received">{t('teacherNotifications.received')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Mobile: Panels for selected tab */}
+          <div className="md:hidden">
+            {activeTab === 'all' && (
+              <div className="space-y-4 mt-4">
+                {data.all.length === 0 ? (
                   <div className="text-center py-8">
                     <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No notifications</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyAllTitle')}</h3>
                     <p className="text-muted-foreground">
-                      There are no notifications to display.
+                      {t('teacherNotifications.emptyAllDesc')}
                     </p>
                   </div>
                 ) : (
                   <NotificationsList
-                    notifications={notifications}
+                    notifications={data.all}
                     tabValue={0}
                     user={user}
                     onMarkAsRead={handleMarkAsRead}
@@ -345,24 +361,24 @@ const TeacherNotifications = () => {
                   />
                 )}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="sent" className="mt-6">
-              <div className="space-y-4">
-                {notifications.length === 0 ? (
+            )}
+
+            {activeTab === 'sent' && (
+              <div className="space-y-4 mt-4">
+                {data.sent.length === 0 ? (
                   <div className="text-center py-8">
                     <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No sent notifications</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptySentTitle')}</h3>
                     <p className="text-muted-foreground mb-4">
-                      You haven't sent any notifications yet.
+                      {t('teacherNotifications.emptySentDesc')}
                     </p>
-                    <Button onClick={handleCreateNew} variant="outline">
-                      Send your first notification
+                    <Button onClick={handleCreateNew} variant="outline" className="w-full sm:w-auto">
+                      {t('teacherNotifications.emptySentCta')}
                     </Button>
                   </div>
                 ) : (
                   <NotificationsList
-                    notifications={notifications}
+                    notifications={data.sent}
                     tabValue={1}
                     user={user}
                     onMarkAsRead={handleMarkAsRead}
@@ -373,21 +389,21 @@ const TeacherNotifications = () => {
                   />
                 )}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="received" className="mt-6">
-              <div className="space-y-4">
-                {notifications.length === 0 ? (
+            )}
+
+            {activeTab === 'received' && (
+              <div className="space-y-4 mt-4">
+                {data.received.length === 0 ? (
                   <div className="text-center py-8">
                     <MailOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No received notifications</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyReceivedTitle')}</h3>
                     <p className="text-muted-foreground">
-                      You haven't received any notifications yet.
+                      {t('teacherNotifications.emptyReceivedDesc')}
                     </p>
                   </div>
                 ) : (
                   <NotificationsList
-                    notifications={notifications}
+                    notifications={data.received}
                     tabValue={2}
                     user={user}
                     onMarkAsRead={handleMarkAsRead}
@@ -398,8 +414,96 @@ const TeacherNotifications = () => {
                   />
                 )}
               </div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
+
+          {/* Desktop: Tabs */}
+          <div className="hidden md:block">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
+                <TabsTrigger value="all">{t('teacherNotifications.all')}</TabsTrigger>
+                <TabsTrigger value="sent">{t('teacherNotifications.sent')}</TabsTrigger>
+                <TabsTrigger value="received">{t('teacherNotifications.received')}</TabsTrigger>
+              </TabsList>
+          
+              <TabsContent value="all" className="mt-6">
+                <div className="space-y-4">
+                  {data.all.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyAllTitle')}</h3>
+                      <p className="text-muted-foreground">
+                        {t('teacherNotifications.emptyAllDesc')}
+                      </p>
+                    </div>
+                  ) : (
+                    <NotificationsList
+                      notifications={data.all}
+                      tabValue={0}
+                      user={user}
+                      onMarkAsRead={handleMarkAsRead}
+                      onMarkAsSeen={handleMarkAsSeen}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onNavigate={handleNavigate}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="sent" className="mt-6">
+                <div className="space-y-4">
+                  {data.sent.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptySentTitle')}</h3>
+                      <p className="text-muted-foreground mb-4">
+                        {t('teacherNotifications.emptySentDesc')}
+                      </p>
+                      <Button onClick={handleCreateNew} variant="outline">
+                        {t('teacherNotifications.emptySentCta')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <NotificationsList
+                      notifications={data.sent}
+                      tabValue={1}
+                      user={user}
+                      onMarkAsRead={handleMarkAsRead}
+                      onMarkAsSeen={handleMarkAsSeen}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onNavigate={handleNavigate}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="received" className="mt-6">
+                <div className="space-y-4">
+                  {data.received.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MailOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyReceivedTitle')}</h3>
+                      <p className="text-muted-foreground">
+                        {t('teacherNotifications.emptyReceivedDesc')}
+                      </p>
+                    </div>
+                  ) : (
+                    <NotificationsList
+                      notifications={data.received}
+                      tabValue={2}
+                      user={user}
+                      onMarkAsRead={handleMarkAsRead}
+                      onMarkAsSeen={handleMarkAsSeen}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onNavigate={handleNavigate}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+            
         </CardContent>
       </Card>
 

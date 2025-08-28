@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Spinner } from '../../../components/ui/spinner';
 import { API_URL } from '../../../config/appConfig';
+import { useTranslation } from 'react-i18next';
 
 const NotificationRecipients = ({ 
   selectedRecipients, 
@@ -36,6 +37,7 @@ const NotificationRecipients = ({
   parents = [],
   loading = false
 }) => {
+  const { t } = useTranslation();
   // TEACHER RESTRICTION: Only show students section for teachers
   const availableSections = currentUserRole === 'teacher' ? ['students'] : ['students', 'teachers', 'parents'];
   const [expandedSections, setExpandedSections] = useState(new Set(availableSections));
@@ -125,7 +127,7 @@ const NotificationRecipients = ({
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <Spinner className="text-primary" />
-        <p className="text-sm text-muted-foreground">Loading recipients...</p>
+        <p className="text-sm text-muted-foreground">{t('teacherNotifications.createPage.loadingRecipients')}</p>
       </div>
     );
   }
@@ -135,9 +137,9 @@ const NotificationRecipients = ({
       <CardHeader>
         <div className="flex items-center space-x-3">
           <Users className="h-6 w-6 text-primary" />
-          <CardTitle>Select Recipients</CardTitle>
+          <CardTitle>{t('teacherNotifications.createPage.recipientsTitle')}</CardTitle>
           {selectedRecipients.length > 0 && (
-            <Badge variant="default">{selectedRecipients.length} selected</Badge>
+            <Badge variant="default">{t('teacherNotifications.createPage.selectedCount', { count: selectedRecipients.length })}</Badge>
           )}
         </div>
       </CardHeader>
@@ -148,7 +150,7 @@ const NotificationRecipients = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search recipients by name or email..."
+              placeholder={t('teacherNotifications.createPage.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-background border-border hover:border-primary/50 transition-colors"
@@ -158,32 +160,32 @@ const NotificationRecipients = ({
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
               <Filter className="h-4 w-4 text-primary" />
-              <Label className="text-sm font-medium text-foreground">Filter by role:</Label>
+              <Label className="text-sm font-medium text-foreground">{t('teacherNotifications.createPage.filterByRole')}</Label>
             </div>
             <Select value={filterRole} onValueChange={setFilterRole}>
               <SelectTrigger className="w-36 h-9 bg-background border-border hover:border-primary/50 hover:bg-background/80 transition-all duration-200 shadow-sm">
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder={currentUserRole === 'teacher' ? 'Students' : 'All Roles'} />
+                  <SelectValue placeholder={currentUserRole === 'teacher' ? t('teacherNotifications.createPage.students') : t('teacherNotifications.createPage.allRoles')} />
                 </div>
               </SelectTrigger>
               <SelectContent className="bg-background border-border shadow-lg">
                 {currentUserRole !== 'teacher' && (
                   <SelectItem value="all" className="hover:bg-muted/50 cursor-pointer">
-                    All Roles
+                    {t('teacherNotifications.createPage.allRoles')}
                   </SelectItem>
                 )}
                 <SelectItem value="student" className="hover:bg-muted/50 cursor-pointer">
-                  Students
+                  {t('teacherNotifications.createPage.students')}
                 </SelectItem>
                 {currentUserRole !== 'teacher' && (
                   <SelectItem value="teacher" className="hover:bg-muted/50 cursor-pointer">
-                    Teachers
+                    {t('teacherNotifications.createPage.teachers')}
                   </SelectItem>
                 )}
                 {currentUserRole !== 'teacher' && (
                   <SelectItem value="parent" className="hover:bg-muted/50 cursor-pointer">
-                    Parents
+                    {t('teacherNotifications.createPage.parents')}
                   </SelectItem>
                 )}
               </SelectContent>
@@ -201,7 +203,7 @@ const NotificationRecipients = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <User className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Students</CardTitle>
+                      <CardTitle className="text-base">{t('teacherNotifications.createPage.students')}</CardTitle>
                       {getRecipientCount('student') && (
                         <Badge variant="secondary">{getRecipientCount('student')}</Badge>
                       )}
@@ -224,16 +226,16 @@ const NotificationRecipients = ({
                       onClick={() => selectAllInSection(getFilteredStudents(), 'student')}
                       disabled={disabled}
                     >
-                      Select All
+                      {t('teacherNotifications.createPage.selectAll')}
                     </Button>
-          <Button
+                    <Button
                       size="sm"
                       variant="outline"
                       onClick={() => deselectAllInSection(getFilteredStudents(), 'student')}
                       disabled={disabled}
                     >
-                      Deselect All
-          </Button>
+                      {t('teacherNotifications.createPage.deselectAll')}
+                    </Button>
                   </div>
                   
                   <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -274,7 +276,7 @@ const NotificationRecipients = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <User className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-base">Teachers</CardTitle>
+                        <CardTitle className="text-base">{t('teacherNotifications.createPage.teachers')}</CardTitle>
                         {getRecipientCount('teacher') && (
                           <Badge variant="secondary">{getRecipientCount('teacher')}</Badge>
                         )}
@@ -291,22 +293,22 @@ const NotificationRecipients = ({
                 <CollapsibleContent>
                   <CardContent className="pt-0">
                     <div className="flex items-center space-x-2 mb-3">
-              <Button
+                      <Button
                         size="sm"
                         variant="outline"
                         onClick={() => selectAllInSection(getFilteredTeachers(), 'teacher')}
                         disabled={disabled}
                       >
-                        Select All
-              </Button>
-              <Button
+                        {t('teacherNotifications.createPage.selectAll')}
+                      </Button>
+                      <Button
                         size="sm"
                         variant="outline"
                         onClick={() => deselectAllInSection(getFilteredTeachers(), 'teacher')}
                         disabled={disabled}
                       >
-                        Deselect All
-              </Button>
+                        {t('teacherNotifications.createPage.deselectAll')}
+                      </Button>
                     </div>
                     
                     <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -348,7 +350,7 @@ const NotificationRecipients = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <User className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-base">Parents</CardTitle>
+                        <CardTitle className="text-base">{t('teacherNotifications.createPage.parents')}</CardTitle>
                         {getRecipientCount('parent') && (
                           <Badge variant="secondary">{getRecipientCount('parent')}</Badge>
                         )}
@@ -371,7 +373,7 @@ const NotificationRecipients = ({
                         onClick={() => selectAllInSection(getFilteredParents(), 'parent')}
                         disabled={disabled}
                       >
-                        Select All
+                        {t('teacherNotifications.createPage.selectAll')}
                       </Button>
                       <Button
                         size="sm"
@@ -379,8 +381,8 @@ const NotificationRecipients = ({
                         onClick={() => deselectAllInSection(getFilteredParents(), 'parent')}
                         disabled={disabled}
                       >
-                        Deselect All
-                    </Button>
+                        {t('teacherNotifications.createPage.deselectAll')}
+                      </Button>
                     </div>
                     
                     <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -419,7 +421,7 @@ const NotificationRecipients = ({
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedRecipients.length} recipient(s) selected
+                {t('teacherNotifications.createPage.recipientsSummary', { count: selectedRecipients.length })}
               </span>
               <Button
                 size="sm"
@@ -428,7 +430,7 @@ const NotificationRecipients = ({
                 disabled={disabled}
               >
                 <X className="mr-2 h-4 w-4" />
-                Clear All
+                {t('teacherNotifications.createPage.clearAll')}
               </Button>
             </div>
           </div>

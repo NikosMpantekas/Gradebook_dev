@@ -24,6 +24,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../compo
 import { API_URL } from '../../config/appConfig';
 import NotificationForm from './components/NotificationForm';
 import NotificationRecipients from './components/NotificationRecipients';
+import { useTranslation } from 'react-i18next';
 
 const CreateNotification = () => {
   const [formData, setFormData] = useState({
@@ -58,6 +59,7 @@ const CreateNotification = () => {
 
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Get token from user object or localStorage as fallback
   const authToken = user?.token || localStorage.getItem('token');
@@ -66,14 +68,14 @@ const CreateNotification = () => {
   useEffect(() => {
     if (user?.role === 'teacher' && user?.canSendNotifications === false) {
       // Teacher doesn't have permission to send notifications
-      toast.error('You do not have permission to send notifications');
+      toast.error(t('teacherNotifications.createPage.noPermission'));
       navigate('/app/teacher/dashboard');
     } else if (user?.role === 'admin') {
       // Admin always has permission, nothing to check
       console.log('Admin user accessing notification creation');
     } else if (user?.role === 'secretary' && !user?.secretaryPermissions?.canSendNotifications) {
       // Secretary without proper permissions
-      toast.error('You do not have permission to send notifications');
+      toast.error(t('teacherNotifications.createPage.noPermission'));
       navigate('/app/admin');
     }
   }, [user, navigate]);
@@ -235,15 +237,15 @@ const CreateNotification = () => {
     const newErrors = {};
     
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+      newErrors.title = t('teacherNotifications.createPage.titleRequired');
     }
     
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
+      newErrors.message = t('teacherNotifications.createPage.messageRequired');
     }
     
     if (formData.recipients.length === 0) {
-      newErrors.recipients = 'At least one recipient is required';
+      newErrors.recipients = t('teacherNotifications.createPage.recipientsRequired');
     }
     
     if (formData.scheduledFor && formData.expiresAt) {
@@ -251,7 +253,7 @@ const CreateNotification = () => {
       const expiryDate = new Date(formData.expiresAt);
       
       if (scheduledDate >= expiryDate) {
-        newErrors.expiresAt = 'Expiry date must be after scheduled date';
+        newErrors.expiresAt = t('teacherNotifications.createPage.expiryAfterSchedule');
       }
     }
     
@@ -294,7 +296,7 @@ const CreateNotification = () => {
       
       if (response.ok) {
         const data = await response.json();
-        toast.success('Notification created successfully!');
+        toast.success(t('teacherNotifications.createPage.createSuccess'));
         
         // Reset form
         setFormData({
@@ -317,11 +319,11 @@ const CreateNotification = () => {
         navigate(redirectPath);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create notification');
+        throw new Error(errorData.message || t('teacherNotifications.createPage.createFailed'));
       }
     } catch (error) {
       console.error('Error creating notification:', error);
-      toast.error(error.message || 'Failed to create notification');
+      toast.error(error.message || t('teacherNotifications.createPage.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -353,12 +355,12 @@ const CreateNotification = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {user.role === 'admin' ? 'Admin: Create Notification' : 'Create Notification'}
+              {user.role === 'admin' ? t('teacherNotifications.createPage.titleAdmin') : t('teacherNotifications.createPage.titleTeacher')}
             </h1>
             <p className="text-muted-foreground">
               {user.role === 'admin' 
-                ? 'Send notifications to students and teachers in your school' : 
-                'Send important messages to your students, parents, and colleagues'
+                ? t('teacherNotifications.createPage.subtitleAdmin') : 
+                t('teacherNotifications.createPage.subtitleTeacher')
               }
             </p>
           </div>
@@ -375,8 +377,8 @@ const CreateNotification = () => {
               disabled={loading}
             >
               <X className="mr-2 h-4 w-4" />
-                    Cancel
-                  </Button>
+              {t('common.cancel')}
+            </Button>
           </div>
         </div>
       </div>
@@ -391,7 +393,7 @@ const CreateNotification = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Bell className="h-6 w-6 text-primary" />
-                      <CardTitle>Basic Information</CardTitle>
+                      <CardTitle>{t('teacherNotifications.createPage.basicInfoTitle')}</CardTitle>
                     </div>
                     {expandedSections.has('basic') ? (
                       <ChevronUp className="h-5 w-5 text-muted-foreground" />
@@ -423,9 +425,9 @@ const CreateNotification = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Users className="h-6 w-6 text-primary" />
-                      <CardTitle>Select Recipients</CardTitle>
+                      <CardTitle>{t('teacherNotifications.createPage.recipientsTitle')}</CardTitle>
                       {formData.recipients.length > 0 && (
-                        <Badge variant="default">{formData.recipients.length} selected</Badge>
+                        <Badge variant="default">{t('teacherNotifications.createPage.selectedCount', { count: formData.recipients.length })}</Badge>
                       )}
                     </div>
                     {expandedSections.has('recipients') ? (
@@ -442,13 +444,13 @@ const CreateNotification = () => {
                   {/* Filter Controls */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="schoolBranch">School Branch</Label>
+                      <Label htmlFor="schoolBranch">{t('teacherNotifications.createPage.schoolBranch')}</Label>
                       <Select 
                         value={selectedFilters.schoolBranch} 
                         onValueChange={(value) => handleFilterChange('schoolBranch', value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select branch" />
+                          <SelectValue placeholder={t('teacherNotifications.createPage.branchPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {filterOptions.schoolBranches.map((branch) => (
@@ -461,14 +463,14 @@ const CreateNotification = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="direction">Direction</Label>
+                      <Label htmlFor="direction">{t('teacherNotifications.createPage.direction')}</Label>
                       <Select 
                         value={selectedFilters.direction} 
                         onValueChange={(value) => handleFilterChange('direction', value)}
                         disabled={!selectedFilters.schoolBranch}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select direction" />
+                          <SelectValue placeholder={t('teacherNotifications.createPage.directionPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {filterOptions.directions.map((direction) => (
@@ -481,14 +483,14 @@ const CreateNotification = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="subject">Subject</Label>
+                      <Label htmlFor="subject">{t('teacherNotifications.createPage.subject')}</Label>
                       <Select 
                         value={selectedFilters.subject} 
                         onValueChange={(value) => handleFilterChange('subject', value)}
                         disabled={!selectedFilters.direction}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select subject" />
+                          <SelectValue placeholder={t('teacherNotifications.createPage.subjectPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {filterOptions.subjects.map((subject) => (
@@ -540,8 +542,8 @@ const CreateNotification = () => {
                   </Button>
             <Button type="submit" disabled={loading}>
               <Send className="mr-2 h-4 w-4" />
-              {loading ? 'Creating...' : 'Create Notification'}
-                  </Button>
+              {loading ? t('teacherNotifications.createPage.creating') : t('teacherNotifications.create')}
+            </Button>
           </div>
       </form>
     </div>

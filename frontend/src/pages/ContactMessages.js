@@ -24,12 +24,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Separator } from '../components/ui/separator';
 import { useTheme } from '../components/theme-provider';
+import { useTranslation } from 'react-i18next';
 
 const ContactMessages = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
   const { darkMode } = useTheme();
+  const { t } = useTranslation();
   
   
   
@@ -98,7 +100,7 @@ const ContactMessages = () => {
       setUserMessages(response.data);
     } catch (error) {
       console.error('Error fetching user messages:', error);
-      toast.error('Failed to load your messages');
+      toast.error(t('contactMessages.loadUserFailed'));
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ const ContactMessages = () => {
       setAllMessages(response.data);
     } catch (error) {
       console.error('Error fetching all messages:', error);
-      toast.error('Failed to load messages');
+      toast.error(t('contactMessages.loadAllFailed'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +130,7 @@ const ContactMessages = () => {
       setPatchNotes(response.data);
     } catch (error) {
       console.error('Error fetching patch notes:', error);
-      toast.error('Failed to load patch notes');
+      toast.error(t('contactMessages.loadPatchNotesFailed'));
     } finally {
       setLoading(false);
     }
@@ -151,7 +153,7 @@ const ContactMessages = () => {
       <div className="w-full max-w-full overflow-x-hidden">
         <Card className="p-4 md:p-6 lg:p-8 mt-4 md:mt-6 mb-4 md:mb-6 overflow-x-hidden">
           <CardHeader>
-            <CardTitle className="text-xl md:text-2xl font-bold">Patch Notes Management</CardTitle>
+            <CardTitle className="text-xl md:text-2xl font-bold">{t('contactMessages.patchNotesManagement')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -179,26 +181,26 @@ const ContactMessages = () => {
 
   const tabDefs = isAdminRole
     ? [
-        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
-        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+        { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
       ]
     : [
-        { key: 'my', label: 'My Messages', icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
-        { key: 'patch', label: 'Patch Notes', icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+        { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+        { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
       ];
 
   return (
     <div className="w-full mx-auto p-4 sm:p-6">
       <Card className="mt-4 md:mt-6 mb-4 md:mb-6">
         <CardHeader>
-          <CardTitle className="text-xl md:text-2xl font-bold">Support & Announcements</CardTitle>
+          <CardTitle className="text-xl md:text-2xl font-bold">{t('contactMessages.supportAndAnnouncements')}</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Mobile: Dropdown Selector */}
           <div className="block md:hidden mb-4">
             <Select value={tabValue} onValueChange={handleTabChange}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select tab" />
+                <SelectValue placeholder={t('contactMessages.selectTab')} />
               </SelectTrigger>
               <SelectContent>
                 {tabDefs.map((tab) => (
@@ -206,7 +208,7 @@ const ContactMessages = () => {
                     <div className="flex items-center gap-2 w-full">
                       {tab.icon}
                       <div className="flex items-center gap-2">
-                        <span>{tab.label}</span>
+                        <span>{t(`contactMessages.tabs.${tab.key}`)}</span>
                         {tab.key === 'all' && allUnreadCount > 0 && (
                           <Badge variant="destructive">{allUnreadCount > 99 ? '99+' : allUnreadCount}</Badge>
                         )}
@@ -261,7 +263,7 @@ const ContactMessages = () => {
                 size="lg"
               >
                 <EmailIcon className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
-                Contact Support
+                {t('contactMessages.contactSupport')}
               </Button>
             </div>
           )}

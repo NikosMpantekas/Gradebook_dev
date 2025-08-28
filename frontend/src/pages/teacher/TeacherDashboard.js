@@ -34,12 +34,14 @@ import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
+import { useTranslation } from 'react-i18next';
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { isFeatureEnabled, loading: featuresLoading } = useFeatureToggles();
+  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,7 +71,7 @@ const TeacherDashboard = () => {
     
     if (user.role !== 'teacher') {
       console.log('TeacherDashboard: User is not teacher, redirecting');
-      toast.error('Access denied. Teacher privileges required.');
+      toast.error(t('teacher.accessDenied'));
       navigate('/app/dashboard');
       return;
     }
@@ -234,7 +236,7 @@ const TeacherDashboard = () => {
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md mb-6">
           <div className="flex items-center space-x-2">
             <XCircle className="h-5 w-5" />
-            <span>Access denied. Teacher privileges required.</span>
+            <span>{t('teacher.accessDenied')}</span>
           </div>
         </div>
       </div>
@@ -245,8 +247,8 @@ const TeacherDashboard = () => {
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-light tracking-wide">Welcome back, {user?.name}!</h1>
-        <p className="text-muted-foreground">Manage your classes, grades, and student communications.</p>
+        <h1 className="text-3xl font-light tracking-wide">{t('teacher.welcomeBackName', { name: user?.name })}</h1>
+        <p className="text-muted-foreground">{t('teacher.subtitle')}</p>
       </div>
 
       {/* Maintenance Notifications */}
@@ -258,23 +260,23 @@ const TeacherDashboard = () => {
         <div className="space-y-4 h-full flex flex-col justify-center">
           <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1 flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('teacher.totalStudents')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="flex flex-col justify-center flex-1 pt-0">
               <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalStudents}</div>
-              <p className="text-xs text-muted-foreground">Enrolled students</p>
+              <p className="text-xs text-muted-foreground">{t('teacher.enrolledStudents')}</p>
             </CardContent>
           </Card>
 
           <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1 flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('teacher.activeClasses')}</CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="flex flex-col justify-center flex-1 pt-0">
               <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalClasses}</div>
-              <p className="text-xs text-muted-foreground">Current classes</p>
+              <p className="text-xs text-muted-foreground">{t('teacher.currentClasses')}</p>
             </CardContent>
           </Card>
         </div>
@@ -284,7 +286,7 @@ const TeacherDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
-              <span>Quick Actions</span>
+              <span>{t('teacher.quickActions')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -295,7 +297,7 @@ const TeacherDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Plus className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Create Grade</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.createGrade')}</span>
               </Button>
 
               <Button
@@ -304,7 +306,7 @@ const TeacherDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Edit className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Manage Grades</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.manageGrades')}</span>
               </Button>
 
               <Button
@@ -313,7 +315,7 @@ const TeacherDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Send Notifications</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.sendNotifications')}</span>
               </Button>
 
               <Button
@@ -322,7 +324,7 @@ const TeacherDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <MessageSquare className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">View Notifications</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.viewNotifications')}</span>
               </Button>
 
               <Button
@@ -331,7 +333,7 @@ const TeacherDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Schedule</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.schedule')}</span>
               </Button>
 
               <Button
@@ -340,7 +342,7 @@ const TeacherDashboard = () => {
                 className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
               >
                 <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">Student Stats</span>
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.studentStats')}</span>
               </Button>
             </div>
           </CardContent>
@@ -352,7 +354,7 @@ const TeacherDashboard = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
             <Bell className="h-5 w-5 text-primary" />
-            <span>Recent Notifications</span>
+            <span>{t('teacher.recentNotifications')}</span>
           </CardTitle>
           <Button 
             variant="outline" 
@@ -360,7 +362,7 @@ const TeacherDashboard = () => {
             onClick={() => navigate('/app/teacher/notifications')}
             className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
           >
-            View All
+            {t('teacher.viewAll')}
           </Button>
         </CardHeader>
         <CardContent>
@@ -405,7 +407,7 @@ const TeacherDashboard = () => {
           ) : (
             <div className="text-center py-8 text-muted-foreground fade-in-up">
               <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No recent notifications</p>
+              <p>{t('teacher.noRecentNotifications')}</p>
             </div>
           )}
         </CardContent>
@@ -418,7 +420,7 @@ const TeacherDashboard = () => {
             <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
               <Info className="h-5 w-5" />
               <span className="text-sm">
-                Some dashboard features are currently disabled. Contact your system administrator to enable additional features.
+                {t('navigation.featuresDisabledMessage')}
               </span>
             </div>
           </CardContent>
