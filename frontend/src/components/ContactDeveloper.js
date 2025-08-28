@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, Bug } from 'lucide-react';
+import { Send, Bug, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
 import { Button } from './ui/button';
@@ -88,17 +88,9 @@ const ContactDeveloper = ({ open, onClose }) => {
     <Dialog open={open} onOpenChange={!sending ? onClose : undefined}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
             <DialogTitle>Contact Developer</DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              disabled={sending}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
           <DialogDescription>
             Send us a message, report a bug, or request a feature
@@ -145,6 +137,9 @@ const ContactDeveloper = ({ open, onClose }) => {
               This is a bug report
             </Label>
           </div>
+          <p className="text-xs text-muted-foreground -mt-2 ml-7">
+            Enable this if you’re reporting a defect so we can triage faster.
+          </p>
           
           {status && (
             <div className={`p-3 rounded-lg ${

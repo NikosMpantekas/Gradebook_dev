@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   ExpandMore,
   Bug,
@@ -24,6 +25,7 @@ import { Separator } from './ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
+  const { t } = useTranslation();
   const [replyText, setReplyText] = useState({});
   const [replying, setReplying] = useState({});
   const [expandedPanel, setExpandedPanel] = useState(null);
@@ -31,9 +33,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
   if (!messages || messages.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">
-          No messages available.
-        </p>
+        <p className="text-muted-foreground">{t('contactMessages.noAdminMessages')}</p>
       </div>
     );
   }
@@ -94,13 +94,13 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
         status: newStatus
       }, config);
 
-      toast.success('Status updated successfully');
+      toast.success(t('contactMessages.statusUpdated'));
       if (onMessagesChanged) {
         onMessagesChanged();
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Failed to update status');
+      toast.error(t('contactMessages.statusUpdateFailed'));
     }
   };
 
@@ -120,7 +120,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
         adminReply: replyText[messageId].trim()
       }, config);
 
-      toast.success('Reply sent successfully');
+      toast.success(t('contactMessages.replySent'));
       setReplyText({
         ...replyText,
         [messageId]: ''
@@ -135,7 +135,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       }
     } catch (error) {
       console.error('Error sending reply:', error);
-      toast.error('Failed to send reply');
+      toast.error(t('contactMessages.replyFailed'));
     }
   };
 
@@ -152,13 +152,13 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
 
       await axios.patch(`${API_URL}/api/contact/${messageId}/read`, {}, config);
 
-      toast.success('Message marked as read');
+      toast.success(t('contactMessages.markedAsRead'));
       if (onMessagesChanged) {
         onMessagesChanged();
       }
     } catch (error) {
       console.error('Error marking as read:', error);
-      toast.error('Failed to mark as read');
+      toast.error(t('contactMessages.markAsReadFailed'));
     }
   };
 
@@ -206,19 +206,19 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <Label className="text-muted-foreground">From:</Label>
+                        <Label className="text-muted-foreground">{t('contactMessages.from')}:</Label>
                         <p className="font-medium">{message.userName || 'Unknown User'}</p>
                       </div>
                       <div>
-                        <Label className="text-muted-foreground">School:</Label>
+                        <Label className="text-muted-foreground">{t('contactMessages.school')}:</Label>
                         <p className="font-medium">{message.schoolName || 'Unknown School'}</p>
                       </div>
                       <div>
-                        <Label className="text-muted-foreground">Email:</Label>
+                        <Label className="text-muted-foreground">{t('contactMessages.email')}:</Label>
                         <p className="font-medium">{message.userEmail || 'No email'}</p>
                       </div>
                       <div>
-                        <Label className="text-muted-foreground">Date:</Label>
+                        <Label className="text-muted-foreground">{t('contactMessages.date')}:</Label>
                         <p className="font-medium">
                           {new Date(message.createdAt).toLocaleDateString()}
                         </p>
@@ -228,7 +228,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                     <Separator />
                     
                     <div>
-                      <Label className="text-muted-foreground">Message:</Label>
+                      <Label className="text-muted-foreground">{t('contactMessages.message')}:</Label>
                       <p className="mt-1 text-foreground">{message.message}</p>
                     </div>
                     
@@ -236,7 +236,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                       <>
                         <Separator />
                         <div>
-                          <Label className="text-muted-foreground">Admin Reply:</Label>
+                          <Label className="text-muted-foreground">{t('contactMessages.adminReply')}:</Label>
                           <p className="mt-1 text-foreground">{message.adminReply}</p>
                         </div>
                       </>
@@ -251,10 +251,10 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="in-progress">In Progress</SelectItem>
-                          <SelectItem value="replied">Replied</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
+                          <SelectItem value="new">{t('contactMessages.status.new')}</SelectItem>
+                          <SelectItem value="in-progress">{t('contactMessages.status.in_progress')}</SelectItem>
+                          <SelectItem value="replied">{t('contactMessages.status.replied')}</SelectItem>
+                          <SelectItem value="closed">{t('contactMessages.status.closed')}</SelectItem>
                         </SelectContent>
                       </Select>
                       
@@ -265,20 +265,20 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                           onClick={() => handleMarkAsRead(message._id)}
                         >
                           <MailOpen className="mr-2 h-4 w-4" />
-                          Mark as Read
+                          {t('contactMessages.markAsRead')}
                         </Button>
                       )}
                     </div>
                     
                     {!message.adminReply && (
                       <div className="space-y-2">
-                        <Label htmlFor={`reply-${message._id}`}>Reply:</Label>
+                        <Label htmlFor={`reply-${message._id}`}>{t('contactMessages.reply')}:</Label>
                         <div className="flex space-x-2">
                           <Input
                             id={`reply-${message._id}`}
                             value={replyText[message._id] || ''}
                             onChange={(e) => handleReplyChange(message._id, e.target.value)}
-                            placeholder="Type your reply..."
+                            placeholder={t('contactMessages.replyPlaceholder')}
                             className="flex-1"
                           />
                           <Button
@@ -286,7 +286,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                             disabled={!replyText[message._id] || replyText[message._id].trim() === ''}
                           >
                             <Send className="mr-2 h-4 w-4" />
-                            Send
+                            {t('contactMessages.send')}
                           </Button>
                         </div>
                       </div>

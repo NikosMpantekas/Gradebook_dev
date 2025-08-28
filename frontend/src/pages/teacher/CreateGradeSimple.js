@@ -25,10 +25,12 @@ import { Separator } from '../../components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
+import { useTranslation } from 'react-i18next';
 
 const CreateGradeSimple = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const { t } = useTranslation();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -106,7 +108,7 @@ const CreateGradeSimple = () => {
       }
     } catch (error) {
       console.error('[CreateGrade] Error loading filter options:', error);
-      toast.error('Failed to load filter options');
+      toast.error(t('teacherGrades.createPage.loadFiltersFailed'));
       setFilterOptions({ schoolBranches: [], directions: [], subjects: [] });
     } finally {
       setLoadingFilters(false);
@@ -205,7 +207,7 @@ const CreateGradeSimple = () => {
       }
     } catch (error) {
       console.error('[CreateGrade] Error loading students:', error);
-      toast.error('Failed to load students');
+      toast.error(t('teacherGrades.createPage.loadStudentsFailed'));
       setStudents([]);
     } finally {
       setLoadingStudents(false);
@@ -306,7 +308,7 @@ const CreateGradeSimple = () => {
         const selectedSubject = subjects.find(s => s.name === selectedFilters.subject);
         
         if (!selectedSubject) {
-          toast.error('Subject not found');
+          toast.error(t('teacherGrades.createPage.subjectNotFound'));
           return;
         }
         
@@ -340,15 +342,15 @@ const CreateGradeSimple = () => {
           console.log(`[CreateGrade] Redirecting ${user.role} to: ${redirectPath}`);
           navigate(redirectPath);
         } else {
-          throw new Error('Failed to create grade');
+          throw new Error(t('teacherGrades.createPage.createFailed'));
         }
       } else {
-        throw new Error('Failed to fetch subjects');
+        throw new Error(t('teacherGrades.createPage.fetchSubjectsFailed'));
       }
       
     } catch (error) {
       console.error('[CreateGrade] Error creating grade:', error);
-      const errorMessage = error.message || 'Failed to create grade';
+      const errorMessage = error.message || t('teacherGrades.createPage.createFailed');
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -377,12 +379,12 @@ const CreateGradeSimple = () => {
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          {user.role === 'admin' ? 'Admin: Create New Grade' : 'Create New Grade'}
+          {user.role === 'admin' ? t('teacherGrades.createPage.titleAdmin') : t('teacherGrades.createPage.titleTeacher')}
         </h1>
         <p className="text-muted-foreground">
           {user.role === 'admin' 
-            ? 'Add a new grade for any student across all classes and subjects.'
-            : 'Add a new grade for a student. Fill in the required information below.'
+            ? t('teacherGrades.createPage.subtitleAdmin')
+            : t('teacherGrades.createPage.subtitleTeacher')
           }
         </p>
       </div>
@@ -392,20 +394,20 @@ const CreateGradeSimple = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Filter className="mr-2 h-5 w-5" />
-            Class Filters
+            {t('teacherGrades.createPage.filtersCardTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loadingFilters ? (
             <div className="flex justify-center items-center p-4">
               <Spinner className="text-primary" />
-              <span className="ml-2">Loading filter options...</span>
+              <span className="ml-2">{t('teacherGrades.createPage.loadingFilters')}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* School Branch Filter */}
               <div className="space-y-2">
-                <Label htmlFor="schoolBranch">School Branch</Label>
+                <Label htmlFor="schoolBranch">{t('teacherGrades.createPage.schoolBranch')}</Label>
                 <Select
                   value={selectedFilters.schoolBranch}
                   onValueChange={(value) => {
@@ -415,7 +417,7 @@ const CreateGradeSimple = () => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select school branch" />
+                    <SelectValue placeholder={t('teacherGrades.createPage.schoolBranchPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {filterOptions.schoolBranches.map((branch) => (
@@ -429,7 +431,7 @@ const CreateGradeSimple = () => {
               
               {/* Subject Filter */}
               <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
+                <Label htmlFor="subject">{t('teacherGrades.subject')}</Label>
                 <Select
                   value={selectedFilters.subject}
                   onValueChange={(value) => {
@@ -440,7 +442,7 @@ const CreateGradeSimple = () => {
                   disabled={!selectedFilters.schoolBranch}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select subject" />
+                    <SelectValue placeholder={t('teacherGrades.createPage.subjectPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {filterOptions.subjects.map((subject) => (
@@ -451,7 +453,7 @@ const CreateGradeSimple = () => {
                   </SelectContent>
                 </Select>
                 {!selectedFilters.schoolBranch && (
-                  <p className="text-sm text-muted-foreground">Select a school branch first</p>
+                  <p className="text-sm text-muted-foreground">{t('teacherGrades.createPage.selectBranchFirst')}</p>
                 )}
               </div>
             </div>
@@ -468,7 +470,7 @@ const CreateGradeSimple = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Award className="h-6 w-6 text-primary" />
-                    <CardTitle>Basic Information</CardTitle>
+                    <CardTitle>{t('teacherGrades.createPage.basicInfoTitle')}</CardTitle>
                   </div>
                   {expandedSections.has('basic') ? (
                     <ChevronUp className="h-5 w-5 text-muted-foreground" />
@@ -484,20 +486,20 @@ const CreateGradeSimple = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Student Selection */}
                   <div className="space-y-2">
-                    <Label htmlFor="studentId">Student *</Label>
+                    <Label htmlFor="studentId">{t('teacherGrades.student')} *</Label>
                     <Select value={formData.studentId} onValueChange={(value) => handleSelectChange('studentId', value)}>
                       <SelectTrigger className={errors.studentId ? 'border-destructive' : ''}>
-                        <SelectValue placeholder="Select a student" />
+                        <SelectValue placeholder={t('teacherGrades.createPage.studentPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {loadingStudents ? (
                           <div className="flex items-center justify-center p-4">
                             <Spinner className="text-primary" />
-                            <span className="ml-2">Loading students...</span>
+                            <span className="ml-2">{t('teacherGrades.createPage.loadingStudents')}</span>
                           </div>
                         ) : students.length === 0 ? (
                           <div className="p-4 text-center text-muted-foreground">
-                            {!selectedFilters.subject ? 'Select all filters first' : 'No students found for selected filters'}
+                            {!selectedFilters.subject ? t('teacherGrades.createPage.selectAllFiltersFirst') : t('teacherGrades.createPage.noStudentsFoundForFilters')}
                           </div>
                         ) : (
                           students.map((student) => (
@@ -518,7 +520,7 @@ const CreateGradeSimple = () => {
 
                   {/* Grade Value */}
                   <div className="space-y-2">
-                    <Label htmlFor="value">Grade Value *</Label>
+                    <Label htmlFor="value">{t('teacherGrades.createPage.gradeValueLabel')} *</Label>
                     <Input
                       id="value"
                       name="value"
@@ -528,7 +530,7 @@ const CreateGradeSimple = () => {
                       max="100"
                       value={formData.value}
                       onChange={handleInputChange}
-                      placeholder="0.0 - 100.0"
+                      placeholder={t('teacherGrades.createPage.gradeValuePlaceholder')}
                       className={errors.value ? 'border-destructive' : ''}
                     />
                     {errors.value && (
@@ -540,7 +542,7 @@ const CreateGradeSimple = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Date */}
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date *</Label>
+                    <Label htmlFor="date">{t('teacherGrades.createPage.dateLabel')} *</Label>
                     <Input
                       id="date"
                       name="date"
@@ -567,7 +569,7 @@ const CreateGradeSimple = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Plus className="h-6 w-6 text-primary" />
-                    <CardTitle>Advanced Options</CardTitle>
+                    <CardTitle>{t('teacherGrades.createPage.advancedOptionsTitle')}</CardTitle>
                   </div>
                   {expandedSections.has('advanced') ? (
                     <ChevronUp className="h-5 w-5 text-muted-foreground" />
@@ -582,13 +584,13 @@ const CreateGradeSimple = () => {
               <CardContent className="space-y-4">
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description">{t('teacherGrades.createPage.descriptionLabelOptional')}</Label>
                   <Textarea
                     id="description"
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    placeholder="Add any additional notes about this grade..."
+                    placeholder={t('teacherGrades.createPage.descriptionPlaceholder')}
                     rows={3}
                   />
                 </div>
@@ -601,14 +603,14 @@ const CreateGradeSimple = () => {
         {(formData.studentId || formData.subjectId || formData.value) && (
           <Card>
             <CardHeader>
-              <CardTitle>Grade Preview</CardTitle>
+              <CardTitle>{t('teacherGrades.createPage.previewTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {formData.studentId && (
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Student:</span>
+                    <span className="font-medium">{t('teacherGrades.createPage.previewStudent')}</span>
                     <span>{getSelectedStudent()?.name}</span>
                   </div>
                 )}
@@ -616,7 +618,7 @@ const CreateGradeSimple = () => {
                 {selectedFilters.subject && (
                   <div className="flex items-center space-x-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Subject:</span>
+                    <span className="font-medium">{t('teacherGrades.createPage.previewSubject')}</span>
                     <span>{selectedFilters.subject}</span>
                   </div>
                 )}
@@ -624,7 +626,7 @@ const CreateGradeSimple = () => {
                 {formData.value && (
                   <div className="flex items-center space-x-2">
                     <Award className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Grade:</span>
+                    <span className="font-medium">{t('teacherGrades.createPage.previewGrade')}</span>
                     <Badge variant="default">{formData.value}</Badge>
                   </div>
                 )}
@@ -632,7 +634,7 @@ const CreateGradeSimple = () => {
                 {formData.date && (
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Date:</span>
+                    <span className="font-medium">{t('teacherGrades.createPage.previewDate')}</span>
                     <span>{new Date(formData.date).toLocaleDateString()}</span>
                   </div>
                 )}
@@ -650,11 +652,11 @@ const CreateGradeSimple = () => {
             disabled={loading}
           >
             <X className="mr-2 h-4 w-4" />
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={loading}>
             <Save className="mr-2 h-4 w-4" />
-            {loading ? 'Creating...' : 'Create Grade'}
+            {loading ? t('teacherGrades.createPage.creating') : t('teacherGrades.createGrade')}
           </Button>
         </div>
       </form>

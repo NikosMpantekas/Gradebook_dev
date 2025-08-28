@@ -9,6 +9,7 @@ import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Switch } from '../../../components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 /**
  * NotificationForm component handles the basic notification form fields
@@ -21,12 +22,13 @@ const NotificationForm = ({
   onChange,
   disabled
 }) => {
+  const { t } = useTranslation();
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center space-x-3">
           <MessageSquare className="h-6 w-6 text-primary" />
-          <CardTitle>Notification Details</CardTitle>
+          <CardTitle>{t('teacherNotifications.createPage.detailsTitle')}</CardTitle>
         </div>
       </CardHeader>
       
@@ -35,7 +37,7 @@ const NotificationForm = ({
         <div className="space-y-2">
           <Label htmlFor="title" className="flex items-center space-x-2">
             <Type className="h-4 w-4" />
-            <span>Notification Title *</span>
+            <span>{t('teacherNotifications.createPage.titleLabel')} *</span>
           </Label>
           <Input
             id="title"
@@ -43,14 +45,14 @@ const NotificationForm = ({
             value={formData.title}
             onChange={onChange}
             disabled={disabled}
-            placeholder="e.g., Important Class Update, Assignment Reminder..."
+            placeholder={t('teacherNotifications.createPage.titlePlaceholder')}
             className={errors.title ? 'border-destructive' : ''}
           />
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Enter a clear, descriptive title for your notification
+            {t('teacherNotifications.createPage.titleHelp')}
           </p>
         </div>
 
@@ -58,7 +60,7 @@ const NotificationForm = ({
         <div className="space-y-2">
           <Label htmlFor="message" className="flex items-center space-x-2">
             <MessageSquare className="h-4 w-4" />
-            <span>Notification Message *</span>
+            <span>{t('teacherNotifications.createPage.messageLabel')} *</span>
           </Label>
           <Textarea
             id="message"
@@ -66,7 +68,7 @@ const NotificationForm = ({
             value={formData.message}
             onChange={onChange}
             disabled={disabled}
-            placeholder="Enter your notification message here..."
+            placeholder={t('teacherNotifications.createPage.messagePlaceholder')}
             rows={4}
             className={errors.message ? 'border-destructive' : ''}
           />
@@ -74,7 +76,7 @@ const NotificationForm = ({
             <p className="text-sm text-destructive">{errors.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Write your notification message. Be clear and concise.
+            {t('teacherNotifications.createPage.messageHelp')}
           </p>
         </div>
 
@@ -91,14 +93,14 @@ const NotificationForm = ({
           />
           <Label htmlFor="isImportant" className="flex items-center space-x-2">
             <AlertTriangle className="h-4 w-4 text-warning" />
-            <span>Mark as Important</span>
+            <span>{t('teacherNotifications.createPage.markImportant')}</span>
           </Label>
         </div>
         
         {formData.isImportant && (
           <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
             <p className="text-sm text-warning-foreground">
-              Important notifications will be highlighted and may be prioritized in delivery.
+              {t('teacherNotifications.createPage.importantHint')}
             </p>
           </div>
         )}

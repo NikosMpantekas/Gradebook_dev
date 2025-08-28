@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { API_URL } from '../../config/appConfig';
+import { useTranslation } from 'react-i18next';
 
 // Components
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -53,6 +54,7 @@ const ManageGrades = () => {
 
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Get token from user object or localStorage as fallback
   const authToken = user?.token || localStorage.getItem('token');
@@ -63,7 +65,7 @@ const ManageGrades = () => {
       fetchStudents();
       fetchSubjects();
     } else {
-      toast.error('Authentication required. Please log in again.');
+      toast.error(t('teacherGrades.authRequired'));
     }
   }, [user, authToken]);
 
@@ -79,7 +81,7 @@ const ManageGrades = () => {
       console.log('Backend health check response:', response.status);
     } catch (error) {
       console.error('Backend connectivity test failed:', error);
-      toast.error('Warning: Backend server may not be accessible');
+      toast.error(t('teacherGrades.backendWarning'));
     }
   };
 
@@ -143,14 +145,14 @@ const ManageGrades = () => {
 
       if (response.status === 401) {
         console.error('Authentication failed for students fetch');
-        toast.error('Authentication failed. Please log in again.');
+        toast.error(t('teacherGrades.authRequired'));
         return;
       }
 
       if (response.status === 403) {
         const errorMessage = user.role === 'admin' 
-          ? 'Access denied. Admin privileges required.'
-          : 'Access denied. Teachers only.';
+          ? t('teacherGrades.accessDeniedAdmin')
+          : t('teacherGrades.accessDeniedTeacher');
         console.error(errorMessage);
         toast.error(errorMessage);
         return;
@@ -162,17 +164,17 @@ const ManageGrades = () => {
         
         if (!data || data.length === 0) {
           const message = user.role === 'admin' 
-            ? 'No students found in the system.'
-            : 'No students found. You may need to be assigned to classes first.';
+            ? t('teacherGrades.noStudentsSystem')
+            : t('teacherGrades.noStudentsAssigned');
           toast.info(message);
         }
       } else {
         console.error('Failed to fetch students:', response.status, response.statusText);
-        toast.error(`Failed to fetch students: ${response.status} ${response.statusText}`);
+        toast.error(t('teacherGrades.fetchStudentsFailed'));
       }
     } catch (error) {
       console.error('Error fetching students:', error);
-      toast.error('Error fetching students. Please try again.');
+      toast.error(t('teacherGrades.fetchStudentsError'));
     }
   };
 
@@ -271,12 +273,12 @@ const ManageGrades = () => {
 
   const handleEditSave = async () => {
     if (!editGradeData.id) {
-      toast.error('Cannot save edit - no grade ID provided');
+      toast.error(t('teacherGrades.noGradeId'));
       return;
     }
 
     if (editGradeData.value === '' || editGradeData.value === null) {
-      toast.error('Grade value cannot be empty');
+      toast.error(t('teacherGrades.emptyGradeValue'));
       return;
     }
 
@@ -295,7 +297,7 @@ const ManageGrades = () => {
       });
 
       if (response.ok) {
-        toast.success('Grade updated successfully');
+        toast.success(t('teacherGrades.updateSuccess'));
         handleEditClose();
         fetchGrades(); // Refresh the grades list
       } else {
@@ -304,12 +306,12 @@ const ManageGrades = () => {
       }
     } catch (error) {
       console.error('Error updating grade:', error);
-      toast.error(error.message || 'Failed to update grade');
+      toast.error(error.message || t('teacherGrades.updateFailed'));
     }
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete ${selectedGrades.length} grade(s)?`)) {
+    if (!window.confirm(t('teacherGrades.confirmDeleteMany', { count: selectedGrades.length }))) {
       return;
     }
 
@@ -325,17 +327,17 @@ const ManageGrades = () => {
       );
 
       await Promise.all(promises);
-      toast.success(`${selectedGrades.length} grade(s) deleted successfully`);
+      toast.success(t('teacherGrades.deleteManySuccess', { count: selectedGrades.length }));
       setSelectedGrades([]);
       fetchGrades();
     } catch (error) {
       console.error('Error deleting grades:', error);
-      toast.error('Failed to delete grades');
+      toast.error(t('teacherGrades.deleteManyFailed'));
     }
   };
 
   const handleDeleteGrade = async (gradeId) => {
-    if (!window.confirm('Are you sure you want to delete this grade?')) {
+    if (!window.confirm(t('teacherGrades.confirmDeleteOne'))) {
       return;
     }
 
@@ -349,7 +351,7 @@ const ManageGrades = () => {
       });
 
       if (response.ok) {
-        toast.success('Grade deleted successfully');
+        toast.success(t('teacherGrades.deleteSuccess'));
         fetchGrades(); // Refresh the list
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -357,7 +359,7 @@ const ManageGrades = () => {
       }
     } catch (error) {
       console.error('Error deleting grade:', error);
-      toast.error(error.message || 'Failed to delete grade');
+      toast.error(error.message || t('teacherGrades.deleteFailed'));
     }
   };
 
@@ -449,7 +451,7 @@ const ManageGrades = () => {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Spinner className="text-primary" />
-          <p className="text-muted-foreground">Loading grades...</p>
+          <p className="text-muted-foreground">{t('teacherGrades.loading')}</p>
         </div>
       </div>
     );
@@ -461,12 +463,12 @@ const ManageGrades = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {user.role === 'admin' ? 'Admin Grade Management' : 'Manage Grades'}
+              {user.role === 'admin' ? t('teacherGrades.adminTitle') : t('teacherGrades.teacherTitle')}
             </h1>
             <p className="text-muted-foreground">
               {user.role === 'admin' 
-                ? 'View, filter, edit, and delete grades across all classes and teachers'
-                : 'View, filter, edit, and delete grades for your assigned classes'
+                ? t('teacherGrades.adminSubtitle')
+                : t('teacherGrades.teacherSubtitle')
               }
             </p>
           </div>
@@ -475,7 +477,7 @@ const ManageGrades = () => {
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Create Grade
+            {t('teacherGrades.createGrade')}
           </Button>
         </div>
       </div>
@@ -486,7 +488,7 @@ const ManageGrades = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
-              Filters & Search
+              {t('teacherGrades.filtersTitle')}
             </CardTitle>
             <Button
               variant="outline"
@@ -494,7 +496,7 @@ const ManageGrades = () => {
               onClick={() => setExpandedFilters(!expandedFilters)}
             >
               {expandedFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              {expandedFilters ? 'Hide' : 'Show'} Filters
+              {expandedFilters ? t('teacherGrades.hideFilters') : t('teacherGrades.showFilters')}
             </Button>
           </div>
         </CardHeader>
@@ -505,11 +507,11 @@ const ManageGrades = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {/* Search */}
                 <div className="space-y-2">
-                  <Label>Search</Label>
+                  <Label>{t('teacherGrades.search')}</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search grades..."
+                      placeholder={t('teacherGrades.searchPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -519,16 +521,16 @@ const ManageGrades = () => {
 
                 {/* Student Filter */}
                 <div className="space-y-2">
-                  <Label>Student</Label>
+                  <Label>{t('teacherGrades.student')}</Label>
                   <Select
                     value={filters.student}
                     onValueChange={(value) => handleFilterChange('student', value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All Students" />
+                      <SelectValue placeholder={t('teacherGrades.allStudents')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Students</SelectItem>
+                      <SelectItem value="all">{t('teacherGrades.allStudents')}</SelectItem>
                       {students.map((student) => (
                         <SelectItem key={student._id} value={student._id}>
                           {student.name}
@@ -540,16 +542,16 @@ const ManageGrades = () => {
 
                 {/* Subject Filter */}
                 <div className="space-y-2">
-                  <Label>Subject</Label>
+                  <Label>{t('teacherGrades.subject')}</Label>
                   <Select
                     value={filters.subject}
                     onValueChange={(value) => handleFilterChange('subject', value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All Subjects" />
+                      <SelectValue placeholder={t('teacherGrades.allSubjects')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Subjects</SelectItem>
+                      <SelectItem value="all">{t('teacherGrades.allSubjects')}</SelectItem>
                       {subjects.map((subject) => (
                         <SelectItem key={subject._id} value={subject._id}>
                           {subject.name}
@@ -561,7 +563,7 @@ const ManageGrades = () => {
 
                 {/* Date From */}
                 <div className="space-y-2">
-                  <Label>Date From</Label>
+                  <Label>{t('teacherGrades.dateFrom')}</Label>
                   <Input
                     type="date"
                     value={filters.dateFrom}
@@ -571,7 +573,7 @@ const ManageGrades = () => {
 
                 {/* Date To */}
                 <div className="space-y-2">
-                  <Label>Date To</Label>
+                  <Label>{t('teacherGrades.dateTo')}</Label>
                   <Input
                     type="date"
                     value={filters.dateTo}
@@ -582,10 +584,10 @@ const ManageGrades = () => {
 
               <div className="flex items-center justify-between mt-4">
                 <Button variant="outline" onClick={clearFilters}>
-                  Clear All Filters
+                  {t('teacherGrades.clearAllFilters')}
                 </Button>
                 <div className="text-sm text-muted-foreground">
-                  {filteredGrades.length} of {grades.length} grades
+                  {t('teacherGrades.countSummary', { count: filteredGrades.length, total: grades.length })}
                 </div>
               </div>
             </CardContent>
@@ -599,15 +601,15 @@ const ManageGrades = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedGrades.length} grade(s) selected
+                {t('teacherGrades.bulkSelected', { count: selectedGrades.length })}
               </span>
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={() => setSelectedGrades([])}>
-                  Deselect All
+                  {t('teacherGrades.deselectAll')}
                 </Button>
                 <Button variant="destructive" onClick={handleBulkDelete}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Selected
+                  {t('teacherGrades.deleteSelected')}
                 </Button>
               </div>
             </div>
@@ -618,15 +620,15 @@ const ManageGrades = () => {
       {/* Grades Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Grades ({filteredGrades.length})</CardTitle>
+          <CardTitle>{t('teacherGrades.gradesHeading', { count: filteredGrades.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredGrades.length === 0 ? (
             <div className="text-center py-8">
               <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Grades Found</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('teacherGrades.noGrades')}</h3>
               <p className="text-muted-foreground">
-                {grades.length === 0 ? 'No grades have been created yet.' : 'No grades match the current filters.'}
+                {grades.length === 0 ? t('teacherGrades.noGradesYet') : t('teacherGrades.noGradesMatch')}
               </p>
             </div>
           ) : (
@@ -650,7 +652,7 @@ const ManageGrades = () => {
                       className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('student')}
                     >
-                      Student
+                      {t('teacherGrades.tableStudent')}
                       {sortConfig.field === 'subject' && (
                         <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -659,7 +661,7 @@ const ManageGrades = () => {
                       className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('subject')}
                     >
-                      Subject
+                      {t('teacherGrades.tableSubject')}
                       {sortConfig.field === 'subject' && (
                         <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -668,7 +670,7 @@ const ManageGrades = () => {
                       className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('value')}
                     >
-                      Grade
+                      {t('teacherGrades.tableGrade')}
                       {sortConfig.field === 'value' && (
                         <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -677,13 +679,13 @@ const ManageGrades = () => {
                       className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
                       onClick={() => handleSort('createdAt')}
                     >
-                      Date
+                      {t('teacherGrades.tableDate')}
                       {sortConfig.field === 'createdAt' && (
                         <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </th>
-                    <th className="text-left p-2">Description</th>
-                    <th className="text-left p-2">Actions</th>
+                    <th className="text-left p-2">{t('teacherGrades.tableDescription')}</th>
+                    <th className="text-left p-2">{t('teacherGrades.tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -695,8 +697,8 @@ const ManageGrades = () => {
                           onCheckedChange={() => handleGradeSelection(grade._id)}
                         />
                       </td>
-                      <td className="p-2 font-medium">{grade.student?.name || 'Unknown Student'}</td>
-                      <td className="p-2">{grade.subject?.name || 'Unknown Subject'}</td>
+                      <td className="p-2 font-medium">{grade.student?.name || t('teacherGrades.unknownStudent')}</td>
+                      <td className="p-2">{grade.subject?.name || t('teacherGrades.unknownSubject')}</td>
                       <td className="p-2">
                         <Badge variant={grade.value >= 5 ? 'default' : 'destructive'}>
                           {grade.value}
@@ -715,7 +717,7 @@ const ManageGrades = () => {
                             size="sm"
                             onClick={() => handleEditGrade(grade)}
                           >
-                            Edit
+                            {t('teacherGrades.edit')}
                           </Button>
                           <Button
                             variant="destructive"

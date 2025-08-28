@@ -411,11 +411,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         <DialogContent className="w-[90vw] max-w-sm sm:max-w-md fade-in">
           <DialogHeader>
             <DialogTitle>{t('sidebar.logoutConfirmTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('sidebar.logoutConfirmDescription')}
-            </DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
+            {t('sidebar.logoutConfirmDescription')}
             {t('sidebar.logoutConfirmText')}
           </p>
           <DialogFooter>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   ChevronDown,
   Bug,
@@ -11,13 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 const UserMessagesList = ({ messages }) => {
+  const { t } = useTranslation();
   const [expandedMessage, setExpandedMessage] = useState(null);
 
   if (!messages || messages.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">
-          You haven't sent any messages yet.
+          {t('contactMessages.noUserMessages')}
         </p>
       </div>
     );
@@ -100,7 +102,7 @@ const UserMessagesList = ({ messages }) => {
               <CardContent className="pt-0">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Message</h4>
+                    <h4 className="font-medium text-foreground mb-2">{t('contactMessages.message')}</h4>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {message.message}
                     </p>
@@ -108,7 +110,7 @@ const UserMessagesList = ({ messages }) => {
                   
                   {message.adminReply && (
                     <div>
-                      <h4 className="font-medium text-foreground mb-2">Admin Reply</h4>
+                      <h4 className="font-medium text-foreground mb-2">{t('contactMessages.adminReply')}</h4>
                       <div className="bg-muted/50 p-3 rounded-lg">
                         <p className="text-sm text-foreground">
                           {message.adminReply}
@@ -118,7 +120,7 @@ const UserMessagesList = ({ messages }) => {
                   )}
                   
                   <div className="text-xs text-muted-foreground">
-                    Sent: {new Date(message.createdAt).toLocaleDateString()}
+                    {t('contactMessages.sent')}: {new Date(message.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </CardContent>
