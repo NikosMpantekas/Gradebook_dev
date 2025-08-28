@@ -498,6 +498,32 @@ app.use(
   require("./routes/eventRoutes")
 ); // Calendar Events API
 
+// Attendance System Routes
+app.use(
+  "/api/sessions",
+  protect,
+  checkMaintenanceMode,
+  setSchoolContext,
+  addFeatureFlags,
+  require("./routes/sessionRoutes")
+); // Sessions API
+app.use(
+  "/api/attendance",
+  protect,
+  checkMaintenanceMode,
+  setSchoolContext,
+  addFeatureFlags,
+  require("./routes/attendanceRoutes")
+); // Attendance API
+app.use(
+  "/api/reports",
+  protect,
+  checkMaintenanceMode,
+  setSchoolContext,
+  addFeatureFlags,
+  require("./routes/reportingRoutes")
+); // Attendance Reports API
+
 logger.info("SERVER", "Routes configured with proper middleware ordering");
 
 // Add essential middleware AFTER route definitions but BEFORE frontend serving

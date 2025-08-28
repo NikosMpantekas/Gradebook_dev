@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { auditLogPlugin } = require('../middleware/auditLogMiddleware');
 
 const classSchema = mongoose.Schema(
   {
@@ -83,5 +84,11 @@ classSchema.index({ direction: 1, schoolId: 1 });
 classSchema.index({ schoolBranch: 1, schoolId: 1 });
 classSchema.index({ 'teachers': 1, schoolId: 1 });
 classSchema.index({ 'students': 1, schoolId: 1 });
+
+// Apply audit logging plugin to track class changes
+classSchema.plugin(auditLogPlugin, {
+  modelName: 'Class',
+  trackFields: ['name', 'subject', 'direction', 'schoolBranch', 'description', 'students', 'teachers', 'schedule', 'active']
+});
 
 module.exports = mongoose.model('Class', classSchema);

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { auditLogPlugin } = require('../middleware/auditLogMiddleware');
 
 const userSchema = mongoose.Schema(
   {
@@ -316,6 +317,12 @@ userSchema.pre('save', async function (next) {
     console.error('Error hashing password in pre-save middleware:', error);
     next(error);
   }
+});
+
+// Apply audit logging plugin to track user changes
+userSchema.plugin(auditLogPlugin, {
+  modelName: 'User',
+  trackFields: ['name', 'email', 'role', 'schoolId', 'mobilePhone', 'personalEmail', 'isActive']
 });
 
 module.exports = mongoose.model('User', userSchema);
