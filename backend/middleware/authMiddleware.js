@@ -658,12 +658,46 @@ const canManageStudents = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Generic authorization middleware that accepts multiple roles
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      logger.warn('AUTH', 'Authorization check failed - no user in request', {
+        path: req.originalUrl,
+        roles: roles
+      });
+      res.status(401);
+      throw new Error('Not authorized - no user found');
+    }
+
+    if (!roles.includes(req.user.role)) {
+      logger.warn('AUTH', 'Authorization check failed - insufficient role', {
+        userId: req.user._id,
+        userRole: req.user.role,
+        requiredRoles: roles,
+        path: req.originalUrl
+      });
+      res.status(403);
+      throw new Error(`Access denied. Required roles: ${roles.join(', ')}`);
+    }
+
+    logger.info('AUTH', 'Authorization check passed', {
+      userId: req.user._id,
+      userRole: req.user.role,
+      path: req.originalUrl
+    });
+    
+    next();
+  };
+};
+
 module.exports = { 
   protect, 
   admin, 
   superadmin,
   teacher, 
   student,
+  authorize,
   // Maintenance mode middleware
   checkMaintenanceMode,
   // NEW: School permission-based middleware
