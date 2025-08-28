@@ -148,6 +148,47 @@ const registerSchemaModels = (connection) => {
       connection.model('PushSubscription', pushSubscriptionSchema);
       console.log('✅ PushSubscription model registered');
     }
+
+    // 6. Register attendance system models
+    // Import and register Session model
+    try {
+      const sessionModel = require('../models/sessionModel');
+      if (!connection.models['Session']) {
+        console.log('✅ Session model registered');
+      }
+    } catch (error) {
+      console.log('⚠️  Session model registration skipped:', error.message);
+    }
+
+    // Import and register Attendance model
+    try {
+      const attendanceModel = require('../models/attendanceModel');
+      if (!connection.models['Attendance']) {
+        console.log('✅ Attendance model registered');
+      }
+    } catch (error) {
+      console.log('⚠️  Attendance model registration skipped:', error.message);
+    }
+
+    // Import and register AuditLog model
+    try {
+      const auditLogModel = require('../models/auditLogModel');
+      if (!connection.models['AuditLog']) {
+        console.log('✅ AuditLog model registered');
+      }
+    } catch (error) {
+      console.log('⚠️  AuditLog model registration skipped:', error.message);
+    }
+
+    // Import and register Attachment model
+    try {
+      const attachmentModel = require('../models/attachmentModel');
+      if (!connection.models['Attachment']) {
+        console.log('✅ Attachment model registered');
+      }
+    } catch (error) {
+      console.log('⚠️  Attachment model registration skipped:', error.message);
+    }
     
     console.log('Schema models registration complete ✅');
   } catch (error) {

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { auditLogPlugin } = require('../middleware/auditLogMiddleware');
 
 const gradeSchema = mongoose.Schema(
   {
@@ -45,5 +46,11 @@ const gradeSchema = mongoose.Schema(
 
 // Create a compound index to ensure unique grades per student, subject, date, and schoolId
 gradeSchema.index({ student: 1, subject: 1, date: 1, schoolId: 1 }, { unique: true });
+
+// Apply audit logging plugin to track grade changes
+gradeSchema.plugin(auditLogPlugin, {
+  modelName: 'Grade',
+  trackFields: ['student', 'subject', 'teacher', 'value', 'description', 'date']
+});
 
 module.exports = mongoose.model('Grade', gradeSchema);
