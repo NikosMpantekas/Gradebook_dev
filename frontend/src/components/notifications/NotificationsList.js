@@ -1,5 +1,6 @@
 import React from 'react';
 import { format, isValid, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
   BellOff, 
@@ -29,6 +30,7 @@ const NotificationsList = ({
   onDelete,
   onNavigate 
 }) => {
+  const { t } = useTranslation();
   const { darkMode } = useTheme();
   // Safely validate notification data
   const validateNotification = (notification) => {
@@ -49,19 +51,19 @@ const NotificationsList = ({
   // Safe date formatting
   const formatNotificationDate = (dateString) => {
     try {
-      if (!dateString) return 'Unknown date';
+      if (!dateString) return t('notifications.unknownDate');
       
       const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
       
       if (!isValid(date)) {
         console.warn('Invalid date for notification:', dateString);
-        return 'Invalid date';
+        return t('notifications.dateError');
       }
       
       return format(date, 'MMM dd, yyyy HH:mm');
     } catch (error) {
       console.error('Error formatting notification date:', error);
-      return 'Date error';
+              return t('notifications.dateError');
     }
   };
 
@@ -98,10 +100,10 @@ const NotificationsList = ({
       <div className="flex flex-col items-center py-16 text-center px-4">
         <AlertCircle className="h-16 w-16 text-destructive mb-4" />
         <h3 className="text-lg font-semibold text-destructive mb-2">
-          Error loading notifications
+          {t('notifications.loadFailed')}
         </h3>
         <p className="text-sm text-muted-foreground">
-          Invalid notification data received. Please refresh the page.
+          {t('notifications.invalidNotificationData')}
         </p>
       </div>
     );
@@ -112,12 +114,12 @@ const NotificationsList = ({
       <div className="flex flex-col items-center py-16 text-center px-4">
         <BellOff className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-          {tabValue === 0 ? 'No notifications received' : 'No notifications sent'}
+          {tabValue === 0 ? t('notifications.noNotificationsReceived') : t('notifications.noNotificationsSent')}
         </h3>
         <p className="text-sm text-muted-foreground">
           {tabValue === 0 
-            ? 'You will see new notifications here when they arrive.' 
-            : 'Notifications you send will appear here.'
+            ? t('notifications.noNotificationsReceivedDesc')
+            : t('notifications.noNotificationsSentDesc')
           }
         </p>
       </div>
@@ -132,10 +134,10 @@ const NotificationsList = ({
       <div className="flex flex-col items-center py-16 text-center px-4">
         <AlertCircle className="h-16 w-16 text-warning mb-4" />
         <h3 className="text-lg font-semibold text-warning mb-2">
-          Invalid notification data
+          {t('notifications.invalidNotificationDataShort')}
         </h3>
         <p className="text-sm text-muted-foreground">
-          All notifications contain invalid data. Please contact support.
+          {t('notifications.allNotificationsInvalid')}
         </p>
       </div>
     );
@@ -156,12 +158,12 @@ const NotificationsList = ({
           
           const safeNotification = {
             _id: notification._id || 'unknown',
-            title: notification.title || 'Untitled',
-            message: notification.message || 'No message',
+            title: notification.title || t('notifications.untitled'),
+            message: notification.message || t('notifications.noMessage'),
             isRead: Boolean(notification.isRead || notification.read),
             isSeen: Boolean(notification.isSeen || notification.seen),
             isImportant: Boolean(notification.isImportant || notification.urgent),
-            sender: notification.sender || { name: 'Unknown sender' },
+            sender: notification.sender || { name: t('notifications.unknownSender') },
             createdAt: notification.createdAt || new Date().toISOString()
           };
 
@@ -208,10 +210,10 @@ const NotificationsList = ({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
+                      <p className="text-sm text-muted-foreground leading-relaxed break-words">
                         {safeNotification.message}
                       </p>
-                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                      <div className="hidden sm:flex items-center space-x-2 text-xs text-muted-foreground">
                         <User className="h-3 w-3" />
                         <span>{safeNotification.sender.name}</span>
                         <span>•</span>
@@ -309,10 +311,10 @@ const NotificationsList = ({
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="sm:hidden flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                   <div className="flex items-center space-x-2">
                     <User className="h-3 w-3" />
-                    <span>{safeNotification.sender.name || 'Unknown sender'}</span>
+                    <span>{safeNotification.sender.name || t('notifications.unknownSender')}</span>
                   </div>
                   <span>{formatNotificationDate(safeNotification.createdAt)}</span>
                 </div>
