@@ -1,79 +1,54 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  Divider,
-  Alert,
-  Grid,
-  Autocomplete,
-  Chip,
-  Tabs,
-  Tab,
-  Card,
-  CardContent,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  OutlinedInput,
-  InputAdornment,
-  Skeleton,
-  Snackbar,
-  Tooltip,
-  useTheme,
-  useMediaQuery,
-  Avatar
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Schedule as ScheduleIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  School as SchoolIcon,
-  Group as GroupIcon,
-  Person as PersonIcon,
-  Book as BookIcon
-} from '@mui/icons-material';
-import { toast } from 'react-toastify';
 import { useSelector, useDispatch } from 'react-redux';
-import { useCallback } from 'react';
+import { toast } from 'react-toastify';
+import { format } from 'date-fns';
 import { getClasses, deleteClass, createClass, updateClass } from '../../features/classes/classSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
 import { getUsers } from '../../features/users/userSlice';
+import { useTranslation } from 'react-i18next';
+
+// shadcn/ui components
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Spinner } from '../../components/ui/spinner';
+
+// Lucide React icons
+import {
+  Plus as AddIcon,
+  Edit as EditIcon,
+  Trash2 as DeleteIcon,
+  Search as SearchIcon,
+  Clock as ScheduleIcon,
+  Building as SchoolIcon,
+  Users as GroupIcon,
+  User as PersonIcon,
+  BookOpen as BookIcon,
+  X as ClearIcon
+} from 'lucide-react';
+
+// Import our custom components
+import { useIsMobile } from '../../components/hooks/use-mobile';
 
 const ManageClasses = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useIsMobile();
   const { user } = useSelector((state) => state.auth);
   const { classes: reduxClasses, isLoading, isError, message } = useSelector(
     (state) => state.classes
   );
   const { schools } = useSelector((state) => state.schools);
   const { users } = useSelector((state) => state.users);
+  const { t } = useTranslation();
   
   // State for dialog operations
   const [open, setOpen] = useState(false);
@@ -86,7 +61,7 @@ const ManageClasses = () => {
   const [forceRefreshTrigger, setForceRefreshTrigger] = useState(0);
   
   // State for form tabs
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState('basic');
   
   // Form state
   const [formOpen, setFormOpen] = useState(false);
@@ -135,244 +110,8 @@ const ManageClasses = () => {
       );
   }, [users, studentFilter]);
 
-  // Mobile card layout for classes
-  const renderMobileContent = () => {
-    if (isLoading) {
-      return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-          <CircularProgress />
-          <Typography variant="body1" sx={{ ml: 2 }}>
-            Loading classes...
-          </Typography>
-        </Box>
-      );
-    }
-
-    if (!filteredClasses || filteredClasses.length === 0) {
-      return (
-        <Box py={4} textAlign="center">
-          <Typography variant="subtitle1" color="text.secondary">
-            No classes found.
-          </Typography>
-        </Box>
-      );
-    }
-
-    return (
-      <Box sx={{ px: { xs: 1, sm: 2 } }}>
-        {filteredClasses.map((classItem) => (
-          <Card
-            key={classItem._id}
-            sx={{
-              mb: 2,
-              '&:hover': {
-                boxShadow: 2,
-                transform: 'translateY(-1px)',
-                transition: 'all 0.2s ease'
-              }
-            }}
-          >
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                <Avatar sx={{ 
-                  bgcolor: 'primary.main',
-                  width: 50,
-                  height: 50,
-                  flexShrink: 0
-                }}>
-                  <BookIcon />
-                </Avatar>
-                
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 'bold',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {classItem.subject || classItem.subjectName}
-                    </Typography>
-                    <Chip
-                      label={classItem.direction || classItem.directionName}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <SchoolIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {schools?.find((s) => s._id === classItem.schoolBranch || s._id === classItem.schoolId)?.name || 'N/A'}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <GroupIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {classItem.students?.length || 0} students
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {classItem.teachers?.length || 0} teachers
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {classItem.schedule && classItem.schedule.length > 0 ? 'Has schedule' : 'No schedule'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-              
-              {/* Action buttons */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
-                {classItem.schedule && classItem.schedule.length > 0 && (
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={() => {
-                      handleEdit(classItem);
-                      setTabValue(2); // Go directly to schedule tab
-                    }}
-                    title="View Schedule"
-                  >
-                    <ScheduleIcon />
-                  </IconButton>
-                )}
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={() => {
-                    handleEdit(classItem);
-                    setTabValue(0); // Go to basic info tab
-                  }}
-                  title="Edit Class"
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  onClick={() => handleDelete(classItem._id)}
-                  color="error"
-                  size="small"
-                  title="Delete Class"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    );
-  };
-
-  // Desktop table layout
-  const renderDesktopContent = () => {
-    return (
-      <TableContainer component={Paper} elevation={1}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Subject</TableCell>
-              <TableCell>Direction</TableCell>
-              <TableCell>School</TableCell>
-              <TableCell>Students</TableCell>
-              <TableCell>Teachers</TableCell>
-              <TableCell>Schedule</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    <CircularProgress />
-                    <Typography variant="body2" sx={{ ml: 2 }}>
-                    Loading classes...
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : filteredClasses && filteredClasses.length > 0 ? (
-                filteredClasses.map((classItem) => (
-                  <TableRow key={classItem._id}>
-                    <TableCell>{classItem.subject || classItem.subjectName}</TableCell>
-                    <TableCell>{classItem.direction || classItem.directionName}</TableCell>
-                    <TableCell>
-                      {schools?.find((s) => s._id === classItem.schoolBranch || s._id === classItem.schoolId)?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {classItem.students?.length || 0} students
-                    </TableCell>
-                    <TableCell>
-                      {classItem.teachers?.length || 0} teachers
-                    </TableCell>
-                    <TableCell>
-                      {classItem.schedule && classItem.schedule.length > 0 ? (
-                        <Tooltip title="View Schedule">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => {
-                              handleEdit(classItem);
-                              setTabValue(2); // Go directly to schedule tab
-                            }}
-                          >
-                            <ScheduleIcon />
-                          </IconButton>
-                        </Tooltip>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">No schedule</Typography>
-                      )}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Edit Class">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => {
-                            handleEdit(classItem);
-                            setTabValue(0); // Go to basic info tab
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Class">
-                        <IconButton
-                          onClick={() => handleDelete(classItem._id)}
-                          color="error"
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No classes found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-    );
-  };
-
   // Filter classes when searchTerm or classes changes
-  useEffect(() => {
+  const applyFilters = useCallback(() => {
     // If no classes yet from Redux, don't try to filter
     if (!reduxClasses) {
       setFilteredClasses([]);
@@ -408,7 +147,11 @@ const ManageClasses = () => {
 
     setFilteredClasses(filtered);
     console.log(`Found ${filtered.length} classes matching search term`);
-  }, [searchTerm, reduxClasses, forceRefreshTrigger]);
+  }, [searchTerm, reduxClasses]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [searchTerm, reduxClasses, applyFilters]);
 
   // Load all required data
   const loadData = async () => {
@@ -497,8 +240,6 @@ const ManageClasses = () => {
     setFormOpen(true);
   };
 
-
-
   // CRITICAL FIX: Enhanced handleFormClose function to properly reset all states
   const handleFormClose = () => {
     console.log('Closing form and resetting all states');
@@ -530,7 +271,7 @@ const ManageClasses = () => {
     
     // Reset the form mode and tabs
     setFormMode('add');
-    setTabValue(0);
+    setTabValue('basic');
     
     // Force refresh classes with a short delay to ensure backend is updated
     setTimeout(() => {
@@ -610,8 +351,6 @@ const ManageClasses = () => {
     setFormOpen(true);
   };
 
-  // The handleFormClose function is now defined above with enhanced functionality
-
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setClassData((prevData) => ({
@@ -637,8 +376,6 @@ const ManageClasses = () => {
       schedule: updatedSchedule,
     }));
   };
-  
-
   
   // Toggle teacher selection with checkbox
   const handleTeacherToggle = (teacherId) => {
@@ -691,22 +428,6 @@ const ManageClasses = () => {
     }));
   };
   
-  // Handle student selection
-  const handleStudentChange = (selectedStudents) => {
-    setClassData((prev) => ({
-      ...prev,
-      students: selectedStudents.map(student => student._id),
-    }));
-  };
-  
-  // Handle teacher selection
-  const handleTeacherChange = (selectedTeachers) => {
-    setClassData((prev) => ({
-      ...prev,
-      teachers: selectedTeachers.map(teacher => teacher._id),
-    }));
-  };
-  
   // Enhanced form submission handler to fix "updating forever" issue
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -749,483 +470,618 @@ const ManageClasses = () => {
     };
     
     try {
-    if (formMode === 'add') {
-      // Create a new class
-      console.log('Creating new class with data:', submissionData);
-      try {
-        const addResult = await dispatch(createClass(submissionData)).unwrap();
-        console.log('Class creation result:', addResult);
-        toast.success('Class created successfully');
+      if (formMode === 'add') {
+        // Create a new class
+        console.log('Creating new class with data:', submissionData);
+        try {
+          const addResult = await dispatch(createClass(submissionData)).unwrap();
+          console.log('Class creation result:', addResult);
+          toast.success('Class created successfully');
+          
+          // Close dialog first then refresh data to avoid UI jank
+          handleFormClose(); // This already resets isSubmitting
+        } catch (createError) {
+          console.error('Failed to create class:', createError);
+          toast.error(`Creation failed: ${createError?.message || 'Unknown error'}`);
+          setIsSubmitting(false); // Only reset here if handleFormClose isn't called
+        }
+      } else {
+        // For update mode, verify we have a class ID
+        if (!classData._id) {
+          console.error('Cannot update class: Missing class ID');
+          toast.error('Cannot update class: Missing ID');
+          setIsSubmitting(false);
+          return;
+        }
         
-        // Close dialog first then refresh data to avoid UI jank
-        handleFormClose(); // This already resets isSubmitting
-      } catch (createError) {
-        console.error('Failed to create class:', createError);
-        toast.error(`Creation failed: ${createError?.message || 'Unknown error'}`);
-        setIsSubmitting(false); // Only reset here if handleFormClose isn't called
+        // CRITICAL FIX: Ensure the ID is properly set with priority
+        const classIdToUse = classData._id;
+        const enhancedData = {
+          ...submissionData,
+          _id: classIdToUse,  // Primary ID format
+          id: classIdToUse    // Alternative ID format for robustness
+        };
+        
+        console.log('Updating class with ID:', classIdToUse);
+        console.log('Full update payload:', enhancedData);
+        
+        try {
+          console.log('Dispatching updateClass action...');
+          const updateResult = await dispatch(updateClass(enhancedData)).unwrap();
+          console.log('Class update API success:', updateResult);
+          
+          // CRITICAL FIX: Always close dialog on success to prevent "updating forever"
+          toast.success('Class updated successfully');
+          handleFormClose(); // This function now resets isSubmitting and refreshes data
+          
+          console.log('Update workflow complete, dialog closed and refresh triggered');
+        } catch (updateError) {
+          // Handle errors properly
+          console.error('Class update operation failed:', updateError);
+          toast.error(`Update failed: ${updateError?.message || 'Unknown error'}`);
+          
+          // IMPORTANT: Always close dialog and reset states even on error
+          handleFormClose();
+        }
       }
-    } else {
-      // For update mode, verify we have a class ID
-      if (!classData._id) {
-        console.error('Cannot update class: Missing class ID');
-        toast.error('Cannot update class: Missing ID');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // CRITICAL FIX: Ensure the ID is properly set with priority
-      const classIdToUse = classData._id;
-      const enhancedData = {
-        ...submissionData,
-        _id: classIdToUse,  // Primary ID format
-        id: classIdToUse    // Alternative ID format for robustness
-      };
-      
-      console.log('Updating class with ID:', classIdToUse);
-      console.log('Full update payload:', enhancedData);
-      
-      try {
-        console.log('Dispatching updateClass action...');
-        const updateResult = await dispatch(updateClass(enhancedData)).unwrap();
-        console.log('Class update API success:', updateResult);
-        
-        // CRITICAL FIX: Always close dialog on success to prevent "updating forever"
-        toast.success('Class updated successfully');
-        handleFormClose(); // This function now resets isSubmitting and refreshes data
-        
-        console.log('Update workflow complete, dialog closed and refresh triggered');
-      } catch (updateError) {
-        // Handle errors properly
-        console.error('Class update operation failed:', updateError);
-        toast.error(`Update failed: ${updateError?.message || 'Unknown error'}`);
-        
-        // IMPORTANT: Always close dialog and reset states even on error
-        handleFormClose();
-      }
+    } catch (generalError) {
+      // This catches any other errors not caught by the inner try-catch blocks
+      console.error('Unhandled form submission error:', generalError);
+      toast.error(generalError?.message || 'An unexpected error occurred');
+      setIsSubmitting(false);
     }
-  } catch (generalError) {
-    // This catches any other errors not caught by the inner try-catch blocks
-    console.error('Unhandled form submission error:', generalError);
-    toast.error(generalError?.message || 'An unexpected error occurred');
-    setIsSubmitting(false);
-  }
-};  
+  };  
 
-const confirmDelete = async () => {
-  if (!deleteId) return;
-  
-  try {
-    await dispatch(deleteClass(deleteId)).unwrap();
-    toast.success('Class deleted successfully');
-    handleClose();
-  } catch (error) {
-    toast.error(`Error deleting class: ${error?.message || 'Unknown error'}`);
-  }
-};
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    
+    try {
+      await dispatch(deleteClass(deleteId)).unwrap();
+      toast.success('Class deleted successfully');
+      handleClose();
+    } catch (error) {
+      toast.error(`Error deleting class: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  // Mobile card layout for classes
+  const renderMobileContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="lg" />
+          <span className="ml-2 text-sm text-foreground">Loading classes...</span>
+        </div>
+      );
+    }
+
+    if (!filteredClasses || filteredClasses.length === 0) {
+      return (
+        <div className="py-4 text-center">
+          <p className="text-muted-foreground">
+            No classes found.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-1 sm:px-2">
+        {filteredClasses.map((classItem) => (
+          <Card
+            key={classItem._id}
+            className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-600 dark:hover:shadow-gray-800/50"
+          >
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-start gap-3">
+                <Avatar className="w-12 h-12 flex-shrink-0 bg-primary">
+                  <AvatarFallback>
+                    <BookIcon className="h-6 w-6" />
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
+                      {classItem.subject || classItem.subjectName}
+                    </h3>
+                    <Badge variant="outline" className="text-xs">
+                      {classItem.direction || classItem.directionName}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <SchoolIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {schools?.find((s) => s._id === classItem.schoolBranch || s._id === classItem.schoolId)?.name || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <GroupIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {classItem.students?.length || 0} students
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <PersonIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {classItem.teachers?.length || 0} teachers
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <ScheduleIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {classItem.schedule && classItem.schedule.length > 0 ? 'Has schedule' : 'No schedule'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action buttons */}
+              <div className="flex justify-end mt-4 gap-2">
+                {classItem.schedule && classItem.schedule.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleEdit(classItem);
+                      setTabValue('schedule'); // Go directly to schedule tab
+                    }}
+                    title="View Schedule"
+                    className="hover:bg-muted dark:hover:bg-gray-700"
+                  >
+                    <ScheduleIcon className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleEdit(classItem);
+                    setTabValue('basic'); // Go to basic info tab
+                  }}
+                  title="Edit Class"
+                  className="hover:bg-muted dark:hover:bg-gray-700"
+                >
+                  <EditIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(classItem._id)}
+                  title="Delete Class"
+                  className="hover:bg-red-700 dark:hover:bg-red-600"
+                >
+                  <DeleteIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  // Desktop table layout
+  const renderDesktopContent = () => {
+    return (
+      <div className="mt-6 rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="text-left p-4 text-foreground font-medium">
+                  Subject
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Direction
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  School
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Students
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Teachers
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Schedule
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <div className="flex justify-center items-center gap-3 py-6">
+                      <Spinner size="sm" />
+                      <span className="text-base text-foreground">Loading classes...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredClasses && filteredClasses.length > 0 ? (
+                filteredClasses.map((classItem) => (
+                  <tr key={classItem._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8 bg-primary">
+                          <AvatarFallback className="text-xs">
+                            <BookIcon className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-foreground text-base">
+                          {classItem.subject || classItem.subjectName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {classItem.direction || classItem.directionName}
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {schools?.find((s) => s._id === classItem.schoolBranch || s._id === classItem.schoolId)?.name || 'N/A'}
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {classItem.students?.length || 0} students
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {classItem.teachers?.length || 0} teachers
+                    </td>
+                    <td className="p-4">
+                      {classItem.schedule && classItem.schedule.length > 0 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            handleEdit(classItem);
+                            setTabValue('schedule'); // Go directly to schedule tab
+                          }}
+                          title="View Schedule"
+                          className="hover:bg-muted dark:hover:bg-gray-700"
+                        >
+                          <ScheduleIcon className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No schedule</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            handleEdit(classItem);
+                            setTabValue('basic'); // Go to basic info tab
+                          }}
+                          title="Edit Class"
+                          className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                        >
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(classItem._id)}
+                          title="Delete Class"
+                          className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
+                        >
+                          <DeleteIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <span className="text-muted-foreground text-base">No classes found.</span>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
   
   // Show loading state if data is being loaded
   if (localLoading || isLoading) {
     return (
-      <Box
-        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}
-      >
-        <CircularProgress />
-        <Typography variant="subtitle1" sx={{ ml: 2 }}>
-          Loading class data...
-        </Typography>
-      </Box>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="xl" />
+          <span className="ml-2 text-base text-foreground">{t('admin.manageClassesPage.messages.loadingClasses')}</span>
+        </div>
+      </div>
     );
   }
   
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-    <Typography variant="h4" component="h1" gutterBottom>
-      Manage Classes
-    </Typography>
-    <Typography variant="body1" color="text.secondary" paragraph>
-      Create, edit, and manage class groups for your school.
-    </Typography>
-    
-    <Divider sx={{ my: 2 }} />
-    
-    {/* Search and add controls */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
-      <TextField
-        label="Search Classes"
-        variant="outlined"
-        size="small"
-        value={searchTerm}
-        onChange={handleSearchChange}
-          sx={{ width: { xs: '100%', sm: '300px' } }}
-      />
-      <Button
-        variant="contained"
-        color="primary"
-        startIcon={<AddIcon />}
-        onClick={handleAdd}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-      >
-        Add Class
-      </Button>
-    </Box>
-    
-    {/* Classes table */}
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          {t('admin.manageClassesPage.title')}
+        </h1>
+        <p className="text-muted-foreground">
+          {t('admin.manageClassesPage.subtitle')}
+        </p>
+      </div>
+      
+      {/* Search and add controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="relative w-full sm:w-80">
+          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t('admin.manageClassesPage.searchPlaceholder')}
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="pl-10"
+          />
+        </div>
+        <Button
+          onClick={handleAdd}
+          className="w-full sm:w-auto gap-2"
+        >
+          <AddIcon className="h-4 w-4" />
+          {t('admin.manageClassesPage.addClass')}
+        </Button>
+      </div>
+      
+      {/* Classes table */}
       {isMobile ? renderMobileContent() : renderDesktopContent()}
       
       {/* Delete confirmation dialog */}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this class? This action cannot be undone.
-          </DialogContentText>
+          <DialogHeader>
+            <DialogTitle>{t('admin.manageClassesPage.dialogs.deleteClass.title')}</DialogTitle>
+            <DialogDescription>
+              {t('admin.manageClassesPage.dialogs.deleteClass.message')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              {t('common.delete')}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
       </Dialog>
       
       {/* Add/Edit form dialog */}
-      <Dialog open={formOpen} onClose={handleFormClose} maxWidth="md" fullWidth>
-        <form onSubmit={handleFormSubmit}>
-          <DialogTitle>{formMode === 'add' ? 'Add New Class' : 'Edit Class'}</DialogTitle>
-          <DialogContent>
-            <Box sx={{ width: '100%', mt: 2 }}>
-              <Tabs
-                value={tabValue}
-                onChange={(e, newValue) => setTabValue(newValue)}
-                aria-label="class form tabs"
-                variant="fullWidth"
-              >
-                <Tab label="Basic Info" />
-                <Tab label="Students & Teachers" />
-                <Tab label="Schedule" />
-              </Tabs>
+      <Dialog open={formOpen} onOpenChange={handleFormClose}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.title') : t('admin.manageClassesPage.dialogs.editClass.title')}</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleFormSubmit} className="space-y-6">
+            <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="basic">{t('admin.manageClassesPage.tabs.basicInfo')}</TabsTrigger>
+                <TabsTrigger value="people">{t('admin.manageClassesPage.tabs.people')}</TabsTrigger>
+                <TabsTrigger value="schedule">{t('admin.manageClassesPage.tabs.schedule')}</TabsTrigger>
+              </TabsList>
               
               {/* Basic Info Tab */}
-              {tabValue === 0 && (
-                <Box sx={{ p: 2 }}>
-                  <TextField
-                    name="subjectName"
-                    label="Subject Name"
-                    value={classData.subjectName}
-                    onChange={handleFormChange}
-                    fullWidth
-                    required
-                    margin="normal"
-                  />
-                  <TextField
-                    name="directionName"
-                    label="Direction Name"
-                    value={classData.directionName}
-                    onChange={handleFormChange}
-                    fullWidth
-                    required
-                    margin="normal"
-                  />
-                  <FormControl fullWidth margin="normal" required>
-                    <InputLabel>School</InputLabel>
+              <TabsContent value="basic" className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="subjectName" className="text-sm font-medium">
+                      {t('admin.manageClassesPage.form.subjectName')} *
+                    </Label>
+                    <Input
+                      id="subjectName"
+                      name="subjectName"
+                      value={classData.subjectName}
+                      onChange={handleFormChange}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="directionName" className="text-sm font-medium">
+                      {t('admin.manageClassesPage.form.directionName')} *
+                    </Label>
+                    <Input
+                      id="directionName"
+                      name="directionName"
+                      value={classData.directionName}
+                      onChange={handleFormChange}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="schoolId" className="text-sm font-medium">
+                      {t('admin.manageClassesPage.form.school')} *
+                    </Label>
                     <Select
                       name="schoolId"
                       value={classData.schoolId}
-                      onChange={handleFormChange}
-                      label="School"
+                      onValueChange={(value) => handleFormChange({ target: { name: 'schoolId', value } })}
+                      required
                     >
-                      {/* Show all available schools (don't filter by type) */}
-                      {schools && schools.length > 0 ? (
-                        schools.map((school) => (
-                          <MenuItem key={school._id} value={school._id}>
-                            {school.name}
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem disabled>No schools available</MenuItem>
-                      )}
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder={t('admin.manageClassesPage.form.school')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {schools && schools.length > 0 ? (
+                          schools.map((school) => (
+                            <SelectItem key={school._id} value={school._id}>
+                              {school.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem disabled>{t('admin.manageClassesPage.form.noSchoolsAvailable')}</SelectItem>
+                        )}
+                      </SelectContent>
                     </Select>
-                  </FormControl>
-                </Box>
-              )}
+                  </div>
+                </div>
+              </TabsContent>
               
               {/* Students & Teachers Tab */}
-              {tabValue === 1 && (
-                <Box sx={{ p: 2 }}>
-                  <Box mb={4}>
-                    <Typography variant="subtitle1" sx={{ mb: 2 }} gutterBottom>
-                      Select Students
-                    </Typography>
-                    <Autocomplete
-                      multiple
-                      disableCloseOnSelect
-                      options={filteredStudents || []}
-                      getOptionLabel={(option) => {
-                        // Ensure we have valid first and last names
-                        const firstName = option.firstName || '';
-                        const lastName = option.lastName || '';
-                        return `${firstName} ${lastName}`.trim() || option.email || 'Unknown student';
-                      }}
-                      value={(filteredStudents || []).filter(user => 
-                        classData.students && 
-                        Array.isArray(classData.students) && 
-                        classData.students.includes(user._id)
-                      )}
-                      onChange={(event, newValue) => {
-                        setClassData({
-                          ...classData,
-                          students: newValue.map(student => student._id)
-                        });
-                      }}
-                      filterOptions={(options, { inputValue }) => {
-                        return options.filter(option => 
-                          option.firstName?.toLowerCase().includes(inputValue.toLowerCase()) || 
-                          option.lastName?.toLowerCase().includes(inputValue.toLowerCase()) || 
-                          option.email?.toLowerCase().includes(inputValue.toLowerCase())
-                        );
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          variant="outlined"
-                          label="Students"
-                          placeholder="Search and select students"
-                          InputProps={{
-                            ...params.InputProps,
-                            startAdornment: (
-                              <>
-                                <InputAdornment position="start">
-                                  <SearchIcon />
-                                </InputAdornment>
-                                {params.InputProps.startAdornment}
-                              </>
-                            )
-                          }}
-                          fullWidth
-                          margin="normal"
+              <TabsContent value="people" className="space-y-6">
+                <div>
+                  <Label className="text-sm font-medium mb-4 block">
+                    {t('admin.manageClassesPage.form.selectStudents')}
+                  </Label>
+                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
+                    {filteredStudents.map((student) => (
+                      <div key={student._id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`student-${student._id}`}
+                          checked={classData.students.includes(student._id)}
+                          onCheckedChange={() => handleStudentToggle(student._id)}
                         />
-                      )}
-                      renderOption={(props, option, { selected }) => (
-                        <li {...props}>
-                          <Checkbox
-                            style={{ marginRight: 8 }}
-                            checked={selected}
-                          />
-                          <Typography variant="body2">
-                            {option.firstName} {option.lastName} • {option.email || ''}
-                          </Typography>
-                        </li>
-                      )}
-                      renderTags={(value, getTagProps) =>
-                        value.map((option, index) => (
-                          <Chip
-                            variant="outlined"
-                            label={`${option.firstName || ""} ${option.lastName || ""}`.trim() || option.email || "User"}
-                            size="small"
-                            {...getTagProps({ index })}
-                          />
-                        ))
-                      }
-                    />
-                    {classData.students.length > 0 && (
-                      <Box display="flex" justifyContent="flex-end" mt={1}>
-                        <Button 
-                          size="small" 
-                          onClick={() => setClassData({...classData, students: []})}
-                          startIcon={<ClearIcon fontSize="small" />}
-                        >
-                          Clear All
-                        </Button>
-                      </Box>
-                    )}
-                  </Box>
+                        <Label htmlFor={`student-${student._id}`} className="text-sm">
+                          {student.firstName} {student.lastName} • {student.email}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {classData.students.length > 0 && (
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setClassData({...classData, students: []})}
+                        className="gap-2"
+                      >
+                        <ClearIcon className="h-4 w-4" />
+                        {t('common.clearAll')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
-                  <Divider sx={{ my: 2 }} />
-                    
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ mb: 2 }} gutterBottom>
-                      Select Teachers
-                    </Typography>
-                    <Autocomplete
-                      multiple
-                      disableCloseOnSelect
-                      options={filteredTeachers || []}
-                      getOptionLabel={(option) => {
-                        // Ensure we have valid first and last names
-                        const firstName = option.firstName || '';
-                        const lastName = option.lastName || '';
-                        return `${firstName} ${lastName}`.trim() || option.email || 'Unknown teacher';
-                      }}
-                      value={(filteredTeachers || []).filter(user => 
-                        classData.teachers && 
-                        Array.isArray(classData.teachers) && 
-                        classData.teachers.includes(user._id)
-                      )}
-                      onChange={(event, newValue) => {
-                        setClassData({
-                          ...classData,
-                          teachers: newValue.map(teacher => teacher._id)
-                        });
-                      }}
-                      filterOptions={(options, { inputValue }) => {
-                        return options.filter(option => 
-                          option.firstName?.toLowerCase().includes(inputValue.toLowerCase()) || 
-                          option.lastName?.toLowerCase().includes(inputValue.toLowerCase()) || 
-                          option.email?.toLowerCase().includes(inputValue.toLowerCase())
-                        );
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          variant="outlined"
-                          label="Teachers"
-                          placeholder="Search and select teachers"
-                          InputProps={{
-                            ...params.InputProps,
-                            startAdornment: (
-                              <>
-                                <InputAdornment position="start">
-                                  <SearchIcon />
-                                </InputAdornment>
-                                {params.InputProps.startAdornment}
-                              </>
-                            )
-                          }}
-                          fullWidth
-                          margin="normal"
+                <div>
+                  <Label className="text-sm font-medium mb-4 block">
+                    {t('admin.manageClassesPage.form.selectTeachers')}
+                  </Label>
+                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
+                    {filteredTeachers.map((teacher) => (
+                      <div key={teacher._id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`teacher-${teacher._id}`}
+                          checked={classData.teachers.includes(teacher._id)}
+                          onCheckedChange={() => handleTeacherToggle(teacher._id)}
                         />
-                      )}
-                      renderOption={(props, option, { selected }) => (
-                        <li {...props}>
-                          <Checkbox
-                            style={{ marginRight: 8 }}
-                            checked={selected}
-                          />
-                          <Typography variant="body2">
-                            {option.firstName} {option.lastName} • {option.email || ''}
-                          </Typography>
-                        </li>
-                      )}
-                      renderTags={(value, getTagProps) =>
-                        value.map((option, index) => (
-                          <Chip
-                            variant="outlined"
-                            label={`${option.firstName || ""} ${option.lastName || ""}`.trim() || option.email || "User"}
-                            size="small"
-                            {...getTagProps({ index })}
-                          />
-                        ))
-                      }
-                    />
-                    {classData.teachers.length > 0 && (
-                      <Box display="flex" justifyContent="flex-end" mt={1}>
-                        <Button 
-                          size="small" 
-                          onClick={() => setClassData({...classData, teachers: []})}
-                          startIcon={<ClearIcon fontSize="small" />}
-                        >
-                          Clear All
-                        </Button>
-                      </Box>
-                    )}
-                  </Box>
-                </Box>
-              )}
+                        <Label htmlFor={`teacher-${teacher._id}`} className="text-sm">
+                          {teacher.firstName} {teacher.lastName} • {teacher.email}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {classData.teachers.length > 0 && (
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setClassData({...classData, teachers: []})}
+                        className="gap-2"
+                      >
+                        <ClearIcon className="h-4 w-4" />
+                        {t('common.clearAll')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
               
               {/* Schedule Tab */}
-              {tabValue === 2 && (
-                <Box sx={{ p: 2 }}>
-                  <Divider>
-                    <Typography variant="h6">Schedule</Typography>
-                  </Divider>
-                  <Box mb={2}>
-                    <Typography variant="body2" color="textSecondary">
-                      Select the days when this class takes place and set the time range.
-                    </Typography>
-                  </Box>
-                  <Grid container spacing={2}>
+              <TabsContent value="schedule" className="space-y-4">
+                <div>
+                  <Label className="text-base font-medium block mb-2">
+                    {t('admin.manageClassesPage.form.schedule')}
+                  </Label>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t('admin.manageClassesPage.form.scheduleDescription')}
+                  </p>
+                  
+                  <div className="space-y-3">
                     {classData.schedule.map((daySchedule, index) => (
-                      <Grid item xs={12} key={daySchedule.day}>
-                        <Paper sx={{ p: 2, backgroundColor: daySchedule.active ? 'rgba(25, 118, 210, 0.08)' : 'transparent' }}>
-                          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center">
-                            <Box display="flex" alignItems="center" width={{ xs: '100%', sm: 'auto' }} mb={{ xs: 1, sm: 0 }}>
-                              <Checkbox
-                                checked={daySchedule.active}
-                                onChange={() => handleDayToggle(index)}
-                                color="primary"
-                              />
-                              <Typography
-                                sx={{ width: '100px', fontWeight: daySchedule.active ? 'bold' : 'normal' }}
-                                variant="subtitle1"
-                              >
-                                {daySchedule.day}
-                              </Typography>
-                            </Box>
-                            {daySchedule.active && (
-                              <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} flex={1} gap={2}>
-                                <TextField
-                                  fullWidth
-                                  label="Start Time"
+                      <Card key={daySchedule.day} className={`p-4 ${daySchedule.active ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''}`}>
+                        <div className="flex items-center space-x-4">
+                          <Checkbox
+                            id={`day-${index}`}
+                            checked={daySchedule.active}
+                            onCheckedChange={() => handleDayToggle(index)}
+                          />
+                          <Label htmlFor={`day-${index}`} className={`text-sm font-medium ${daySchedule.active ? 'text-blue-900 dark:text-blue-100' : ''}`}>
+                            {daySchedule.day}
+                          </Label>
+                          
+                          {daySchedule.active && (
+                            <div className="flex items-center space-x-2 ml-auto">
+                              <div>
+                                <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
+                                  {t('admin.manageClassesPage.form.startTime')}
+                                </Label>
+                                <Input
+                                  id={`start-${index}`}
                                   type="time"
                                   value={daySchedule.startTime || ''}
-                                  onChange={(e) =>
-                                    handleScheduleChange(
-                                      index,
-                                      'startTime',
-                                      e.target.value
-                                    )
-                                  }
-                                  InputLabelProps={{ shrink: true }}
-                                  inputProps={{ step: 300 }}
+                                  onChange={(e) => handleScheduleChange(index, 'startTime', e.target.value)}
+                                  className="w-32"
                                 />
-                                <TextField
-                                  fullWidth
-                                  label="End Time"
+                              </div>
+                              <div>
+                                <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
+                                  {t('admin.manageClassesPage.form.endTime')}
+                                </Label>
+                                <Input
+                                  id={`end-${index}`}
                                   type="time"
                                   value={daySchedule.endTime || ''}
-                                  onChange={(e) =>
-                                    handleScheduleChange(
-                                      index,
-                                      'endTime',
-                                      e.target.value
-                                    )
-                                  }
-                                  InputLabelProps={{ shrink: true }}
-                                  inputProps={{ step: 300 }}
+                                  onChange={(e) => handleScheduleChange(index, 'endTime', e.target.value)}
+                                  className="w-32"
                                 />
-                              </Box>
-                            )}
-                          </Box>
-                        </Paper>
-                      </Grid>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
                     ))}
-                  </Grid>
-                </Box>
-              )}
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleFormClose} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <CircularProgress size={24} />
-              ) : formMode === 'add' ? (
-                'Create'
-              ) : (
-                'Update'
-              )}
-            </Button>
-          </DialogActions>
-        </form>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleFormClose} disabled={isSubmitting}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner size="sm" />
+                    {formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.creating') : t('admin.manageClassesPage.dialogs.editClass.updating')}
+                  </div>
+                ) : (
+                  formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.create') : t('admin.manageClassesPage.dialogs.editClass.update')
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

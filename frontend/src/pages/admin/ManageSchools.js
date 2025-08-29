@@ -54,7 +54,7 @@ const ManageSchools = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   // State for the school branch being edited or added
-  const [schoolBranch, setSchoolBranch] = useState({
+  const [currentSchool, setCurrentSchool] = useState({
     name: '',
     address: '',
     phone: '',
@@ -67,6 +67,7 @@ const ManageSchools = () => {
     isClusterSchool: false,
     branchDescription: '',
   });
+  
   const [schoolIdToDelete, setSchoolIdToDelete] = useState(null);
   
   // Form validation

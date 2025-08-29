@@ -2,52 +2,43 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { API_URL } from '../../config/appConfig';
-import {
-  Typography,
-  Paper,
-  Box,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  FormHelperText,
-  Divider,
-  Alert,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  Chip,
-  Checkbox,
-  ListItemText,
-  OutlinedInput,
-  Switch,
-  FormControlLabel,
-  Tooltip,
-} from '@mui/material';
-import {
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Refresh as RefreshIcon,
-  Email as EmailIcon,
-  ContentCopy as CopyIcon,
-  Person as PersonIcon,
-  Lock as LockIcon,
-  Phone as PhoneIcon,
-  AlternateEmail as AlternateEmailIcon,
-  ContentCopy as ContentCopyIcon,
-} from '@mui/icons-material';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Switch } from '../../components/ui/switch';
+import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
+
+import { Spinner } from '../../components/ui/spinner';
+import { 
+  ArrowLeft, 
+  Eye, 
+  EyeOff, 
+  RefreshCw, 
+  Copy, 
+  User, 
+  Lock, 
+  Phone, 
+  Mail,
+  Building,
+  Users,
+  BookOpen,
+  Bell,
+  FileText,
+  Shield,
+  Settings,
+  GraduationCap,
+  UserPlus
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 import { createUser, reset } from '../../features/users/userSlice';
 import axios from 'axios';
-import LoadingState from '../../components/common/LoadingState';
-import ErrorState from '../../components/common/ErrorState';
+import { useTranslation } from 'react-i18next';
 
 const CreateUser = (props) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -392,15 +383,15 @@ const CreateUser = (props) => {
       confirmPassword: newPassword
     });
     setPasswordGenerated(true);
-    toast.success('Password generated successfully!');
+    toast.success(t('admin.createUserPage.actions.passwordGenerated'));
   };
 
   const handleCopyPassword = async () => {
     try {
       await navigator.clipboard.writeText(generatedPassword);
-      toast.success('Password copied to clipboard!');
+      toast.success(t('admin.createUserPage.actions.passwordCopied'));
     } catch (error) {
-      toast.error('Failed to copy password');
+              toast.error(t('admin.createUserPage.actions.passwordCopyFailed'));
     }
   };
 
@@ -445,49 +436,49 @@ const CreateUser = (props) => {
     let isValid = true;
 
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
+      errors.name = t('admin.createUserPage.validation.nameRequired');
       isValid = false;
     }
 
     if (!formData.email) {
-      errors.email = 'Email is required';
+      errors.email = t('admin.createUserPage.validation.emailRequired');
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
+      errors.email = t('admin.createUserPage.validation.emailInvalid');
       isValid = false;
     }
 
     // Validate personal email if provided
     if (formData.personalEmail && !/\S+@\S+\.\S+/.test(formData.personalEmail)) {
-      errors.personalEmail = 'Personal email is invalid';
+              errors.personalEmail = t('admin.createUserPage.validation.emailInvalid');
       isValid = false;
     }
 
     // Validate mobile phone if provided
     if (formData.mobilePhone && !/^[\d\s\-+()]+$/.test(formData.mobilePhone)) {
-      errors.mobilePhone = 'Invalid phone number format';
+              errors.mobilePhone = t('admin.createUserPage.validation.invalidPhoneFormat');
       isValid = false;
     }
 
     // Validate required fields based on role
     if (!formData.role) {
-      errors.role = 'Role is required';
+              errors.role = t('admin.createUserPage.validation.roleRequired');
     } else if (formData.role === 'student') {
-      if (!formData.school) errors.school = 'School is required';
+              if (!formData.school) errors.school = t('admin.createUserPage.validation.schoolRequired');
     } else if (formData.role === 'teacher') {
-      if (!formData.schools || formData.schools.length === 0) errors.schools = 'At least one school is required';
+              if (!formData.schools || formData.schools.length === 0) errors.schools = t('admin.createUserPage.validation.atLeastOneSchoolRequired');
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+              errors.password = t('admin.createUserPage.validation.passwordRequired');
       isValid = false;
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+              errors.password = t('admin.createUserPage.validation.passwordTooShort');
       isValid = false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+              errors.confirmPassword = t('admin.createUserPage.validation.passwordsDoNotMatch');
       isValid = false;
     }
 
@@ -677,7 +668,7 @@ const CreateUser = (props) => {
     
     if (isSuccess && hasSubmitted.current) {
       console.log('CreateUser: Success after form submission');
-      toast.success('User created successfully');
+              toast.success(t('admin.createUserPage.messages.userCreatedSuccessfully'));
       
       // Important: Reset state and navigate
       setSubmitting(false);
@@ -695,7 +686,7 @@ const CreateUser = (props) => {
       if (submitting && hasSubmitted.current) {
         console.warn('CreateUser: Form submission timeout - resetting state');
         setSubmitting(false);
-        toast.error('Request is taking too long. Please try again.');
+        toast.error(t('admin.createUserPage.messages.requestTakingTooLong'));
         dispatch(reset());
         hasSubmitted.current = false;
       }
@@ -718,727 +709,432 @@ const CreateUser = (props) => {
   // Show a loading state when submitting the form
   if (submitting) {
     return (
-      <Box sx={{ flexGrow: 1 }}>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         <Button
-          startIcon={<ArrowBackIcon />}
+          variant="outline"
           onClick={handleBack}
           disabled
-          sx={{ mb: 2 }}
+          className="mb-6 gap-2"
         >
-          Back to Users
+          <ArrowLeft className="h-4 w-4" />
+          {t('admin.createUserPage.backToUsers')}
         </Button>
-        <LoadingState message="Creating user..." />
-      </Box>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="xl" />
+          <span className="ml-2 text-lg">Creating user...</span>
+        </div>
+      </div>
     );
   }
 
   // Show an error state if there's an error
   if (isError && !submitting) {
     return (
-      <Box sx={{ flexGrow: 1 }}>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         <Button
-          startIcon={<ArrowBackIcon />}
+          variant="outline"
           onClick={handleBack}
-          sx={{ mb: 2 }}
+          className="mb-6 gap-2"
         >
-          Back to Users
+          <ArrowLeft className="h-4 w-4" />
+          {t('admin.createUserPage.backToUsers')}
         </Button>
-        <ErrorState 
-          message={`Failed to create user: ${message || 'Unknown error'}`}
-          onRetry={() => setFormErrors({})}
-          retryText="Try Again"
-        />
-      </Box>
+        <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200">
+            Failed to create user: {message || 'Unknown error'}
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={handleBack}
-        sx={{ mb: 2 }}
-      >
-        Back to Users
-      </Button>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+              <Button
+          variant="outline"
+          onClick={handleBack}
+          className="mb-6 gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t('admin.createUserPage.backToUsers')}
+        </Button>
       
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Create New User
-        </Typography>
-        
-        <Divider sx={{ mb: 3 }} />
-        
-        <Box component="form" onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Full Name *"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                error={!!formErrors.name}
-                helperText={formErrors.name || 'Enter the user\'s full name'}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                type="email"
-                label="Login Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={!!formErrors.email}
-                helperText={formErrors.email || 'Email is auto-generated but can be edited if needed'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <Tooltip title="Email is suggested based on name but can be edited">
-                        <Chip 
-                          size="small" 
-                          color="primary" 
-                          label="Editable" 
-                          sx={{ fontSize: '0.7rem' }}
-                        />
-                      </Tooltip>
-                    </InputAdornment>
-                  ),
-                }}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Mobile Phone"
-                name="mobilePhone"
-                value={formData.mobilePhone}
-                onChange={handleChange}
-                helperText="Optional"
-                inputProps={{
-                  maxLength: 20,
-                  pattern: '[\d\s\-+()]+'
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Personal Email"
-                name="personalEmail"
-                type="email"
-                value={formData.personalEmail}
-                onChange={handleChange}
-                helperText="Optional"
-                inputProps={{
-                  autoComplete: 'email',
-                  inputMode: 'email'
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Password *"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleChange}
-                error={!!formErrors.password}
-                helperText={formErrors.password || 'Password must be at least 6 characters'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleClickShowPassword}
-                        onMouseDown={handleMouseDownPassword}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Confirm Password *"
-                name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={!!formErrors.confirmPassword}
-                helperText={formErrors.confirmPassword || 'Re-enter the password to confirm'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleClickShowConfirmPassword}
-                        onMouseDown={handleMouseDownPassword}
-                        edge="end"
-                      >
-                        {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Grid>
-            
-            {/* Password Generation Controls */}
-            <Grid item xs={12}>
-              <Paper elevation={1} sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                  Password Generation
-                </Typography>
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <UserPlus className="h-6 w-6" />
+            {t('admin.createUserPage.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Separator className="mb-6" />
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  {t('admin.createUserPage.form.fullName')}
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder={t('admin.createUserPage.form.fullNamePlaceholder')}
+                  className={formErrors.name ? 'border-red-500' : ''}
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-500">{formErrors.name}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  {t('admin.createUserPage.form.loginEmail')}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.form.emailAutoGenerated')}
+                    className={formErrors.email ? 'border-red-500' : ''}
+                    required
+                  />
+                  <Badge className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs">
+                    {t('admin.createUserPage.form.emailEditable')}
+                  </Badge>
+                </div>
+                {formErrors.email && (
+                  <p className="text-sm text-red-500">{formErrors.email}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t('admin.createUserPage.form.emailDescription')}
+                </p>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="mobilePhone" className="text-sm font-medium">
+                  {t('admin.createUserPage.form.mobilePhone')}
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="mobilePhone"
+                    name="mobilePhone"
+                    value={formData.mobilePhone}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.form.optional')}
+                    className="pl-10"
+                    maxLength={20}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{t('admin.createUserPage.form.optional')}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="personalEmail" className="text-sm font-medium">
+                  {t('admin.createUserPage.form.personalEmail')}
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="personalEmail"
+                    name="personalEmail"
+                    type="email"
+                    value={formData.personalEmail}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.form.optional')}
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{t('admin.createUserPage.form.optional')}</p>
+              </div>
+            </div>
+
+            {/* Password Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  {t('admin.createUserPage.form.password')} *
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.form.passwordPlaceholder')}
+                    className={`pl-10 ${formErrors.password ? 'border-red-500' : ''}`}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClickShowPassword}
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {formErrors.password && (
+                  <p className="text-sm text-red-500">{formErrors.password}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                  {t('admin.createUserPage.form.confirmPassword')} *
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.form.confirmPasswordPlaceholder')}
+                    className={`pl-10 ${formErrors.password ? 'border-red-500' : ''}`}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClickShowConfirmPassword}
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {formErrors.confirmPassword && (
+                  <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Password Generation */}
+            <Card className="bg-muted/50">
+              <CardContent className="pt-6">
+                                  <div className="flex items-center gap-2 mb-4">
+                    <Lock className="h-5 w-5" />
+                    <h3 className="text-lg font-semibold">{t('admin.createUserPage.passwordGeneration.title')}</h3>
+                  </div>
                 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
                     <Button
-                      variant="contained"
-                      startIcon={<RefreshIcon />}
+                      type="button"
                       onClick={handleGeneratePassword}
-                      sx={{ minWidth: 'auto' }}
+                      className="gap-2"
                     >
-                      Generate Easy Password
+                      <RefreshCw className="h-4 w-4" />
+                      {t('admin.createUserPage.passwordGeneration.generateButton')}
                     </Button>
                     
                     {passwordGenerated && (
-                      <Button
-                        variant="outlined"
-                        startIcon={<CopyIcon />}
-                        onClick={handleCopyPassword}
-                        size="small"
-                      >
-                        Copy Password
-                      </Button>
+                                              <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCopyPassword}
+                          className="gap-2"
+                        >
+                          <Copy className="h-4 w-4" />
+                          {t('admin.createUserPage.passwordGeneration.copyButton')}
+                        </Button>
                     )}
-                  </Box>
+                  </div>
                   
                   {passwordGenerated && (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Generated Password Options:
-                      </Typography>
-                      
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={showCredentials}
-                              onChange={handleToggleShowCredentials}
-                              color="primary"
-                            />
-                          }
-                          label="Show Credentials to Admin"
-                        />
+                    <div className="space-y-4">
+                      <div className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="showCredentials"
+                            checked={showCredentials}
+                            onCheckedChange={handleToggleShowCredentials}
+                          />
+                          <Label htmlFor="showCredentials">{t('admin.createUserPage.credentials.showCredentialsToAdmin')}</Label>
+                        </div>
                         
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={emailCredentials}
-                              onChange={handleToggleEmailCredentials}
-                              color="primary"
-                            />
-                          }
-                          label="Email Credentials to User"
-                        />
-                      </Box>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="emailCredentials"
+                            checked={emailCredentials}
+                            onCheckedChange={handleToggleEmailCredentials}
+                          />
+                          <Label htmlFor="emailCredentials">{t('admin.createUserPage.credentials.emailCredentialsToUser')}</Label>
+                        </div>
+                      </div>
                       
                       {showCredentials && (
-                        <Alert severity="info" sx={{ mt: 2 }}>
-                          <Typography variant="body2">
-                            <strong>Login Credentials:</strong><br/>
-                            Email: {formData.email}<br/>
-                            Password: {generatedPassword}
-                          </Typography>
-                        </Alert>
+                        <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>{t('admin.createUserPage.credentials.loginCredentials')}:</strong><br/>
+                            {t('admin.createUserPage.labels.email')} {formData.email}<br/>
+                            {t('admin.createUserPage.labels.password')} {generatedPassword}
+                          </p>
+                        </div>
                       )}
                       
                       {emailCredentials && (
-                        <Alert severity="warning" sx={{ mt: 2 }}>
-                          <Typography variant="body2">
-                            📧 Credentials will be sent to: <strong>{formData.personalEmail || formData.email}</strong><br/>
-                            Make sure the email address is correct before creating the user.
-                          </Typography>
-                        </Alert>
+                        <div className="p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <p className="text-sm text-amber-800 dark:text-amber-200">
+                            {t('admin.createUserPage.credentials.credentialsWillBeSentTo')} <strong>{formData.personalEmail || formData.email}</strong><br/>
+                            {t('admin.createUserPage.credentials.makeSureEmailCorrect')}
+                          </p>
+                        </div>
                       )}
-                    </Box>
+                    </div>
                   )}
-                </Box>
-              </Paper>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!!formErrors.role}>
-                <InputLabel id="role-label">Role *</InputLabel>
-                <Select
-                  labelId="role-label"
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  label="Role *"
-                >
-                  <MenuItem value="">
-                    <em>Select a role</em>
-                  </MenuItem>
-                  <MenuItem value="teacher">Teacher</MenuItem>
-                  <MenuItem value="student">Student</MenuItem>
-                  <MenuItem value="parent">Parent</MenuItem>
-                </Select>
-                {formErrors.role && (
-                  <FormHelperText>{formErrors.role}</FormHelperText>
-                )}
-                {adminExists && (
-                  <FormHelperText>
-                    ⚠️ An admin account already exists for this organization. Only one admin is allowed.
-                  </FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
-            
-            {/* School selection components have been removed */}
-            
-            {/* Secretary Permissions Section */}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Role Selection */}
+            <div className="space-y-2">
+                              <Label htmlFor="role" className="text-sm font-medium">
+                  {t('admin.createUserPage.role.label')} *
+                </Label>
+              <Select value={formData.role} onValueChange={(value) => handleChange({ target: { name: 'role', value } })}>
+                <SelectTrigger className={formErrors.role ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
+                </SelectContent>
+              </Select>
+              {formErrors.role && (
+                <p className="text-sm text-red-500">{formErrors.role}</p>
+              )}
+              {adminExists && (
+                <p className="text-sm text-amber-600">
+                  ⚠️ An admin account already exists for this organization. Only one admin is allowed.
+                </p>
+              )}
+            </div>
+
+            {/* Secretary Permissions */}
             {formData.role === 'secretary' && (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
-                  <Typography variant="h6" gutterBottom>
-                    Secretary Permissions
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="h-5 w-5" />
+                    <h3 className="text-lg font-semibold">Secretary Permissions</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
                     Configure which administrative functions this secretary account can access.
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageGrades}
-                            onChange={(e) => handleChange({ target: { name: 'secretary_canManageGrades', value: e.target.checked } })}
-                            color="primary"
-                          />
-                        }
-                        label="Can view and edit grades"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canSendNotifications}
-                            onChange={(e) => handleChange({ target: { name: 'secretary_canSendNotifications', value: e.target.checked } })}
-                            color="primary"
-                          />
-                        }
-                        label="Can send notifications"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageUsers}
-                            onChange={(e) => handleChange({ target: { name: 'secretary_canManageUsers', value: e.target.checked } })}
-                            color="primary"
-                          />
-                        }
-                        label="Can manage user accounts"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageSchools}
-                            onChange={(e) => handleChange({ target: { name: 'secretary_canManageSchools', value: e.target.checked } })}
-                            color="primary"
-                          />
-                        }
-                        label="Can manage schools"
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-            
-            {/* Teacher Permission Controls */}
-            {formData.role === 'teacher' && (
-              <Grid item xs={12}>
-                <Paper elevation={1} sx={{ p: 2, mt: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                    Teacher Permissions
-                  </Typography>
+                  </p>
                   
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <FormControl component="fieldset">
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={formData.canSendNotifications}
-                              onChange={(e) => {
-                                setFormData({
-                                  ...formData,
-                                  canSendNotifications: e.target.checked
-                                });
-                              }}
-                              color="primary"
-                            />
-                          }
-                          label="Can Send Notifications"
-                        />
-                        <FormHelperText>Allow this teacher to send notifications to students</FormHelperText>
-                      </FormControl>
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <FormControl component="fieldset">
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={formData.canAddGradeDescriptions}
-                              onChange={(e) => {
-                                setFormData({
-                                  ...formData,
-                                  canAddGradeDescriptions: e.target.checked
-                                });
-                              }}
-                              color="primary"
-                            />
-                          }
-                          label="Can Add Grade Descriptions"
-                        />
-                        <FormHelperText>Allow this teacher to add descriptions to grades</FormHelperText>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-            
-            {/* Parent Account Creation Section */}
-            {formData.role === 'student' && (
-              <Grid item xs={12}>
-                <Paper elevation={1} sx={{ p: 2, mt: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                    👨‍👩‍👧‍👦 Parent Account Creation
-                  </Typography>
-                  
-                  <FormControlLabel
-                    control={
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
                       <Switch
-                        checked={formData.createParentAccount || false}
-                        onChange={(e) => {
-                          setFormData({
-                            ...formData,
-                            createParentAccount: e.target.checked,
-                            // Reset parent fields if unchecked
-                            ...(!e.target.checked && {
-                              parentName: '',
-                              parentEmail: '',
-                              parentPassword: '',
-                              parentMobilePhone: '',
-                              parentPersonalEmail: '',
-                              emailParentCredentials: false
-                            })
-                          });
-                        }}
-                        color="primary"
+                        id="canManageGrades"
+                        checked={formData.secretaryPermissions.canManageGrades}
+                        onCheckedChange={(checked) => handleChange({ target: { name: 'secretary_canManageGrades', value: checked } })}
                       />
-                    }
-                    label="Create parent account for this student"
-                  />
-                  <FormHelperText sx={{ mb: 2 }}>Enable this to create a parent account that can monitor this student's academic progress</FormHelperText>
-                  
-                  {formData.createParentAccount && (
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>
-                        👤 Parent Account Information
-                      </Typography>
-                      
-                      <Grid container spacing={3}>
-                        {/* Full Name * - EXACT MATCH */}
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Full Name *"
-                            name="parentName"
-                            value={formData.parentName || ''}
-                            onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                            error={formData.createParentAccount && !formData.parentName}
-                            helperText={formData.createParentAccount && !formData.parentName ? 'Parent name is required' : 'Enter the user\'s full name'}
-                            required
-                          />
-                        </Grid>
-                        
-                        {/* Login Email * - EXACT MATCH with auto-fill */}
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            variant="outlined"
-                            type="email"
-                            label="Login Email"
-                            name="parentEmail"
-                            value={formData.parentEmail || (
-                              formData.parentName && adminSchoolInfo.domain 
-                                ? `${formData.parentName.toLowerCase().replace(/\s+/g, '.')}@${adminSchoolInfo.domain}`
-                                : ''
-                            )}
-                            onChange={(e) => setFormData({ ...formData, parentEmail: e.target.value })}
-                            error={formData.createParentAccount && !formData.parentEmail}
-                            helperText={formData.createParentAccount && !formData.parentEmail ? 'Parent login email is required' : 'Email is auto-generated from parent name but can be edited if needed'}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <Tooltip title="Email is suggested based on student email but can be edited">
-                                    <Chip 
-                                      size="small" 
-                                      color="primary" 
-                                      label="Editable" 
-                                      sx={{ fontSize: '0.7rem' }}
-                                    />
-                                  </Tooltip>
-                                </InputAdornment>
-                              ),
-                            }}
-                            required
-                          />
-                        </Grid>
-                        
-                        {/* Mobile Phone - EXACT MATCH */}
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Mobile Phone"
-                            name="parentMobilePhone"
-                            value={formData.parentMobilePhone || ''}
-                            onChange={(e) => setFormData({ ...formData, parentMobilePhone: e.target.value })}
-                            helperText="Optional"
-                            inputProps={{
-                              maxLength: 20,
-                              pattern: '[\d\s\-+()]+'
-                            }}
-                          />
-                        </Grid>
-                        
-                        {/* Personal Email - EXACT MATCH */}
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Personal Email"
-                            name="parentPersonalEmail"
-                            type="email"
-                            value={formData.parentPersonalEmail || ''}
-                            onChange={(e) => setFormData({ ...formData, parentPersonalEmail: e.target.value })}
-                            helperText="Optional"
-                            inputProps={{
-                              autoComplete: 'email',
-                              inputMode: 'email'
-                            }}
-                          />
-                        </Grid>
-                        
-                        {/* Password * - EXACT MATCH */}
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Password *"
-                            name="parentPassword"
-                            type={formData.showParentPassword ? 'text' : 'password'}
-                            value={formData.parentPassword || ''}
-                            onChange={(e) => setFormData({ ...formData, parentPassword: e.target.value })}
-                            error={formData.createParentAccount && !formData.parentPassword}
-                            helperText={formData.createParentAccount && !formData.parentPassword ? 'Password is required' : 'Password must be at least 6 characters'}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <IconButton
-                                    onClick={() => setFormData({ ...formData, showParentPassword: !formData.showParentPassword })}
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    edge="end"
-                                  >
-                                    {formData.showParentPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                                  </IconButton>
-                                </InputAdornment>
-                              )
-                            }}
-                            required
-                          />
-                        </Grid>
-                        
-                        {/* Confirm Password * - EXACT MATCH */}
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Confirm Password *"
-                            name="parentConfirmPassword"
-                            type={formData.showParentConfirmPassword ? 'text' : 'password'}
-                            value={formData.parentConfirmPassword || ''}
-                            onChange={(e) => setFormData({ ...formData, parentConfirmPassword: e.target.value })}
-                            error={formData.createParentAccount && (formData.parentPassword !== formData.parentConfirmPassword)}
-                            helperText={formData.createParentAccount && (formData.parentPassword !== formData.parentConfirmPassword) ? 'Passwords do not match' : 'Re-enter the password to confirm'}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <IconButton
-                                    onClick={() => setFormData({ ...formData, showParentConfirmPassword: !formData.showParentConfirmPassword })}
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    edge="end"
-                                  >
-                                    {formData.showParentConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                                  </IconButton>
-                                </InputAdornment>
-                              )
-                            }}
-                            required
-                          />
-                        </Grid>
-                        
-                        {/* Password Generation - EXACT MATCH */}
-                        <Grid item xs={12}>
-                          <Paper elevation={1} sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                              Password Generation
-                            </Typography>
-                            
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                                <Button
-                                  variant="contained"
-                                  startIcon={<RefreshIcon />}
-                                  onClick={() => {
-                                    const words = [
-                                      'Apple', 'Beach', 'Cloud', 'Dance', 'Eagle', 'Flame', 'Grace', 'Happy',
-                                      'Island', 'Jungle', 'Knight', 'Light', 'Magic', 'Night', 'Ocean', 'Peace',
-                                      'Quick', 'River', 'Smile', 'Trust', 'Unity', 'Voice', 'Water', 'Youth'
-                                    ];
-                                    const word = words[Math.floor(Math.random() * words.length)];
-                                    const numbers = Math.floor(1000 + Math.random() * 9000);
-                                    const symbols = ['!', '@', '#', '$', '%'];
-                                    const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-                                    const newPassword = `${word}${numbers}${symbol}`;
-                                    
-                                    setFormData({ 
-                                      ...formData, 
-                                      parentPassword: newPassword,
-                                      parentConfirmPassword: newPassword,
-                                      parentPasswordGenerated: true,
-                                      parentGeneratedPassword: newPassword
-                                    });
-                                  }}
-                                  sx={{ minWidth: 'auto' }}
-                                >
-                                  Generate Easy Password
-                                </Button>
-                                
-                                {formData.parentPasswordGenerated && (
-                                  <Button
-                                    variant="outlined"
-                                    startIcon={<ContentCopyIcon />}
-                                    onClick={async () => {
-                                      try {
-                                        await navigator.clipboard.writeText(formData.parentGeneratedPassword);
-                                        // You can add toast notification here if needed
-                                      } catch (error) {
-                                        console.error('Failed to copy password');
-                                      }
-                                    }}
-                                    size="small"
-                                  >
-                                    Copy Password
-                                  </Button>
-                                )}
-                              </Box>
-                              
-                              {formData.parentPasswordGenerated && (
-                                <Box>
-                                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    Generated Password Options:
-                                  </Typography>
-                                  
-                                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <FormControlLabel
-                                      control={
-                                        <Switch
-                                          checked={formData.showParentCredentials || false}
-                                          onChange={(e) => setFormData({ ...formData, showParentCredentials: e.target.checked })}
-                                          color="primary"
-                                        />
-                                      }
-                                      label="Show Credentials to Admin"
-                                    />
-                                    
-                                    <FormControlLabel
-                                      control={
-                                        <Switch
-                                          checked={formData.parentEmailCredentials || false}
-                                          onChange={(e) => setFormData({ ...formData, parentEmailCredentials: e.target.checked })}
-                                          color="primary"
-                                        />
-                                      }
-                                      label="Email Credentials to User"
-                                    />
-                                  </Box>
-                                  
-                                  {formData.showParentCredentials && (
-                                    <Alert severity="info" sx={{ mt: 2 }}>
-                                      <Typography variant="body2">
-                                        <strong>Parent Login Credentials:</strong><br/>
-                                        Email: {formData.parentEmail || (formData.email ? `parent.${formData.email}` : '')}<br/>
-                                        Password: {formData.parentGeneratedPassword}
-                                      </Typography>
-                                    </Alert>
-                                  )}
-                                  
-                                  {formData.parentEmailCredentials && (
-                                    <Alert severity="success" sx={{ mt: 2 }}>
-                                      <Typography variant="body2">
-                                        📧 Parent will receive login credentials via email after account creation.
-                                      </Typography>
-                                    </Alert>
-                                  )}
-                                </Box>
-                              )}
-                            </Box>
-                          </Paper>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
+                      <Label htmlFor="canManageGrades">Can view and edit grades</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canSendNotifications"
+                        checked={formData.secretaryPermissions.canSendNotifications}
+                        onCheckedChange={(checked) => handleChange({ target: { name: 'secretary_canSendNotifications', value: checked } })}
+                      />
+                      <Label htmlFor="canSendNotifications">Can send notifications</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canManageUsers"
+                        checked={formData.secretaryPermissions.canManageUsers}
+                        onCheckedChange={(checked) => handleChange({ target: { name: 'secretary_canManageUsers', value: checked } })}
+                      />
+                      <Label htmlFor="canManageUsers">Can manage user accounts</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canManageSchools"
+                        checked={formData.secretaryPermissions.canManageSchools}
+                        onCheckedChange={(checked) => handleChange({ target: { name: 'secretary_canManageSchools', value: checked } })}
+                      />
+                      <Label htmlFor="canManageSchools">Can manage schools</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-            
-            <Grid item xs={12}>
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                  disabled={isLoading}
-                  sx={{ py: 1.5, px: 4 }}
-                >
-                  {isLoading ? 'Creating User...' : 'Create User'}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </Paper>
-    </Box>
+
+            {/* Teacher Permissions */}
+            {formData.role === 'teacher' && (
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <GraduationCap className="h-5 w-5" />
+                    <h3 className="text-lg font-semibold">Teacher Permissions</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canSendNotifications"
+                        checked={formData.canSendNotifications}
+                        onCheckedChange={(checked) => setFormData({ ...formData, canSendNotifications: checked })}
+                      />
+                      <Label htmlFor="canSendNotifications">Can Send Notifications</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canAddGradeDescriptions"
+                        checked={formData.canAddGradeDescriptions}
+                        onCheckedChange={(checked) => setFormData({ ...formData, canAddGradeDescriptions: checked })}
+                      />
+                      <Label htmlFor="canAddGradeDescriptions">Can Add Grade Descriptions</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Submit Button */}
+            <div className="pt-4">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="gap-2 px-8 py-2"
+              >
+                {isLoading ? (
+                                      <>
+                      <Spinner size="sm" />
+                      {t('admin.createUserPage.actions.creatingUser')}
+                    </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    {t('admin.createUserPage.actions.createUser')}
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

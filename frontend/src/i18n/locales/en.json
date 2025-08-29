@@ -20,6 +20,7 @@
     "submit": "Submit",
     "reset": "Reset",
     "clear": "Clear",
+    "clearAll": "Clear All",
     "select": "Select",
     "download": "Download",
     "upload": "Upload",
@@ -50,7 +51,16 @@
     "success": "Success",
     "error": "Error",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -106,7 +116,8 @@
     "studentStats": "Student Statistics",
     "myGrades": "My Grades",
     "ratingSubmission": "Rating Submission",
-    "childGrades": "Child Grades"
+    "childGrades": "Child Grades",
+    "payments": "Payments"
   },
   "ratings": {
     "answerRequiredQuestions": "Please answer all required questions",
@@ -576,6 +587,375 @@
     "recentNotifications": "Recent Notifications",
     "viewAll": "View All",
     "noRecentNotifications": "No recent notifications"
+  }
+,
+  "admin": {
+    "accessDenied": "Access denied. Admin privileges required.",
+    "failedToLoad": "Failed to load dashboard data. Please refresh the page.",
+    "welcomeBackName": "Welcome back, {{name}}!",
+    "subtitle": "Manage your school's academic operations and user accounts.",
+    "totalUsers": "Total Users",
+    "activeAccounts": "Active accounts",
+    "students": "Students",
+    "enrolledStudents": "Enrolled students",
+    "teachers": "Teachers",
+    "activeTeachers": "Active teachers",
+    "classes": "Classes",
+    "activeClasses": "Active classes",
+    "quickActions": "Quick Actions",
+    "manageUsers": "Manage Users",
+    "schoolBranches": "School Branches",
+    "manageGrades": "Manage Grades",
+    "manageClasses": "Manage Classes",
+    "studentProgress": "Student Progress",
+    "manageSchedule": "Manage Schedule",
+    "recentNotifications": "Recent Notifications",
+    "viewAll": "View All",
+    "noRecentNotifications": "No recent notifications",
+    "featuresDisabled": "Some dashboard features are currently disabled. Contact your system administrator to enable additional features.",
+    "manageUsersPage": {
+      "title": "Manage Users",
+      "subtitle": "Create, edit, and manage user accounts for your school.",
+      "searchPlaceholder": "Search users...",
+      "addUser": "Add User",
+      "filters": "Filters",
+      "role": "Role",
+      "allRoles": "All Roles",
+      "status": "Status",
+      "allStatuses": "All Statuses",
+      "tableHeaders": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "roles": {
+        "admin": "Admin",
+        "teacher": "Teacher",
+        "student": "Student",
+        "secretary": "Secretary",
+        "parent": "Parent"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "viewProfile": "View Profile"
+      },
+      "dialogs": {
+        "addUser": {
+          "title": "Add New User",
+          "subtitle": "Create a new user account"
+        },
+        "editUser": {
+          "title": "Edit User",
+          "subtitle": "Update user information"
+        },
+        "deleteUser": {
+          "title": "Delete User",
+          "message": "Are you sure you want to delete this user? This action cannot be undone."
+        }
+      },
+      "messages": {
+        "noUsers": "No users found matching your criteria",
+        "loadingUsers": "Loading users...",
+        "userCreated": "User created successfully",
+        "userUpdated": "User updated successfully",
+        "userDeleted": "User deleted successfully",
+        "errorLoadingUsers": "Error loading users",
+        "unknownError": "An unknown error occurred",
+        "tryAgain": "Try Again",
+        "noUsersFound": "No users found. Click \"Add User\" to create one.",
+        "pleaseWait": "Please wait while we retrieve user data",
+        "errorMessage": "An error occurred while loading users",
+        "noUsersFoundMatchingCriteria": "No users found matching your criteria",
+        "showingUsers": "Showing {{start}} to {{end}} of {{total}} users",
+        "rowsPerPage": {
+          "5": "5",
+          "10": "10",
+          "25": "25"
+        },
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "search": "Search",
+      "filterByRole": "Filter by Role",
+      "filterBySchoolBranch": "Filter by School Branch",
+      "filterByClass": "Filter by Class",
+      "allSchoolBranches": "All School Branches",
+      "allClasses": "All Classes",
+      "cannotEditOwnAccount": "You cannot edit your own account",
+      "cannotEditSecretaryAccounts": "You cannot edit other secretary accounts",
+      "cannotEditAdminAccounts": "You cannot edit admin accounts",
+      "adminAccountsCannotBeDeleted": "Admin accounts cannot be deleted",
+      "cannotDeleteOwnAccount": "You cannot delete your own account",
+      "cannotDeleteSecretaryAccounts": "You cannot delete other secretary accounts",
+      "cannotDeleteAdminAccounts": "You cannot delete admin accounts",
+      "cannotCreateSecretaryAccounts": "You cannot create secretary accounts",
+      "createdAt": "Created",
+      "unknown": "Unknown",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "actions": "Actions"
+    },
+    "manageClassesPage": {
+      "title": "Manage Classes",
+      "subtitle": "Create, edit, and manage class groups for your school.",
+      "searchPlaceholder": "Search classes...",
+      "addClass": "Add Class",
+      "tableHeaders": {
+        "subject": "Subject",
+        "direction": "Direction",
+        "school": "School",
+        "students": "Students",
+        "teachers": "Teachers",
+        "schedule": "Schedule",
+        "actions": "Actions"
+      },
+      "tabs": {
+        "basicInfo": "Basic Info",
+        "people": "Students & Teachers",
+        "schedule": "Schedule"
+      },
+      "form": {
+        "subjectName": "Subject Name",
+        "directionName": "Direction Name",
+        "school": "School",
+        "selectStudents": "Select Students",
+        "selectTeachers": "Select Teachers",
+        "schedule": "Schedule",
+        "scheduleDescription": "Select the days when this class takes place and set the time range.",
+        "day": "Day",
+        "startTime": "Start Time",
+        "endTime": "End Time",
+        "active": "Active",
+        "noSchoolsAvailable": "No schools available"
+      },
+      "dialogs": {
+        "addClass": {
+          "title": "Add New Class",
+          "subtitle": "Create a new class group",
+          "create": "Create",
+          "creating": "Creating..."
+        },
+        "editClass": {
+          "title": "Edit Class",
+          "subtitle": "Update class information",
+          "update": "Update",
+          "updating": "Updating..."
+        },
+        "deleteClass": {
+          "title": "Delete Class",
+          "message": "Are you sure you want to delete this class? This action cannot be undone."
+        }
+      },
+      "messages": {
+        "noClasses": "No classes found matching your criteria",
+        "loadingClasses": "Loading classes...",
+        "classCreated": "Class created successfully",
+        "classUpdated": "Class updated successfully",
+        "classDeleted": "Class deleted successfully",
+        "hasSchedule": "Has schedule",
+        "noSchedule": "No schedule",
+        "viewSchedule": "View Schedule",
+        "editClass": "Edit Class",
+        "deleteClass": "Delete Class"
+      }
+    },
+    "manageSchoolsPage": {
+      "title": "Manage School Branches",
+      "subtitle": "Create, edit, and manage school branch locations and cluster schools.",
+      "searchPlaceholder": "Search schools...",
+      "addSchoolBranch": "Add School Branch",
+      "showClusterSchools": "Show cluster schools",
+      "tableHeaders": {
+        "school": "School",
+        "address": "Address",
+        "phone": "Phone",
+        "actions": "Actions"
+      },
+      "form": {
+        "schoolName": "School Branch Name",
+        "address": "Address",
+        "phone": "Phone Number",
+        "email": "Email",
+        "website": "Website",
+        "schoolDomain": "School Domain",
+        "emailDomain": "Email Domain",
+        "description": "Description",
+        "isClusterSchool": "This is a cluster school (main school, not a branch)",
+        "errors": {
+          "schoolNameRequired": "School name is required",
+          "addressRequired": "Address is required",
+          "phoneRequired": "Phone number is required",
+          "validEmail": "Please enter a valid email address",
+          "websiteProtocol": "Website must start with http:// or https://"
+        }
+      },
+      "dialogs": {
+        "addSchool": {
+          "title": "Add New School Branch",
+          "subtitle": "Create a new school branch"
+        },
+        "editSchool": {
+          "title": "Edit School Branch",
+          "subtitle": "Update school information"
+        },
+        "deleteSchool": {
+          "title": "Delete School Branch",
+          "message": "Are you sure you want to delete this school branch? This action cannot be undone."
+        }
+      },
+      "messages": {
+        "noSchools": "No school branches found",
+        "tryDifferentSearch": "Try a different search term",
+        "loadingSchools": "Loading schools...",
+        "schoolCreated": "School branch added successfully",
+        "schoolUpdated": "School branch updated successfully",
+        "schoolDeleted": "School branch deleted successfully",
+        "clusterSchool": "Cluster School",
+        "branch": "Branch",
+        "noSchoolBranchesFound": "No school branches found",
+        "tryDifferentSearchTerm": "Try a different search term",
+        "editSchool": "Edit School",
+        "deleteSchool": "Delete School",
+        "schoolAddedSuccess": "School branch added successfully",
+        "missingSchoolId": "Cannot update: Missing school ID",
+        "updateSchoolFailed": "Failed to update school"
+      },
+      "table": {
+        "school": "School",
+        "address": "Address",
+        "contact": "Contact",
+        "type": "Type",
+        "actions": "Actions"
+      }
+    },
+    "createUserPage": {
+      "title": "Create New User",
+      "subtitle": "Create a new user account for your school",
+      "backToUsers": "Back to Users",
+      "form": {
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Enter full name",
+        "mobilePhone": "Mobile Phone",
+        "mobilePhonePlaceholder": "Enter mobile number",
+        "optional": "Optional",
+        "password": "Password",
+        "passwordPlaceholder": "Password must be at least 6 characters",
+        "passwordValidation": "Password must be at least 6 characters",
+        "confirmPassword": "Confirm Password",
+        "confirmPasswordPlaceholder": "Re-enter the password to confirm",
+        "loginEmail": "Login Email",
+        "emailAutoGenerated": "Email is auto-generated",
+        "emailEditable": "Editable",
+        "emailDescription": "Email is suggested based on name but can be edited",
+        "personalEmail": "Personal Email",
+        "personalEmailPlaceholder": "Enter personal email"
+      },
+      "passwordGeneration": {
+        "title": "Password Generation",
+        "generateButton": "Generate Password",
+        "copyButton": "Copy Password"
+      },
+      "role": {
+        "label": "Role",
+        "placeholder": "Select a role",
+        "adminExistsWarning": "▲ An admin account already exists for this organization. Only one admin is allowed."
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Email is invalid",
+        "passwordRequired": "Password is required",
+        "passwordTooShort": "Password must be at least 6 characters",
+        "passwordsDoNotMatch": "Passwords do not match",
+        "roleRequired": "Role is required",
+        "schoolRequired": "School is required",
+        "directionRequired": "Direction is required",
+        "subjectRequired": "Subject is required",
+        "invalidPhoneFormat": "Invalid phone number format",
+        "atLeastOneSchoolRequired": "At least one school is required"
+      },
+      "actions": {
+        "createUser": "Create User",
+        "creatingUser": "Creating user...",
+        "passwordGenerated": "Password generated successfully",
+        "passwordCopied": "Password copied to clipboard",
+        "passwordCopyFailed": "Failed to copy password"
+      },
+      "messages": {
+        "userCreatedSuccessfully": "User created successfully",
+        "requestTakingTooLong": "Request is taking too long. Please try again."
+      },
+      "credentials": {
+        "showCredentialsToAdmin": "Show Credentials to Admin",
+        "emailCredentialsToUser": "Email Credentials to User",
+        "loginCredentials": "Login Credentials",
+        "credentialsWillBeSentTo": "📧 Credentials will be sent to:",
+        "makeSureEmailCorrect": "Make sure the email address is correct before creating the user."
+      },
+      "labels": {
+        "email": "Email:",
+        "password": "Password:"
+      },
+      "editUserPage": {
+        "title": "Edit User",
+        "subtitle": "Update user information and settings",
+        "backToUsers": "Back to Users",
+        "form": {
+          "fullName": "Full Name",
+          "fullNamePlaceholder": "Enter full name",
+          "mobilePhone": "Mobile Phone",
+          "mobilePhonePlaceholder": "Enter mobile number",
+          "optional": "Optional",
+          "loginEmail": "Login Email",
+          "loginEmailPlaceholder": "Enter login email",
+          "personalEmail": "Personal Email",
+          "personalEmailPlaceholder": "Enter personal email",
+          "role": "Role",
+          "roleCannotBeChanged": "Role cannot be changed after user creation"
+        },
+        "changePassword": {
+          "title": "Change Password",
+          "description": "Change user password",
+          "newPassword": "New Password",
+          "newPasswordPlaceholder": "Enter new password",
+          "confirmPassword": "Confirm New Password",
+          "confirmPasswordPlaceholder": "Re-enter the new password",
+          "passwordValidation": "Password must be at least 6 characters",
+          "passwordsDoNotMatch": "Passwords do not match"
+        },
+        "validation": {
+          "nameRequired": "Name is required",
+          "emailRequired": "Email is required",
+          "emailInvalid": "Email is invalid",
+          "passwordRequired": "Password is required",
+          "passwordTooShort": "Password must be at least 6 characters",
+          "passwordsDoNotMatch": "Passwords do not match"
+        },
+        "actions": {
+          "updateUser": "Update User",
+          "updatingUser": "Updating user...",
+          "userUpdated": "User updated successfully",
+          "updateFailed": "Failed to update user"
+        },
+        "permissions": {
+          "teacherPermissions": "Teacher Permissions",
+          "secretaryPermissions": "Secretary Permissions",
+          "canSendNotifications": "Can Send Notifications",
+          "canAddGradeDescriptions": "Can Add Grade Descriptions",
+          "canManageGrades": "Can Manage Grades",
+          "canManageUsers": "Can Manage Users",
+          "canManageSchools": "Can Manage Schools",
+          "canManageDirections": "Can Manage Directions",
+          "canManageSubjects": "Can Manage Subjects",
+          "canAccessStudentProgress": "Can Access Student Progress",
+          "configureSecretaryAccess": "Configure which administrative functions this secretary account can access."
+        }
+      }
+    }
   }
 ,
   "teacherGrades": {

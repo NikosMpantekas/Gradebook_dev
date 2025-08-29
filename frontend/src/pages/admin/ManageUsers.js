@@ -1,79 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { getUsers, deleteUser, reset } from '../../features/users/userSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
+
+// shadcn/ui components
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Spinner } from '../../components/ui/spinner';
+
+// Lucide React icons
 import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Chip,
-  Avatar,
-  Tooltip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  CircularProgress,
-  Grid,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Card,
-  CardContent,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import {
-  Add as AddIcon,
+  Plus as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
+  Trash2 as DeleteIcon,
   Search as SearchIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  Visibility as ViewIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  School as SchoolIcon,
+  RefreshCw as RefreshIcon,
+  Mail as EmailIcon,
+  Building as SchoolIcon,
   Book as BookIcon,
-  Schedule as ScheduleIcon
-} from '@mui/icons-material';
+  Calendar as ScheduleIcon
+} from 'lucide-react';
+
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 // Import our custom components
-import LoadingState from '../../components/common/LoadingState';
-import ErrorState from '../../components/common/ErrorState';
-
-// We already have these imports at the top
+import { useIsMobile } from '../../components/hooks/use-mobile';
 
 const ManageUsers = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { user: currentUser } = useSelector((state) => state.auth);
   
   const { users, isLoading, isSuccess, isError, message } = useSelector(state => state.users);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [schoolFilter, setSchoolFilter] = useState('');
-  const [classFilter, setClassFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [schoolFilter, setSchoolFilter] = useState('all');
+  const [classFilter, setClassFilter] = useState('all');
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [classes, setClasses] = useState([]);
   const [classesLoading, setClassesLoading] = useState(false);
@@ -86,14 +62,114 @@ const ManageUsers = () => {
   // Get schools data from Redux store
   const { schools, isLoading: schoolsLoading } = useSelector((state) => state.schools);
   
+  // Define applyFilters function using useCallback
+  const applyFilters = useCallback(() => {
+    let filtered = [...users];
+    
+    // Filter by search term (name or email)
+    if (searchTerm) {
+      filtered = filtered.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by role
+    if (roleFilter && roleFilter !== "all") {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    // Filter by school branch - show users assigned to classes within the selected school branch
+    if (schoolFilter && schoolFilter !== "all") {
+      filtered = filtered.filter(user => {
+        // Direct school assignment check (for admin/secretaries and teachers)
+        if (user.school) {
+          if (Array.isArray(user.school)) {
+            const directMatch = user.school.some(school => 
+              (typeof school === 'object' ? school._id : school) === schoolFilter
+            );
+            if (directMatch) return true;
+          } else {
+            const directMatch = (typeof user.school === 'object' ? user.school._id : user.school) === schoolFilter;
+            if (directMatch) return true;
+          }
+        }
+        
+        // Also check user.schools array for direct assignments
+        if (user.schools && Array.isArray(user.schools)) {
+          const directMatch = user.schools.some(school => 
+            (typeof school === 'object' ? school._id : school) === schoolFilter
+          );
+          if (directMatch) return true;
+        }
+        
+        // For students and teachers: check if they belong to classes within this school branch
+        const userClassesInBranch = classes.filter(cls => 
+          cls.schoolBranch === schoolFilter || cls.schoolId === schoolFilter
+        );
+        
+        if (userClassesInBranch.length === 0) return false;
+        
+        // Check if user is a student in any class within this school branch
+        if (user.role === 'student') {
+          return userClassesInBranch.some(cls => 
+            cls.students && cls.students.some(student => 
+              (typeof student === 'object' ? student._id : student) === user._id
+            )
+          );
+        }
+        
+        // Check if user is a teacher in any class within this school branch
+        if (user.role === 'teacher') {
+          return userClassesInBranch.some(cls => 
+            cls.teachers && cls.teachers.some(teacher => 
+              (typeof teacher === 'object' ? teacher._id : teacher) === user._id
+            )
+          );
+        }
+        
+        return false;
+      });
+    }
+
+    // Filter by class - check if user is associated with the selected class
+    if (classFilter && classFilter !== "all") {
+      filtered = filtered.filter(user => {
+        const selectedClass = classes.find(cls => cls._id === classFilter);
+        if (!selectedClass) return false;
+        
+        // For students: check if they are enrolled in this class
+        if (user.role === 'student' && selectedClass.students && Array.isArray(selectedClass.students)) {
+          return selectedClass.students.some(student => 
+            (typeof student === 'object' ? student._id : student) === user._id
+          );
+        }
+        
+        // For teachers: check if they teach in this class
+        if (user.role === 'teacher' && selectedClass.teachers && Array.isArray(selectedClass.teachers)) {
+          return selectedClass.teachers.some(teacher => 
+            (typeof teacher === 'object' ? teacher._id : teacher) === user._id
+          );
+        }
+        
+        // For admins and others, no class association
+        return false;
+      });
+    }
+
+    console.log('Filtered users:', filtered.length, 'out of', users.length);
+    setFilteredUsers(filtered);
+    setPage(0);
+  }, [users, searchTerm, roleFilter, schoolFilter, classFilter, classes]);
+  
   // Fetch classes data
   useEffect(() => {
     const fetchClasses = async () => {
       try {
         setClassesLoading(true);
-        const response = await fetch(`${currentUser.baseURL || 'https://beta-backend.gradebook.pro'}/api/classes`, {
+        const response = await fetch(`${currentUser?.baseURL || 'https://beta-backend.gradebook.pro'}/api/classes`, {
           headers: {
-            'Authorization': `Bearer ${currentUser.token}`,
+            'Authorization': `Bearer ${currentUser?.token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -128,7 +204,7 @@ const ManageUsers = () => {
     if (!isLoading && Array.isArray(users) && users.length > 0) {
       applyFilters();
     }
-  }, [isLoading, users, schools, classes]);
+  }, [isLoading, users, schools, classes, applyFilters]);
 
   // Debug logs
   console.log('ManageUsers rendering:', { 
@@ -193,105 +269,11 @@ const ManageUsers = () => {
     } else if (!isLoading && Array.isArray(users)) {
       applyFilters();
     }
-  }, [searchTerm, roleFilter, schoolFilter, classFilter, users]);
+  }, [searchTerm, roleFilter, schoolFilter, classFilter, users, isLoading, applyFilters]);
 
-  const applyFilters = () => {
-    let filtered = [...users];
-    
-    // Filter by search term (name or email)
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
 
-    // Filter by role
-    if (roleFilter) {
-      filtered = filtered.filter(user => user.role === roleFilter);
-    }
-
-    // Filter by school branch - show users assigned to classes within the selected school branch
-    if (schoolFilter) {
-      filtered = filtered.filter(user => {
-        // Direct school assignment check (for admin/secretaries)
-        if (user.school) {
-          if (Array.isArray(user.school)) {
-            const directMatch = user.school.some(school => 
-              (typeof school === 'object' ? school._id : school) === schoolFilter
-            );
-            if (directMatch) return true;
-          } else {
-            const directMatch = (typeof user.school === 'object' ? user.school._id : user.school) === schoolFilter;
-            if (directMatch) return true;
-          }
-        }
-        
-        // For students and teachers: check if they belong to classes within this school branch
-        const userClassesInBranch = classes.filter(cls => 
-          cls.schoolBranch === schoolFilter || cls.schoolId === schoolFilter
-        );
-        
-        if (userClassesInBranch.length === 0) return false;
-        
-        // Check if user is a student in any class within this school branch
-        if (user.role === 'student') {
-          return userClassesInBranch.some(cls => 
-            cls.students && cls.students.some(student => 
-              (typeof student === 'object' ? student._id : student) === user._id
-            )
-          );
-        }
-        
-        // Check if user is a teacher in any class within this school branch
-        if (user.role === 'teacher') {
-          return userClassesInBranch.some(cls => 
-            cls.teachers && cls.teachers.some(teacher => 
-              (typeof teacher === 'object' ? teacher._id : teacher) === user._id
-            )
-          );
-        }
-        
-        return false;
-      });
-    }
-
-    // Filter by class - check if user is associated with the selected class
-    if (classFilter) {
-      filtered = filtered.filter(user => {
-        const selectedClass = classes.find(cls => cls._id === classFilter);
-        if (!selectedClass) return false;
-        
-        // For students: check if they are enrolled in this class
-        if (user.role === 'student' && selectedClass.students && Array.isArray(selectedClass.students)) {
-          return selectedClass.students.some(student => 
-            (typeof student === 'object' ? student._id : student) === user._id
-          );
-        }
-        
-        // For teachers: check if they teach in this class
-        if (user.role === 'teacher' && selectedClass.teachers && Array.isArray(selectedClass.teachers)) {
-          return selectedClass.teachers.some(teacher => 
-            (typeof teacher === 'object' ? teacher._id : teacher) === user._id
-          );
-        }
-        
-        // For admins and others, no class association
-        return false;
-      });
-    }
-
-    console.log('Filtered users:', filtered.length, 'out of', users.length);
-    setFilteredUsers(filtered);
-    setPage(0);
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+  const handleChangeRowsPerPage = (value) => {
+    setRowsPerPage(parseInt(value, 10));
     setPage(0);
   };
 
@@ -300,17 +282,17 @@ const ManageUsers = () => {
     setPage(0);
   };
 
-  const handleRoleFilterChange = (event) => {
-    setRoleFilter(event.target.value);
+  const handleRoleFilterChange = (value) => {
+    setRoleFilter(value);
     setPage(0);
   };
   
-  const handleSchoolFilterChange = (event) => {
-    setSchoolFilter(event.target.value);
+  const handleSchoolFilterChange = (value) => {
+    setSchoolFilter(value);
   };
   
-  const handleClassFilterChange = (event) => {
-    setClassFilter(event.target.value);
+  const handleClassFilterChange = (value) => {
+    setClassFilter(value);
   };
 
   const handleAddUser = (isSecretary = false) => {
@@ -374,13 +356,13 @@ const ManageUsers = () => {
   const getRoleColor = (role) => {
     switch (role) {
       case 'admin':
-        return 'error';
+        return 'bg-red-500 text-white';
       case 'teacher':
-        return 'primary';
+        return 'bg-blue-500 text-white';
       case 'student':
-        return 'success';
+        return 'bg-green-500 text-white';
       default:
-        return 'default';
+        return 'bg-gray-500 text-white';
     }
   };
 
@@ -392,105 +374,74 @@ const ManageUsers = () => {
   const renderMobileContent = () => {
   if (isLoading || !dataLoaded.current) {
     return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-          <CircularProgress />
-          <Typography variant="body1" sx={{ ml: 2 }}>
-            Loading users...
-          </Typography>
-      </Box>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="lg" />
+          <span className="ml-2 text-sm">{t('admin.manageUsersPage.messages.loadingUsers')}</span>
+        </div>
     );
   }
 
   if (isError) {
     return (
-        <Box py={4} textAlign="center">
-          <Typography variant="subtitle1" color="error">
-            Error loading users
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {message || "An unknown error occurred"}
-          </Typography>
+        <div className="py-4 text-center">
+          <h3 className="text-lg font-medium text-red-600 mb-1">{t('admin.manageUsersPage.errorLoadingUsers')}</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            {message || t('admin.manageUsersPage.unknownError')}
+          </p>
             <Button 
-              variant="contained" 
               onClick={() => dispatch(getUsers())}
-              startIcon={<RefreshIcon />}
-            sx={{ mt: 2 }}
+            className="gap-2"
             >
-              Try Again
+            <RefreshIcon className="h-4 w-4" />
+              {t('admin.manageUsersPage.messages.tryAgain')}
             </Button>
-      </Box>
+        </div>
     );
   }
 
   if (!users || !Array.isArray(users) || users.length === 0) {
     return (
-        <Box py={4} textAlign="center">
-          <Typography variant="subtitle1" color="text.secondary">
-            No users found. Click "Add User" to create one.
-          </Typography>
-      </Box>
+        <div className="py-4 text-center">
+          <p className="text-muted-foreground">{t('admin.manageUsersPage.messages.noUsersFound')}</p>
+        </div>
     );
   }
 
   return (
-      <Box sx={{ px: { xs: 1, sm: 2 } }}>
+      <div className="px-1 sm:px-2">
         {filteredUsers
           .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
           .map((user) => (
             <Card
               key={user._id}
-              sx={{
-                mb: 2,
-                '&:hover': {
-                  boxShadow: 2,
-                  transform: 'translateY(-1px)',
-                  transition: 'all 0.2s ease'
-                }
-              }}
+              className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
             >
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <Avatar sx={{ 
-                    bgcolor: getRoleColor(user.role),
-                    width: 50,
-                    height: 50,
-                    flexShrink: 0
-                  }}>
-                    {getAvatarLetter(user.name)}
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-start gap-3">
+                  <Avatar className={`w-12 h-12 flex-shrink-0 ${getRoleColor(user.role)}`}>
+                    <AvatarFallback>{getAvatarLetter(user.name)}</AvatarFallback>
                   </Avatar>
                   
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 'bold',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
+                  <div className="flex-grow min-w-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap">
                         {user.name}
-                      </Typography>
-                      <Chip
-                        label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        color={getRoleColor(user.role)}
-                        size="small"
-                      />
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <EmailIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email}
-        </Typography>
-      </Box>
+                      </h3>
+                      <Badge variant="secondary">
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-2">
+                      <EmailIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{user.email}</span>
+                    </div>
 
                     {/* School and Direction information */}
                     {(user.schools?.length > 0 || user.school) && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <SchoolIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
+                      <div className="flex items-center gap-2 mb-2">
+                        <SchoolIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
                           {user.schools && user.schools.length > 0 ? (
                             user.schools.map((school, idx) => (
                               <span key={idx}>
@@ -508,172 +459,215 @@ const ManageUsers = () => {
                           ) : (
                             user.school?.name || user.school
                           )}
-                        </Typography>
-                      </Box>
+                        </span>
+                      </div>
                     )}
                     
                     {/* Subjects information */}
                     {user.subjects && user.subjects.length > 0 && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <BookIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <BookIcon className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex flex-wrap gap-1">
                           {user.subjects.slice(0, 2).map((subject, idx) => (
-                            <Chip
-                              key={idx}
-                              label={subject.name || subject}
-                              size="small"
-                              variant="outlined"
-                            />
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {subject.name || subject}
+                            </Badge>
                           ))}
                           {user.subjects.length > 2 && (
-                            <Chip
-                              label={`+${user.subjects.length - 2} more`}
-                              size="small"
-              variant="outlined"
-                            />
+                            <Badge variant="outline" className="text-xs">
+                              +{user.subjects.length - 2} more
+                            </Badge>
                           )}
-                        </Box>
-                      </Box>
+                        </div>
+                      </div>
                     )}
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Created: {user.createdAt ? format(new Date(user.createdAt), 'PP') : 'Unknown'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
+
+                    <div className="flex items-center gap-2">
+                      <ScheduleIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {t('admin.manageUsersPage.createdAt')}: {user.createdAt ? format(new Date(user.createdAt), 'PP') : t('admin.manageUsersPage.unknown')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 
                 {/* Action buttons */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
-                  <IconButton
-                    color="primary"
-                    size="small"
+                <div className="flex justify-end mt-4 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleEditUser(user._id)}
                     disabled={currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin')}
-                    title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? 'You cannot edit your own account' : 
-                           currentUser?.role === 'secretary' && user.role === 'secretary' ? 'You cannot edit other secretary accounts' : 
-                           currentUser?.role === 'secretary' && user.role === 'admin' ? 'You cannot edit admin accounts' : ''}
+                    title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotEditOwnAccount') : 
+                           currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotEditSecretaryAccounts') : 
+                           currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotEditAdminAccounts') : ''}
                   >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    size="small"
+                    <EditIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => handleDeleteClick(user)}
                     disabled={user.role === 'admin' || 
                               (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
-                    title={user.role === 'admin' ? 'Admin accounts cannot be deleted' : 
-                           currentUser?.role === 'secretary' && user._id === currentUser?._id ? 'You cannot delete your own account' : 
-                           currentUser?.role === 'secretary' && user.role === 'secretary' ? 'You cannot delete other secretary accounts' : 
-                           currentUser?.role === 'secretary' && user.role === 'admin' ? 'You cannot delete admin accounts' : ''}
+                    title={user.role === 'admin' ? t('admin.manageUsersPage.adminAccountsCannotBeDeleted') : 
+                           currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotDeleteOwnAccount') : 
+                           currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotDeleteSecretaryAccounts') : 
+                           currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotDeleteAdminAccounts') : ''}
                   >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
+                    <DeleteIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
-      </Box>
+      </div>
     );
   };
 
   // Desktop table layout
   const renderDesktopContent = () => {
     return (
-      <Paper elevation={3} sx={{ mt: 3, borderRadius: 2 }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+      <div className="mt-6 rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageUsersPage.name')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageUsersPage.email')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageUsersPage.role')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageUsersPage.createdAt')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageUsersPage.actions')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
               {filteredUsers.length > 0 ? (
                 filteredUsers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((user) => (
-                    <TableRow hover key={user._id}>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar sx={{ mr: 2, bgcolor: getRoleColor(user.role) }}>
-                            {getAvatarLetter(user.name)}
+                    <tr key={user._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                      <td className="p-4">
+                        <div className="flex items-center gap-4">
+                          <Avatar className={`w-10 h-10 ${getRoleColor(user.role)}`}>
+                            <AvatarFallback className="text-sm font-medium">
+                              {getAvatarLetter(user.name)}
+                            </AvatarFallback>
                           </Avatar>
-                          <Typography variant="body1">{user.name}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                          color={getRoleColor(user.role)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {user.createdAt ? format(new Date(user.createdAt), 'PP') : 'Unknown'}
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          color="primary"
-                          aria-label="edit user"
-                          onClick={() => handleEditUser(user._id)}
-                          disabled={currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin')}
-                          title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? 'You cannot edit your own account' : 
-                                 currentUser?.role === 'secretary' && user.role === 'secretary' ? 'You cannot edit other secretary accounts' : 
-                                 currentUser?.role === 'secretary' && user.role === 'admin' ? 'You cannot edit admin accounts' : ''}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          aria-label="delete user"
-                          onClick={() => handleDeleteClick(user)}
-                          disabled={user.role === 'admin' || 
-                                    (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
-                          title={user.role === 'admin' ? 'Admin accounts cannot be deleted' : 
-                                 currentUser?.role === 'secretary' && user._id === currentUser?._id ? 'You cannot delete your own account' : 
-                                 currentUser?.role === 'secretary' && user.role === 'secretary' ? 'You cannot delete other secretary accounts' : 
-                                 currentUser?.role === 'secretary' && user.role === 'admin' ? 'You cannot delete admin accounts' : ''}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
+                          <span className="font-medium text-foreground text-base">{user.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-foreground text-base">{user.email}</td>
+                      <td className="p-4">
+                        <Badge variant="secondary" className="text-sm px-3 py-1">
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-foreground text-base">
+                        {user.createdAt ? format(new Date(user.createdAt), 'PP') : t('admin.manageUsersPage.unknown')}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditUser(user._id)}
+                            disabled={currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin')}
+                            title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotEditOwnAccount') : 
+                                   currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotEditSecretaryAccounts') : 
+                                   currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotEditAdminAccounts') : ''}
+                            className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                          >
+                            <EditIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(user)}
+                            disabled={user.role === 'admin' || 
+                                      (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
+                            title={user.role === 'admin' ? t('admin.manageUsersPage.adminAccountsCannotBeDeleted') : 
+                                   currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotDeleteOwnAccount') : 
+                                   currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotDeleteSecretaryAccounts') : 
+                                   currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotDeleteAdminAccounts') : ''}
+                            className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
+                          >
+                            <DeleteIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
                   ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
+                <tr>
+                  <td colSpan={5} className="text-center py-12">
                     {isLoading ? (
-                      <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                        <CircularProgress size={24} />
-                        <Typography variant="body2" sx={{ ml: 1 }}>Loading users...</Typography>
-                      </Box>
+                      <div className="flex justify-center items-center gap-3 py-6">
+                        <Spinner size="sm" />
+                        <span className="text-base text-foreground">{t('admin.manageUsersPage.messages.loadingUsers')}</span>
+                      </div>
                     ) : (
-                      'No users found matching your criteria'
+                      <span className="text-muted-foreground text-base">{t('admin.manageUsersPage.messages.noUsersFoundMatchingCriteria')}</span>
                     )}
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={filteredUsers.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Simple pagination controls */}
+        {filteredUsers.length > 0 && (
+          <div className="flex items-center justify-between p-4 border-t">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>
+                {t('admin.manageUsersPage.messages.showingUsers', {
+                  start: page * rowsPerPage + 1,
+                  end: Math.min((page + 1) * rowsPerPage, filteredUsers.length),
+                  total: filteredUsers.length
+                })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">{t('admin.manageUsersPage.messages.rowsPerPage.5')}</SelectItem>
+                  <SelectItem value="10">{t('admin.manageUsersPage.messages.rowsPerPage.10')}</SelectItem>
+                  <SelectItem value="25">{t('admin.manageUsersPage.messages.rowsPerPage.25')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.max(0, page - 1))}
+                disabled={page === 0}
+              >
+                {t('admin.manageUsersPage.messages.previous')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.min(Math.ceil(filteredUsers.length / rowsPerPage) - 1, page + 1))}
+                disabled={page >= Math.ceil(filteredUsers.length / rowsPerPage) - 1}
+              >
+                {t('admin.manageUsersPage.messages.next')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -681,221 +675,193 @@ const ManageUsers = () => {
   // This prevents the white screen flash when navigating to this page
   if (isLoading || !dataLoaded.current) {
     return (
-      <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            Manage Users
-          </Typography>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
           <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
-            onClick={handleAddUser}
-            disabled={true}
+            disabled
+            className="gap-2"
           >
-            Add User
+            <AddIcon className="h-4 w-4" />
+            {t('admin.manageUsersPage.addUser')}
           </Button>
-        </Box>
+        </div>
 
-        <Paper elevation={3} sx={{ p: 5, borderRadius: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', minHeight: 300 }}>
-          <CircularProgress size={60} />
-          <Typography variant="h6" sx={{ mt: 3 }}>
-            Loading users...
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Please wait while we retrieve user data
-          </Typography>
-        </Paper>
-      </Box>
+        <div className="rounded-lg border bg-card dark:border-gray-600 p-10 flex flex-col items-center justify-center min-h-[300px]">
+          <Spinner size="xl" />
+          <h2 className="text-xl font-semibold mt-6 text-foreground">{t('admin.manageUsersPage.messages.loadingUsers')}</h2>
+          <p className="text-sm text-muted-foreground mt-2">{t('admin.manageUsersPage.messages.pleaseWait')}</p>
+        </div>
+      </div>
     );
   }
 
   // Handle error state
   if (isError) {
     return (
-      <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            Manage Users
-          </Typography>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
           <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
             onClick={handleAddUser}
+            className="gap-2"
           >
-            Add User
+            <AddIcon className="h-4 w-4" />
+            {t('admin.manageUsersPage.addUser')}
           </Button>
-        </Box>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" color="error" align="center" sx={{ mb: 2 }}>
-            Error loading users
-          </Typography>
-          <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-            {message || "An unknown error occurred"}
-          </Typography>
-          <Box display="flex" justifyContent="center">
+        </div>
+        <div className="rounded-lg border bg-card dark:border-gray-600 p-6">
+          <h2 className="text-xl font-semibold text-red-600 dark:text-red-400 text-center mb-3">{t('admin.manageUsersPage.messages.errorLoadingUsers')}</h2>
+          <p className="text-center mb-6 text-foreground">{t('admin.manageUsersPage.messages.errorMessage')}</p>
+          <div className="flex justify-center">
             <Button 
-              variant="contained" 
               onClick={() => dispatch(getUsers())}
-              startIcon={<RefreshIcon />}
+              className="gap-2"
             >
-              Try Again
+              <RefreshIcon className="h-4 w-4" />
+              {t('admin.manageUsersPage.messages.tryAgain')}
             </Button>
-          </Box>
-        </Paper>
-      </Box>
+          </div>
+        </div>
+      </div>
     );
   }
 
   // Empty state - simple version without complex checks that might cause crashes
   if (!users || !Array.isArray(users) || users.length === 0) {
     return (
-      <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            Manage Users
-          </Typography>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
           <Button 
-            variant="contained" 
-            startIcon={<AddIcon />}
             onClick={handleAddUser}
+            className="gap-2"
           >
-            Add User
+            <AddIcon className="h-4 w-4" />
+            {t('admin.manageUsersPage.addUser')}
           </Button>
-        </Box>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" align="center" sx={{ py: 4 }}>
-            No users found. Click "Add User" to create one.
-          </Typography>
-        </Paper>
-      </Box>
+        </div>
+        <div className="rounded-lg border bg-card dark:border-gray-600 p-6">
+          <p className="text-center py-8 text-muted-foreground">{t('admin.manageUsersPage.messages.noUsersFound')}</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          Manage Users
-        </Typography>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
         <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
           onClick={() => handleAddUser(currentUser?.role === 'secretary')}
-          title={currentUser?.role === 'secretary' ? 'You cannot create secretary accounts' : ''}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          title={currentUser?.role === 'secretary' ? t('admin.manageUsersPage.cannotCreateSecretaryAccounts') : ''}
+          className="w-full sm:w-auto gap-2"
         >
-          Add User
+          <AddIcon className="h-4 w-4" />
+          {t('admin.manageUsersPage.addUser')}
         </Button>
-      </Box>
+      </div>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search by name or email"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="role-filter-label">Filter by Role</InputLabel>
-              <Select
-                labelId="role-filter-label"
-                id="role-filter"
-                value={roleFilter}
-                onChange={handleRoleFilterChange}
-                label="Filter by Role"
-              >
-                <MenuItem value="">
-                  <em>All Roles</em>
-                </MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-                <MenuItem value="teacher">Teacher</MenuItem>
-                <MenuItem value="student">Student</MenuItem>
-                <MenuItem value="parent">Parent</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="school-filter-label">Filter by School Branch</InputLabel>
-              <Select
-                labelId="school-filter-label"
-                id="school-filter"
-                value={schoolFilter}
-                onChange={handleSchoolFilterChange}
-                label="Filter by School Branch"
-                disabled={schoolsLoading || !schools || schools.length === 0}
-              >
-                <MenuItem value="">
-                  <em>All School Branches</em>
-                </MenuItem>
+      <div className="p-4 mb-6 rounded-lg border bg-card dark:border-gray-600">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          <div className="md:col-span-4">
+            <Label htmlFor="search" className="text-sm font-medium mb-2 block text-foreground">{t('admin.manageUsersPage.search')}</Label>
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="search"
+                placeholder={t('admin.manageUsersPage.searchPlaceholder')}
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <Label htmlFor="role-filter" className="text-sm font-medium mb-2 block text-foreground">{t('admin.manageUsersPage.filterByRole')}</Label>
+            <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
+              <SelectTrigger id="role-filter">
+                <SelectValue placeholder={t('admin.manageUsersPage.allRoles')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('admin.manageUsersPage.allRoles')}</SelectItem>
+                <SelectItem value="admin">{t('admin.manageUsersPage.roles.admin')}</SelectItem>
+                <SelectItem value="teacher">{t('admin.manageUsersPage.roles.teacher')}</SelectItem>
+                <SelectItem value="student">{t('admin.manageUsersPage.roles.student')}</SelectItem>
+                <SelectItem value="parent">{t('admin.manageUsersPage.roles.parent')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="md:col-span-3">
+            <Label htmlFor="school-filter" className="text-sm font-medium mb-2 block text-foreground">{t('admin.manageUsersPage.filterBySchoolBranch')}</Label>
+            <Select
+              value={schoolFilter}
+              onValueChange={handleSchoolFilterChange}
+              disabled={schoolsLoading || !schools || schools.length === 0}
+            >
+              <SelectTrigger id="school-filter">
+                <SelectValue placeholder={t('admin.manageUsersPage.allSchoolBranches')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('admin.manageUsersPage.allSchoolBranches')}</SelectItem>
                 {Array.isArray(schools) && schools.map((school) => (
-                  <MenuItem key={school._id} value={school._id}>
+                  <SelectItem key={school._id} value={school._id}>
                     {school.name}
-                  </MenuItem>
+                  </SelectItem>
                 ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="class-filter-label">Filter by Class</InputLabel>
-              <Select
-                labelId="class-filter-label"
-                id="class-filter"
-                value={classFilter}
-                onChange={handleClassFilterChange}
-                label="Filter by Class"
-                disabled={classesLoading || !classes || classes.length === 0}
-              >
-                <MenuItem value="">
-                  <em>All Classes</em>
-                </MenuItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="md:col-span-3">
+            <Label htmlFor="class-filter" className="text-sm font-medium mb-2 block text-foreground">{t('admin.manageUsersPage.filterByClass')}</Label>
+            <Select
+              value={classFilter}
+              onValueChange={handleClassFilterChange}
+              disabled={classesLoading || !classes || classes.length === 0}
+            >
+              <SelectTrigger id="class-filter">
+                <SelectValue placeholder={t('admin.manageUsersPage.allClasses')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('admin.manageUsersPage.allClasses')}</SelectItem>
                 {Array.isArray(classes) && classes.map((cls) => (
-                  <MenuItem key={cls._id} value={cls._id}>
+                  <SelectItem key={cls._id} value={cls._id}>
                     {cls.className} - {cls.subject?.name || cls.subject}
-                  </MenuItem>
+                  </SelectItem>
                 ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
 
       {/* User Table/Cards */}
       {isMobile ? renderMobileContent() : renderDesktopContent()}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleDeleteCancel}
-      >
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteCancel}>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete the user "{userToDelete?.name}"? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Delete
+          <DialogHeader>
+            <DialogTitle>{t('admin.manageUsersPage.dialogs.deleteUser.title')}</DialogTitle>
+            <DialogDescription>
+            {t('admin.manageUsersPage.dialogs.deleteUser.message', { name: userToDelete?.name })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDeleteCancel}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+            {t('common.delete')}
           </Button>
-        </DialogActions>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

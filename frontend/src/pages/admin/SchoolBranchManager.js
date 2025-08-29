@@ -1,45 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Typography,
-  Paper,
-  Box,
-  Button,
-  TextField,
-  Grid,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  CircularProgress,
-  Divider,
-  InputAdornment,
-  Checkbox,
-  FormControlLabel,
-  Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  School as SchoolIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Link as LinkIcon,
-  LocationOn as LocationIcon,
-} from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import {
   getSchools,
   createSchool,
@@ -48,8 +10,37 @@ import {
   reset
 } from '../../features/schools/schoolSlice';
 
+// shadcn/ui components
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Spinner } from '../../components/ui/spinner';
+
+// Lucide React icons
+import {
+  Plus as AddIcon,
+  Edit as EditIcon,
+  Trash2 as DeleteIcon,
+  Search as SearchIcon,
+  Building as SchoolIcon,
+  Mail as EmailIcon,
+  Phone as PhoneIcon,
+  Link as LinkIcon,
+  MapPin as LocationIcon,
+} from 'lucide-react';
+
+// Import our custom components
+import { useIsMobile } from '../../components/hooks/use-mobile';
+
 const SchoolBranchManager = () => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { schools, isLoading, isError, isSuccess, message } = useSelector(
     (state) => state.schools
   );
@@ -102,71 +93,58 @@ const SchoolBranchManager = () => {
   // Update filtered schools when schools or search term changes
   useEffect(() => {
     if (isError) {
-      toast.error(message || 'Error loading school branches');
-      console.error('School branches error:', message);
+      toast.error(message);
     }
     
     if (schools) {
       applyFilters();
-    } else if (!isLoading && !isError) {
-      // Handle the case where no schools are returned but no error occurred
-      setFilteredSchools([]);
-      console.log('No school branches available for this domain');
     }
-  }, [schools, searchTerm, showClusterSchools, isLoading, isError, message]);
+  }, [schools, searchTerm, showClusterSchools, isError, message]);
   
-  // Apply all filters to schools data
-  const applyFilters = () => {
+  // Apply filters to schools data
+  const applyFilters = useCallback(() => {
     try {
-      // Safety check for schools array
       if (!Array.isArray(schools)) {
-        console.error('UI Filter: Schools is not an array:', schools);
+        console.error('Schools is not an array:', schools);
         setFilteredSchools([]);
         return;
       }
 
-      // Filter by cluster type if needed
-      let filteredByType = showClusterSchools 
-        ? schools 
-        : schools.filter(school => !school.isClusterSchool);
+      let filtered = schools;
       
-      // Then apply the search filter
-      if (searchTerm.trim() === '') {
-        setFilteredSchools(filteredByType);
-      } else {
-        // Apply search with safety checks
-        const filtered = filteredByType.filter(school => {
-          try {
-            const nameMatch = school.name && typeof school.name === 'string' ? 
-              school.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-              
-            const addressMatch = school.address && typeof school.address === 'string' ? 
-              school.address.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-              
-            const phoneMatch = school.phone && typeof school.phone === 'string' ? 
-              school.phone.includes(searchTerm) : false;
-              
-            return nameMatch || addressMatch || phoneMatch;
-          } catch (error) {
-            console.error('UI Filter: Error filtering school by search term:', error);
-            return false; // Safety: exclude on error
-          }
-        });
-        
-        setFilteredSchools(filtered);
+      // Filter by cluster school visibility
+      if (!showClusterSchools) {
+        filtered = schools.filter(school => !school.isClusterSchool);
       }
+      
+      // Apply search filter
+      if (searchTerm.trim() !== '') {
+        filtered = filtered.filter(school => {
+          const nameMatch = school.name && typeof school.name === 'string' ? 
+            school.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+            
+          const addressMatch = school.address && typeof school.address === 'string' ? 
+            school.address.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+            
+          const phoneMatch = school.phone && typeof school.phone === 'string' ? 
+            school.phone.includes(searchTerm) : false;
+            
+          const emailMatch = school.email && typeof school.email === 'string' ? 
+            school.email.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+            
+          return nameMatch || addressMatch || phoneMatch || emailMatch;
+        });
+      }
+      
+      setFilteredSchools(filtered);
     } catch (error) {
-      console.error('UI Filter: Critical error in applyFilters, showing no schools:', error);
-      setFilteredSchools([]); // Safety: show no schools on error
+      console.error('Error in applyFilters:', error);
+      setFilteredSchools([]);
     }
-  };
+  }, [schools, searchTerm, showClusterSchools]);
   
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-  };
-  
-  const toggleShowClusterSchools = () => {
-    setShowClusterSchools(!showClusterSchools);
   };
   
   // Dialog handlers
@@ -177,9 +155,8 @@ const SchoolBranchManager = () => {
       phone: '',
       email: '',
       website: '',
-      logo: '',
-      schoolDomain: '',
-      emailDomain: '',
+      schoolDomain: schoolDomainBase,
+      emailDomain: userDomain,
       parentCluster: null,
       isClusterSchool: false,
       branchDescription: '',
@@ -190,18 +167,25 @@ const SchoolBranchManager = () => {
   
   const handleCloseAddDialog = () => {
     setOpenAddDialog(false);
+    setSchoolBranch({
+      name: '',
+      address: '',
+      phone: '',
+      email: '',
+      website: '',
+      schoolDomain: '',
+      emailDomain: '',
+      parentCluster: null,
+      isClusterSchool: false,
+      branchDescription: '',
+    });
+    setFormErrors({});
   };
   
   const handleOpenEditDialog = (school) => {
     setSchoolBranch({
       ...school,
-      // Convert undefined values to empty strings for controlled inputs
-      schoolDomain: school.schoolDomain || '',
-      emailDomain: school.emailDomain || '',
-      email: school.email || '',
-      website: school.website || '',
-      branchDescription: school.branchDescription || '',
-      isClusterSchool: Boolean(school.isClusterSchool),
+      _id: school._id
     });
     setFormErrors({});
     setOpenEditDialog(true);
@@ -209,10 +193,23 @@ const SchoolBranchManager = () => {
   
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
+    setSchoolBranch({
+      name: '',
+      address: '',
+      phone: '',
+      email: '',
+      website: '',
+      schoolDomain: '',
+      emailDomain: '',
+      parentCluster: null,
+      isClusterSchool: false,
+      branchDescription: '',
+    });
+    setFormErrors({});
   };
   
-  const handleOpenDeleteDialog = (schoolId) => {
-    setSchoolIdToDelete(schoolId);
+  const handleOpenDeleteDialog = (id) => {
+    setSchoolIdToDelete(id);
     setOpenDeleteDialog(true);
   };
   
@@ -221,32 +218,52 @@ const SchoolBranchManager = () => {
     setSchoolIdToDelete(null);
   };
   
-  // Form handling
+  // Form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setSchoolBranch(prev => ({
-      ...prev,
-      [name]: value
-    }));
     
-    // Clear error if field is filled
-    if (value.trim() !== '' && formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+    // Clear error when field is modified
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: '',
+      });
     }
+    
+    setSchoolBranch({
+      ...schoolBranch,
+      [name]: value,
+    });
+  };
+  
+  const handleCheckboxChange = (name, checked) => {
+    setSchoolBranch({
+      ...schoolBranch,
+      [name]: checked,
+    });
   };
   
   const validateForm = () => {
     const errors = {};
     
     if (!schoolBranch.name.trim()) {
-      errors.name = 'School branch name is required';
+      errors.name = t('admin.manageSchoolsPage.form.errors.schoolNameRequired');
     }
     
     if (!schoolBranch.address.trim()) {
-      errors.address = 'Address is required';
+      errors.address = t('admin.manageSchoolsPage.form.errors.addressRequired');
+    }
+    
+    if (!schoolBranch.phone.trim()) {
+      errors.phone = t('admin.manageSchoolsPage.form.errors.phoneRequired');
+    }
+    
+    if (schoolBranch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(schoolBranch.email)) {
+      errors.email = t('admin.manageSchoolsPage.form.errors.validEmail');
+    }
+    
+    if (schoolBranch.website && !/^https?:\/\/.+/.test(schoolBranch.website)) {
+      errors.website = t('admin.manageSchoolsPage.form.errors.websiteProtocol');
     }
     
     setFormErrors(errors);
@@ -255,416 +272,710 @@ const SchoolBranchManager = () => {
   
   // CRUD operations
   const handleAddSchool = () => {
-    if (!validateForm()) return;
-    
-    // Always use admin's domain for new branches
-    const schoolData = {
-      ...schoolBranch,
-      // Force set domain values based on admin's email domain
-      schoolDomain: schoolDomainBase,
-      emailDomain: userDomain,
-      // Ensure it's created as a branch, not a cluster
-      isClusterSchool: false
-    };
-    
-    dispatch(createSchool(schoolData))
-      .unwrap()
-      .then(() => {
-        toast.success('School branch added successfully');
-        setOpenAddDialog(false);
-        dispatch(getSchools()); // Refresh schools list
-      })
-      .catch((error) => {
-        if (error.message) {
-          toast.error(error.message);
-        } else {
-          toast.error('Failed to add school branch');
-        }
-      });
+    if (validateForm()) {
+      dispatch(createSchool(schoolBranch))
+        .unwrap()
+        .then(() => {
+          setOpenAddDialog(false);
+          toast.success(t('admin.manageSchoolsPage.messages.schoolAddedSuccess'));
+        })
+        .catch((error) => {
+          toast.error(error);
+        });
+    }
   };
   
   const handleEditSchool = () => {
-    if (!validateForm()) return;
-    
-    // Generate default domain values if not provided
-    const sanitizedName = schoolBranch.name.toLowerCase().replace(/\s+/g, '');
-    const schoolData = {
-      ...schoolBranch,
-      schoolDomain: schoolBranch.schoolDomain || sanitizedName,
-      emailDomain: schoolBranch.emailDomain || `${sanitizedName}.edu`
-    };
-    
-    dispatch(updateSchool(schoolData))
-      .unwrap()
-      .then(() => {
-        toast.success('School branch updated successfully');
-        setOpenEditDialog(false);
-        dispatch(getSchools()); // Refresh schools list
-      })
-      .catch((error) => {
-        if (error.message) {
-          toast.error(error.message);
-        } else {
-          toast.error('Failed to update school branch');
-        }
-      });
+    if (validateForm()) {
+      if (!schoolBranch._id) {
+        toast.error(t('admin.manageSchoolsPage.messages.missingSchoolId'));
+        return;
+      }
+      
+      const schoolId = schoolBranch._id;
+      const schoolData = {
+        name: schoolBranch.name,
+        address: schoolBranch.address,
+        phone: schoolBranch.phone,
+        email: schoolBranch.email,
+        website: schoolBranch.website,
+        schoolDomain: schoolBranch.schoolDomain,
+        emailDomain: schoolBranch.emailDomain,
+        parentCluster: schoolBranch.parentCluster,
+        isClusterSchool: schoolBranch.isClusterSchool,
+        branchDescription: schoolBranch.branchDescription,
+      };
+      
+      dispatch(updateSchool({ id: schoolId, schoolData }))
+        .unwrap()
+        .then((result) => {
+          console.log('School update succeeded:', result);
+          setOpenEditDialog(false);
+          return dispatch(getSchools()).unwrap();
+        })
+        .then(() => {
+          toast.success(t('admin.manageSchoolsPage.messages.schoolUpdatedSuccess'));
+        })
+        .catch((error) => {
+          console.error('School update failed:', error);
+          toast.error(`${t('admin.manageSchoolsPage.messages.updateSchoolFailed')}: ${error}`);
+        });
+    }
   };
   
   const handleDeleteSchool = () => {
-    if (!schoolIdToDelete) return;
-    
     dispatch(deleteSchool(schoolIdToDelete))
       .unwrap()
       .then(() => {
-        toast.success('School branch deleted successfully');
         setOpenDeleteDialog(false);
-        setSchoolIdToDelete(null);
-        dispatch(getSchools()); // Refresh schools list
+        toast.success(t('admin.manageSchoolsPage.messages.schoolDeletedSuccess'));
       })
       .catch((error) => {
-        if (error.message) {
-          toast.error(error.message);
-        } else {
-          toast.error('Failed to delete school branch');
-        }
+        toast.error(error);
       });
   };
+
+  // Mobile card layout for schools
+  const renderMobileContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="lg" />
+          <span className="ml-2 text-sm text-foreground">{t('admin.manageSchoolsPage.messages.loadingSchools')}</span>
+        </div>
+      );
+    }
+
+    if (!filteredSchools || filteredSchools.length === 0) {
+      return (
+        <div className="py-4 text-center">
+          <p className="text-muted-foreground">
+            {t('admin.manageSchoolsPage.messages.noSchoolBranchesFound')}
+          </p>
+          {searchTerm && (
+            <p className="text-sm text-muted-foreground mt-2">
+              {t('admin.manageSchoolsPage.messages.tryDifferentSearchTerm')}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {filteredSchools.map((school) => (
+          <Card
+            key={school._id}
+            className="hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-600 dark:hover:shadow-gray-800/50"
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Avatar className="w-12 h-12 flex-shrink-0 bg-primary">
+                  <AvatarFallback>
+                    <SchoolIcon className="h-6 w-6" />
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg text-foreground">
+                      {school.name}
+                    </h3>
+                    {school.isClusterSchool && (
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full dark:bg-blue-900 dark:text-blue-200">
+                        {t('admin.manageSchoolsPage.messages.clusterSchool')}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <LocationIcon className="h-4 w-4" />
+                      <span>{school.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PhoneIcon className="h-4 w-4" />
+                      <span>{school.phone}</span>
+                    </div>
+                    {school.email && (
+                      <div className="flex items-center gap-2">
+                        <EmailIcon className="h-4 w-4" />
+                        <span>{school.email}</span>
+                      </div>
+                    )}
+                    {school.website && (
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="h-4 w-4" />
+                        <span className="truncate">{school.website}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action buttons */}
+              <div className="flex justify-end mt-4 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenEditDialog(school)}
+                  title={t('admin.manageSchoolsPage.messages.editSchool')}
+                  className="hover:bg-muted dark:hover:bg-gray-700"
+                >
+                  <EditIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleOpenDeleteDialog(school._id)}
+                  title={t('admin.manageSchoolsPage.messages.deleteSchool')}
+                  className="hover:bg-red-700 dark:hover:bg-red-600"
+                >
+                  <DeleteIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  // Desktop table layout
+  const renderDesktopContent = () => {
+    return (
+      <div className="mt-6 rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageSchoolsPage.table.school')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageSchoolsPage.table.address')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageSchoolsPage.table.contact')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageSchoolsPage.table.type')}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  {t('admin.manageSchoolsPage.table.actions')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-12">
+                    <div className="flex justify-center items-center gap-3 py-6">
+                      <Spinner size="sm" />
+                      <span className="text-base text-foreground">{t('admin.manageSchoolsPage.messages.loadingSchools')}</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredSchools && filteredSchools.length > 0 ? (
+                filteredSchools.map((school) => (
+                  <tr key={school._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8 bg-primary">
+                          <AvatarFallback className="text-xs">
+                            <SchoolIcon className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <span className="font-medium text-foreground text-base">
+                            {school.name}
+                          </span>
+                          {school.branchDescription && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {school.branchDescription}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      <div className="flex items-center gap-2">
+                        <LocationIcon className="h-4 w-4 text-muted-foreground" />
+                        <span>{school.address}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <PhoneIcon className="h-4 w-4 text-muted-foreground" />
+                          <span>{school.phone}</span>
+                        </div>
+                        {school.email && (
+                          <div className="flex items-center gap-2">
+                            <EmailIcon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{school.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      {school.isClusterSchool ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {t('admin.manageSchoolsPage.messages.clusterSchool')}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          {t('admin.manageSchoolsPage.messages.branch')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditDialog(school)}
+                          title={t('admin.manageSchoolsPage.messages.editSchool')}
+                          className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                        >
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleOpenDeleteDialog(school._id)}
+                          title={t('admin.manageSchoolsPage.messages.deleteSchool')}
+                          className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
+                        >
+                          <DeleteIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-12">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-base">
+                        {t('admin.manageSchoolsPage.messages.noSchoolBranchesFound')}
+                      </p>
+                      {searchTerm && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {t('admin.manageSchoolsPage.messages.tryDifferentSearchTerm')}
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
   
+  // Show loading state if data is being loaded
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="xl" />
+          <span className="ml-2 text-base text-foreground">{t('admin.manageSchoolsPage.messages.loadingSchools')}</span>
+        </div>
+      </div>
     );
   }
   
-  // Get list of cluster schools for parent selection
-  const clusterSchools = schools ? schools.filter(school => school.isClusterSchool) : [];
-  
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-        Manage School Branches
-      </Typography>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          {t('admin.manageSchoolsPage.title')}
+        </h1>
+        <p className="text-muted-foreground">
+          {t('admin.manageSchoolsPage.subtitle')}
+        </p>
+      </div>
       
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={7}>
-                <TextField
-                  fullWidth
-                  placeholder="Search by name, address, or phone"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={2}>
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={showClusterSchools} 
-                      onChange={toggleShowClusterSchools}
-                      color="primary"
-                    />
-                  }
-                  label="Show Clusters"
-                />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenAddDialog}
-                >
-                  Add School Branch
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
+      {/* Search and add controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative w-full sm:w-80">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('admin.manageSchoolsPage.searchPlaceholder')}
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-10"
+            />
+          </div>
           
-          <Paper elevation={3} sx={{ borderRadius: 2 }}>
-            <List>
-              {filteredSchools.length > 0 ? (
-                filteredSchools.map((school, index) => (
-                  <React.Fragment key={school._id}>
-                    <ListItem sx={{ py: 2 }}>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <SchoolIcon sx={{ mr: 1, color: school.isClusterSchool ? 'secondary.main' : 'primary.main' }} />
-                            <Typography variant="subtitle1" fontWeight="bold">
-                              {school.name}
-                              {school.isClusterSchool && (
-                                <Chip 
-                                  label="Cluster" 
-                                  size="small" 
-                                  color="secondary" 
-                                  sx={{ ml: 1, fontSize: '0.7rem' }} 
-                                />
-                              )}
-                            </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Grid container spacing={1} sx={{ mt: 0.5 }}>
-                            <Grid item xs={12} sm={6}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <LocationIcon fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
-                                <Typography variant="body2" component="span">
-                                  {school.address}
-                                </Typography>
-                              </Box>
-                              {school.phone && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                                  <PhoneIcon fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
-                                  <Typography variant="body2" component="span">
-                                    {school.phone}
-                                  </Typography>
-                                </Box>
-                              )}
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              {school.email && (
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <EmailIcon fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
-                                  <Typography variant="body2" component="span">
-                                    {school.email}
-                                  </Typography>
-                                </Box>
-                              )}
-                              {school.website && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                                  <LinkIcon fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
-                                  <Typography variant="body2" component="span">
-                                    {school.website}
-                                  </Typography>
-                                </Box>
-                              )}
-                              {school.emailDomain && (
-                                <Box sx={{ mt: 0.5 }}>
-                                  <Chip 
-                                    label={`Domain: ${school.emailDomain}`} 
-                                    size="small" 
-                                    variant="outlined"
-                                    sx={{ fontSize: '0.7rem' }} 
-                                  />
-                                </Box>
-                              )}
-                            </Grid>
-                          </Grid>
-                        }
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton 
-                          edge="end" 
-                          aria-label="edit"
-                          onClick={() => handleOpenEditDialog(school)}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          edge="end" 
-                          aria-label="delete"
-                          onClick={() => handleOpenDeleteDialog(school._id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    {index < filteredSchools.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))
-              ) : (
-                <ListItem>
-                  <ListItemText 
-                    primary="No school branches found" 
-                    secondary={searchTerm ? "Try a different search term" : "Add a new school branch to get started"} 
-                  />
-                </ListItem>
-              )}
-            </List>
-          </Paper>
-        </Grid>
-      </Grid>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-cluster"
+              checked={showClusterSchools}
+              onCheckedChange={setShowClusterSchools}
+            />
+            <Label htmlFor="show-cluster" className="text-sm">
+              {t('admin.manageSchoolsPage.showClusterSchools')}
+            </Label>
+          </div>
+        </div>
+        
+        <Button
+          onClick={handleOpenAddDialog}
+          className="w-full sm:w-auto gap-2"
+        >
+          <AddIcon className="h-4 w-4" />
+          {t('admin.manageSchoolsPage.addSchoolBranch')}
+        </Button>
+      </div>
+      
+      {/* Schools table */}
+      {isMobile ? renderMobileContent() : renderDesktopContent()}
       
       {/* Add School Branch Dialog */}
-      <Dialog open={openAddDialog} onClose={handleCloseAddDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Add New School Branch</DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" color="primary" gutterBottom>
-              Creating branch for domain: <strong>{userDomain}</strong>
-            </Typography>
+      <Dialog open={openAddDialog} onOpenChange={handleCloseAddDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('admin.manageSchoolsPage.dialogs.addSchool.title')}</DialogTitle>
+            <DialogDescription>
+              {t('admin.manageSchoolsPage.dialogs.addSchool.subtitle')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => { e.preventDefault(); handleAddSchool(); }} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.schoolName')} *
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={schoolBranch.name}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  required
+                  autoFocus
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="phone" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.phone')} *
+                </Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={schoolBranch.phone}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  required
+                />
+                {formErrors.phone && (
+                  <p className="text-sm text-red-600 mt-1">{formErrors.phone}</p>
+                )}
+              </div>
+            </div>
             
-            <TextField
-              margin="dense"
-              label="School Branch Name *"
-              name="name"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.name}
-              onChange={handleInputChange}
-              error={!!formErrors.name}
-              helperText={formErrors.name || "Enter the name of this physical branch location"}
-              autoFocus
-            />
+            <div>
+              <Label htmlFor="address" className="text-sm font-medium">
+                {t('admin.manageSchoolsPage.form.address')} *
+              </Label>
+              <Input
+                id="address"
+                name="address"
+                value={schoolBranch.address}
+                onChange={handleInputChange}
+                className="mt-1"
+                required
+              />
+              {formErrors.address && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.address}</p>
+              )}
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Address/Location *"
-              name="address"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.address}
-              onChange={handleInputChange}
-              error={!!formErrors.address}
-              helperText={formErrors.address || "Enter the physical address of this branch"}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.email')}
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={schoolBranch.email}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="website" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.website')}
+                </Label>
+                <Input
+                  id="website"
+                  name="website"
+                  value={schoolBranch.website}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              </div>
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Contact Phone Number"
-              name="phone"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.phone}
-              onChange={handleInputChange}
-              helperText="Phone number for this specific branch location"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="schoolDomain" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.schoolDomain')}
+                </Label>
+                <Input
+                  id="schoolDomain"
+                  name="schoolDomain"
+                  value={schoolBranch.schoolDomain}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  placeholder={`${schoolDomainBase}.school`}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="emailDomain" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.emailDomain')}
+                </Label>
+                <Input
+                  id="emailDomain"
+                  name="emailDomain"
+                  value={schoolBranch.emailDomain}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  placeholder={`${schoolDomainBase}.edu`}
+                />
+              </div>
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Branch Email (optional)"
-              name="email"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.email}
-              onChange={handleInputChange}
-              helperText="Contact email specific to this branch"
-            />
+            <div>
+              <Label htmlFor="branchDescription" className="text-sm font-medium">
+                {t('admin.manageSchoolsPage.form.description')}
+              </Label>
+              <Input
+                id="branchDescription"
+                name="branchDescription"
+                value={schoolBranch.branchDescription}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Branch Description (optional)"
-              name="branchDescription"
-              fullWidth
-              multiline
-              rows={2}
-              variant="outlined"
-              value={schoolBranch.branchDescription}
-              onChange={handleInputChange}
-              helperText="Additional details about this branch location"
-            />
-          </Box>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isClusterSchool"
+                name="isClusterSchool"
+                checked={schoolBranch.isClusterSchool}
+                onCheckedChange={(checked) => handleInputChange({ target: { name: 'isClusterSchool', value: checked } })}
+              />
+              <Label htmlFor="isClusterSchool" className="text-sm">
+                {t('admin.manageSchoolsPage.form.isClusterSchool')}
+              </Label>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseAddDialog}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit">
+                {t('admin.manageSchoolsPage.addSchoolBranch')}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAddDialog}>Cancel</Button>
-          <Button onClick={handleAddSchool} variant="contained">Add School Branch</Button>
-        </DialogActions>
       </Dialog>
       
       {/* Edit School Branch Dialog */}
-      <Dialog open={openEditDialog} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit School Branch</DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" color="primary" gutterBottom>
-              School Branch for domain: <strong>{userDomain}</strong>
-            </Typography>
+      <Dialog open={openEditDialog} onOpenChange={handleCloseEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('admin.manageSchoolsPage.dialogs.editSchool.title')}</DialogTitle>
+            <DialogDescription>
+              {t('admin.manageSchoolsPage.dialogs.editSchool.subtitle')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => { e.preventDefault(); handleEditSchool(); }} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-name" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.schoolName')} *
+                </Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  value={schoolBranch.name}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  required
+                  autoFocus
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-phone" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.phone')} *
+                </Label>
+                <Input
+                  id="edit-phone"
+                  name="phone"
+                  value={schoolBranch.phone}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  required
+                />
+                {formErrors.phone && (
+                  <p className="text-sm text-red-600 mt-1">{formErrors.phone}</p>
+                )}
+              </div>
+            </div>
             
-            <TextField
-              margin="dense"
-              label="School Branch Name *"
-              name="name"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.name}
-              onChange={handleInputChange}
-              error={!!formErrors.name}
-              helperText={formErrors.name || "Name of this physical branch location"}
-              autoFocus
-            />
+            <div>
+              <Label htmlFor="edit-address" className="text-sm font-medium">
+                {t('admin.manageSchoolsPage.form.address')} *
+              </Label>
+              <Input
+                id="edit-address"
+                name="address"
+                value={schoolBranch.address}
+                onChange={handleInputChange}
+                className="mt-1"
+                required
+              />
+              {formErrors.address && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.address}</p>
+              )}
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Address/Location *"
-              name="address"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.address}
-              onChange={handleInputChange}
-              error={!!formErrors.address}
-              helperText={formErrors.address || "Physical address of this branch"}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-email" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.email')}
+                </Label>
+                <Input
+                  id="edit-email"
+                  name="email"
+                  type="email"
+                  value={schoolBranch.email}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-website" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.website')}
+                </Label>
+                <Input
+                  id="edit-website"
+                  name="website"
+                  value={schoolBranch.website}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              </div>
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Contact Phone Number"
-              name="phone"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.phone}
-              onChange={handleInputChange}
-              helperText="Phone number for this specific branch location"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-schoolDomain" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.schoolDomain')}
+                </Label>
+                <Input
+                  id="edit-schoolDomain"
+                  name="schoolDomain"
+                  value={schoolBranch.schoolDomain}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-emailDomain" className="text-sm font-medium">
+                  {t('admin.manageSchoolsPage.form.emailDomain')}
+                </Label>
+                <Input
+                  id="edit-emailDomain"
+                  name="emailDomain"
+                  value={schoolBranch.emailDomain}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              </div>
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Branch Email (optional)"
-              name="email"
-              fullWidth
-              variant="outlined"
-              value={schoolBranch.email}
-              onChange={handleInputChange}
-              helperText="Contact email specific to this branch"
-            />
+            <div>
+              <Label htmlFor="edit-branchDescription" className="text-sm font-medium">
+                {t('admin.manageSchoolsPage.form.description')}
+              </Label>
+              <Input
+                id="edit-branchDescription"
+                name="branchDescription"
+                value={schoolBranch.branchDescription}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </div>
             
-            <TextField
-              margin="dense"
-              label="Branch Description (optional)"
-              name="branchDescription"
-              fullWidth
-              multiline
-              rows={2}
-              variant="outlined"
-              value={schoolBranch.branchDescription}
-              onChange={handleInputChange}
-              helperText="Additional details about this branch location"
-            />
-          </Box>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-isClusterSchool"
+                name="isClusterSchool"
+                checked={schoolBranch.isClusterSchool}
+                onCheckedChange={(checked) => handleInputChange({ target: { name: 'isClusterSchool', value: checked } })}
+              />
+              <Label htmlFor="edit-isClusterSchool" className="text-sm">
+                {t('admin.manageSchoolsPage.form.isClusterSchool')}
+              </Label>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseEditDialog}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit">
+                {t('common.save')}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button onClick={handleEditSchool} variant="contained">Save Changes</Button>
-        </DialogActions>
       </Dialog>
       
       {/* Delete School Branch Dialog */}
-      <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Delete School Branch</DialogTitle>
+      <Dialog open={openDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this school branch? This action cannot be undone.
-          </DialogContentText>
+          <DialogHeader>
+            <DialogTitle>{t('admin.manageSchoolsPage.dialogs.deleteSchool.title')}</DialogTitle>
+            <DialogDescription>
+              {t('admin.manageSchoolsPage.dialogs.deleteSchool.message')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDeleteDialog}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteSchool}>
+              {t('common.delete')}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleDeleteSchool} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 
