@@ -1,47 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Typography,
-  Paper,
-  Box,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  FormHelperText,
-  Divider,
-  Alert,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  Switch,
-  FormControlLabel,
-  Chip,
-  Checkbox,
-  ListItemText,
-  OutlinedInput,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
-import {
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-} from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Switch } from '../../components/ui/switch';
+import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
 
+import { Spinner } from '../../components/ui/spinner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
+import { 
+  ArrowLeft, 
+  Eye, 
+  EyeOff, 
+  Save, 
+  User, 
+  Lock, 
+  Phone, 
+  Mail,
+  Building,
+  Users,
+  BookOpen,
+  Bell,
+  FileText,
+  Shield,
+  Settings,
+  GraduationCap,
+  Link,
+  Unlink
+} from 'lucide-react';
+import { toast } from 'react-toastify';
 import { getUserById, updateUser, reset } from '../../features/users/userSlice';
 import { updateCurrentUserPermissions } from '../../features/auth/authSlice';
 import { API_URL } from '../../config/appConfig';
+import { useTranslation } from 'react-i18next';
 
 const EditUser = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -100,310 +98,104 @@ const EditUser = () => {
     email: '',
     mobilePhone: '',
     personalEmail: '',
-    role: '',
     password: '',
     confirmPassword: '',
   });
-  
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch user data when component mounts
+  useEffect(() => {
+    if (id && currentUser?.token) {
+      fetchUserData();
+    }
+  }, [id, currentUser?.token]);
+
   // Fetch schools data
   useEffect(() => {
-    const fetchSchools = async () => {
-      try {
-        setSchoolsLoading(true);
-        // Fetch schools from API
-        const response = await fetch(`${API_URL}/api/schools`, {
-          headers: {
-            Authorization: `Bearer ${currentUser.token}`
-          }
+    if (currentUser?.token) {
+      fetchSchools();
+    }
+  }, [currentUser?.token]);
+
+  const fetchUserData = async () => {
+    try {
+      setIsLoading(true);
+      setIsError(false);
+      
+      const response = await fetch(`${API_URL}/api/users/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const user = await response.json();
+        setUserData(user);
+        
+        // Populate form data
+        setFormData({
+          name: user.name || '',
+          email: user.email || '',
+          mobilePhone: user.mobilePhone || '',
+          personalEmail: user.personalEmail || '',
+          role: user.role || '',
+          changePassword: false,
+          password: '',
+          confirmPassword: '',
+          canSendNotifications: user.canSendNotifications !== false,
+          canAddGradeDescriptions: user.canAddGradeDescriptions !== false,
+          secretaryPermissions: {
+            canManageGrades: user.secretaryPermissions?.canManageGrades || false,
+            canSendNotifications: user.secretaryPermissions?.canSendNotifications || false,
+            canManageUsers: user.secretaryPermissions?.canManageUsers || false,
+            canManageSchools: user.secretaryPermissions?.canManageSchools || false,
+            canManageDirections: user.secretaryPermissions?.canManageDirections || false,
+            canManageSubjects: user.secretaryPermissions?.canManageSubjects || false,
+            canAccessStudentProgress: user.secretaryPermissions?.canAccessStudentProgress || false,
+          },
         });
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch schools');
-        }
-        
-        const data = await response.json();
-        setSchools(data);
-      } catch (error) {
-        console.error('Error fetching schools:', error);
-        toast.error('Failed to load schools data');
-      } finally {
-        setSchoolsLoading(false);
-      }
-    };
-    
-    fetchSchools();
-  }, [currentUser.token]);
-
-  // Fetch available parents and student's linked parents
-  const fetchParentData = async () => {
-    if (!userData || userData.role !== 'student') return;
-    
-    try {
-      setParentLinkingLoading(true);
-      
-      // Fetch available parents
-      const parentsResponse = await fetch(`${API_URL}/api/users/available-parents`, {
-        headers: {
-          'Authorization': `Bearer ${currentUser.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (parentsResponse.ok) {
-        const parentsData = await parentsResponse.json();
-        console.log('[FETCH_PARENT_DATA] Available parents response:', parentsData);
-        setAvailableParents(parentsData.parents || []);
+        dataLoaded.current = true;
       } else {
-        console.error('[FETCH_PARENT_DATA] Failed to fetch available parents:', parentsResponse.status);
+        throw new Error('Failed to fetch user data');
       }
-      
-      // Fetch student's linked parents
-      const linkedResponse = await fetch(`${API_URL}/api/users/student/${id}/parents`, {
-        headers: {
-          'Authorization': `Bearer ${currentUser.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (linkedResponse.ok) {
-        const linkedData = await linkedResponse.json();
-        console.log('[FETCH_PARENT_DATA] Linked parents response:', linkedData);
-        console.log('[FETCH_PARENT_DATA] Setting linked parents to:', linkedData.parents || []);
-        // FIX: Backend returns 'parents' not 'linkedParents'
-        setLinkedParents(linkedData.parents || []);
-      } else {
-        console.error('[FETCH_PARENT_DATA] Failed to fetch linked parents:', linkedResponse.status);
-      }
-      
     } catch (error) {
-      console.error('Error fetching parent data:', error);
-      toast.error('Failed to load parent data');
+      console.error('Error fetching user data:', error);
+      setIsError(true);
+      setErrorMessage(error.message || 'Failed to fetch user data');
     } finally {
-      setParentLinkingLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Load parent data when user data is available
-  useEffect(() => {
-    if (userData && userData.role === 'student') {
-      fetchParentData();
-    }
-  }, [userData]);
-
-  // Define empty arrays for legacy fields to prevent undefined errors
-  const directions = [];
-  const subjects = [];
-  const filteredSubjects = [];
-  const directionsLoading = false;
-
-  // Fetch user data on component mount
-  useEffect(() => {
-    console.log('EditUser: Fetching user data for ID:', id);
-    setIsLoading(true);
-    setIsError(false);
-    
-    // Reset any previous state
-    dispatch(reset());
-    
-    // Get user data from API
-    dispatch(getUserById(id))
-      .unwrap()
-      .then(response => {
-        console.log('EditUser: User data retrieved successfully', response);
-        if (response && response._id) {
-          setUserData(response);
-          // Prepare the form data based on user role
-          const newFormData = {
-            ...formData,
-            name: response.name || '',
-            email: response.email || '',
-            mobilePhone: response.mobilePhone || response.savedMobilePhone || '',
-            personalEmail: response.personalEmail || response.savedPersonalEmail || '',
-            role: response.role || '',
-            changePassword: false,
-            password: '',
-            confirmPassword: '',
-            // Set teacher permission fields if they exist, otherwise use defaults
-            canSendNotifications: response.canSendNotifications !== undefined ? response.canSendNotifications : true,
-            canAddGradeDescriptions: response.canAddGradeDescriptions !== undefined ? response.canAddGradeDescriptions : true,
-            // Set secretary permissions if they exist, otherwise use defaults
-            secretaryPermissions: response.secretaryPermissions || {
-              canManageGrades: false,
-              canSendNotifications: false,
-              canManageUsers: false,
-              canManageSchools: false,
-              canManageDirections: false,
-              canManageSubjects: false,
-              canAccessStudentProgress: false,
-            },
-          };
-          
-          // Enhanced user data processing for all roles
-          console.log('Processing user data for role:', response.role);
-          console.log('Raw user data from server:', JSON.stringify(response, null, 2));
-          
-          // Process schools - handle both array and single value formats
-          const processSchoolData = (schoolData) => {
-            if (Array.isArray(schoolData)) {
-              return schoolData.map(school => typeof school === 'object' ? school._id : school);
-            }
-            return schoolData ? (typeof schoolData === 'object' ? [schoolData._id] : [schoolData]) : [];
-          };
-          
-          // Process directions - handle both array and single value formats
-          const processDirectionData = (directionData) => {
-            if (Array.isArray(directionData)) {
-              return directionData.map(direction => typeof direction === 'object' ? direction._id : direction);
-            }
-            return directionData ? (typeof directionData === 'object' ? [directionData._id] : [directionData]) : [];
-          };
-          
-          // Process subjects
-          const processSubjectData = (subjectData) => {
-            if (!subjectData) return [];
-            if (Array.isArray(subjectData)) {
-              return subjectData.map(subject => typeof subject === 'object' ? subject._id : subject);
-            }
-            return typeof subjectData === 'object' ? [subjectData._id] : [subjectData];
-          };
-          
-          // Process based on role
-          if (response.role === 'student') {
-            // CRITICAL FIX: Properly handle both single object and array of objects or ids
-            console.log('Raw student data:', {
-              school: response.school,
-              schools: response.schools,
-              direction: response.direction,
-              directions: response.directions
-            });
-            
-            // Process schools with better fallback handling
-            let schools = [];
-            // First try schools array
-            if (response.schools && Array.isArray(response.schools) && response.schools.length > 0) {
-              schools = processSchoolData(response.schools);
-            }
-            // Then try single school
-            else if (response.school) {
-              schools = processSchoolData([response.school]);
-            }
-            
-            // Process directions with better fallback handling
-            let directions = [];
-            // First try directions array
-            if (response.directions && Array.isArray(response.directions) && response.directions.length > 0) {
-              directions = processDirectionData(response.directions);
-            }
-            // Then try single direction
-            else if (response.direction) {
-              directions = processDirectionData([response.direction]);
-            }
-            
-            // CRITICAL FIX: Make sure we have values for the dropdowns
-            newFormData.schools = schools;
-            newFormData.directions = directions;
-            newFormData.school = schools.length > 0 ? schools[0] : '';
-            newFormData.direction = directions.length > 0 ? directions[0] : '';
-            
-            console.log('FIXED: Student data processed:', {
-              school: newFormData.school,
-              direction: newFormData.direction,
-              schools: newFormData.schools,
-              directions: newFormData.directions
-            });
-          } else if (response.role === 'teacher' || response.role === 'secretary') {
-            // CRITICAL FIX: Better handling for teacher/secretary data
-            console.log('Raw teacher/secretary data:', {
-              role: response.role,
-              school: response.school,
-              schools: response.schools,
-              direction: response.direction,
-              directions: response.directions
-            });
-            
-            // Process schools with better fallback handling
-            let schools = [];
-            // First try schools array
-            if (response.schools && Array.isArray(response.schools) && response.schools.length > 0) {
-              schools = processSchoolData(response.schools);
-            }
-            // Then try single school
-            else if (response.school) {
-              schools = Array.isArray(response.school)
-                ? processSchoolData(response.school)
-                : processSchoolData([response.school]);
-            }
-            
-            // Set schools array and single school value
-            newFormData.schools = schools;
-            newFormData.school = schools.length > 0 ? schools[0] : '';
-            
-            // Only set directions for teachers, not for secretaries
-            if (response.role === 'teacher') {
-              // Process directions with better fallback handling
-              let directions = [];
-              // First try directions array
-              if (response.directions && Array.isArray(response.directions) && response.directions.length > 0) {
-                directions = processDirectionData(response.directions);
-              }
-              // Then try single direction
-              else if (response.direction) {
-                directions = Array.isArray(response.direction)
-                  ? processDirectionData(response.direction)
-                  : processDirectionData([response.direction]);
-              }
-              
-              newFormData.directions = directions;
-              newFormData.direction = directions.length > 0 ? directions[0] : '';
-            } else {
-              // For secretary, set empty directions
-              newFormData.directions = [];
-              newFormData.direction = '';
-            }
-            
-            console.log('FIXED: Teacher/Secretary data processed:', {
-              role: response.role,
-              school: newFormData.school,
-              direction: newFormData.direction,
-              schools: newFormData.schools,
-              directions: newFormData.directions
-            });
-          }
-          
-          // Process subjects for all roles
-          newFormData.subjects = processSubjectData(response.subjects);
-          console.log('Processed subjects:', newFormData.subjects);
-          
-          setFormData(newFormData);
-          dataLoaded.current = true;
-        } else {
-          console.error('EditUser: Invalid user data received', response);
-          setIsError(true);
-          setErrorMessage('Invalid user data received');
+  const fetchSchools = async () => {
+    try {
+      setSchoolsLoading(true);
+      const response = await fetch(`${API_URL}/api/schools`, {
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
         }
-      })
-      .catch(error => {
-        console.error('EditUser: Failed to retrieve user data', error);
-        setIsError(true);
-        setErrorMessage(error?.message || 'User not found');
-        toast.error('Failed to load user data: ' + (error?.message || 'User not found'));
-      })
-      .finally(() => {
-        setIsLoading(false);
       });
-  }, [id, dispatch]);
-  
+
+      if (response.ok) {
+        const schoolsData = await response.json();
+        setSchools(schoolsData);
+      } else {
+        console.error('Failed to fetch schools');
+      }
+    } catch (error) {
+      console.error('Error fetching schools:', error);
+    } finally {
+      setSchoolsLoading(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Enhanced debug logging for multi-select fields
-    if (name === 'schools' || name === 'directions') {
-      console.log(`${name} selection changed:`, value);
-      console.log('Selection type:', Array.isArray(value) ? 'Array' : typeof value);
-      console.log('Selection length:', Array.isArray(value) ? value.length : 'N/A');
-    }
-    
-    // Clear errors for this field
+    // Clear the error for this field when it's modified
     if (formErrors[name]) {
       setFormErrors({
         ...formErrors,
@@ -411,995 +203,549 @@ const EditUser = () => {
       });
     }
     
-    // Create a clone of the current form data to work with
-    let updatedFormData = { ...formData };
-    
-    // 1. MULTI-SELECT HANDLING - Teacher specific fields
-    if (formData.role === 'teacher' && (name === 'schools' || name === 'directions')) {
-      // CRITICAL FIX: Ensure multi-selects are always handled as arrays
-      if (!Array.isArray(value)) {
-        // Convert single value to array or use empty array if no value
-        updatedFormData[name] = value ? [value] : [];
-        console.log(`FIXED: Converted non-array ${name} to:`, updatedFormData[name]);
-      } else {
-        // Use the array as provided
-        updatedFormData[name] = [...value];
-      }
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
 
-      // Log detailed information about the updated selection
-      console.log(`Teacher ${name} updated to:`, updatedFormData[name]);
-      console.log(`Number of selected ${name}:`, updatedFormData[name].length);
-      
-      // Handle the subjects filtering based on directions selection
-      if (name === 'directions' && Array.isArray(value)) {
-        const dirSubjects = subjects.filter(subject => 
-          subject.directions && Array.isArray(subject.directions) && (
-            subject.directions.some(subjectDir => {
-              const subjectDirId = typeof subjectDir === 'object' ? subjectDir._id : subjectDir;
-              return value.includes(subjectDirId);
-            })
-          )
-        );
-        
-        // Keep only subjects that belong to at least one of the selected directions
-        const dirSubjectIds = dirSubjects.map(s => s._id);
-        updatedFormData.subjects = updatedFormData.subjects.filter(id => dirSubjectIds.includes(id));
-      }
-      
-      // Update with our modified data
-      setFormData(updatedFormData);
-    }
-    // 2. STUDENT DIRECTION HANDLING - filter subjects based on direction
-    else if (name === 'direction' && formData.role === 'student') {
-      // When direction changes for a student, reset subjects that don't belong to this direction
-      const dirSubjects = subjects.filter(subject => 
-        subject.directions && (
-          (Array.isArray(subject.directions) && subject.directions.includes(value)) ||
-          (Array.isArray(subject.directions) && subject.directions.some(d => 
-            (typeof d === 'object' && d._id === value) || d === value
-          ))
-        )
-      );
-      
-      // Keep only subjects that belong to the new direction
-      const dirSubjectIds = dirSubjects.map(s => s._id);
-      updatedFormData[name] = value;
-      updatedFormData.subjects = updatedFormData.subjects.filter(id => dirSubjectIds.includes(id));
-      
-      // Update with our modified data
-      setFormData(updatedFormData);
-    } 
-    // 3. DEFAULT HANDLING for all other fields
-    else {
-      // Standard field handling
+  const handleSwitchChange = (name, checked) => {
+    if (name.startsWith('secretary_')) {
+      const permissionKey = name.replace('secretary_', '');
       setFormData({
         ...formData,
-        [name]: value,
+        secretaryPermissions: {
+          ...formData.secretaryPermissions,
+          [permissionKey]: checked
+        }
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: checked,
       });
     }
   };
-  
-  const handleChangePasswordToggle = (e) => {
-    // Update the formData object directly with the changePassword field
-    setFormData({
-      ...formData,
-      changePassword: e.target.checked,
-      // Clear password fields when disabling password change
-      password: e.target.checked ? formData.password : '',
-      confirmPassword: e.target.checked ? formData.confirmPassword : '',
-    });
-    
-    // Clear any password-related errors when disabling
-    if (!e.target.checked) {
-      const updatedErrors = { ...formErrors };
-      delete updatedErrors.password;
-      delete updatedErrors.confirmPassword;
-      setFormErrors(updatedErrors);
-    }
-  };
-  
+
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
-  
+
   const handleClickShowConfirmPassword = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
-  
-  const handleMouseDownPassword = (e) => {
+
+  const validateForm = () => {
+    const errors = {};
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      errors.name = t('admin.createUserPage.editUserPage.form.fullName');
+      isValid = false;
+    }
+
+    if (!formData.email) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Email is invalid';
+      isValid = false;
+    }
+
+    // Validate personal email if provided
+    if (formData.personalEmail && !/\S+@\S+\.\S+/.test(formData.personalEmail)) {
+              errors.personalEmail = t('admin.createUserPage.editUserPage.validation.emailInvalid');
+      isValid = false;
+    }
+
+    // Validate mobile phone if provided
+    if (formData.mobilePhone && !/^[\d\s\-+()]+$/.test(formData.mobilePhone)) {
+      errors.mobilePhone = 'Invalid phone number format';
+      isValid = false;
+    }
+
+    // Validate password fields if changing password
+    if (formData.changePassword) {
+      if (!formData.password) {
+        errors.password = 'Password is required';
+        isValid = false;
+      } else if (formData.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+        isValid = false;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+        isValid = false;
+      }
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-  };
-
-  // Parent linking functionality
-  const handleLinkParent = async () => {
-    if (!selectedParentId) {
-      toast.error('Please select a parent to link');
-      return;
-    }
-    
-    try {
-      setParentLinkingLoading(true);
-      
-      const response = await fetch(`${API_URL}/api/users/link-parent`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${currentUser.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          parentId: selectedParentId,
-          studentId: id
-        })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(`Successfully linked parent: ${result.parent.name}`);
-        setLinkParentDialogOpen(false);
-        setSelectedParentId('');
-        // Refresh parent data
-        await fetchParentData();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to link parent');
-      }
-    } catch (error) {
-      console.error('Error linking parent:', error);
-      toast.error('Failed to link parent');
-    } finally {
-      setParentLinkingLoading(false);
-    }
-  };
-
-  const handleUnlinkParent = async (parentId, parentName) => {
-    try {
-      setParentLinkingLoading(true);
-      
-      const response = await fetch(`${API_URL}/api/users/unlink-parent`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${currentUser.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          parentId: parentId,
-          studentId: id
-        })
-      });
-      
-      if (response.ok) {
-        toast.success(`Successfully unlinked parent: ${parentName}`);
-        // Refresh parent data
-        await fetchParentData();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to unlink parent');
-      }
-    } catch (error) {
-      console.error('Error unlinking parent:', error);
-      toast.error('Failed to unlink parent');
-    } finally {
-      setParentLinkingLoading(false);
-    }
-  };
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    hasSubmitted.current = true;
-    setIsError(false);
-    
-    const validateForm = () => {
-      const errors = {};
-      let isValid = true;
-      
-      if (!formData.name.trim()) {
-        errors.name = 'Name is required';
-        isValid = false;
-      }
-      
-      if (!formData.email.trim()) {
-        errors.email = 'Email is required';
-        isValid = false;
-      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        errors.email = 'Email is invalid';
-        isValid = false;
-      }
-      
-      // Validate personal email if provided
-      if (formData.personalEmail && !/\S+@\S+\.\S+/.test(formData.personalEmail)) {
-        errors.personalEmail = 'Personal email is invalid';
-        isValid = false;
-      }
-
-      // Validate mobile phone if provided
-      if (formData.mobilePhone && !/^[\d\s\-+()]+$/.test(formData.mobilePhone)) {
-        errors.mobilePhone = 'Invalid phone number format';
-        isValid = false;
-      }
-      
-      if (formData.changePassword) {
-        if (formData.password && formData.password.length < 6) {
-          errors.password = 'Password must be at least 6 characters';
-          isValid = false;
-        }
-        
-        if (formData.password !== formData.confirmPassword) {
-          errors.confirmPassword = 'Passwords do not match';
-          isValid = false;
-        }
-      }
-      
-      if (!formData.role) {
-        errors.role = 'Role is required';
-        isValid = false;
-      }
-      
-      // Legacy field validation has been removed
-      
-      setFormErrors(errors);
-      return isValid;
-    };
     
     if (!validateForm()) {
       return;
     }
-    
-    // Create user data object with all necessary properties
-    const userUpdateData = {};
-    
-    // Always include these basic fields
-    userUpdateData.name = formData.name;
-    userUpdateData.email = formData.email;
-    userUpdateData.mobilePhone = formData.mobilePhone || ''; // Added mobile phone
-    userUpdateData.personalEmail = formData.personalEmail || ''; // Added personal email
-    userUpdateData.role = formData.role;
-    
-    // Only include password if changing it
-    if (formData.changePassword && formData.password) {
-      userUpdateData.password = formData.password;
-    }
-    
-    // Handle school, direction, and subjects based on user role
-    if (formData.role === 'student') {
-      // For students: single school and direction
-      userUpdateData.school = formData.school || null;
-      userUpdateData.direction = formData.direction || null;
-      
-      // Ensure subjects array is always included
-      userUpdateData.subjects = formData.subjects && formData.subjects.length > 0 
-        ? formData.subjects 
-        : [];
-    } else if (formData.role === 'secretary') {
-      // For secretaries: add secretary permissions and school/direction assignments
-      userUpdateData.secretaryPermissions = formData.secretaryPermissions;
-      
-      // Process schools array with clean field naming to match the backend model
-      console.log('Original secretary schools:', formData.schools);
-      
-      // Extract school IDs from the form data
-      let schoolsArray = [];
-      
-      if (Array.isArray(formData.schools) && formData.schools.length > 0) {
-        // Process schools array
-        schoolsArray = formData.schools.map(school => 
-          typeof school === 'object' && school._id ? school._id : school
-        );
-      } else if (formData.schools && !Array.isArray(formData.schools)) {
-        // Handle single value if not an array
-        const schoolId = typeof formData.schools === 'object' && formData.schools._id ? 
-          formData.schools._id : formData.schools;
-        schoolsArray = [schoolId];
-      }
-      
-      userUpdateData.schools = schoolsArray;
-      userUpdateData.school = schoolsArray; // For compatibility
 
-      // Process directions array with clean field naming
-      console.log('Original secretary directions:', formData.directions);
-      
-      // Extract direction IDs from the form data
-      let directionsArray = [];
-      
-      if (Array.isArray(formData.directions) && formData.directions.length > 0) {
-        // Process directions array
-        directionsArray = formData.directions.map(direction => 
-          typeof direction === 'object' && direction._id ? direction._id : direction
-        );
-      } else if (formData.directions && !Array.isArray(formData.directions)) {
-        // Handle single value if not an array
-        const directionId = typeof formData.directions === 'object' && formData.directions._id ? 
-          formData.directions._id : formData.directions;
-        directionsArray = [directionId];
-      }
-      
-      userUpdateData.directions = directionsArray;
-      userUpdateData.direction = directionsArray; // For compatibility
-      
-      // Ensure subjects array is always included
-      userUpdateData.subjects = formData.subjects && formData.subjects.length > 0 
-        ? formData.subjects.map(subject => 
-            typeof subject === 'object' && subject._id ? subject._id : subject
-          )
-        : [];
+    setSubmitting(true);
 
-      console.log('Secretary data being sent to backend:', userUpdateData);
-    } else if (formData.role === 'teacher') {
-      // For teachers: use the dedicated array fields (schools/directions)
-      // The backend now uses separate fields for teachers vs students
-      console.log('Processing teacher multi-select fields');
-      
-      // Process schools array with clean field naming to match the backend model
-      console.log('Original formData.schools:', formData.schools);
-      
-      // Extract school IDs from the form data
-      let schoolsArray = [];
-      
-      if (Array.isArray(formData.schools) && formData.schools.length > 0) {
-        // Process schools array
-        schoolsArray = formData.schools.map(school => 
-          typeof school === 'object' && school._id ? school._id : school
-        );
-      } else if (formData.schools && !Array.isArray(formData.schools)) {
-        // Handle single value if not an array
-        const schoolId = typeof formData.schools === 'object' && formData.schools._id ? 
-          formData.schools._id : formData.schools;
-        schoolsArray = [schoolId];
+    try {
+      const updateData = {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        mobilePhone: formData.mobilePhone?.trim() || '',
+        personalEmail: formData.personalEmail?.trim().toLowerCase() || '',
+        canSendNotifications: formData.canSendNotifications,
+        canAddGradeDescriptions: formData.canAddGradeDescriptions,
+        secretaryPermissions: formData.secretaryPermissions,
+      };
+
+      if (formData.changePassword) {
+        updateData.password = formData.password;
       }
+
+      console.log('Updating user with data:', updateData);
+
+      // Set the submission flag to true
+      hasSubmitted.current = true;
       
-      // FIXED FOR COMPATIBILITY: Use both old and new field names to ensure it works
-      // This is because some API endpoints might still be using school/direction
-      userUpdateData.schools = schoolsArray;
-      userUpdateData.school = schoolsArray; // Also send using old field name for compatibility
+      // Dispatch the update action
+      dispatch(updateUser({ id, userData: updateData }));
       
-      console.log('Schools data being sent to backend:');
-      console.log('- userUpdateData.schools:', JSON.stringify(userUpdateData.schools));
-      console.log('- userUpdateData.school:', JSON.stringify(userUpdateData.school));
-      console.log('Number of schools:', userUpdateData.schools.length);
-      
-      // Process directions array with clean field naming
-      console.log('Original formData.directions:', formData.directions);
-      
-      // Extract direction IDs from the form data
-      let directionsArray = [];
-      
-      if (Array.isArray(formData.directions) && formData.directions.length > 0) {
-        // Process directions array
-        directionsArray = formData.directions.map(direction => 
-          typeof direction === 'object' && direction._id ? direction._id : direction
-        );
-      } else if (formData.directions && !Array.isArray(formData.directions)) {
-        // Handle single value if not an array
-        const directionId = typeof formData.directions === 'object' && formData.directions._id ? 
-          formData.directions._id : formData.directions;
-        directionsArray = [directionId];
-      }
-      
-      // FIXED FOR COMPATIBILITY: Use both old and new field names
-      userUpdateData.directions = directionsArray;
-      userUpdateData.direction = directionsArray; // Also send using old field name for compatibility
-      
-      console.log('Directions data being sent to backend:');
-      console.log('- userUpdateData.directions:', JSON.stringify(userUpdateData.directions));
-      console.log('- userUpdateData.direction:', JSON.stringify(userUpdateData.direction));
-      console.log('Number of directions:', userUpdateData.directions.length);
-      
-      // Ensure subjects array is always included
-      userUpdateData.subjects = formData.subjects && formData.subjects.length > 0 
-        ? formData.subjects.map(subject => 
-            typeof subject === 'object' && subject._id ? subject._id : subject
-          )
-        : [];
-      
-      // Include teacher permission fields
-      userUpdateData.canSendNotifications = formData.canSendNotifications || false;
-      userUpdateData.canAddGradeDescriptions = formData.canAddGradeDescriptions || false;
-    } else {
-      // For admins, clear these fields
-      userUpdateData.school = null;
-      userUpdateData.direction = null;
-      userUpdateData.subjects = [];
+    } catch (error) {
+      console.error('Error updating user:', error);
+      setSubmitting(false);
     }
-    
-    console.log('Submitting user data:', userUpdateData);
-    
-    // Update user
-    setIsLoading(true);
-    dispatch(updateUser({ id, userData: userUpdateData }))
-      .unwrap()
-      .then((updatedUser) => {
-        toast.success('User updated successfully');
-        
-        // If the user's permissions were updated, also update them in the auth state
-        // to make the changes take effect without needing to log out
-        if (currentUser && currentUser._id === id) {
-          // This is the current logged-in user updating their own account
-          toast.info('Refreshing your session with the new permissions...', { autoClose: 2000 });
-          
-          // Remove the current user data to force a fresh fetch
-          if (localStorage.getItem('user')) {
-            localStorage.removeItem('user');
-          }
-          if (sessionStorage.getItem('user')) {
-            sessionStorage.removeItem('user');
-          }
-          
-          // Force a full page reload which will redirect to login
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 1500);
-        } else {
-          // For other users, just update permissions and refresh the data
-          if (formData.role === 'teacher') {
-            // Create a permissions object with just the permission flags
-            const permissionUpdates = {
-              canSendNotifications: formData.canSendNotifications,
-              canAddGradeDescriptions: formData.canAddGradeDescriptions
-            };
-            dispatch(updateCurrentUserPermissions(permissionUpdates));
-          } else if (formData.role === 'secretary') {
-            // Secretary permissions update
-            const permissionUpdates = {
-              secretaryPermissions: formData.secretaryPermissions
-            };
-            dispatch(updateCurrentUserPermissions(permissionUpdates));
-          }
-          
-          // After saving, refresh user data to see changes immediately
-          setTimeout(() => {
-            // Reload the user data to show updated values without refresh
-            dispatch(getUserById(id));
-          }, 500);
-          
-          // Navigate back to users list after a delay
-          setTimeout(() => {
-            // Redirect back to user management
-            navigate('/app/admin/users');
-          }, 1000);
-        }
-      })
-      .catch(error => {
-        setIsLoading(false);
-        setIsError(true);
-        
-        // Log detailed error information for debugging
-        console.error('Update user error details:', error);
-        
-        // Extract the actual error message from the thunk rejection
-        const errorDetail = typeof error === 'string' ? error : error.message || 'Unknown error';
-        console.log('Error detail for debugging:', errorDetail);
-        
-        // Create a comprehensive error message
-        const errorMsg = `Failed to update user: ${errorDetail}`;
-        
-        // Add an alert in the browser console with the full error details
-        console.warn('%c DETAILED ERROR INFORMATION FOR UPDATE USER ', 'background: #ff0000; color: #ffffff; font-size: 16px');
-        console.dir(error);
-        
-        // Save the error message in component state and show toast
-        setErrorMessage(errorMsg);
-        toast.error(errorMsg, {
-          autoClose: 10000, // Keep this error visible longer (10 seconds)
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      });
   };
-  
+
+  // Handle API response effects
+  useEffect(() => {
+    // Skip effects on initial component mount
+    if (initialMount.current) {
+      initialMount.current = false;
+      dispatch(reset());
+      return;
+    }
+
+    if (userError) {
+      toast.error(userMessage || 'Failed to update user');
+      setSubmitting(false);
+      hasSubmitted.current = false;
+    }
+    
+    if (userLoading === false && hasSubmitted.current) {
+      toast.success('User updated successfully');
+      setSubmitting(false);
+      hasSubmitted.current = false;
+      
+      // Navigate back to users list
+      setTimeout(() => {
+        dispatch(reset());
+        navigate('/app/admin/users');
+      }, 100);
+    }
+    
+  }, [userError, userLoading, userMessage, navigate, dispatch]);
+
   const handleBack = () => {
     navigate('/app/admin/users');
   };
-  
+
   // Show loading state
-  if (isLoading || userLoading) {
+  if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ ml: 2 }}>
-          Loading user data...
-        </Typography>
-      </Box>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="xl" />
+          <span className="ml-2 text-lg">Loading user data...</span>
+        </div>
+      </div>
     );
   }
 
   // Show error state
-  if (isError || userError) {
+  if (isError) {
     return (
-      <Box sx={{ maxWidth: '800px', mx: 'auto', mt: 3 }}>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         <Button
-          startIcon={<ArrowBackIcon />}
+          variant="outline"
           onClick={handleBack}
-          sx={{ mb: 2 }}
+          className="mb-6 gap-2"
         >
-          Back to Users
+          <ArrowLeft className="h-4 w-4" />
+          {t('admin.createUserPage.editUserPage.backToUsers')}
         </Button>
-        
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {errorMessage || userMessage || 'Failed to load user data'}
-        </Alert>
-        
-        <Button 
-          variant="contained" 
-          onClick={() => dispatch(getUserById(id))} 
-          startIcon={<IconButton><VisibilityIcon /></IconButton>}
-        >
-          Retry
-        </Button>
-      </Box>
+        <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200">
+            {errorMessage || 'Failed to load user data'}
+          </p>
+        </div>
+      </div>
     );
   }
-  
+
+  // Show submitting state
+  if (submitting) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <Button
+          variant="outline"
+          onClick={handleBack}
+          disabled
+          className="mb-6 gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t('admin.createUserPage.editUserPage.backToUsers')}
+        </Button>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Spinner size="xl" />
+          <span className="ml-2 text-lg">{t('admin.createUserPage.editUserPage.actions.updatingUser')}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Box sx={{ flexGrow: 1, maxWidth: '800px', mx: 'auto' }}>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
       <Button
-        startIcon={<ArrowBackIcon />}
+        variant="outline"
         onClick={handleBack}
-        sx={{ mb: 2 }}
+        className="mb-6 gap-2"
       >
-        Back to Users
+        <ArrowLeft className="h-4 w-4" />
+        {t('admin.createUserPage.editUserPage.backToUsers')}
       </Button>
       
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Edit User
-        </Typography>
-        
-        <Divider sx={{ mb: 3 }} />
-        
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Name *"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                error={!!formErrors.name}
-                helperText={formErrors.name}
-                disabled={isLoading}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Email *"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={!!formErrors.email}
-                helperText={formErrors.email || 'Email cannot be changed after creation'}
-                disabled={true}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Mobile Phone"
-                name="mobilePhone"
-                value={formData.mobilePhone}
-                onChange={handleChange}
-                placeholder="e.g., +30 69 1234 5678"
-                error={!!formErrors.mobilePhone}
-                helperText={formErrors.mobilePhone || 'Optional'}
-                inputProps={{
-                  maxLength: 20,
-                  pattern: '[\d\s\-+()]+'
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Personal Email"
-                name="personalEmail"
-                type="email"
-                value={formData.personalEmail}
-                onChange={handleChange}
-                placeholder="student@example.com"
-                error={!!formErrors.personalEmail}
-                helperText={formErrors.personalEmail || 'Optional'}
-                inputProps={{
-                  autoComplete: 'email',
-                  inputMode: 'email'
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!!formErrors.role}>
-                <InputLabel id="role-label">Role</InputLabel>
-                <Select
-                  labelId="role-label"
-                  id="role"
-                  name="role"
-                  value={formData.role}
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <User className="h-6 w-6" />
+            {t('admin.createUserPage.editUserPage.title')}: {userData?.name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Separator className="mb-6" />
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  {t('admin.createUserPage.editUserPage.form.fullName')} *
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  label="Role"
-                  disabled={userData?.role === 'admin' || userData?.role === 'secretary'}
-                >
-                  <MenuItem value="teacher">Teacher</MenuItem>
-                  <MenuItem value="student">Student</MenuItem>
-                  <MenuItem value="parent">Parent</MenuItem>
-                </Select>
-                <FormHelperText>
-                  {formErrors.role || (userData?.role === 'admin' ? 'Admin account type cannot be changed' : '')}
-                </FormHelperText>
-              </FormControl>
-            </Grid>
-            
-            {/* Legacy field selection components (school, direction, subjects) have been removed */}
-            
-            {/* Secretary Permissions Section */}
-            {formData.role === 'secretary' && (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
-                  <Typography variant="h6" gutterBottom>
-                    Secretary Permissions
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Configure which administrative functions this secretary account can access.
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageGrades}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canManageGrades: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can view and edit grades"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canSendNotifications}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canSendNotifications: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can send notifications"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageUsers}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canManageUsers: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can manage user accounts"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageSchools}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canManageSchools: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can manage schools"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageDirections}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canManageDirections: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can manage directions"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canManageSubjects}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canManageSubjects: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can manage subjects"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.secretaryPermissions.canAccessStudentProgress}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                secretaryPermissions: {
-                                  ...formData.secretaryPermissions,
-                                  canAccessStudentProgress: e.target.checked
-                                }
-                              });
-                            }}
-                            color="primary"
-                          />
-                        }
-                        label="Can access student progress tracking"
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-            
-            
-            {/* Parent Account Management Section */}
-            {formData.role === 'student' && (
-              <Grid item xs={12}>
-                <Paper elevation={1} sx={{ p: 2, mt: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                    👨‍👩‍👧‍👦 Parent Account Management
-                  </Typography>
-                  
-                  {/* Existing Parent Accounts Display */}
-                  {linkedParents && linkedParents.length > 0 ? (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Current parent accounts linked to this student:
-                      </Typography>
-                      {linkedParents.map((parent, index) => (
-                        <Alert key={parent._id || index} severity="info" sx={{ mb: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Box>
-                              <Typography variant="body2">
-                                <strong>{parent.name}</strong> - {parent.email}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                Total linked students: {parent.totalLinkedStudents || 0}
-                              </Typography>
-                            </Box>
-                            <Button
-                              size="small"
-                              color="error"
-                              disabled={parentLinkingLoading}
-                              onClick={() => handleUnlinkParent(parent._id, parent.name)}
-                            >
-                              {parentLinkingLoading ? 'Unlinking...' : 'Unlink'}
-                            </Button>
-                          </Box>
-                        </Alert>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Alert severity="warning" sx={{ mb: 2 }}>
-                      No parent accounts are currently linked to this student.
-                    </Alert>
-                  )}
-                  
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    disabled={parentLinkingLoading}
-                    onClick={() => setLinkParentDialogOpen(true)}
-                    sx={{ mr: 2 }}
-                  >
-                    Link Parent Account
-                  </Button>
-                </Paper>
-              </Grid>
-            )}
-            
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.changePassword}
-                    onChange={handleChangePasswordToggle}
-                    name="changePassword"
-                    color="primary"
-                    disabled={isLoading}
-                  />
-                }
-                label="Change Password"
-              />
-            </Grid>
-            
-            {formData.changePassword && (
-              <>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="New Password *"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={handleChange}
-                    error={!!formErrors.password}
-                    helperText={formErrors.password}
-                    disabled={isLoading}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
-                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Confirm Password *"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    error={!!formErrors.confirmPassword}
-                    helperText={formErrors.confirmPassword}
-                    disabled={isLoading}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={handleClickShowConfirmPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
-                            {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-              </>
-            )}
-            
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                <Button 
-                  type="button"
-                  onClick={handleBack}
-                  sx={{ mr: 2 }}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  variant="contained" 
-                  color="primary"
-                  startIcon={<SaveIcon />}
-                  disabled={isLoading}
-                >
-                  Save Changes
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
+                  placeholder={t('admin.createUserPage.editUserPage.form.fullNamePlaceholder')}
+                  className={formErrors.name ? 'border-red-500' : ''}
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-500">{formErrors.name}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  {t('admin.createUserPage.editUserPage.form.loginEmail')} *
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder={t('admin.createUserPage.editUserPage.form.loginEmailPlaceholder')}
+                  className={formErrors.email ? 'border-red-500' : ''}
+                  required
+                />
+                {formErrors.email && (
+                  <p className="text-sm text-red-500">{formErrors.email}</p>
+                )}
+              </div>
+            </div>
 
-      {/* Link Parent Dialog */}
-      <Dialog 
-        open={linkParentDialogOpen} 
-        onClose={() => setLinkParentDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Link Parent to Student</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>Select Parent</InputLabel>
-              <Select
-                value={selectedParentId}
-                onChange={(e) => setSelectedParentId(e.target.value)}
-                label="Select Parent"
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="mobilePhone" className="text-sm font-medium">
+                  {t('admin.createUserPage.editUserPage.form.mobilePhone')}
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="mobilePhone"
+                    name="mobilePhone"
+                    value={formData.mobilePhone}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.editUserPage.form.optional')}
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{t('admin.createUserPage.editUserPage.form.optional')}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="personalEmail" className="text-sm font-medium">
+                  {t('admin.createUserPage.editUserPage.form.personalEmail')}
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="personalEmail"
+                    name="personalEmail"
+                    type="email"
+                    value={formData.personalEmail}
+                    onChange={handleChange}
+                    placeholder={t('admin.createUserPage.editUserPage.form.optional')}
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{t('admin.createUserPage.editUserPage.form.optional')}</p>
+              </div>
+            </div>
+
+            {/* Role Display */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">{t('admin.createUserPage.editUserPage.form.role')}</Label>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm">
+                  {formData.role}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {t('admin.createUserPage.editUserPage.form.roleCannotBeChanged')}
+                </span>
+              </div>
+            </div>
+
+            {/* Password Change Section */}
+            <Card className="bg-muted/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Lock className="h-5 w-5" />
+                  <h3 className="text-lg font-semibold">{t('admin.createUserPage.editUserPage.changePassword.title')}</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="changePassword"
+                      checked={formData.changePassword}
+                      onCheckedChange={(checked) => setFormData({ ...formData, changePassword: checked })}
+                    />
+                    <Label htmlFor="changePassword">{t('admin.createUserPage.editUserPage.changePassword.description')}</Label>
+                  </div>
+                  
+                  {formData.changePassword && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-sm font-medium">
+                          {t('admin.createUserPage.editUserPage.changePassword.newPassword')} *
+                        </Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder={t('admin.createUserPage.editUserPage.changePassword.newPasswordPlaceholder')}
+                            className={`pl-10 ${formErrors.password ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClickShowPassword}
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {formErrors.password && (
+                          <p className="text-sm text-red-500">{formErrors.password}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                          {t('admin.createUserPage.editUserPage.changePassword.confirmPassword')} *
+                        </Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            placeholder={t('admin.createUserPage.editUserPage.changePassword.confirmPasswordPlaceholder')}
+                            className={`pl-10 ${formErrors.confirmPassword ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClickShowConfirmPassword}
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {formErrors.confirmPassword && (
+                          <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Teacher Permissions */}
+            {formData.role === 'teacher' && (
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <GraduationCap className="h-5 w-5" />
+                    <h3 className="text-lg font-semibold">{t('admin.createUserPage.editUserPage.permissions.teacherPermissions')}</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canSendNotifications"
+                        checked={formData.canSendNotifications}
+                        onCheckedChange={(checked) => handleSwitchChange('canSendNotifications', checked)}
+                      />
+                      <Label htmlFor="canSendNotifications">{t('admin.createUserPage.editUserPage.permissions.canSendNotifications')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="canAddGradeDescriptions"
+                        checked={formData.canAddGradeDescriptions}
+                        onCheckedChange={(checked) => handleSwitchChange('canAddGradeDescriptions', checked)}
+                      />
+                      <Label htmlFor="canAddGradeDescriptions">{t('admin.createUserPage.editUserPage.permissions.canAddGradeDescriptions')}</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Secretary Permissions */}
+            {formData.role === 'secretary' && (
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="h-5 w-5" />
+                    <h3 className="text-lg font-semibold">{t('admin.createUserPage.editUserPage.permissions.secretaryPermissions')}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t('admin.createUserPage.editUserPage.permissions.configureSecretaryAccess')}
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canManageGrades"
+                        checked={formData.secretaryPermissions.canManageGrades}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canManageGrades', checked)}
+                      />
+                      <Label htmlFor="secretary_canManageGrades">{t('admin.createUserPage.editUserPage.permissions.canManageGrades')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canSendNotifications"
+                        checked={formData.secretaryPermissions.canSendNotifications}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canSendNotifications', checked)}
+                      />
+                      <Label htmlFor="secretary_canSendNotifications">{t('admin.createUserPage.editUserPage.permissions.canSendNotifications')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canManageUsers"
+                        checked={formData.secretaryPermissions.canManageUsers}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canManageUsers', checked)}
+                      />
+                      <Label htmlFor="secretary_canManageUsers">{t('admin.createUserPage.editUserPage.permissions.canManageUsers')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canManageSchools"
+                        checked={formData.secretaryPermissions.canManageSchools}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canManageSchools', checked)}
+                      />
+                      <Label htmlFor="secretary_canManageUsers">{t('admin.createUserPage.editUserPage.permissions.canManageSchools')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canManageDirections"
+                        checked={formData.secretaryPermissions.canManageDirections}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canManageDirections', checked)}
+                      />
+                      <Label htmlFor="secretary_canManageDirections">{t('admin.createUserPage.editUserPage.permissions.canManageDirections')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canManageSubjects"
+                        checked={formData.secretaryPermissions.canManageSubjects}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canManageSubjects', checked)}
+                      />
+                      <Label htmlFor="secretary_canManageSubjects">{t('admin.createUserPage.editUserPage.permissions.canManageSubjects')}</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="secretary_canAccessStudentProgress"
+                        checked={formData.secretaryPermissions.canAccessStudentProgress}
+                        onCheckedChange={(checked) => handleSwitchChange('secretary_canAccessStudentProgress', checked)}
+                      />
+                      <Label htmlFor="secretary_canAccessStudentProgress">{t('admin.createUserPage.editUserPage.permissions.canAccessStudentProgress')}</Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Submit Button */}
+            <div className="pt-4">
+              <Button
+                type="submit"
+                disabled={userLoading}
+                className="gap-2 px-8 py-2"
               >
-                {availableParents
-                  .filter(parent => !linkedParents.some(linked => linked._id === parent._id))
-                  .map((parent) => (
-                    <MenuItem key={parent._id} value={parent._id}>
-                      {parent.name} ({parent.email}) - {parent.linkedStudentsCount} students
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
-            {availableParents.length === 0 ? (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                No parent accounts found in this school. Create parent accounts first.
-              </Alert>
-            ) : availableParents.filter(parent => !linkedParents.some(linked => linked._id === parent._id)).length === 0 ? (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                All available parents are already linked to this student.
-              </Alert>
-            ) : null}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => setLinkParentDialogOpen(false)}
-            disabled={parentLinkingLoading}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleLinkParent}
-            disabled={parentLinkingLoading || !selectedParentId}
-            variant="contained"
-          >
-            {parentLinkingLoading ? 'Linking...' : 'Link Parent'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+                {userLoading ? (
+                                      <>
+                      <Spinner size="sm" />
+                      {t('admin.createUserPage.editUserPage.actions.updatingUser')}
+                    </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    {t('admin.createUserPage.editUserPage.actions.updateUser')}
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

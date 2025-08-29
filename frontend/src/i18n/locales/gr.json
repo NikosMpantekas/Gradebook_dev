@@ -20,6 +20,7 @@
     "submit": "Υποβολή",
     "reset": "Επαναφορά",
     "clear": "Εκκαθάριση",
+    "clearAll": "Εκκαθάριση Όλων",
     "select": "Επιλογή",
     "download": "Λήψη",
     "upload": "Μεταφόρτωση",
@@ -50,7 +51,16 @@
     "success": "Επιτυχία",
     "error": "Σφάλμα",
     "warning": "Προειδοποίηση",
-    "info": "Πληροφορία"
+    "info": "Πληροφορία",
+    "days": {
+      "monday": "Δευτέρα",
+      "tuesday": "Τρίτη",
+      "wednesday": "Τετάρτη",
+      "thursday": "Πέμπτη",
+      "friday": "Παρασκευή",
+      "saturday": "Σάββατο",
+      "sunday": "Κυριακή"
+    }
   },
   "navigation": {
     "dashboard": "Πίνακας Ελέγχου",
@@ -586,6 +596,375 @@
     "recentNotifications": "Πρόσφατες Ειδοποιήσεις",
     "viewAll": "Προβολή Όλων",
     "noRecentNotifications": "Δεν υπάρχουν πρόσφατες ειδοποιήσεις"
+  }
+,
+  "admin": {
+    "accessDenied": "Άρνηση πρόσβασης. Απαιτούνται δικαιώματα διαχειριστή.",
+    "failedToLoad": "Αποτυχία φόρτωσης δεδομένων πίνακα. Παρακαλώ ανανεώστε τη σελίδα.",
+    "welcomeBackName": "Καλώς ήρθατε, {{name}}!",
+    "subtitle": "Διαχειριστείτε τις ακαδημαϊκές λειτουργίες και τους χρήστες του σχολείου.",
+    "totalUsers": "Σύνολο Χρηστών",
+    "activeAccounts": "Ενεργοί λογαριασμοί",
+    "students": "Μαθητές",
+    "enrolledStudents": "Εγγεγραμμένοι μαθητές",
+    "teachers": "Καθηγητές",
+    "activeTeachers": "Ενεργοί καθηγητές",
+    "classes": "Τάξεις",
+    "activeClasses": "Ενεργές τάξεις",
+    "quickActions": "Γρήγορες Ενέργειες",
+    "manageUsers": "Διαχείριση Χρηστών",
+    "schoolBranches": "Παραρτήματα Σχολείου",
+    "manageGrades": "Διαχείριση Βαθμών",
+    "manageClasses": "Διαχείριση Τάξεων",
+    "studentProgress": "Πρόοδος Μαθητών",
+    "manageSchedule": "Διαχείριση Προγράμματος",
+    "recentNotifications": "Πρόσφατες Ειδοποιήσεις",
+    "viewAll": "Προβολή Όλων",
+    "noRecentNotifications": "Δεν υπάρχουν πρόσφατες ειδοποιήσεις",
+    "featuresDisabled": "Ορισμένες λειτουργίες του πίνακα είναι απενεργοποιημένες. Επικοινωνήστε με τον διαχειριστή για να ενεργοποιηθούν πρόσθετες δυνατότητες.",
+    "manageUsersPage": {
+      "title": "Διαχείριση Χρηστών",
+      "subtitle": "Δημιουργήστε, επεξεργαστείτε και διαχειριστείτε λογαριασμούς χρηστών για το σχολείο σας.",
+      "searchPlaceholder": "Αναζήτηση χρηστών...",
+      "addUser": "Προσθήκη Χρήστη",
+      "filters": "Φίλτρα",
+      "role": "Ρόλος",
+      "allRoles": "Όλοι οι Ρόλοι",
+      "status": "Κατάσταση",
+      "allStatuses": "Όλες οι Καταστάσεις",
+      "tableHeaders": {
+        "name": "Όνομα",
+        "email": "Email",
+        "role": "Ρόλος",
+        "created": "Δημιουργήθηκε",
+        "actions": "Ενέργειες"
+      },
+      "roles": {
+        "admin": "Διαχειριστής",
+        "teacher": "Καθηγητής",
+        "student": "Μαθητής",
+        "secretary": "Γραμματέας",
+        "parent": "Γονέας"
+      },
+      "actions": {
+        "edit": "Επεξεργασία",
+        "delete": "Διαγραφή",
+        "viewProfile": "Προβολή Προφίλ"
+      },
+      "dialogs": {
+        "addUser": {
+          "title": "Προσθήκη Νέου Χρήστη",
+          "subtitle": "Δημιουργήστε έναν νέο λογαριασμό χρήστη"
+        },
+        "editUser": {
+          "title": "Επεξεργασία Χρήστη",
+          "subtitle": "Ενημερώστε τις πληροφορίες χρήστη"
+        },
+        "deleteUser": {
+          "title": "Διαγραφή Χρήστη",
+          "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτόν τον χρήστη; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+        }
+      },
+      "messages": {
+        "noUsers": "Δεν βρέθηκαν χρήστες που να ταιριάζουν στα κριτήριά σας",
+        "loadingUsers": "Φόρτωση χρηστών...",
+        "userCreated": "Ο χρήστης δημιουργήθηκε επιτυχώς",
+        "userUpdated": "Ο χρήστης ενημερώθηκε επιτυχώς",
+        "userDeleted": "Ο χρήστης διαγράφηκε επιτυχώς",
+        "errorLoadingUsers": "Σφάλμα φόρτωσης χρηστών",
+        "unknownError": "Προέκυψε άγνωστο σφάλμα",
+        "tryAgain": "Δοκιμάστε Ξανά",
+        "noUsersFound": "Δεν βρέθηκαν χρήστες. Κάντε κλικ στο \"Προσθήκη Χρήστη\" για να δημιουργήσετε έναν.",
+        "pleaseWait": "Παρακαλώ περιμένετε ενώ ανακτούμε τα δεδομένα χρηστών",
+        "errorMessage": "Προέκυψε σφάλμα κατά τη φόρτωση χρηστών",
+        "noUsersFoundMatchingCriteria": "Δεν βρέθηκαν χρήστες που να ταιριάζουν στα κριτήριά σας",
+        "showingUsers": "Εμφάνιση {{start}} έως {{end}} από {{total}} χρήστες",
+        "rowsPerPage": {
+          "5": "5",
+          "10": "10",
+          "25": "25"
+        },
+        "previous": "Προηγούμενο",
+        "next": "Επόμενο"
+      },
+      "search": "Αναζήτηση",
+      "filterByRole": "Φιλτράρισμα κατά Ρόλο",
+      "filterBySchoolBranch": "Φιλτράρισμα κατά Παράρτημα Σχολείου",
+      "filterByClass": "Φιλτράρισμα κατά Τάξη",
+      "allSchoolBranches": "Όλα τα Παραρτήματα Σχολείου",
+      "allClasses": "Όλες οι Τάξεις",
+      "cannotEditOwnAccount": "Δεν μπορείτε να επεξεργαστείτε τον δικό σας λογαριασμό",
+      "cannotEditSecretaryAccounts": "Δεν μπορείτε να επεξεργαστείτε λογαριασμούς άλλων γραμματέων",
+      "cannotEditAdminAccounts": "Δεν μπορείτε να επεξεργαστείτε λογαριασμούς διαχειριστών",
+      "adminAccountsCannotBeDeleted": "Οι λογαριασμοί διαχειριστών δεν μπορούν να διαγραφούν",
+      "cannotDeleteOwnAccount": "Δεν μπορείτε να διαγράψετε τον δικό σας λογαριασμό",
+      "cannotDeleteSecretaryAccounts": "Δεν μπορείτε να διαγράψετε λογαριασμούς άλλων γραμματέων",
+      "cannotDeleteAdminAccounts": "Δεν μπορείτε να διαγράψετε λογαριασμούς διαχειριστών",
+      "cannotCreateSecretaryAccounts": "Δεν μπορείτε να δημιουργήσετε λογαριασμούς γραμματέων",
+      "createdAt": "Δημιουργήθηκε",
+      "unknown": "Άγνωστο",
+      "name": "Όνομα",
+      "email": "Email",
+      "role": "Ρόλος",
+      "actions": "Ενέργειες"
+    },
+    "manageClassesPage": {
+      "title": "Διαχείριση Τάξεων",
+      "subtitle": "Δημιουργήστε, επεξεργαστείτε και διαχειριστείτε ομάδες τάξεων για το σχολείο σας.",
+      "searchPlaceholder": "Αναζήτηση τάξεων...",
+      "addClass": "Προσθήκη Τάξης",
+      "tableHeaders": {
+        "subject": "Μάθημα",
+        "direction": "Κατεύθυνση",
+        "school": "Σχολείο",
+        "students": "Μαθητές",
+        "teachers": "Καθηγητές",
+        "schedule": "Πρόγραμμα",
+        "actions": "Ενέργειες"
+      },
+      "tabs": {
+        "basicInfo": "Βασικές Πληροφορίες",
+        "people": "Μαθητές & Καθηγητές",
+        "schedule": "Πρόγραμμα"
+      },
+      "form": {
+        "subjectName": "Όνομα Μαθήματος",
+        "directionName": "Όνομα Κατεύθυνσης",
+        "school": "Σχολείο",
+        "selectStudents": "Επιλογή Μαθητών",
+        "selectTeachers": "Επιλογή Καθηγητών",
+        "schedule": "Πρόγραμμα",
+        "scheduleDescription": "Επιλέξτε τις ημέρες που διεξάγεται αυτή η τάξη και ορίστε το χρονικό διάστημα.",
+        "day": "Ημέρα",
+        "startTime": "Ώρα Έναρξης",
+        "endTime": "Ώρα Λήξης",
+        "active": "Ενεργό",
+        "noSchoolsAvailable": "Δεν υπάρχουν διαθέσιμα σχολεία"
+      },
+      "dialogs": {
+        "addClass": {
+          "title": "Προσθήκη Νέας Τάξης",
+          "subtitle": "Δημιουργήστε μια νέα ομάδα τάξης",
+          "create": "Δημιουργία",
+          "creating": "Δημιουργία..."
+        },
+        "editClass": {
+          "title": "Επεξεργασία Τάξης",
+          "subtitle": "Ενημερώστε τις πληροφορίες τάξης",
+          "update": "Ενημέρωση",
+          "updating": "Ενημέρωση..."
+        },
+        "deleteClass": {
+          "title": "Διαγραφή Τάξης",
+          "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την τάξη; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+        }
+      },
+      "messages": {
+        "noClasses": "Δεν βρέθηκαν τάξεις που να ταιριάζουν στα κριτήριά σας",
+        "loadingClasses": "Φόρτωση τάξεων...",
+        "classCreated": "Η τάξη δημιουργήθηκε επιτυχώς",
+        "classUpdated": "Η τάξη ενημερώθηκε επιτυχώς",
+        "classDeleted": "Η τάξη διαγράφηκε επιτυχώς",
+        "hasSchedule": "Έχει πρόγραμμα",
+        "noSchedule": "Χωρίς πρόγραμμα",
+        "viewSchedule": "Προβολή Προγράμματος",
+        "editClass": "Επεξεργασία Τάξης",
+        "deleteClass": "Διαγραφή Τάξης"
+      }
+    },
+    "manageSchoolsPage": {
+      "title": "Διαχείριση Φροντιστηρίων",
+      "subtitle": "Δημιουργήστε, επεξεργαστείτε και διαχειριστείτε τοποθεσίες φροντιστηρίων και κεντρικά σχολεία.",
+      "searchPlaceholder": "Αναζήτηση σχολείων...",
+      "addSchoolBranch": "Προσθήκη Φροντιστηρίου",
+      "showClusterSchools": "Εμφάνιση κεντρικών σχολείων",
+      "tableHeaders": {
+        "school": "Σχολείο",
+        "address": "Διεύθυνση",
+        "phone": "Τηλέφωνο",
+        "actions": "Ενέργειες"
+      },
+      "form": {
+        "schoolName": "Όνομα Φροντιστηρίου",
+        "address": "Διεύθυνση",
+        "phone": "Αριθμός Τηλεφώνου",
+        "email": "Email",
+        "website": "Ιστοσελίδα",
+        "schoolDomain": "Τομέας Σχολείου",
+        "emailDomain": "Τομέας Email",
+        "description": "Περιγραφή",
+        "isClusterSchool": "Αυτό είναι ένα κεντρικό σχολείο (κύριο σχολείο, όχι υποκατάστημα)",
+        "errors": {
+          "schoolNameRequired": "Το όνομα του σχολείου είναι υποχρεωτικό",
+          "addressRequired": "Η διεύθυνση είναι υποχρεωτική",
+          "phoneRequired": "Ο αριθμός τηλεφώνου είναι υποχρεωτικός",
+          "validEmail": "Παρακαλώ εισάγετε μια έγκυρη διεύθυνση email",
+          "websiteProtocol": "Η ιστοσελίδα πρέπει να ξεκινά με http:// ή https://"
+        }
+      },
+      "dialogs": {
+        "addSchool": {
+          "title": "Προσθήκη Νέου Παραρτήματος",
+          "subtitle": "Δημιουργήστε ένα νέο παράρτημα"
+        },
+        "editSchool": {
+          "title": "Επεξεργασία Παραρτήματος",
+          "subtitle": "Ενημερώστε τις πληροφορίες σχολείου"
+        },
+        "deleteSchool": {
+          "title": "Διαγραφή Παραρτήματος",
+          "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το παράρτημα; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+        }
+      },
+      "messages": {
+        "noSchools": "Δεν βρέθηκαν φροντιστήρια",
+        "tryDifferentSearch": "Δοκιμάστε διαφορετικό όρο αναζήτησης",
+        "loadingSchools": "Φόρτωση παραρτημάτων...",
+        "schoolCreated": "Το παράρτημα προστέθηκε επιτυχώς",
+        "schoolUpdated": "Το παράρτημα ενημερώθηκε επιτυχώς",
+        "schoolDeleted": "Το παράρτημα διαγράφηκε επιτυχώς",
+        "clusterSchool": "Κεντρικό Σχολείο",
+        "branch": "Υποκατάστημα",
+        "noSchoolBranchesFound": "Δεν βρέθηκαν παραρτήματα",
+        "tryDifferentSearchTerm": "Δοκιμάστε διαφορετικό όρο αναζήτησης",
+        "editSchool": "Επεξεργασία Σχολείου",
+        "deleteSchool": "Διαγραφή Σχολείου",
+        "schoolAddedSuccess": "Το φροντιστήριο προστέθηκε επιτυχώς",
+        "missingSchoolId": "Δεν είναι δυνατή η ενημέρωση: Λείπει το ID του σχολείου",
+        "updateSchoolFailed": "Αποτυχία ενημέρωσης σχολείου"
+      },
+      "table": {
+        "school": "Σχολείο",
+        "address": "Διεύθυνση",
+        "contact": "Επικοινωνία",
+        "type": "Τύπος",
+        "actions": "Ενέργειες"
+      }
+    },
+    "createUserPage": {
+      "title": "Δημιουργία Νέου Χρήστη",
+      "subtitle": "Δημιουργήστε έναν νέο λογαριασμό χρήστη για το σχολείο σας",
+      "backToUsers": "Πίσω στους Χρήστες",
+      "form": {
+        "fullName": "Πλήρες Όνομα",
+        "fullNamePlaceholder": "Εισάγετε το πλήρες όνομα",
+        "mobilePhone": "Κινητό Τηλέφωνο",
+        "mobilePhonePlaceholder": "Εισάγετε τον αριθμό κινητού",
+        "optional": "Προαιρετικό",
+        "password": "Κωδικός Πρόσβασης",
+        "passwordPlaceholder": "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες",
+        "passwordValidation": "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες",
+        "confirmPassword": "Επιβεβαίωση Κωδικού",
+        "confirmPasswordPlaceholder": "Επαναλάβετε τον κωδικό για επιβεβαίωση",
+        "loginEmail": "Email Σύνδεσης",
+        "emailAutoGenerated": "Το email δημιουργείται αυτόματα",
+        "emailEditable": "Επεξεργάσιμο",
+        "emailDescription": "Το email προτείνεται βάσει του ονόματος αλλά μπορεί να επεξεργαστεί",
+        "personalEmail": "Προσωπικό Email",
+        "personalEmailPlaceholder": "Εισάγετε το προσωπικό email"
+      },
+      "passwordGeneration": {
+        "title": "Δημιουργία Κωδικού",
+        "generateButton": "Δημιουργία Κωδικού",
+        "copyButton": "Αντιγραφή Κωδικού"
+      },
+      "role": {
+        "label": "Ρόλος",
+        "placeholder": "Επιλέξτε έναν ρόλο",
+        "adminExistsWarning": "Υπάρχει ήδη λογαριασμός διαχειριστή για αυτόν τον οργανισμό. Επιτρέπεται μόνο ένας διαχειριστής."
+      },
+      "validation": {
+        "nameRequired": "Το όνομα είναι υποχρεωτικό",
+        "emailRequired": "Το email είναι υποχρεωτικό",
+        "emailInvalid": "Το email δεν είναι έγκυρο",
+        "passwordRequired": "Ο κωδικός είναι υποχρεωτικός",
+        "passwordTooShort": "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες",
+        "passwordsDoNotMatch": "Οι κωδικοί δεν ταιριάζουν",
+        "roleRequired": "Ο ρόλος είναι υποχρεωτικός",
+        "schoolRequired": "Το σχολείο είναι υποχρεωτικό",
+        "directionRequired": "Η κατεύθυνση είναι υποχρεωτική",
+        "subjectRequired": "Το μάθημα είναι υποχρεωτικό",
+        "invalidPhoneFormat": "Μη έγκυρη μορφή αριθμού τηλεφώνου",
+        "atLeastOneSchoolRequired": "Απαιτείται τουλάχιστον ένα σχολείο"
+      },
+      "actions": {
+        "createUser": "Δημιουργία Χρήστη",
+        "creatingUser": "Δημιουργία χρήστη...",
+        "passwordGenerated": "Ο κωδικός δημιουργήθηκε επιτυχώς",
+        "passwordCopied": "Ο κωδικός αντιγράφηκε στο πρόχειρο",
+        "passwordCopyFailed": "Αποτυχία αντιγραφής κωδικού"
+      },
+      "messages": {
+        "userCreatedSuccessfully": "Ο χρήστης δημιουργήθηκε επιτυχώς",
+        "requestTakingTooLong": "Η αίτηση παίρνει πολύ χρόνο. Παρακαλώ δοκιμάστε ξανά."
+      },
+      "credentials": {
+        "showCredentialsToAdmin": "Εμφάνιση Στοιχείων Σύνδεσης στον Διαχειριστή",
+        "emailCredentialsToUser": "Αποστολή Στοιχείων Σύνδεσης στον Χρήστη",
+        "loginCredentials": "Στοιχεία Σύνδεσης",
+        "credentialsWillBeSentTo": "📧 Τα στοιχεία σύνδεσης θα σταλούν στο:",
+        "makeSureEmailCorrect": "Βεβαιωθείτε ότι η διεύθυνση email είναι σωστή πριν δημιουργήσετε τον χρήστη."
+      },
+      "labels": {
+        "email": "Email:",
+        "password": "Κωδικός:"
+      },
+      "editUserPage": {
+        "title": "Επεξεργασία Χρήστη",
+        "subtitle": "Ενημέρωση πληροφοριών και ρυθμίσεων χρήστη",
+        "backToUsers": "Πίσω στους Χρήστες",
+        "form": {
+          "fullName": "Πλήρες Όνομα",
+          "fullNamePlaceholder": "Εισάγετε το πλήρες όνομα",
+          "mobilePhone": "Κινητό Τηλέφωνο",
+          "mobilePhonePlaceholder": "Εισάγετε τον αριθμό κινητού",
+          "optional": "Προαιρετικό",
+          "loginEmail": "Email Σύνδεσης",
+          "loginEmailPlaceholder": "Εισάγετε το email σύνδεσης",
+          "personalEmail": "Προσωπικό Email",
+          "personalEmailPlaceholder": "Εισάγετε το προσωπικό email",
+          "role": "Ρόλος",
+          "roleCannotBeChanged": "Ο ρόλος δεν μπορεί να αλλάξει μετά τη δημιουργία χρήστη"
+        },
+        "changePassword": {
+          "title": "Αλλαγή Κωδικού",
+          "description": "Αλλαγή κωδικού χρήστη",
+          "newPassword": "Νέος Κωδικός",
+          "newPasswordPlaceholder": "Εισάγετε νέο κωδικό",
+          "confirmPassword": "Επιβεβαίωση Νέου Κωδικού",
+          "confirmPasswordPlaceholder": "Επαναλάβετε τον νέο κωδικό",
+          "passwordValidation": "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες",
+          "passwordsDoNotMatch": "Οι κωδικοί δεν ταιριάζουν"
+        },
+        "validation": {
+          "nameRequired": "Το όνομα είναι υποχρεωτικό",
+          "emailRequired": "Το email είναι υποχρεωτικό",
+          "emailInvalid": "Το email δεν είναι έγκυρο",
+          "passwordRequired": "Ο κωδικός είναι υποχρεωτικός",
+          "passwordTooShort": "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες",
+          "passwordsDoNotMatch": "Οι κωδικοί δεν ταιριάζουν"
+        },
+        "actions": {
+          "updateUser": "Ενημέρωση Χρήστη",
+          "updatingUser": "Ενημέρωση χρήστη...",
+          "userUpdated": "Ο χρήστης ενημερώθηκε επιτυχώς",
+          "updateFailed": "Αποτυχία ενημέρωσης χρήστη"
+        },
+        "permissions": {
+          "teacherPermissions": "Δικαιώματα Καθηγητή",
+          "secretaryPermissions": "Δικαιώματα Γραμματέα",
+          "canSendNotifications": "Μπορεί να Στέλνει Ειδοποιήσεις",
+          "canAddGradeDescriptions": "Μπορεί να Προσθέτει Περιγραφές Βαθμών",
+          "canManageGrades": "Μπορεί να Διαχειρίζεται Βαθμούς",
+          "canManageUsers": "Μπορεί να Διαχειρίζεται Χρήστες",
+          "canManageSchools": "Μπορεί να Διαχειρίζεται Σχολεία",
+          "canManageDirections": "Μπορεί να Διαχειρίζεται Κατευθύνσεις",
+          "canManageSubjects": "Μπορεί να Διαχειρίζεται Μαθήματα",
+          "canAccessStudentProgress": "Μπορεί να Πρόσβαση στην Πρόοδο Μαθητών",
+          "configureSecretaryAccess": "Ρυθμίστε ποιες διοικητικές λειτουργίες μπορεί να προσπελάσει αυτός ο λογαριασμός γραμματέα."
+        }
+      }
+    }
   }
 ,
   "teacherGrades": {
