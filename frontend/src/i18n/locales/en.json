@@ -508,7 +508,12 @@
     "emailSent": "Email sent successfully",
     "fileUploaded": "File uploaded successfully",
     "passwordReset": "Password reset successfully",
-    "profileUpdated": "Profile updated successfully"
+    "profileUpdated": "Profile updated successfully",
+    "selectForAnalysis": "Select a student and date range to view grade analysis",
+    "chooseForReport": "Choose a student and start/end dates above to generate a detailed grade report with class comparisons and progress charts",
+    "noGradesForPeriod": "No grades found for this period",
+    "tryDifferentPeriod": "Try selecting a different time period or check if grades have been recorded",
+    "noGradesFoundPeriod": "No grades found for the selected period"
   },
   "profile": {
     "title": "Profile",

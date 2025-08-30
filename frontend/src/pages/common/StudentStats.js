@@ -24,6 +24,7 @@ import { Separator } from '../../components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
+import { DatePicker } from '../../components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Spinner } from '../../components/ui/spinner';
 import { useTranslation } from 'react-i18next';
@@ -154,18 +155,20 @@ const StudentStats = () => {
   const selectedStudentData = students.find(s => s._id === selectedStudent);
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <>
+
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-primary rounded-lg">
                 {roleInfo.icon}
               </div>
               <div>
-                <CardTitle className="text-3xl font-light">{roleInfo.title}</CardTitle>
-                <p className="text-muted-foreground">{roleInfo.description}</p>
+                <CardTitle className="text-2xl sm:text-3xl font-light">{roleInfo.title}</CardTitle>
+                <p className="text-muted-foreground text-sm sm:text-base">{roleInfo.description}</p>
               </div>
             </div>
           </div>
@@ -175,7 +178,7 @@ const StudentStats = () => {
       {/* Selection Controls */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
             <div className="space-y-2">
               <Label htmlFor="student">{t('student.selectStudent')}</Label>
               <Select
@@ -198,27 +201,62 @@ const StudentStats = () => {
             
             <div className="space-y-2">
               <Label htmlFor="startDate">{t('student.startDate')}</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                disabled={!selectedStudent}
-                max={endDate || new Date().toISOString().split('T')[0]}
-              />
+              {/* Mobile: Native date input */}
+              <div className="block sm:hidden">
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  disabled={!selectedStudent}
+                  max={endDate || new Date().toISOString().split('T')[0]}
+                  className="w-full min-w-0"
+                  style={{ WebkitAppearance: 'none' }}
+                  inputMode="none"
+                />
+              </div>
+              {/* Desktop: Beautiful DatePicker */}
+              <div className="hidden sm:block">
+                <DatePicker
+                  placeholder={t('student.startDate')}
+                  value={startDate}
+                  onChange={setStartDate}
+                  disabled={!selectedStudent}
+                  max={endDate || new Date().toISOString().split('T')[0]}
+                  className="w-full"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="endDate">{t('student.endDate')}</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                disabled={!selectedStudent || !startDate}
-                min={startDate}
-                max={new Date().toISOString().split('T')[0]}
-              />
+              {/* Mobile: Native date input */}
+              <div className="block sm:hidden">
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  disabled={!selectedStudent || !startDate}
+                  min={startDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full min-w-0"
+                  style={{ WebkitAppearance: 'none' }}
+                  inputMode="none"
+                />
+              </div>
+              {/* Desktop: Beautiful DatePicker */}
+              <div className="hidden sm:block">
+                <DatePicker
+                  placeholder={t('student.endDate')}
+                  value={endDate}
+                  onChange={setEndDate}
+                  disabled={!selectedStudent || !startDate}
+                  min={startDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
           
@@ -259,13 +297,13 @@ const StudentStats = () => {
           {/* Report Header */}
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="text-center mb-6">
-                <h1 className="text-4xl font-light mb-4">{t('student.gradeAnalysisReport')}</h1>
-                <h2 className="text-2xl text-primary mb-2">{selectedStudentData?.name}</h2>
-                <p className="text-muted-foreground">
+              <div className="text-center mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-4xl font-light mb-3 sm:mb-4">{t('student.gradeAnalysisReport')}</h1>
+                <h2 className="text-xl sm:text-2xl text-primary mb-2">{selectedStudentData?.name}</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">
                   {t('student.dateRange')}: {startDate ? new Date(startDate).toLocaleDateString() : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString() : 'N/A'}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {t('student.generatedOn')}: {new Date().toLocaleDateString()}
                 </p>
               </div>
@@ -277,12 +315,12 @@ const StudentStats = () => {
             Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData]) => (
               <Card key={subjectName} className="mb-6">
                 <CardContent className="p-6">
-                  <h3 className="text-2xl font-semibold mb-4">
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">
                     📚 {subjectName}
                   </h3>
                   
                   {/* Summary Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
                     <Card>
                       <CardContent className="text-center p-4">
                         <div className="text-2xl font-bold text-primary">
@@ -325,10 +363,10 @@ const StudentStats = () => {
                   {/* Progress Graph for multiple grades */}
                   {subjectData.grades && subjectData.grades.length > 1 && (
                     <div className="mb-6">
-                      <h4 className="text-lg font-semibold mb-4">
+                      <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
                         📈 {t('student.gradeProgressOverTime')}
                       </h4>
-                      <div className="w-full h-[300px]">
+                      <div className="w-full h-[250px] sm:h-[300px]">
                         <ResponsiveContainer>
                           <LineChart data={prepareChartData(subjectData.grades)}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -360,50 +398,64 @@ const StudentStats = () => {
                   )}
 
                   {/* Grades Table */}
-                  <h4 className="text-lg font-semibold mb-4">
+                  <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
                     📋 {t('student.allGrades')}
                   </h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('student.date')}</TableHead>
-                        <TableHead>{t('student.grade')}</TableHead>
-                        <TableHead>{t('student.description')}</TableHead>
-                        <TableHead>{t('student.teacher')}</TableHead>
-                        <TableHead>{t('student.vsClassAvg')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subjectData.grades?.map((grade, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{new Date(grade.date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={grade.value >= subjectData.classAverage ? 'default' : grade.value >= subjectData.classAverage * 0.8 ? 'secondary' : 'destructive'}
-                            >
-                              {grade.value}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{grade.description || '-'}</TableCell>
-                          <TableCell>{grade.teacher?.name || 'Unknown'}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {grade.value >= subjectData.classAverage ? `↗️ ${t('student.above')}` : `↘️ ${t('student.below')}`}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      )) || (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center">
-                            {t('student.noGradesForPeriod')}
-                          </TableCell>
+                          <TableHead className="min-w-[100px]">{t('student.date')}</TableHead>
+                          <TableHead className="min-w-[80px]">{t('student.grade')}</TableHead>
+                          <TableHead className="min-w-[150px]">{t('student.description')}</TableHead>
+                          <TableHead className="min-w-[120px]">{t('student.teacher')}</TableHead>
+                          <TableHead className="min-w-[100px]">{t('student.vsClassAvg')}</TableHead>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {subjectData.grades?.map((grade, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="min-w-[100px]">
+                              <span className="text-sm">
+                                {new Date(grade.date).toLocaleDateString()}
+                              </span>
+                            </TableCell>
+                            <TableCell className="min-w-[80px]">
+                              <Badge 
+                                variant={grade.value >= subjectData.classAverage ? 'default' : grade.value >= subjectData.classAverage * 0.8 ? 'secondary' : 'destructive'}
+                              >
+                                {grade.value}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="min-w-[150px]">
+                              <span className="text-sm break-words">
+                                {grade.description || '-'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="min-w-[120px]">
+                              <span className="text-sm">
+                                {grade.teacher?.name || 'Unknown'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="min-w-[100px]">
+                              <Badge 
+                                variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {grade.value >= subjectData.classAverage ? `↗️ ${t('student.above')}` : `↘️ ${t('student.below')}`}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )) || (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center">
+                              {t('student.noGradesForPeriod')}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -425,18 +477,19 @@ const StudentStats = () => {
       {/* Selection prompt */}
       {!selectedStudent || !startDate || !endDate ? (
         <Card>
-          <CardContent className="p-8 text-center">
-            <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg text-muted-foreground mb-2">
+          <CardContent className="p-6 sm:p-8 text-center">
+            <BarChart3 className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-base sm:text-lg text-muted-foreground mb-2">
               {t('student.selectForAnalysis')}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {t('student.chooseForReport')}
             </p>
           </CardContent>
         </Card>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 };
 

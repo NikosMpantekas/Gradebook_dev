@@ -10,7 +10,8 @@ import {
   Edit, 
   MailOpen,
   Eye,
-  AlertCircle
+  AlertCircle,
+  MoreHorizontal
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -18,6 +19,13 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
 import { Separator } from '../ui/separator';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '../ui/dropdown-menu';
 import { useTheme } from '../../components/theme-provider';
 
 const NotificationsList = ({ 
@@ -145,7 +153,7 @@ const NotificationsList = ({
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
+              <div className="space-y-2 sm:space-y-3">
         {validNotifications.map((notification) => {
           // Debug notification data
           console.log('NotificationsList - Raw notification data:', {
@@ -187,30 +195,32 @@ const NotificationsList = ({
               onClick={() => handleNotificationClick(safeNotification._id)}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <Avatar className="h-10 w-10 flex-shrink-0 border border-border/60 dark:border-white/15">
-                      <AvatarFallback className="text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 border border-border/60 dark:border-white/15">
+                      <AvatarFallback className="text-xs sm:text-sm">
                         {safeNotification.sender.name?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="font-semibold text-foreground text-base">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-foreground text-sm sm:text-base break-words">
                           {safeNotification.title}
                         </h4>
-                        {safeNotification.isImportant && (
-                          <Badge variant="destructive" className="text-xs">
-                            Important
-                          </Badge>
-                        )}
-                        {!safeNotification.isRead && (
-                          <Badge variant="secondary" className="text-xs">
-                            New
-                          </Badge>
-                        )}
+                        <div className="flex flex-wrap gap-1">
+                          {safeNotification.isImportant && (
+                            <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                              Important
+                            </Badge>
+                          )}
+                          {!safeNotification.isRead && (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                              New
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed break-words">
+                      <p className="text-sm text-muted-foreground leading-tight break-words">
                         {safeNotification.message}
                       </p>
                       <div className="hidden sm:flex items-center space-x-2 text-xs text-muted-foreground">
@@ -222,101 +232,176 @@ const NotificationsList = ({
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2 ml-4">
-                    {!isSender && !safeNotification.isRead && onMarkAsRead && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMarkAsRead(safeNotification._id);
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <MailOpen className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Mark as read</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                  <div className="flex items-center justify-end gap-1 flex-shrink-0">
+                    {/* Desktop: Individual action buttons */}
+                    <div className="hidden sm:flex items-center gap-1">
+                      {!isSender && !safeNotification.isRead && onMarkAsRead && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarkAsRead(safeNotification._id);
+                              }}
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                            >
+                              <MailOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark as read</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      
+                      {!isSender && !safeNotification.isSeen && onMarkAsSeen && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarkAsSeen(safeNotification._id);
+                              }}
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                            >
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark as seen</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      
+                      {canEdit(safeNotification) && onEdit && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(safeNotification);
+                              }}
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                            >
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit notification</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      
+                      {canEdit(safeNotification) && onDelete && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(safeNotification._id);
+                              }}
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete notification</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     
-                    {!isSender && !safeNotification.isSeen && onMarkAsSeen && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
+                    {/* Mobile: Dropdown menu */}
+                    <div className="block sm:hidden">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMarkAsSeen(safeNotification._id);
-                            }}
-                            className="h-8 w-8 p-0"
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-7 w-7 p-0"
                           >
-                            <Eye className="h-4 w-4" />
+                            <MoreHorizontal className="h-3 w-3" />
                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Mark as seen</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                    
-                    {canEdit(safeNotification) && onEdit && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(safeNotification);
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit notification</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                    
-                    {canEdit(safeNotification) && onDelete && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(safeNotification._id);
-                            }}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete notification</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          {!isSender && !safeNotification.isRead && onMarkAsRead && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarkAsRead(safeNotification._id);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <MailOpen className="mr-2 h-4 w-4" />
+                              Mark as read
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {!isSender && !safeNotification.isSeen && onMarkAsSeen && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onMarkAsSeen(safeNotification._id);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              Mark as seen
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {canEdit(safeNotification) && onEdit && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(safeNotification);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit notification
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {canEdit(safeNotification) && onDelete && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDelete(safeNotification._id);
+                                }}
+                                className="cursor-pointer text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete notification
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="sm:hidden flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <div className="sm:hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-xs text-muted-foreground">
                   <div className="flex items-center space-x-2">
                     <User className="h-3 w-3" />
-                    <span>{safeNotification.sender.name || t('notifications.unknownSender')}</span>
+                    <span className="break-words">{safeNotification.sender.name || t('notifications.unknownSender')}</span>
                   </div>
-                  <span>{formatNotificationDate(safeNotification.createdAt)}</span>
+                  <span className="text-xs">{formatNotificationDate(safeNotification.createdAt)}</span>
                 </div>
               </CardContent>
             </Card>

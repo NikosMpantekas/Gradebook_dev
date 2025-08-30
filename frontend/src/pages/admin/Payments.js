@@ -311,29 +311,29 @@ const Payments = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Payment Management</h1>
-          <p className="text-gray-600">Track and manage student monthly payments</p>
+          <h1 className="text-3xl font-bold text-foreground">Payment Management</h1>
+          <p className="text-muted-foreground">Track and manage student monthly payments</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Dialog open={isGenerateModalOpen} onOpenChange={setIsGenerateModalOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Calendar className="w-4 h-4 mr-2" />
                 Generate Monthly
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[95vw] max-w-md">
               <DialogHeader>
                 <DialogTitle>Generate Monthly Payments</DialogTitle>
                 <DialogDescription>
                   Create payment records for all students for a specific month
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="year">Year</Label>
                   <Input
@@ -375,27 +375,27 @@ const Payments = () => {
           
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Payment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="w-[95vw] max-w-md">
               <DialogHeader>
                 <DialogTitle>
                   {selectedPayment ? 'Edit Payment' : 'Add Payment Record'}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {!selectedPayment && (
                   <>
                     <div>
-                      <Label htmlFor="student">Parent (Students)</Label>
+                      <Label htmlFor="student" className="text-sm">Parent (Students)</Label>
                       <Select value={paymentForm.parentId} onValueChange={(value) => {
                         const selectedParent = students.find(p => p._id === value);
                         setPaymentForm({...paymentForm, parentId: value, linkedStudents: selectedParent?.linkedStudents || []});
                       }}>
-                        <SelectTrigger>
+                        <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Select parent" />
                         </SelectTrigger>
                         <SelectContent>
@@ -410,9 +410,9 @@ const Payments = () => {
                     
                     {paymentForm.linkedStudents && paymentForm.linkedStudents.length > 0 && (
                       <div>
-                        <Label htmlFor="specificStudent">Select Student</Label>
+                        <Label htmlFor="specificStudent" className="text-sm">Select Student</Label>
                         <Select value={paymentForm.studentId} onValueChange={(value) => setPaymentForm({...paymentForm, studentId: value})}>
-                          <SelectTrigger>
+                          <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Select specific student" />
                           </SelectTrigger>
                           <SelectContent>
@@ -427,9 +427,9 @@ const Payments = () => {
                     )}
                     
                     <div>
-                      <Label htmlFor="period">Payment Period</Label>
+                      <Label htmlFor="period" className="text-sm">Payment Period</Label>
                       <Select value={paymentForm.paymentPeriod} onValueChange={(value) => setPaymentForm({...paymentForm, paymentPeriod: value})}>
-                        <SelectTrigger>
+                        <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Select period" />
                         </SelectTrigger>
                         <SelectContent>
@@ -445,9 +445,9 @@ const Payments = () => {
                 )}
                 
                 <div>
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status" className="text-sm">Status</Label>
                   <Select value={paymentForm.status} onValueChange={(value) => setPaymentForm({...paymentForm, status: value})}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -459,9 +459,9 @@ const Payments = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Label htmlFor="paymentMethod" className="text-sm">Payment Method</Label>
                   <Select value={paymentForm.paymentMethod} onValueChange={(value) => setPaymentForm({...paymentForm, paymentMethod: value})}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select method (optional)" />
                     </SelectTrigger>
                     <SelectContent>
@@ -475,13 +475,14 @@ const Payments = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes" className="text-sm">Notes</Label>
                   <Textarea
                     id="notes"
                     placeholder="Optional notes..."
                     value={paymentForm.notes}
                     onChange={(e) => setPaymentForm({...paymentForm, notes: e.target.value})}
                     rows={3}
+                    className="mt-1"
                   />
                 </div>
               </div>
@@ -503,224 +504,232 @@ const Payments = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Paid</p>
-                <p className="text-2xl font-bold text-green-600">{stats.paid}</p>
-              </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 rounded-lg border bg-card dark:border-gray-600">
+          <div className="flex items-center">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">Paid</p>
+              <p className="text-2xl font-bold text-green-600">{stats.paid}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              </div>
+        <div className="p-4 rounded-lg border bg-card dark:border-gray-600">
+          <div className="flex items-center">
+            <Clock className="h-8 w-8 text-yellow-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <XCircle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
-              </div>
+        <div className="p-4 rounded-lg border bg-card dark:border-gray-600">
+          <div className="flex items-center">
+            <XCircle className="h-8 w-8 text-red-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+              <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Records</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-              </div>
+        <div className="p-4 rounded-lg border bg-card dark:border-gray-600">
+          <div className="flex items-center">
+            <Users className="h-8 w-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">Total Records</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="statusFilter">Status</Label>
-              <Select 
-                value={filters.status} 
-                onValueChange={(value) => setFilters({...filters, status: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="studentFilter">Student</Label>
-              <Select 
-                value={filters.student} 
-                onValueChange={(value) => setFilters({...filters, student: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All students" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Students</SelectItem>
-                  {students.map((student) => (
-                    <SelectItem key={student._id} value={student._id}>
-                      {student.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="periodFilter">Period</Label>
-              <Select 
-                value={filters.period} 
-                onValueChange={(value) => setFilters({...filters, period: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All periods" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Periods</SelectItem>
-                  {periodOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label>&nbsp;</Label>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setFilters({ status: 'all', student: '', period: '', search: '' })}
-              >
-                Clear Filters
-              </Button>
-            </div>
+      <div className="p-4 mb-6 rounded-lg border bg-card dark:border-gray-600">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          <div className="md:col-span-3">
+            <Label htmlFor="statusFilter" className="text-sm font-medium mb-2 block text-foreground">Status</Label>
+            <Select 
+              value={filters.status} 
+              onValueChange={(value) => setFilters({...filters, status: value})}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Payments Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Records</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Loading payments...</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Paid Date</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(payments || []).length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      No payment records found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  (payments || []).map((payment) => (
-                    <TableRow key={payment._id}>
-                      <TableCell className="font-medium">
-                        {payment.student?.name || 'Unknown Student'}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(payment.paymentPeriod + '-01').toLocaleDateString('en-US', { 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(payment.status)}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(payment.dueDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {payment.paidDate ? new Date(payment.paidDate).toLocaleDateString() : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {payment.paymentMethod ? payment.paymentMethod.replace('_', ' ').toUpperCase() : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditPayment(payment)}
-                        >
-                          Edit
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
           
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-4">
-              <Button
-                variant="outline"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div className="md:col-span-3">
+            <Label htmlFor="studentFilter" className="text-sm font-medium mb-2 block text-foreground">Student</Label>
+            <Select 
+              value={filters.student} 
+              onValueChange={(value) => setFilters({...filters, student: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All students" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                {students.map((student) => (
+                  <SelectItem key={student._id} value={student._id}>
+                    {student.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="md:col-span-3">
+            <Label htmlFor="periodFilter" className="text-sm font-medium mb-2 block text-foreground">Period</Label>
+            <Select 
+              value={filters.period} 
+              onValueChange={(value) => setFilters({...filters, period: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All periods" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Periods</SelectItem>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="md:col-span-3">
+            <Label htmlFor="clearFilters" className="text-sm font-medium mb-2 block text-foreground">&nbsp;</Label>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setFilters({ status: 'all', student: '', period: '', search: '' })}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+      </div>
+
+            {/* Payments Table */}
+      <div className="mt-6 rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="text-left p-4 text-foreground font-medium">
+                  Student
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Period
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Status
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Due Date
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Paid Date
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Method
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <div className="flex justify-center items-center gap-3 py-6">
+                      <span className="text-base text-foreground">Loading payments...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (payments || []).length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <span className="text-muted-foreground text-base">No payment records found</span>
+                  </td>
+                </tr>
+              ) : (
+                (payments || []).map((payment) => (
+                  <tr key={payment._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                    <td className="p-4">
+                      <span className="font-medium text-foreground text-base">
+                        {payment.student?.name || 'Unknown Student'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {new Date(payment.paymentPeriod + '-01').toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </td>
+                    <td className="p-4">
+                      {getStatusBadge(payment.status)}
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {new Date(payment.dueDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {payment.paidDate ? new Date(payment.paidDate).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {payment.paymentMethod ? payment.paymentMethod.replace('_', ' ').toUpperCase() : '-'}
+                    </td>
+                    <td className="p-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditPayment(payment)}
+                        className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                      >
+                        Edit
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center space-x-2 p-4 border-t border-gray-200 dark:border-gray-600">
+            <Button
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
