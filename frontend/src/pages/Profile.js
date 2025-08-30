@@ -40,11 +40,6 @@ const Profile = () => {
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
   
-  // Safety check to prevent rendering without user data
-  if (!user) {
-    return null; // Don't render anything until user data is available
-  }
-  
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
