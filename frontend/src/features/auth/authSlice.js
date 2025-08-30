@@ -352,6 +352,17 @@ export const authSlice = createSlice({
       .addCase(updateProfile.pending, (state) => {
         state.isLoading = true;
       })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.user = action.payload;
+        // Update storage to persist the changes
+        try {
+          localStorage.setItem('user', JSON.stringify(action.payload));
+        } catch (error) {
+          console.error('Failed to update localStorage:', error);
+        }
+      })
       .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
