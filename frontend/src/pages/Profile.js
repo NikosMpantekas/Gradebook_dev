@@ -40,6 +40,11 @@ const Profile = () => {
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
   
+  // Safety check to prevent rendering without user data
+  if (!user) {
+    return null; // Don't render anything until user data is available
+  }
+  
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -64,32 +69,6 @@ const Profile = () => {
       return;
     }
     
-    // Refresh user data for admin without page reload
-    const refreshUserData = async () => {
-      try {
-        console.log('[PROFILE] Refreshing admin user data...');
-        const response = await authService.getProfile();
-        if (response) {
-          // Update Redux store with fresh user data
-          dispatch(updateProfile(response));
-          // Update localStorage to persist the fresh data
-          localStorage.setItem('user', JSON.stringify(response));
-          console.log('[PROFILE] Admin pack info refreshed:', { 
-            packType: response.packType, 
-            monthlyPrice: response.monthlyPrice 
-          });
-        }
-      } catch (error) {
-        console.error('Error refreshing user data:', error);
-      }
-    };
-    
-    // Only refresh if this is an admin and we haven't refreshed in this session
-    if (user.role === 'admin' && !sessionStorage.getItem('profileRefreshed')) {
-      sessionStorage.setItem('profileRefreshed', 'true');
-      refreshUserData();
-    }
-    
     // Initialize form data with current user info
     setFormData({
       name: user.name || '',
@@ -104,7 +83,49 @@ const Profile = () => {
       newPassword: '',
       confirmPassword: ''
     });
-  }, [user, navigate, dispatch]);
+  }, [user, navigate]);
+
+  // Separate useEffect for admin data refresh to avoid infinite loops
+  useEffect(() => {
+    if (!user || user.role !== 'admin') return;
+    
+    // Only refresh if we haven't refreshed in this session
+    if (sessionStorage.getItem('profileRefreshed')) return;
+    
+    const refreshUserData = async () => {
+      try {
+        console.log('[PROFILE] Refreshing admin user data...');
+        sessionStorage.setItem('profileRefreshed', 'true');
+        
+        // Add timeout to prevent hanging requests
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
+        
+        const response = await Promise.race([
+          authService.getProfile(),
+          timeoutPromise
+        ]);
+        
+        if (response) {
+          // Update Redux store with fresh user data
+          dispatch(updateProfile(response));
+          // Update localStorage to persist the fresh data
+          localStorage.setItem('user', JSON.stringify(response));
+          console.log('[PROFILE] Admin pack info refreshed:', { 
+            packType: response.packType, 
+            monthlyPrice: response.monthlyPrice 
+          });
+        }
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+        // Remove the flag on error so it can retry
+        sessionStorage.removeItem('profileRefreshed');
+      }
+    };
+    
+    refreshUserData();
+  }, [user?.role]); // Only depend on user.role, not the entire user object
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
