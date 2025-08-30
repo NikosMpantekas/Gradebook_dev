@@ -228,13 +228,18 @@ const Notifications = () => {
   }
 
   return (
-    <div className="w-full mx-auto p-4 sm:p-6">
+    <div className="w-full mx-auto p-2 sm:p-4 lg:p-6">
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-xl sm:text-2xl font-bold">
-              {t('notifications.title')}
-            </CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold">
+                {t('notifications.title')}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground hidden sm:block">
+                {t('notifications.subtitle') || 'Manage your notifications and communications'}
+              </p>
+            </div>
             
             <Button
               variant="outline"
@@ -254,17 +259,17 @@ const Notifications = () => {
         
         <CardContent>
           <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
-            <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              <TabsTrigger value="received" className="relative flex items-center justify-center">
-                <span>{t('notifications.received')}</span>
+            <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'} gap-1`}>
+              <TabsTrigger value="received" className="relative flex items-center justify-center text-sm">
+                <span className="truncate">{t('notifications.received')}</span>
                 {unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
+                  <Badge variant="destructive" className="ml-1 sm:ml-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 text-xs flex items-center justify-center">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Badge>
                 )}
               </TabsTrigger>
               {(user?.role === 'teacher' || user?.role === 'admin') && (
-                <TabsTrigger value="sent">{t('notifications.sent')}</TabsTrigger>
+                <TabsTrigger value="sent" className="text-sm">{t('notifications.sent')}</TabsTrigger>
               )}
             </TabsList>
             
