@@ -641,7 +641,7 @@ const getProcessedClasses = asyncHandler(async (req, res) => {
 
 module.exports = {
   saveClassSessionAttendance,
-  getClassAttendance,
+  getClassSessionAttendance,
   getClassAttendanceByDate,
   getProcessedClasses,
   getStudentAttendanceData,
