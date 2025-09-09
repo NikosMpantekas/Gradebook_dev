@@ -186,10 +186,10 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/teacher/contact' });
       }
       
-      // Attendance System - Teachers can mark attendance for their classes
-      if (isFeatureEnabled('enableClasses')) {
-        items.push({ icon: UserCheck, label: t('navigation.attendance'), path: '/app/teacher/attendance' });
-      }
+      // Attendance System - Temporarily disabled for teachers
+      // if (isFeatureEnabled('enableClasses')) {
+      //   items.push({ icon: UserCheck, label: t('navigation.attendance'), path: '/app/teacher/attendance' });
+      // }
     }
 
     if (isStudent) {

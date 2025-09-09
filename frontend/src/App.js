@@ -86,8 +86,8 @@ import RatingManager from './pages/admin/RatingManager';
 import RatingStatistics from './pages/admin/RatingStatistics';
 import SystemMaintenance from './pages/superadmin/SystemMaintenance';
 import AdminPayments from './pages/admin/Payments';
-import AttendanceManagement from './pages/admin/AttendanceManagement';
-import CreateAttendanceSession from './pages/admin/CreateAttendanceSession';
+import WeeklyAttendanceManagement from './pages/admin/WeeklyAttendanceManagement';
+import StudentAttendanceView from './pages/student/StudentAttendanceView';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // SuperAdmin Pages
@@ -524,7 +524,7 @@ function App() {
             } />
             <Route path="/app/student/attendance" element={
               <StudentProgressRoute>
-                <StudentAttendance />
+                <StudentAttendanceView />
               </StudentProgressRoute>
             } />
             
@@ -695,12 +695,7 @@ function App() {
             } />
             <Route path="/app/admin/attendance" element={
               <AdminRoute>
-                <AttendanceManagement />
-              </AdminRoute>
-            } />
-            <Route path="/app/admin/attendance/create-session" element={
-              <AdminRoute>
-                <CreateAttendanceSession />
+                <WeeklyAttendanceManagement />
               </AdminRoute>
             } />
             <Route path="/app/teacher/student-stats" element={
