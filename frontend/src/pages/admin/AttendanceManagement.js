@@ -34,7 +34,7 @@ const AttendanceManagement = () => {
   const { t } = useTranslation();
   const { user } = useSelector((state) => state.auth);
   
-  // State management
+  // State management with proper initialization
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -43,6 +43,7 @@ const AttendanceManagement = () => {
   const [activeTab, setActiveTab] = useState('sessions');
   const [attendanceData, setAttendanceData] = useState([]);
   const [reports, setReports] = useState([]);
+  const [error, setError] = useState(null);
 
   // Logging function
   const logAction = (action, data = {}) => {
@@ -68,6 +69,7 @@ const AttendanceManagement = () => {
 
   const fetchClasses = async () => {
     setLoading(true);
+    setError(null);
     try {
       logAction('Fetching classes');
       const token = localStorage.getItem('token');
@@ -75,10 +77,14 @@ const AttendanceManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setClasses(response.data || []);
-      logAction('Classes fetched successfully', { count: response.data?.length });
+      // Ensure response.data is always an array
+      const classesData = Array.isArray(response.data) ? response.data : [];
+      setClasses(classesData);
+      logAction('Classes fetched successfully', { count: classesData.length });
     } catch (error) {
       logAction('Error fetching classes', { error: error.message });
+      setError(error.message);
+      setClasses([]); // Ensure fallback to empty array
       toast.error(t('attendance.failedToLoadClasses'));
     } finally {
       setLoading(false);
@@ -89,17 +95,23 @@ const AttendanceManagement = () => {
     if (!selectedClass) return;
     
     setLoading(true);
+    setError(null);
     try {
       logAction('Fetching sessions', { classId: selectedClass, date: selectedDate });
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/sessions?classId=${selectedClass}&date=${selectedDate}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get('/api/attendance/sessions', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { classId: selectedClass, date: selectedDate }
       });
       
-      setSessions(response.data || []);
-      logAction('Sessions fetched successfully', { count: response.data?.length });
+      // Ensure response.data is always an array
+      const sessionsData = Array.isArray(response.data) ? response.data : [];
+      setSessions(sessionsData);
+      logAction('Sessions fetched successfully', { count: sessionsData.length });
     } catch (error) {
       logAction('Error fetching sessions', { error: error.message });
+      setError(error.message);
+      setSessions([]); // Ensure fallback to empty array
       toast.error(t('attendance.failedToLoadSessions'));
     } finally {
       setLoading(false);
@@ -115,7 +127,9 @@ const AttendanceManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setReports(response.data || []);
+      // Ensure response.data is always an array
+      const reportsData = Array.isArray(response.data) ? response.data : [];
+      setReports(reportsData);
       logAction('Reports fetched successfully', { count: response.data?.length });
     } catch (error) {
       logAction('Error fetching reports', { error: error.message });
@@ -133,7 +147,7 @@ const AttendanceManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setSessions(prev => [...prev, response.data]);
+      setSessions(prev => [...(prev || []), response.data]);
       toast.success(t('attendance.sessionCreated'));
       logAction('Session created successfully', { sessionId: response.data._id });
     } catch (error) {
@@ -168,15 +182,38 @@ const AttendanceManagement = () => {
   };
 
   const filteredSessions = useMemo(() => {
-    return sessions.filter(session => 
+    return (sessions || []).filter(session => 
       !selectedClass || session.classId === selectedClass
     );
   }, [sessions, selectedClass]);
 
-  if (loading && sessions.length === 0) {
+  if (loading && (sessions || []).length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner className="w-8 h-8" />
+      </div>
+    );
+  }
+
+  // Error boundary for debugging
+  if (error) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Attendance</h2>
+            <p className="text-red-600">{error}</p>
+            <Button 
+              onClick={() => {
+                setError(null);
+                fetchClasses();
+              }} 
+              className="mt-4"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -260,7 +297,7 @@ const AttendanceManagement = () => {
           </div>
 
           <div className="grid gap-4">
-            {filteredSessions.length === 0 ? (
+            {(filteredSessions || []).length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
