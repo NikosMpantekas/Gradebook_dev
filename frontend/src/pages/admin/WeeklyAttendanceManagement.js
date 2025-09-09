@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, parseISO, isWithinInterval } from 'date-fns';
 import { 
   Card, 
   CardContent, 
@@ -28,6 +28,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -57,7 +58,10 @@ import {
   UserPlus, 
   FileText, 
   Download, 
-  CheckCircle2 
+  CheckCircle2,
+  Plus,
+  X,
+  Save
 } from 'lucide-react';
 import { API_URL } from '../../config/apiConfig';
 import axios from 'axios';
