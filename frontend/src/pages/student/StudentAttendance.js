@@ -32,18 +32,19 @@ const StudentAttendance = () => {
   
   // State management
   const [loading, setLoading] = useState(false);
-  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [sessions, setSessions] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [selectedClass, setSelectedClass] = useState('');
   const [classes, setClasses] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [stats, setStats] = useState({
     totalSessions: 0,
-    attendedSessions: 0,
-    attendanceRate: 0,
-    missedSessions: 0
+    presentSessions: 0,
+    absentSessions: 0,
+    attendanceRate: 0
   });
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Logging function
   const logAction = (action, data = {}) => {
@@ -122,17 +123,17 @@ const StudentAttendance = () => {
   };
 
   const getAttendanceForDate = (date) => {
-    return attendanceRecords.filter(record => 
+    return (attendanceRecords || []).filter(record => 
       format(new Date(record.session.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
   };
 
   const getAttendanceStatus = (date) => {
     const dayRecords = getAttendanceForDate(date);
-    if (dayRecords.length === 0) return 'no-session';
+    if ((dayRecords || []).length === 0) return 'no-session';
     
-    const presentCount = dayRecords.filter(record => record.status === 'present').length;
-    const absentCount = dayRecords.filter(record => record.status === 'absent').length;
+    const presentCount = (dayRecords || []).filter(record => record.status === 'present').length;
+    const absentCount = (dayRecords || []).filter(record => record.status === 'absent').length;
     
     if (absentCount > 0) return 'absent';
     if (presentCount > 0) return 'present';
@@ -146,16 +147,39 @@ const StudentAttendance = () => {
   }, [selectedMonth]);
 
   const filteredSessions = useMemo(() => {
-    return sessions.filter(session => {
+    return (sessions || []).filter(session => {
       if (!selectedClass) return true;
       return session.classId === selectedClass;
     });
   }, [sessions, selectedClass]);
 
-  if (loading && attendanceRecords.length === 0) {
+  if (loading && (attendanceRecords || []).length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner className="w-8 h-8" />
+      </div>
+    );
+  }
+
+  // Error boundary for debugging
+  if (error) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Student Attendance</h2>
+            <p className="text-red-600">{error}</p>
+            <Button 
+              onClick={() => {
+                setError(null);
+                fetchStudentClasses();
+              }} 
+              className="mt-4"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -350,7 +374,7 @@ const StudentAttendance = () => {
                       `}
                     >
                       <div className="text-sm font-medium">{format(date, 'd')}</div>
-                      {dayRecords.length > 0 && (
+                      {(dayRecords || []).length > 0 && (
                         <div className="text-xs">
                           {status === 'present' && <PresentIcon className="w-3 h-3 mx-auto text-green-600" />}
                           {status === 'absent' && <AbsentIcon className="w-3 h-3 mx-auto text-red-600" />}
@@ -387,7 +411,7 @@ const StudentAttendance = () => {
               <CardTitle>{t('attendance.sessionHistory')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {filteredSessions.length === 0 ? (
+              {(filteredSessions || []).length === 0 ? (
                 <div className="text-center py-8">
                   <ClockIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
@@ -397,7 +421,7 @@ const StudentAttendance = () => {
               ) : (
                 <div className="space-y-3">
                   {(filteredSessions || []).map((session) => {
-                    const attendance = attendanceRecords.find(record => record.sessionId === session._id);
+                    const attendance = (attendanceRecords || []).find(record => record.sessionId === session._id);
                     
                     return (
                       <div key={session._id} className="flex items-center justify-between p-4 border rounded-lg">

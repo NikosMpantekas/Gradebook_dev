@@ -36,14 +36,15 @@ const TeacherAttendance = () => {
   
   // State management
   const [loading, setLoading] = useState(false);
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useState([]); // State management with proper array initialization
   const [classes, setClasses] = useState([]);
-  const [students, setStudents] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [students, setStudents] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
   const [showCreateSession, setShowCreateSession] = useState(false);
+  const [error, setError] = useState(null);
   const [newSessionTitle, setNewSessionTitle] = useState('');
 
   // Logging function
@@ -155,7 +156,7 @@ const TeacherAttendance = () => {
       
       // Initialize attendance data for all students
       const initialAttendance = {};
-      students.forEach(student => {
+      (students || []).forEach(student => {
         initialAttendance[student._id] = false;
       });
       setAttendanceData(initialAttendance);
@@ -215,7 +216,7 @@ const TeacherAttendance = () => {
 
   const markAllPresent = () => {
     const allPresent = {};
-    students.forEach(student => {
+    (students || []).forEach(student => {
       allPresent[student._id] = true;
     });
     setAttendanceData(allPresent);
@@ -223,7 +224,7 @@ const TeacherAttendance = () => {
 
   const markAllAbsent = () => {
     const allAbsent = {};
-    students.forEach(student => {
+    (students || []).forEach(student => {
       allAbsent[student._id] = false;
     });
     setAttendanceData(allAbsent);
@@ -235,7 +236,7 @@ const TeacherAttendance = () => {
     // Initialize attendance data if not already loaded
     if (Object.keys(attendanceData).length === 0) {
       const initialAttendance = {};
-      students.forEach(student => {
+      (students || []).forEach(student => {
         initialAttendance[student._id] = false;
       });
       setAttendanceData(initialAttendance);
@@ -245,12 +246,35 @@ const TeacherAttendance = () => {
   };
 
   const presentCount = Object.values(attendanceData).filter(Boolean).length;
-  const absentCount = students.length - presentCount;
+  const absentCount = (students || []).length - presentCount;
 
-  if (loading && sessions.length === 0 && classes.length === 0) {
+  if (loading && (sessions || []).length === 0 && (classes || []).length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner className="w-8 h-8" />
+      </div>
+    );
+  }
+
+  // Error boundary for debugging
+  if (error) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Teacher Attendance</h2>
+            <p className="text-red-600">{error}</p>
+            <Button 
+              onClick={() => {
+                setError(null);
+                fetchTeacherClasses();
+              }} 
+              className="mt-4"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -306,7 +330,7 @@ const TeacherAttendance = () => {
       </Card>
 
       {/* Sessions List */}
-      {sessions.length > 0 && (
+      {(sessions || []).length > 0 && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -341,7 +365,7 @@ const TeacherAttendance = () => {
       )}
 
       {/* Attendance Marking */}
-      {activeSession && students.length > 0 && (
+      {activeSession && (students || []).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -423,7 +447,7 @@ const TeacherAttendance = () => {
       )}
 
       {/* No Active Session Message */}
-      {!activeSession && selectedClass && students.length > 0 && (
+      {!activeSession && selectedClass && (students || []).length > 0 && (
         <Card>
           <CardContent className="p-8 text-center">
             <ClockIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
