@@ -183,7 +183,7 @@ const AttendanceManagement = () => {
 
   const filteredSessions = useMemo(() => {
     return (sessions || []).filter(session => 
-      !selectedClass || session.classId === selectedClass
+      !selectedClass || selectedClass === 'all' || session.classId === selectedClass
     );
   }, [sessions, selectedClass]);
 
@@ -240,7 +240,7 @@ const AttendanceManagement = () => {
                   <SelectValue placeholder={t('attendance.selectClass')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t('attendance.allClasses')}</SelectItem>
+                  <SelectItem value="all">{t('attendance.allClasses')}</SelectItem>
                   {(classes || []).map((cls) => (
                     <SelectItem key={cls._id} value={cls._id}>
                       {cls.name}

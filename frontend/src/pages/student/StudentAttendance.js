@@ -148,7 +148,7 @@ const StudentAttendance = () => {
 
   const filteredSessions = useMemo(() => {
     return (sessions || []).filter(session => {
-      if (!selectedClass) return true;
+      if (!selectedClass || selectedClass === 'all') return true;
       return session.classId === selectedClass;
     });
   }, [sessions, selectedClass]);
@@ -206,7 +206,7 @@ const StudentAttendance = () => {
                   <SelectValue placeholder={t('attendance.allClasses')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t('attendance.allClasses')}</SelectItem>
+                  <SelectItem value="all">{t('attendance.allClasses')}</SelectItem>
                   {(classes || []).map((cls) => (
                     <SelectItem key={cls._id} value={cls._id}>
                       {cls.name}
