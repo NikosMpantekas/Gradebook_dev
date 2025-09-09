@@ -87,6 +87,7 @@ import RatingStatistics from './pages/admin/RatingStatistics';
 import SystemMaintenance from './pages/superadmin/SystemMaintenance';
 import AdminPayments from './pages/admin/Payments';
 import AttendanceManagement from './pages/admin/AttendanceManagement';
+import CreateAttendanceSession from './pages/admin/CreateAttendanceSession';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // SuperAdmin Pages
@@ -699,7 +700,7 @@ function App() {
             } />
             <Route path="/app/admin/attendance/create-session" element={
               <AdminRoute>
-                <AttendanceManagement />
+                <CreateAttendanceSession />
               </AdminRoute>
             } />
             <Route path="/app/teacher/student-stats" element={

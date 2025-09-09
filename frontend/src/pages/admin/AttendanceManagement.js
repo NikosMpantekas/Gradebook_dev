@@ -79,6 +79,11 @@ const AttendanceManagement = () => {
       
       console.log('Classes API response:', response.data);
       
+      // Check if response is HTML (API connectivity issue)
+      if (typeof response.data === 'string' && response.data.includes('<!doctype html>')) {
+        throw new Error('Backend API not accessible - receiving HTML instead of JSON. Check if backend server is running.');
+      }
+      
       // Ensure response.data is always an array
       const classesData = Array.isArray(response.data) ? response.data : [];
       setClasses(classesData);
