@@ -204,7 +204,7 @@ const AttendanceManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">{t('attendance.allClasses')}</SelectItem>
-                  {classes.map((cls) => (
+                  {(classes || []).map((cls) => (
                     <SelectItem key={cls._id} value={cls._id}>
                       {cls.name}
                     </SelectItem>
@@ -273,7 +273,7 @@ const AttendanceManagement = () => {
                 </CardContent>
               </Card>
             ) : (
-              filteredSessions.map((session) => (
+              (filteredSessions || []).map((session) => (
                 <Card key={session._id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
