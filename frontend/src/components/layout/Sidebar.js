@@ -28,6 +28,7 @@ import {
   Mail,
   BadgeAlert,
   Wrench,
+  UserCheck,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback} from '../ui/avatar';
@@ -156,6 +157,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       if (isFeatureEnabled('enableContact')) {
         items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/admin/contact' });
       }
+      
+      // Attendance System - Admin can manage everything
+      if (isFeatureEnabled('enableClasses')) {
+        items.push({ icon: UserCheck, label: t('navigation.attendanceManagement'), path: '/app/admin/attendance' });
+      }
     }
 
     if (isTeacher) {
@@ -179,6 +185,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       if (isFeatureEnabled('enableContact')) {
         items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/teacher/contact' });
       }
+      
+      // Attendance System - Teachers can mark attendance for their classes
+      if (isFeatureEnabled('enableClasses')) {
+        items.push({ icon: UserCheck, label: t('navigation.attendance'), path: '/app/teacher/attendance' });
+      }
     }
 
     if (isStudent) {
@@ -201,6 +212,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       
       if (isFeatureEnabled('enableContact')) {
         items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/student/contact' });
+      }
+      
+      // Attendance System - Students can view their attendance
+      if (isFeatureEnabled('enableClasses')) {
+        items.push({ icon: UserCheck, label: t('navigation.myAttendance'), path: '/app/student/attendance' });
       }
     }
 
