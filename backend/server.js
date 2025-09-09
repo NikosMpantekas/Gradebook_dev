@@ -513,8 +513,8 @@ app.use(
   checkMaintenanceMode,
   setSchoolContext,
   addFeatureFlags,
-  require("./routes/attendanceRoutes")
-); // Attendance API
+  require("./routes/classAttendanceRoutes")
+); // Class Attendance API
 app.use(
   "/api/reports",
   protect,
