@@ -346,7 +346,7 @@ const TeacherAttendance = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <UserCheck className="w-5 h-5" />
+                <PresentIcon className="w-5 h-5" />
                 {t('attendance.markAttendance')} - {activeSession.title}
               </span>
               <div className="flex gap-2">
