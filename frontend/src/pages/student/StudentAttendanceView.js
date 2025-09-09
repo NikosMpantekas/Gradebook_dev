@@ -359,56 +359,43 @@ const StudentAttendanceView = () => {
       {selectedClass && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>{t('attendance.sessionHistory')}</CardTitle>
-            <CardDescription>
-              {t('attendance.detailedSessionHistory')} {selectedClass.name}
-            </CardDescription>
+            <CardTitle className="flex items-center space-x-2">
+              <Clock className="h-5 w-5" />
+              <span>{t('attendance.detailedSessionHistory')} {selectedClass.name}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {attendanceData.length > 0 ? (
-              <div className="space-y-3">
-                {attendanceData.map((record) => (
-                  <div
-                    key={record._id}
-                    className="flex items-center justify-between p-3 border rounded-md hover:bg-gray-50"
-                  >
+            <div className="space-y-3">
+              {attendanceData.length > 0 ? (
+                attendanceData.map((session, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${getAttendanceColor(record.status)}`}>
-                        {getAttendanceIcon(record.status)}
-                      </div>
-                      <div>
-                        <div className="font-medium">
-                          {record.session ? 
-                            format(parseISO(record.session.scheduledStartAt), 'MMM dd, yyyy') :
-                            t('attendance.noSession')
-                          }
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {record.session ? 
-                            format(parseISO(record.session.scheduledStartAt), 'HH:mm') :
-                            t('attendance.noSession')
-                          }
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={getAttendanceColor(record.status)}>
-                        {t(`attendance.${record.status}`)}
-                      </Badge>
-                      {record.note && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {record.note}
-                        </div>
+                      {session.status === 'present' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-600" />
                       )}
+                      <div>
+                        <p className="font-medium">{format(parseISO(session.date), 'EEEE, MMM dd, yyyy')}</p>
+                        {session.note && (
+                          <p className="text-sm text-gray-500">{session.note}</p>
+                        )}
+                      </div>
                     </div>
+                    <Badge 
+                      variant={session.status === 'present' ? 'default' : 'destructive'}
+                      className={session.status === 'present' ? 'bg-green-100 text-green-800' : ''}
+                    >
+                      {session.status === 'present' ? t('attendance.present') : t('attendance.absent')}
+                    </Badge>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                {loading ? t('common.loading') : t('attendance.noSessionsFound')}
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  {loading ? t('common.loading') : t('attendance.noAttendanceData')}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

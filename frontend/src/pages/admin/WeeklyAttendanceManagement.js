@@ -191,17 +191,38 @@ const WeeklyAttendanceManagement = () => {
   }, []);
 
   const fetchInitialData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       await Promise.all([
         fetchClasses(),
-        fetchSchoolBranches()
+        loadProcessedClasses()
       ]);
     } catch (error) {
       console.error('Error fetching initial data:', error);
       setError('Failed to load initial data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProcessedClasses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const startDate = format(startOfWeek(new Date()), 'yyyy-MM-dd');
+      const endDate = format(endOfWeek(new Date()), 'yyyy-MM-dd');
+      
+      const response = await axios.get(`${API_URL}/api/attendance/processed-classes`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { startDate, endDate }
+      });
+
+      if (response.data && response.data.success && response.data.data) {
+        const processedKeys = response.data.data.map(item => `${item.classId}-${item.date}`);
+        setProcessedClasses(new Set(processedKeys));
+      }
+    } catch (error) {
+      console.error('Error loading processed classes:', error);
+      logAction('Error loading processed classes', { error: error.message });
     }
   };
 
@@ -309,23 +330,73 @@ const WeeklyAttendanceManagement = () => {
     });
   };
 
-  const openClassPopup = (classData, date) => {
+  const openClassPopup = async (classData, date) => {
     const dayName = format(date, 'EEEE');
     const scheduleForDay = classData.schedule?.find(sch => sch.day === dayName);
     
     setSelectedClass(classData);
     setClassDate(date);
-    setClassAttendance({
-      wasHeld: false,
-      startTime: scheduleForDay?.startTime || '',
-      endTime: scheduleForDay?.endTime || '',
-      students: classData.students?.map(studentId => ({
-        studentId,
-        present: false,
-        note: ''
-      })) || [],
-      notes: ''
-    });
+    
+    // Fetch existing attendance data for this class and date
+    try {
+      const token = localStorage.getItem('token');
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const response = await axios.get(`${API_URL}/api/attendance/class-attendance`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { classId: classData._id, date: dateStr }
+      });
+
+      if (response.data && response.data.success && response.data.data) {
+        const existingData = response.data.data;
+        
+        // Mark class as processed if data exists
+        const classKey = `${classData._id}-${dateStr}`;
+        setProcessedClasses(prev => new Set([...prev, classKey]));
+        
+        // Load existing attendance data
+        setClassAttendance({
+          wasHeld: existingData.wasHeld || false,
+          startTime: existingData.startTime || scheduleForDay?.startTime || '',
+          endTime: existingData.endTime || scheduleForDay?.endTime || '',
+          students: existingData.students || classData.students?.map(studentId => ({
+            studentId,
+            present: false,
+            note: ''
+          })) || [],
+          notes: existingData.notes || ''
+        });
+      } else {
+        // No existing data, initialize with defaults
+        setClassAttendance({
+          wasHeld: false,
+          startTime: scheduleForDay?.startTime || '',
+          endTime: scheduleForDay?.endTime || '',
+          students: classData.students?.map(studentId => ({
+            studentId,
+            present: false,
+            note: ''
+          })) || [],
+          notes: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching existing attendance:', error);
+      logAction('Error fetching existing attendance', { error: error.message });
+      
+      // Initialize with defaults on error
+      setClassAttendance({
+        wasHeld: false,
+        startTime: scheduleForDay?.startTime || '',
+        endTime: scheduleForDay?.endTime || '',
+        students: classData.students?.map(studentId => ({
+          studentId,
+          present: false,
+          note: ''
+        })) || [],
+        notes: ''
+      });
+    }
+    
     setClassPopupOpen(true);
   };
 
