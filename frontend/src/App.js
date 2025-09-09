@@ -50,12 +50,14 @@ import PrintGradePage from './pages/print/PrintGradePage';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import TeacherAttendance from './pages/teacher/TeacherAttendance';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentGrades from './pages/student/StudentGrades';
 import GradeDetail from './pages/student/GradeDetail';
 import RatingSubmission from './pages/student/RatingSubmission';
+import StudentAttendance from './pages/student/StudentAttendance';
 
 // Parent Pages
 import ParentDashboard from './pages/ParentDashboard';
@@ -84,6 +86,7 @@ import RatingManager from './pages/admin/RatingManager';
 import RatingStatistics from './pages/admin/RatingStatistics';
 import SystemMaintenance from './pages/superadmin/SystemMaintenance';
 import AdminPayments from './pages/admin/Payments';
+import AttendanceManagement from './pages/admin/AttendanceManagement';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // SuperAdmin Pages
@@ -518,6 +521,11 @@ function App() {
                 <Schedule />
               </StudentProgressRoute>
             } />
+            <Route path="/app/student/attendance" element={
+              <StudentProgressRoute>
+                <StudentAttendance />
+              </StudentProgressRoute>
+            } />
             
             {/* Teacher Routes */}
             <Route path="/app/teacher/grades/manage" element={
@@ -559,6 +567,11 @@ function App() {
             <Route path="/app/teacher/schedule" element={
               <TeacherRoute>
                 <Schedule />
+              </TeacherRoute>
+            } />
+            <Route path="/app/teacher/attendance" element={
+              <TeacherRoute>
+                <TeacherAttendance />
               </TeacherRoute>
             } />
             
@@ -677,6 +690,11 @@ function App() {
             <Route path="/app/admin/payments" element={
               <AdminRoute>
                 <AdminPayments />
+              </AdminRoute>
+            } />
+            <Route path="/app/admin/attendance" element={
+              <AdminRoute>
+                <AttendanceManagement />
               </AdminRoute>
             } />
             <Route path="/app/teacher/student-stats" element={
