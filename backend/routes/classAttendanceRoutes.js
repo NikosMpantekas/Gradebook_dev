@@ -1,7 +1,7 @@
 const express = require('express');
 const {
   saveClassSessionAttendance,
-  getClassAttendance,
+  getClassSessionAttendance,
   getClassAttendanceByDate,
   getProcessedClasses,
   getStudentAttendanceData,
@@ -19,7 +19,7 @@ router.use(attachAuditContext);
 
 // Class session attendance routes
 router.post('/class-session', authorize('admin', 'teacher', 'superadmin'), saveClassSessionAttendance);
-router.get('/class-session/:classId/:date', authorize('admin', 'teacher', 'student', 'superadmin'), getClassAttendance);
+router.get('/class-session/:classId/:date', authorize('admin', 'teacher', 'student', 'superadmin'), getClassSessionAttendance);
 router.get('/class-attendance', authorize('admin', 'teacher', 'superadmin'), getClassAttendanceByDate);
 router.get('/processed-classes', authorize('admin', 'teacher', 'superadmin'), getProcessedClasses);
 
