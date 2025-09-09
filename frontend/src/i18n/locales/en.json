@@ -154,6 +154,10 @@
     "semesterDates": "Semester Configuration",
     "semesterStart": "Semester Start Date",
     "semesterEnd": "Semester End Date",
+    "confirmSemesterChange": "Confirm Semester Configuration Change",
+    "confirmSemesterStartChange": "Are you sure you want to change the semester start date to {{date}}?",
+    "confirmSemesterEndChange": "Are you sure you want to change the semester end date to {{date}}?",
+    "semesterConfigSaved": "Semester configuration saved successfully",
     "selectBranch": "Select Branch",
     "allBranches": "All Branches",
     "currentWeek": "Current Week",
@@ -730,7 +734,6 @@
       "searchPlaceholder": "Search users...",
       "addUser": "Add User",
       "filters": "Filters",
-      "role": "Role",
       "allRoles": "All Roles",
       "status": "Status",
       "allStatuses": "All Statuses",
@@ -747,11 +750,6 @@
         "student": "Student",
         "secretary": "Secretary",
         "parent": "Parent"
-      },
-      "actions": {
-        "edit": "Edit",
-        "delete": "Delete",
-        "viewProfile": "View Profile"
       },
       "dialogs": {
         "addUser": {
@@ -801,14 +799,10 @@
       "adminAccountsCannotBeDeleted": "Admin accounts cannot be deleted",
       "cannotDeleteOwnAccount": "You cannot delete your own account",
       "cannotDeleteSecretaryAccounts": "You cannot delete other secretary accounts",
-      "cannotDeleteAdminAccounts": "You cannot delete admin accounts",
+      "cannotDeleteAdminAccounts": "Admin accounts cannot be deleted",
       "cannotCreateSecretaryAccounts": "You cannot create secretary accounts",
       "createdAt": "Created",
-      "unknown": "Unknown",
-      "name": "Name",
-      "email": "Email",
-      "role": "Role",
-      "actions": "Actions"
+      "unknown": "Unknown"
     },
     "manageClassesPage": {
       "title": "Manage Classes",

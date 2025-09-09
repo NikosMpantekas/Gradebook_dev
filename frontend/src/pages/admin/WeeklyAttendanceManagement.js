@@ -2,40 +2,67 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
 import { toast } from 'react-toastify';
-import { API_URL } from '../../config/appConfig';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, isWithinInterval } from 'date-fns';
-
-// shadcn/ui components
+import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Textarea } from '../../components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../../components/ui/dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../../components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  Users, 
+  Calendar, 
+  Clock, 
+  Search, 
+  UserPlus, 
+  FileText, 
+  Download, 
+  CheckCircle2 
+} from 'lucide-react';
+import { API_URL } from '../../config/apiConfig';
+import axios from 'axios';
 import { Spinner } from '../../components/ui/spinner';
 
-// Lucide React icons
-import {
-  ChevronDown,
-  ChevronRight,
-  Calendar,
-  Users,
-  Clock,
-  FileText,
-  Download,
-  Filter,
-  Search,
-  Plus,
-  Save,
-  X,
-  Check
-} from 'lucide-react';
 
 const WeeklyAttendanceManagement = () => {
   const navigate = useNavigate();
@@ -47,9 +74,52 @@ const WeeklyAttendanceManagement = () => {
   const [classes, setClasses] = useState([]);
   const [schoolBranches, setSchoolBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
-  const [semesterStart, setSemesterStart] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [semesterEnd, setSemesterEnd] = useState(format(new Date(new Date().getFullYear(), 11, 31), 'yyyy-MM-dd'));
+  // Load semester dates from localStorage or use defaults
+  const [semesterStart, setSemesterStart] = useState(() => {
+    return localStorage.getItem('attendance_semester_start') || format(new Date(), 'yyyy-MM-dd');
+  });
+  const [semesterEnd, setSemesterEnd] = useState(() => {
+    return localStorage.getItem('attendance_semester_end') || format(new Date(new Date().getFullYear(), 11, 31), 'yyyy-MM-dd');
+  });
+  const [showSemesterConfirm, setShowSemesterConfirm] = useState(false);
+  const [pendingSemesterChange, setPendingSemesterChange] = useState(null);
+  const [processedClasses, setProcessedClasses] = useState(new Set());
   const [error, setError] = useState(null);
+
+  // Semester configuration handlers
+  const handleSemesterStartChange = (value) => {
+    if (value !== semesterStart) {
+      setPendingSemesterChange({ type: 'start', value });
+      setShowSemesterConfirm(true);
+    }
+  };
+
+  const handleSemesterEndChange = (value) => {
+    if (value !== semesterEnd) {
+      setPendingSemesterChange({ type: 'end', value });
+      setShowSemesterConfirm(true);
+    }
+  };
+
+  const confirmSemesterChange = () => {
+    if (pendingSemesterChange) {
+      if (pendingSemesterChange.type === 'start') {
+        setSemesterStart(pendingSemesterChange.value);
+        localStorage.setItem('attendance_semester_start', pendingSemesterChange.value);
+      } else {
+        setSemesterEnd(pendingSemesterChange.value);
+        localStorage.setItem('attendance_semester_end', pendingSemesterChange.value);
+      }
+      toast.success(t('attendance.semesterConfigSaved'));
+    }
+    setShowSemesterConfirm(false);
+    setPendingSemesterChange(null);
+  };
+
+  const cancelSemesterChange = () => {
+    setShowSemesterConfirm(false);
+    setPendingSemesterChange(null);
+  };
 
   // Week/day management
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
@@ -158,10 +228,41 @@ const WeeklyAttendanceManagement = () => {
 
   const fetchSchoolBranches = async () => {
     try {
-      const branches = [...new Set(classes.map(cls => cls.schoolBranch))].filter(Boolean);
-      setSchoolBranches(branches);
+      // Get unique school branch IDs and fetch their details
+      const branchIds = [...new Set(classes.map(cls => cls.schoolBranch))].filter(Boolean);
+      
+      // Fetch school branch details from API
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      
+      const branchDetails = await Promise.all(
+        branchIds.map(async (branchId) => {
+          try {
+            const response = await axios.get(`${API_URL}/api/school-branches/${branchId}`, config);
+            return {
+              id: branchId,
+              name: response.data.name || `Branch ${branchId}`
+            };
+          } catch (error) {
+            console.warn(`Failed to fetch branch ${branchId}:`, error);
+            return {
+              id: branchId,
+              name: `Branch ${branchId}`
+            };
+          }
+        })
+      );
+      
+      setSchoolBranches(branchDetails);
     } catch (error) {
       console.error('Error processing school branches:', error);
+      // Fallback to just IDs
+      const branches = [...new Set(classes.map(cls => cls.schoolBranch))].filter(Boolean);
+      setSchoolBranches(branches.map(id => ({ id, name: `Branch ${id}` })));
     }
   };
 
@@ -285,15 +386,28 @@ const WeeklyAttendanceManagement = () => {
         notes: classAttendance.notes
       };
 
-      await axios.post(`${API_URL}/api/attendance/class-session`, attendanceData, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.post(`${API_URL}/api/attendance/class-session`, attendanceData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      toast.success(t('attendance.attendanceSaved'));
-      setClassPopupOpen(false);
-      logAction('Class attendance saved successfully');
+      if (response.data && response.data.success) {
+        toast.success(t('attendance.attendanceSaved'));
+        
+        // Mark class as processed with green tick
+        const classKey = `${selectedClass._id}-${format(classDate, 'yyyy-MM-dd')}`;
+        setProcessedClasses(prev => new Set([...prev, classKey]));
+        
+        setClassPopupOpen(false);
+        logAction('Class attendance saved successfully');
+      } else {
+        throw new Error('Failed to save attendance - no success response');
+      }
     } catch (error) {
       console.error('Error saving attendance:', error);
+      logAction('Error saving attendance', { error: error.message });
       toast.error(t('attendance.failedToSaveAttendance'));
     }
   };
@@ -357,28 +471,29 @@ const WeeklyAttendanceManagement = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{t('attendance.weeklyManagement')}</h1>
-          <p className="text-gray-600">{t('attendance.manageWeeklyAttendance')}</p>
-        </div>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          {t('attendance.weeklyManagement')}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          {t('attendance.manageWeeklyAttendance')}
+        </p>
+      </div>
         
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Export buttons */}
-          <Select onValueChange={(value) => exportAttendance(value)}>
-            <SelectTrigger className="w-40">
-              <Download className="w-4 h-4" />
-              <span>{t('attendance.export')}</span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('attendance.exportAll')}</SelectItem>
-              <SelectItem value="class">{t('attendance.exportByClass')}</SelectItem>
-              <SelectItem value="student">{t('attendance.exportByStudent')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        {/* Export buttons */}
+        <Select onValueChange={(value) => exportAttendance(value)}>
+          <SelectTrigger className="w-40">
+            <Download className="w-4 h-4" />
+            <span>{t('attendance.export')}</span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('attendance.exportAll')}</SelectItem>
+            <SelectItem value="class">{t('attendance.exportByClass')}</SelectItem>
+            <SelectItem value="student">{t('attendance.exportByStudent')}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Semester Configuration */}
@@ -397,7 +512,7 @@ const WeeklyAttendanceManagement = () => {
                 id="semesterStart"
                 type="date"
                 value={semesterStart}
-                onChange={(e) => setSemesterStart(e.target.value)}
+                onChange={(e) => handleSemesterStartChange(e.target.value)}
               />
             </div>
             <div>
@@ -406,7 +521,7 @@ const WeeklyAttendanceManagement = () => {
                 id="semesterEnd"
                 type="date"
                 value={semesterEnd}
-                onChange={(e) => setSemesterEnd(e.target.value)}
+                onChange={(e) => handleSemesterEndChange(e.target.value)}
               />
             </div>
             <div>
@@ -418,7 +533,9 @@ const WeeklyAttendanceManagement = () => {
                 <SelectContent>
                   <SelectItem value="all">{t('attendance.allBranches')}</SelectItem>
                   {schoolBranches.map(branch => (
-                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                    <SelectItem key={branch.id || branch} value={branch.id || branch}>
+                      {branch.name || branch}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -430,14 +547,14 @@ const WeeklyAttendanceManagement = () => {
       {/* Weekly View */}
       <div className="space-y-4">
         {weeksToShow.map(week => (
-          <Card key={week.offset} className={week.isCurrent ? 'border-blue-500 bg-blue-50' : ''}>
+          <Card key={week.offset} className={week.isCurrent ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-400' : 'dark:bg-gray-800 dark:border-gray-700'}>
             <Collapsible
               open={expandedWeeks.has(week.offset)}
               onOpenChange={() => toggleWeek(week.offset)}
             >
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-gray-50">
-                  <CardTitle className="flex items-center justify-between">
+                <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
                     <div className="flex items-center gap-2">
                       {expandedWeeks.has(week.offset) ? 
                         <ChevronDown className="w-5 h-5" /> : 
@@ -460,14 +577,14 @@ const WeeklyAttendanceManagement = () => {
                     const isToday = isSameDay(day, new Date());
                     
                     return (
-                      <Card key={dateKey} className={isToday ? 'border-green-500 bg-green-50' : 'border-gray-200'}>
+                      <Card key={dateKey} className={isToday ? 'border-green-500 bg-green-50 dark:bg-green-950/20 dark:border-green-400' : 'border-gray-200 dark:border-gray-600 dark:bg-gray-800'}>
                         <Collapsible
                           open={expandedDays.has(dateKey)}
                           onOpenChange={() => toggleDay(day)}
                         >
                           <CollapsibleTrigger asChild>
-                            <CardHeader className="cursor-pointer hover:bg-gray-50 py-3">
-                              <CardTitle className="flex items-center justify-between text-base">
+                            <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 py-3">
+                              <CardTitle className="flex items-center justify-between text-base text-gray-900 dark:text-gray-100">
                                 <div className="flex items-center gap-2">
                                   {expandedDays.has(dateKey) ? 
                                     <ChevronDown className="w-4 h-4" /> : 
@@ -478,7 +595,7 @@ const WeeklyAttendanceManagement = () => {
                                     {isToday && <Badge variant="secondary" className="ml-2">{t('attendance.today')}</Badge>}
                                   </span>
                                 </div>
-                                <Badge variant="outline">{dayClasses.length} {t('attendance.classes')}</Badge>
+                                <Badge variant="outline" className="dark:border-gray-500 dark:text-gray-300">{dayClasses.length} {t('attendance.classes')}</Badge>
                               </CardTitle>
                             </CardHeader>
                           </CollapsibleTrigger>
@@ -486,37 +603,32 @@ const WeeklyAttendanceManagement = () => {
                           <CollapsibleContent>
                             <CardContent className="pt-0">
                               {dayClasses.length === 0 ? (
-                                <p className="text-gray-500 text-center py-4">{t('attendance.noClassesScheduled')}</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-center py-4">{t('attendance.noClassesScheduled')}</p>
                               ) : (
                                 <div className="grid gap-3">
-                                  {dayClasses.map(classData => {
-                                    const scheduleForDay = classData.schedule?.find(sch => sch.day === format(day, 'EEEE'));
+                                  {dayClasses.map(cls => {
+                                    const classKey = `${cls._id}-${format(day, 'yyyy-MM-dd')}`;
+                                    const isProcessed = processedClasses.has(classKey);
                                     
                                     return (
-                                      <Card 
-                                        key={classData._id}
-                                        className="cursor-pointer hover:bg-gray-50 transition-colors"
-                                        onClick={() => openClassPopup(classData, day)}
+                                      <Button
+                                        key={cls._id}
+                                        variant="outline"
+                                        className={`w-full justify-between dark:border-gray-600 dark:hover:bg-gray-700 ${
+                                          isProcessed ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''
+                                        }`}
+                                        onClick={() => openClassPopup(cls, day)}
                                       >
-                                        <CardContent className="p-4">
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                              <h4 className="font-semibold">{classData.name}</h4>
-                                              <p className="text-sm text-gray-600">
-                                                {classData.subject} - {classData.direction}
-                                              </p>
-                                              <p className="text-sm text-gray-500">
-                                                {scheduleForDay?.startTime} - {scheduleForDay?.endTime}
-                                              </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                              <Badge variant="outline">{classData.schoolBranch}</Badge>
-                                              <Users className="w-4 h-4 text-gray-400" />
-                                              <span className="text-sm text-gray-500">{classData.students?.length || 0}</span>
-                                            </div>
-                                          </div>
-                                        </CardContent>
-                                      </Card>
+                                        <div className="flex items-center gap-2">
+                                          {isProcessed && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                                          <Users className="w-4 h-4" />
+                                          <span className="font-medium dark:text-gray-100">{cls.name}</span>
+                                          <Badge variant="secondary" className="dark:bg-gray-700 dark:text-gray-300">{cls.subject}</Badge>
+                                        </div>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                                          {cls.schedule?.find(sch => sch.day === format(day, 'EEEE'))?.startTime || 'No time set'}
+                                        </span>
+                                      </Button>
                                     );
                                   })}
                                 </div>
@@ -533,6 +645,25 @@ const WeeklyAttendanceManagement = () => {
           </Card>
         ))}
       </div>
+
+      {/* Semester Change Confirmation Dialog */}
+      <AlertDialog open={showSemesterConfirm} onOpenChange={setShowSemesterConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('attendance.confirmSemesterChange')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingSemesterChange?.type === 'start' 
+                ? t('attendance.confirmSemesterStartChange', { date: pendingSemesterChange?.value })
+                : t('attendance.confirmSemesterEndChange', { date: pendingSemesterChange?.value })
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelSemesterChange}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSemesterChange}>{t('common.confirm')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Class Attendance Popup */}
       <Dialog open={classPopupOpen} onOpenChange={setClassPopupOpen}>
