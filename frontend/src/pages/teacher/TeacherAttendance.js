@@ -277,7 +277,7 @@ const TeacherAttendance = () => {
                   <SelectValue placeholder={t('attendance.selectClass')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map((cls) => (
+                  {(classes || []).map((cls) => (
                     <SelectItem key={cls._id} value={cls._id}>
                       {cls.name}
                     </SelectItem>
@@ -316,7 +316,7 @@ const TeacherAttendance = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {sessions.map((session) => (
+              {(sessions || []).map((session) => (
                 <div key={session._id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <h3 className="font-medium">{session.title}</h3>
@@ -371,7 +371,7 @@ const TeacherAttendance = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 mb-6">
-              {students.map((student) => (
+              {(students || []).map((student) => (
                 <div key={student._id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">

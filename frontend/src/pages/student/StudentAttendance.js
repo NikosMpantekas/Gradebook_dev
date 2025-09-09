@@ -183,7 +183,7 @@ const StudentAttendance = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">{t('attendance.allClasses')}</SelectItem>
-                  {classes.map((cls) => (
+                  {(classes || []).map((cls) => (
                     <SelectItem key={cls._id} value={cls._id}>
                       {cls.name}
                     </SelectItem>
@@ -335,7 +335,7 @@ const StudentAttendance = () => {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
-                {calendarDays.map((date) => {
+                {(calendarDays || []).map((date) => {
                   const status = getAttendanceStatus(date);
                   const dayRecords = getAttendanceForDate(date);
                   
@@ -396,7 +396,7 @@ const StudentAttendance = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {filteredSessions.map((session) => {
+                  {(filteredSessions || []).map((session) => {
                     const attendance = attendanceRecords.find(record => record.sessionId === session._id);
                     
                     return (
