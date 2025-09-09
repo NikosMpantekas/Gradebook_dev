@@ -202,16 +202,33 @@ const createClass = asyncHandler(async (req, res) => {
 // @access  Private (Admin and Teachers)
 const getClasses = asyncHandler(async (req, res) => {
   console.log('Getting classes for user with schoolId:', req.user.schoolId);
+  console.log('Full user object:', JSON.stringify(req.user, null, 2));
+  
+  // Check if user has schoolId, if not use user._id for admin
+  const userSchoolId = req.user.schoolId || req.user._id;
+  console.log('Using schoolId for query:', userSchoolId);
   
   // Construct query based on user role
-  let query = { schoolId: req.user.schoolId };
+  let query = {};
   
-  // If teacher, only return classes where they are assigned
-  if (req.user.role === 'teacher') {
+  if (req.user.role === 'admin') {
+    // For admin, try multiple approaches to find classes
+    query = {
+      $or: [
+        { schoolId: userSchoolId },
+        { schoolId: req.user._id },
+        { createdBy: req.user._id }
+      ]
+    };
+  } else if (req.user.role === 'teacher') {
+    // If teacher, only return classes where they are assigned
     query = { 
-      schoolId: req.user.schoolId,
+      schoolId: req.user.schoolId || req.user._id,
       teachers: req.user._id
     };
+  } else {
+    // Default fallback
+    query = { schoolId: userSchoolId };
   }
   
   console.log('Class query filter:', JSON.stringify(query, null, 2));
@@ -246,19 +263,38 @@ const getClasses = asyncHandler(async (req, res) => {
     .sort({ name: 1 });
 
   console.log(`Found ${classes.length} classes matching query`);
+  
+  // If no classes found, try a broader search for admin
+  if (classes.length === 0 && req.user.role === 'admin') {
+    console.log('No classes found with initial query, trying broader search...');
+    const allClasses = await Class.find({})
+      .populate('students', 'name email')
+      .populate('teachers', 'name email')
+      .sort({ name: 1 });
+    console.log(`Found ${allClasses.length} total classes in database`);
+    
+    if (allClasses.length > 0) {
+      console.log('Sample class structure:', JSON.stringify(allClasses[0], null, 2));
+    }
+  }
+  
   if (classes.length > 0) {
     // Only log first class to avoid excessive logging
     console.log('Sample class data:', JSON.stringify(classes[0], null, 2));
-  } else {
-    console.log('No classes found - trying to get all classes to debug');
-    const allClasses = await Class.find({});
-    console.log(`Total classes in database: ${allClasses.length}`);
-    if (allClasses.length > 0) {
-      console.log('Sample class with potentially mismatched schoolId:', JSON.stringify(allClasses[0], null, 2));
-    }
   }
 
-  res.status(200).json(classes);
+  // For admin users, if no classes found with strict query, return all classes
+  let finalClasses = classes;
+  if (req.user.role === 'admin' && classes.length === 0) {
+    console.log('Admin user - returning all classes as fallback');
+    finalClasses = await Class.find({})
+      .populate('students', 'name email')
+      .populate('teachers', 'name email')
+      .sort({ name: 1 });
+    console.log(`Fallback found ${finalClasses.length} total classes`);
+  }
+
+  res.status(200).json(finalClasses);
 });
 
 // @desc    Get a single class by ID
