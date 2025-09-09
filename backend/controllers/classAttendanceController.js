@@ -492,9 +492,158 @@ const exportAttendanceReport = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get class attendance for a specific date
+// @route   GET /api/attendance/class-attendance
+// @access  Private (Admin, Teacher)
+const getClassAttendanceByDate = asyncHandler(async (req, res) => {
+  const { classId, date } = req.query;
+
+  logger.info('CLASS_ATTENDANCE', 'Fetching class attendance for date', {
+    userId: req.user._id,
+    classId,
+    date
+  });
+
+  try {
+    // Validate class exists
+    const classData = await Class.findById(classId);
+    if (!classData) {
+      res.status(404);
+      throw new Error('Class not found');
+    }
+
+    // Check authorization
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+    const isTeacherOfClass = classData.teachers.includes(req.user._id);
+    
+    if (!isAdmin && !isTeacherOfClass) {
+      res.status(403);
+      throw new Error('Not authorized to view attendance for this class');
+    }
+
+    // Parse date and find session for this date
+    const sessionDate = new Date(date);
+    const startOfDay = new Date(sessionDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(sessionDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Find sessions for this class and date
+    const sessions = await Session.find({
+      class: classId,
+      scheduledStart: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    if (sessions.length === 0) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'No session found for this date'
+      });
+    }
+
+    // Get the session (use the first one if multiple)
+    const session = sessions[0];
+
+    // Find attendance records for this session
+    const attendanceRecords = await Attendance.find({
+      sessionId: session._id
+    }).populate('studentId', 'fullName email');
+
+    // Format the response with attendance data
+    const attendanceData = {
+      sessionId: session._id,
+      wasHeld: session.status === 'held',
+      startTime: session.scheduledStart ? 
+        `${session.scheduledStart.getHours().toString().padStart(2, '0')}:${session.scheduledStart.getMinutes().toString().padStart(2, '0')}` : '',
+      endTime: session.scheduledEnd ? 
+        `${session.scheduledEnd.getHours().toString().padStart(2, '0')}:${session.scheduledEnd.getMinutes().toString().padStart(2, '0')}` : '',
+      students: attendanceRecords.map(record => ({
+        studentId: record.studentId._id,
+        present: record.status === 'present',
+        note: record.note || '',
+        studentName: record.studentId.fullName
+      })),
+      notes: session.notes || ''
+    };
+
+    res.json({
+      success: true,
+      data: attendanceData,
+      message: 'Class attendance retrieved successfully'
+    });
+
+  } catch (error) {
+    logger.error('CLASS_ATTENDANCE', 'Error fetching class attendance', {
+      userId: req.user._id,
+      classId,
+      date,
+      error: error.message
+    });
+    
+    res.status(500);
+    throw new Error('Failed to fetch class attendance');
+  }
+});
+
+// @desc    Get processed classes for a date range
+// @route   GET /api/attendance/processed-classes
+// @access  Private (Admin, Teacher)
+const getProcessedClasses = asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  try {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Find all sessions with attendance in the date range
+    const sessions = await Session.find({
+      scheduledStart: { $gte: start, $lte: end },
+      status: 'held'
+    }).populate('class');
+
+    // Check if user has access to these classes
+    const accessibleSessions = sessions.filter(session => {
+      const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+      const isTeacherOfClass = session.class.teachers.includes(req.user._id);
+      return isAdmin || isTeacherOfClass;
+    });
+
+    const processedClasses = accessibleSessions.map(session => ({
+      classId: session.class._id,
+      date: session.scheduledStart.toISOString().split('T')[0]
+    }));
+
+    res.json({
+      success: true,
+      data: processedClasses,
+      message: 'Processed classes retrieved successfully'
+    });
+
+  } catch (error) {
+    logger.error('CLASS_ATTENDANCE', 'Error fetching processed classes', {
+      userId: req.user._id,
+      startDate,
+      endDate,
+      error: error.message
+    });
+    
+    res.status(500);
+    throw new Error('Failed to fetch processed classes');
+  }
+});
+
 module.exports = {
   saveClassSessionAttendance,
-  getClassSessionAttendance,
+  getClassAttendance,
+  getClassAttendanceByDate,
+  getProcessedClasses,
   getStudentAttendanceData,
   searchStudents,
   exportAttendanceReport
