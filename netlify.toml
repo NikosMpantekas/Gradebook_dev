@@ -1,3 +1,12 @@
+[build.environment]
+  REACT_APP_API_URL = "https://gradebook-backend-production.up.railway.app"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://gradebook-backend-production.up.railway.app/api/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
