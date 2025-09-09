@@ -77,12 +77,19 @@ const AttendanceManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      console.log('Classes API response:', response.data);
+      
       // Ensure response.data is always an array
       const classesData = Array.isArray(response.data) ? response.data : [];
       setClasses(classesData);
-      logAction('Classes fetched successfully', { count: classesData.length });
+      logAction('Classes fetched successfully', { count: classesData.length, data: classesData });
+      
+      if (classesData.length === 0) {
+        console.warn('No classes found - this may indicate a database or permission issue');
+      }
     } catch (error) {
-      logAction('Error fetching classes', { error: error.message });
+      console.error('Error fetching classes:', error);
+      logAction('Error fetching classes', { error: error.message, stack: error.stack });
       setError(error.message);
       setClasses([]); // Ensure fallback to empty array
       toast.error(t('attendance.failedToLoadClasses'));

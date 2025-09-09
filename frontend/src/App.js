@@ -697,6 +697,11 @@ function App() {
                 <AttendanceManagement />
               </AdminRoute>
             } />
+            <Route path="/app/admin/attendance/create-session" element={
+              <AdminRoute>
+                <AttendanceManagement />
+              </AdminRoute>
+            } />
             <Route path="/app/teacher/student-stats" element={
               <TeacherRoute>
                 <StudentStats />
