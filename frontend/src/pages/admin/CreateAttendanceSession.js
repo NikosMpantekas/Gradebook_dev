@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import { API_URL } from '../../config/appConfig';
 
 // shadcn/ui components
 import { Button } from '../../components/ui/button';
@@ -61,7 +62,7 @@ const CreateAttendanceSession = () => {
     try {
       logAction('Fetching classes for session creation');
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/classes', {
+      const response = await axios.get(`${API_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -121,7 +122,7 @@ const CreateAttendanceSession = () => {
 
       logAction('Creating attendance session', sessionData);
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/attendance/sessions', sessionData, {
+      const response = await axios.post(`${API_URL}/api/sessions/classes/${formData.classId}/sessions/generate`, sessionData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
-import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import { API_URL } from '../../config/appConfig';
+import { format } from 'date-fns';
 
 // shadcn/ui components
 import { Button } from '../../components/ui/button';
@@ -73,7 +73,7 @@ const AttendanceManagement = () => {
     try {
       logAction('Fetching classes');
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/classes', {
+      const response = await axios.get(`${API_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -111,7 +111,7 @@ const AttendanceManagement = () => {
     try {
       logAction('Fetching sessions', { classId: selectedClass, date: selectedDate });
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/attendance/sessions', {
+      const response = await axios.get(`${API_URL}/api/attendance/sessions`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { classId: selectedClass, date: selectedDate }
       });
@@ -135,7 +135,7 @@ const AttendanceManagement = () => {
     try {
       logAction('Fetching attendance reports');
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/reports/attendance', {
+      const response = await axios.get(`${API_URL}/api/reports/attendance`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -155,7 +155,7 @@ const AttendanceManagement = () => {
     try {
       logAction('Creating session', sessionData);
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/sessions', sessionData, {
+      const response = await axios.post(`${API_URL}/api/sessions/classes/${selectedClass}/sessions/generate`, sessionData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
