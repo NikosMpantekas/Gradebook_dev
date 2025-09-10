@@ -20,6 +20,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Checkbox } from '../../components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Spinner } from '../../components/ui/spinner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import TimePickerWheel from '../../components/ui/time-picker-wheel';
 
 // Lucide React icons
 import {
@@ -32,7 +34,9 @@ import {
   Users as GroupIcon,
   User as PersonIcon,
   BookOpen as BookIcon,
-  X as ClearIcon
+  X as ClearIcon,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 // Import our custom components
@@ -88,6 +92,10 @@ const ManageClasses = () => {
   // States for filtering teachers and students
   const [teacherFilter, setTeacherFilter] = useState('');
   const [studentFilter, setStudentFilter] = useState('');
+  
+  // States for collapsible sections
+  const [studentsExpanded, setStudentsExpanded] = useState(false);
+  const [teachersExpanded, setTeachersExpanded] = useState(false);
   
   // Filtered lists
   const filteredTeachers = useMemo(() => {
@@ -935,72 +943,168 @@ const ManageClasses = () => {
               
               {/* Students & Teachers Tab */}
               <TabsContent value="people" className="space-y-6">
+                {/* Students Selection */}
                 <div>
-                  <Label className="text-sm font-medium mb-4 block">
-                    {t('admin.manageClassesPage.form.selectStudents')}
-                  </Label>
-                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
-                    {filteredStudents.map((student) => (
-                      <div key={student._id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`student-${student._id}`}
-                          checked={classData.students.includes(student._id)}
-                          onCheckedChange={() => handleStudentToggle(student._id)}
-                        />
-                        <Label htmlFor={`student-${student._id}`} className="text-sm">
-                          {student.firstName} {student.lastName} • {student.email}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {classData.students.length > 0 && (
-                    <div className="flex justify-end mt-2">
+                  <Collapsible open={studentsExpanded} onOpenChange={setStudentsExpanded}>
+                    <CollapsibleTrigger asChild>
                       <Button
+                        variant="ghost"
+                        className="flex w-full justify-between p-0 font-medium text-sm hover:bg-transparent"
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setClassData({...classData, students: []})}
-                        className="gap-2"
                       >
-                        <ClearIcon className="h-4 w-4" />
-                        {t('common.clearAll')}
+                        <div className="flex items-center gap-2">
+                          <GroupIcon className="h-4 w-4" />
+                          {t('admin.manageClassesPage.form.selectStudents')}
+                          {classData.students.length > 0 && (
+                            <Badge variant="secondary" className="ml-2">
+                              {classData.students.length} selected
+                            </Badge>
+                          )}
+                        </div>
+                        {studentsExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
                       </Button>
-                    </div>
-                  )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 mt-3">
+                      {/* Search Box */}
+                      <div className="relative">
+                        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search students..."
+                          value={studentFilter}
+                          onChange={(e) => setStudentFilter(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      
+                      {/* Students List */}
+                      <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4 bg-muted/20">
+                        {filteredStudents.length > 0 ? (
+                          filteredStudents.map((student) => (
+                            <div key={student._id} className="flex items-center space-x-2 p-2 hover:bg-muted/30 rounded">
+                              <Checkbox
+                                id={`student-${student._id}`}
+                                checked={classData.students.includes(student._id)}
+                                onCheckedChange={() => handleStudentToggle(student._id)}
+                              />
+                              <Label htmlFor={`student-${student._id}`} className="text-sm cursor-pointer flex-1">
+                                {student.firstName} {student.lastName}
+                                <span className="text-muted-foreground ml-2">• {student.email}</span>
+                              </Label>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-muted-foreground text-sm">
+                            {studentFilter ? 'No students found matching search' : 'No students available'}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">
+                          {classData.students.length} students selected
+                        </span>
+                        {classData.students.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setClassData({...classData, students: []})}
+                            className="gap-2"
+                          >
+                            <ClearIcon className="h-4 w-4" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
 
+                {/* Teachers Selection */}
                 <div>
-                  <Label className="text-sm font-medium mb-4 block">
-                    {t('admin.manageClassesPage.form.selectTeachers')}
-                  </Label>
-                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
-                    {filteredTeachers.map((teacher) => (
-                      <div key={teacher._id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`teacher-${teacher._id}`}
-                          checked={classData.teachers.includes(teacher._id)}
-                          onCheckedChange={() => handleTeacherToggle(teacher._id)}
-                        />
-                        <Label htmlFor={`teacher-${teacher._id}`} className="text-sm">
-                          {teacher.firstName} {teacher.lastName} • {teacher.email}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {classData.teachers.length > 0 && (
-                    <div className="flex justify-end mt-2">
+                  <Collapsible open={teachersExpanded} onOpenChange={setTeachersExpanded}>
+                    <CollapsibleTrigger asChild>
                       <Button
+                        variant="ghost"
+                        className="flex w-full justify-between p-0 font-medium text-sm hover:bg-transparent"
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setClassData({...classData, teachers: []})}
-                        className="gap-2"
                       >
-                        <ClearIcon className="h-4 w-4" />
-                        {t('common.clearAll')}
+                        <div className="flex items-center gap-2">
+                          <PersonIcon className="h-4 w-4" />
+                          {t('admin.manageClassesPage.form.selectTeachers')}
+                          {classData.teachers.length > 0 && (
+                            <Badge variant="secondary" className="ml-2">
+                              {classData.teachers.length} selected
+                            </Badge>
+                          )}
+                        </div>
+                        {teachersExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
                       </Button>
-                    </div>
-                  )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 mt-3">
+                      {/* Search Box */}
+                      <div className="relative">
+                        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search teachers..."
+                          value={teacherFilter}
+                          onChange={(e) => setTeacherFilter(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      
+                      {/* Teachers List */}
+                      <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4 bg-muted/20">
+                        {filteredTeachers.length > 0 ? (
+                          filteredTeachers.map((teacher) => (
+                            <div key={teacher._id} className="flex items-center space-x-2 p-2 hover:bg-muted/30 rounded">
+                              <Checkbox
+                                id={`teacher-${teacher._id}`}
+                                checked={classData.teachers.includes(teacher._id)}
+                                onCheckedChange={() => handleTeacherToggle(teacher._id)}
+                              />
+                              <Label htmlFor={`teacher-${teacher._id}`} className="text-sm cursor-pointer flex-1">
+                                {teacher.firstName} {teacher.lastName}
+                                <span className="text-muted-foreground ml-2">• {teacher.email}</span>
+                              </Label>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-muted-foreground text-sm">
+                            {teacherFilter ? 'No teachers found matching search' : 'No teachers available'}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">
+                          {classData.teachers.length} teachers selected
+                        </span>
+                        {classData.teachers.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setClassData({...classData, teachers: []})}
+                            className="gap-2"
+                          >
+                            <ClearIcon className="h-4 w-4" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </TabsContent>
               
@@ -1033,11 +1137,10 @@ const ManageClasses = () => {
                                 <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
                                   {t('admin.manageClassesPage.form.startTime')}
                                 </Label>
-                                <Input
-                                  id={`start-${index}`}
-                                  type="time"
+                                <TimePickerWheel
                                   value={daySchedule.startTime || ''}
-                                  onChange={(e) => handleScheduleChange(index, 'startTime', e.target.value)}
+                                  onChange={(value) => handleScheduleChange(index, 'startTime', value)}
+                                  placeholder="Start time"
                                   className="w-32"
                                 />
                               </div>
@@ -1045,11 +1148,10 @@ const ManageClasses = () => {
                                 <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
                                   {t('admin.manageClassesPage.form.endTime')}
                                 </Label>
-                                <Input
-                                  id={`end-${index}`}
-                                  type="time"
+                                <TimePickerWheel
                                   value={daySchedule.endTime || ''}
-                                  onChange={(e) => handleScheduleChange(index, 'endTime', e.target.value)}
+                                  onChange={(value) => handleScheduleChange(index, 'endTime', value)}
+                                  placeholder="End time"
                                   className="w-32"
                                 />
                               </div>
