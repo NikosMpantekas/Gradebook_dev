@@ -9,8 +9,7 @@ const {
   setDefaultTheme,
   getDefaultTheme
 } = require('../controllers/themeController');
-const { authenticate } = require('../middleware/authMiddleware');
-const { authorize } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -43,14 +42,14 @@ const themeValidation = [
 ];
 
 // Public routes (authenticated users)
-router.get('/', authenticate, getAllThemes);
-router.get('/default', authenticate, getDefaultTheme);
-router.get('/:id', authenticate, getThemeById);
+router.get('/', protect, getAllThemes);
+router.get('/default', protect, getDefaultTheme);
+router.get('/:id', protect, getThemeById);
 
 // Protected routes (superadmin only)
-router.post('/', authenticate, authorize('superadmin'), themeValidation, createTheme);
-router.put('/:id', authenticate, authorize('superadmin'), themeValidation, updateTheme);
-router.delete('/:id', authenticate, authorize('superadmin'), deleteTheme);
-router.patch('/:id/default', authenticate, authorize('superadmin'), setDefaultTheme);
+router.post('/', protect, authorize('superadmin'), themeValidation, createTheme);
+router.put('/:id', protect, authorize('superadmin'), themeValidation, updateTheme);
+router.delete('/:id', protect, authorize('superadmin'), deleteTheme);
+router.patch('/:id/default', protect, authorize('superadmin'), setDefaultTheme);
 
 module.exports = router;
