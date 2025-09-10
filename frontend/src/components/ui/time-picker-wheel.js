@@ -1,127 +1,147 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Card } from './card';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './button';
 import { Input } from './input';
-import { Label } from './label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './dialog';
 import { Clock } from 'lucide-react';
 
 const TimePickerWheel = ({ value, onChange, placeholder = "Select time", className = "" }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [hours, setHours] = useState('00');
-  const [minutes, setMinutes] = useState('00');
-  const [keyboardMode, setKeyboardMode] = useState(false);
-  const [keyboardValue, setKeyboardValue] = useState('');
+  const [hours, setHours] = useState(12);
+  const [minutes, setMinutes] = useState(0);
+  const [keyboardInput, setKeyboardInput] = useState('');
+  const [showKeyboard, setShowKeyboard] = useState(false);
   
-  const hoursRef = useRef(null);
-  const minutesRef = useRef(null);
+  const hoursWheelRef = useRef(null);
+  const minutesWheelRef = useRef(null);
+  const hoursScrollRef = useRef(null);
+  const minutesScrollRef = useRef(null);
+  const itemHeight = 44;
+  const visibleItems = 5;
+  const centerIndex = Math.floor(visibleItems / 2);
 
-  // Initialize state from value prop
+  // Initialize from value prop
   useEffect(() => {
     if (value) {
-      const [h, m] = value.split(':');
-      setHours(h.padStart(2, '0'));
-      setMinutes(m.padStart(2, '0'));
-      setKeyboardValue(value);
+      const [h, m] = value.split(':').map(Number);
+      setHours(h);
+      setMinutes(m);
     }
   }, [value]);
 
-  // Generate hour and minute arrays
-  const hoursArray = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-  const minutesArray = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
-
-  const handleWheelScroll = (e, type) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 1 : -1;
+  // Create infinite arrays with padding
+  const createInfiniteArray = (max) => {
+    const baseArray = Array.from({ length: max }, (_, i) => i);
+    // Add padding items for smooth infinite scrolling
+    const padding = visibleItems * 3;
+    const infiniteArray = [];
     
-    if (type === 'hours') {
-      const currentIndex = hoursArray.indexOf(hours);
-      const newIndex = Math.max(0, Math.min(23, currentIndex + delta));
-      setHours(hoursArray[newIndex]);
-    } else {
-      const currentIndex = minutesArray.indexOf(minutes);
-      const newIndex = Math.max(0, Math.min(59, currentIndex + delta));
-      setMinutes(minutesArray[newIndex]);
+    for (let i = -padding; i < max + padding; i++) {
+      infiniteArray.push(((i % max) + max) % max);
     }
+    return infiniteArray;
   };
 
-  const handleItemClick = (value, type) => {
-    if (type === 'hours') {
-      setHours(value);
-    } else {
-      setMinutes(value);
+  const hoursArray = createInfiniteArray(24);
+  const minutesArray = createInfiniteArray(60);
+
+  const scrollToValue = useCallback((wheelRef, scrollRef, value, max) => {
+    if (!wheelRef.current || !scrollRef.current) return;
+    
+    const padding = visibleItems * 3;
+    const targetIndex = padding + value;
+    const scrollTop = (targetIndex - centerIndex) * itemHeight;
+    
+    scrollRef.current.scrollTop = scrollTop;
+  }, [centerIndex, itemHeight, visibleItems]);
+
+  // Scroll to initial values when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        scrollToValue(hoursWheelRef, hoursScrollRef, hours, 24);
+        scrollToValue(minutesWheelRef, minutesScrollRef, minutes, 60);
+      }, 50);
     }
-  };
+  }, [isOpen, hours, minutes, scrollToValue]);
 
-  const handleConfirm = () => {
-    const timeValue = `${hours}:${minutes}`;
-    onChange(timeValue);
-    setIsOpen(false);
-    setKeyboardMode(false);
-  };
+  const handleScroll = useCallback((scrollRef, setValue, max) => {
+    if (!scrollRef.current) return;
+    
+    const scrollTop = scrollRef.current.scrollTop;
+    const index = Math.round(scrollTop / itemHeight) + centerIndex;
+    const padding = visibleItems * 3;
+    const actualValue = ((index - padding) % max + max) % max;
+    
+    setValue(actualValue);
+  }, [centerIndex, itemHeight, visibleItems]);
 
-  const handleCancel = () => {
-    setIsOpen(false);
-    setKeyboardMode(false);
-    setKeyboardValue(value || '');
-  };
+  const onHoursScroll = useCallback(() => {
+    handleScroll(hoursScrollRef, setHours, 24);
+  }, [handleScroll]);
 
-  const handleKeyboardInput = () => {
-    setKeyboardMode(true);
-    setKeyboardValue(value || '');
-  };
+  const onMinutesScroll = useCallback(() => {
+    handleScroll(minutesScrollRef, setMinutes, 60);
+  }, [handleScroll]);
 
-  const handleKeyboardChange = (e) => {
-    setKeyboardValue(e.target.value);
-  };
-
-  const handleKeyboardConfirm = () => {
-    // Validate time format (HH:MM)
-    const timeRegex = /^([01]?\d|2[0-3]):([0-5]?\d)$/;
-    if (timeRegex.test(keyboardValue)) {
-      const [h, m] = keyboardValue.split(':');
-      const formattedHours = h.padStart(2, '0');
-      const formattedMinutes = m.padStart(2, '0');
-      setHours(formattedHours);
-      setMinutes(formattedMinutes);
-      onChange(`${formattedHours}:${formattedMinutes}`);
-      setIsOpen(false);
-      setKeyboardMode(false);
+  // Handle infinite scrolling
+  const handleInfiniteScroll = useCallback((scrollRef, max) => {
+    if (!scrollRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const padding = visibleItems * 3;
+    const itemsPerCycle = max;
+    const cycleHeight = itemsPerCycle * itemHeight;
+    
+    // Reset scroll position when reaching boundaries for infinite effect
+    if (scrollTop < cycleHeight) {
+      scrollRef.current.scrollTop = scrollTop + cycleHeight;
+    } else if (scrollTop > scrollHeight - clientHeight - cycleHeight) {
+      scrollRef.current.scrollTop = scrollTop - cycleHeight;
     }
-  };
+  }, [itemHeight, visibleItems]);
 
-  const WheelColumn = ({ items, selectedValue, onItemClick, type }) => (
-    <div className="relative">
+  const WheelColumn = ({ items, selectedValue, scrollRef, onScroll, onInfiniteScroll, max }) => (
+    <div className="relative w-20">
+      {/* Selection indicator */}
       <div 
-        className="h-48 overflow-hidden relative"
-        onWheel={(e) => handleWheelScroll(e, type)}
+        className="absolute inset-x-0 bg-gray-200 dark:bg-gray-700 rounded-lg pointer-events-none z-10"
+        style={{
+          top: `${centerIndex * itemHeight}px`,
+          height: `${itemHeight}px`,
+        }}
+      />
+      
+      <div
+        ref={scrollRef}
+        className="h-220 overflow-y-scroll scrollbar-hide"
+        style={{ height: `${visibleItems * itemHeight}px` }}
+        onScroll={() => {
+          onScroll();
+          onInfiniteScroll(scrollRef, max);
+        }}
       >
-        {/* Selection indicator */}
-        <div className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 h-10 bg-blue-100 dark:bg-blue-900/30 border-y-2 border-blue-200 dark:border-blue-700 pointer-events-none z-10" />
-        
-        <div className="flex flex-col items-center py-20">
+        <div className="relative">
           {items.map((item, index) => {
             const isSelected = item === selectedValue;
-            const distance = Math.abs(items.indexOf(selectedValue) - index);
-            const opacity = Math.max(0.3, 1 - distance * 0.2);
-            const scale = Math.max(0.8, 1 - distance * 0.1);
+            const distanceFromCenter = Math.abs(index - centerIndex - Math.round(scrollRef.current?.scrollTop / itemHeight || 0));
+            const opacity = Math.max(0.3, 1 - distanceFromCenter * 0.15);
+            const scale = Math.max(0.85, 1 - distanceFromCenter * 0.05);
             
             return (
-              <button
-                key={item}
-                type="button"
-                onClick={() => onItemClick(item, type)}
+              <div
+                key={`${item}-${index}`}
                 className={`
-                  h-10 w-16 flex items-center justify-center text-lg font-medium transition-all duration-200 hover:bg-muted/50 rounded
-                  ${isSelected ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-foreground'}
+                  flex items-center justify-center text-lg font-medium transition-all duration-100
+                  ${isSelected ? 'text-foreground' : 'text-muted-foreground'}
                 `}
                 style={{
+                  height: `${itemHeight}px`,
                   opacity,
                   transform: `scale(${scale})`,
                 }}
               >
-                {item}
-              </button>
+                {item.toString().padStart(2, '0')}
+              </div>
             );
           })}
         </div>
@@ -129,78 +149,132 @@ const TimePickerWheel = ({ value, onChange, placeholder = "Select time", classNa
     </div>
   );
 
+  const handleTimeClick = () => {
+    setShowKeyboard(true);
+    setKeyboardInput(value || `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+  };
+
+  const handleKeyboardChange = (e) => {
+    let input = e.target.value.replace(/[^\d:]/g, '');
+    
+    // Auto-format as user types
+    if (input.length === 2 && !input.includes(':')) {
+      input += ':';
+    }
+    
+    // Limit to HH:MM format
+    if (input.length > 5) {
+      input = input.slice(0, 5);
+    }
+    
+    setKeyboardInput(input);
+  };
+
+  const handleKeyboardSubmit = () => {
+    const timeRegex = /^([01]?\d|2[0-3]):([0-5]?\d)$/;
+    if (timeRegex.test(keyboardInput)) {
+      const [h, m] = keyboardInput.split(':').map(Number);
+      setHours(h);
+      setMinutes(m);
+      onChange(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      setIsOpen(false);
+      setShowKeyboard(false);
+    }
+  };
+
+  const handleConfirm = () => {
+    const timeValue = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    onChange(timeValue);
+    setIsOpen(false);
+    setShowKeyboard(false);
+  };
+
+  const handleCancel = () => {
+    setIsOpen(false);
+    setShowKeyboard(false);
+  };
+
+  const displayTime = value || `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
   return (
     <div className={className}>
       <Button
         type="button"
         variant="outline"
         onClick={() => setIsOpen(true)}
-        className="w-full justify-start gap-2 h-10"
+        className="w-full justify-start gap-2 h-10 font-mono"
       >
         <Clock className="h-4 w-4" />
-        {value || placeholder}
+        {displayTime}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Select Time</DialogTitle>
           </DialogHeader>
           
-          {keyboardMode ? (
+          {showKeyboard ? (
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="keyboard-time">Enter time (24h format - HH:MM)</Label>
+              <div className="text-center">
                 <Input
-                  id="keyboard-time"
                   type="text"
-                  placeholder="14:30"
-                  value={keyboardValue}
+                  placeholder="HH:MM"
+                  value={keyboardInput}
                   onChange={handleKeyboardChange}
-                  className="mt-1"
+                  className="text-center text-xl font-mono"
                   autoFocus
+                  maxLength={5}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Examples: 09:30, 14:45, 23:00
+                <p className="text-xs text-muted-foreground mt-2">
+                  24-hour format (00:00 - 23:59)
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex justify-center items-center gap-4">
-                <div className="text-center">
-                  <Label className="text-sm font-medium mb-2 block">Hours</Label>
-                  <WheelColumn
-                    items={hoursArray}
-                    selectedValue={hours}
-                    onItemClick={handleItemClick}
-                    type="hours"
-                  />
-                </div>
-                
-                <div className="text-2xl font-bold self-center mt-6">:</div>
-                
-                <div className="text-center">
-                  <Label className="text-sm font-medium mb-2 block">Minutes</Label>
-                  <WheelColumn
-                    items={minutesArray}
-                    selectedValue={minutes}
-                    onItemClick={handleItemClick}
-                    type="minutes"
-                  />
-                </div>
-              </div>
-              
+              {/* Clickable time display */}
               <div className="text-center">
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  onClick={handleKeyboardInput}
-                  className="text-muted-foreground hover:text-foreground"
+                  onClick={handleTimeClick}
+                  className="text-2xl font-mono hover:bg-muted/50 px-4 py-2"
                 >
-                  Type time manually
+                  {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}
                 </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click to type manually
+                </p>
+              </div>
+              
+              {/* Wheel picker */}
+              <div className="flex justify-center items-center gap-4">
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-2">Hours</div>
+                  <WheelColumn
+                    items={hoursArray}
+                    selectedValue={hours}
+                    scrollRef={hoursScrollRef}
+                    onScroll={onHoursScroll}
+                    onInfiniteScroll={handleInfiniteScroll}
+                    max={24}
+                  />
+                </div>
+                
+                <div className="text-xl font-bold mt-6">:</div>
+                
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-2">Minutes</div>
+                  <WheelColumn
+                    items={minutesArray}
+                    selectedValue={minutes}
+                    scrollRef={minutesScrollRef}
+                    onScroll={onMinutesScroll}
+                    onInfiniteScroll={handleInfiniteScroll}
+                    max={60}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -211,13 +285,26 @@ const TimePickerWheel = ({ value, onChange, placeholder = "Select time", classNa
             </Button>
             <Button 
               type="button" 
-              onClick={keyboardMode ? handleKeyboardConfirm : handleConfirm}
+              onClick={showKeyboard ? handleKeyboardSubmit : handleConfirm}
             >
-              Confirm
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <style jsx>{`
+        .h-220 {
+          height: 220px;
+        }
+        .scrollbar-hide {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 };
