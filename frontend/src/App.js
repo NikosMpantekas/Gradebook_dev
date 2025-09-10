@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from './components/theme-provider';
+import { ThemeProvider as ShadcnThemeProvider } from './components/theme-provider';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from './components/ui/sonner';
 import { useSelector, useDispatch } from 'react-redux';
 import './globals.css';
@@ -338,8 +339,9 @@ function App() {
   return (
     <ErrorBoundary fallback={<DiagnosticPage />} componentName="Application Root">
       <ThemeProvider>
-        <ScrollFix /> {/* Fix for Safari elastic scroll */}
-        <FeatureToggleProvider>
+        <ShadcnThemeProvider>
+          <ScrollFix /> {/* Fix for Safari elastic scroll */}
+          <FeatureToggleProvider>
           <HomeScreenPrompt />
           <MaintenanceStatusChecker>
             <Router>
@@ -830,9 +832,10 @@ function App() {
         {/* Floating Push Notification Toggle */}
         {user && <FloatingPushToggle />}
         
-      </FeatureToggleProvider>
-      <Toaster />
-    </ThemeProvider>
+        </FeatureToggleProvider>
+        <Toaster />
+        </ShadcnThemeProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
