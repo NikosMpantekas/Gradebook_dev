@@ -371,7 +371,7 @@ export const ThemeProvider = ({ children }) => {
   const [themes, setThemes] = useState(fallbackThemes);
   const [loading, setLoading] = useState(true);
   const [apiThemes, setApiThemes] = useState([]);
-  const darkMode = useSelector((state) => state.darkMode?.darkMode || false);
+  const darkMode = useSelector((state) => state.ui?.darkMode || false);
 
   useEffect(() => {
     fetchThemesFromAPI();
@@ -419,9 +419,8 @@ export const ThemeProvider = ({ children }) => {
     // Ensure dark class is properly set for shadcn components
     root.classList.toggle('dark', Boolean(isDark));
 
-    // Save to localStorage
-    localStorage.setItem('gradebook-theme', themeId);
-    setCurrentTheme(themeId);
+    // Save to localStorage  
+    localStorage.setItem('selectedTheme', themeId);
   };
 
   // Fetch themes from API
@@ -523,8 +522,10 @@ export const ThemeProvider = ({ children }) => {
 
   // Apply theme whenever current theme or dark mode changes
   useEffect(() => {
-    applyTheme(currentTheme, darkMode);
-  }, [currentTheme, darkMode]);
+    if (!loading && themes[currentTheme]) {
+      applyTheme(currentTheme, darkMode);
+    }
+  }, [currentTheme, darkMode, loading, themes]);
 
   const value = {
     currentTheme,
@@ -533,7 +534,8 @@ export const ThemeProvider = ({ children }) => {
     loading,
     switchTheme: (themeId) => {
       if (themes[themeId]) {
-        applyTheme(themeId, darkMode);
+        setCurrentTheme(themeId);
+        localStorage.setItem('selectedTheme', themeId);
       }
     },
     darkMode,
