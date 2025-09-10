@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { API_URL } from '../config/appConfig';
 
 const ThemeContext = createContext();
 
-// Define our 5 premium color themes with sophisticated palettes and gradients
-export const themes = {
+// Fallback themes in case API is unavailable
+export const fallbackThemes = {
   default: {
     id: 'default',
     name: 'Soft Ocean',
@@ -366,12 +367,24 @@ function hexToHsl(hex) {
 }
 
 export const ThemeProvider = ({ children }) => {
-  const { darkMode } = useSelector((state) => state.ui);
-  const [currentTheme, setCurrentTheme] = useState(() => {
-    // Load theme from localStorage or default to 'default'
-    const saved = localStorage.getItem('gradebook-theme');
-    return saved && themes[saved] ? saved : 'default';
-  });
+  const [currentTheme, setCurrentTheme] = useState('default');
+  const [themes, setThemes] = useState(fallbackThemes);
+  const [loading, setLoading] = useState(true);
+  const [apiThemes, setApiThemes] = useState([]);
+  const darkMode = useSelector((state) => state.darkMode?.darkMode || false);
+
+  useEffect(() => {
+    fetchThemesFromAPI();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      const savedTheme = localStorage.getItem('selectedTheme');
+      if (savedTheme && themes[savedTheme]) {
+        setCurrentTheme(savedTheme);
+      }
+    }
+  }, [loading, themes]);
 
   const applyTheme = (themeId, isDark = false) => {
     const theme = themes[themeId];
@@ -411,11 +424,102 @@ export const ThemeProvider = ({ children }) => {
     setCurrentTheme(themeId);
   };
 
-  const switchTheme = (themeId) => {
-    if (themes[themeId]) {
-      applyTheme(themeId, darkMode);
+  // Fetch themes from API
+  const fetchThemesFromAPI = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/themes`);
+      if (response.ok) {
+        const apiData = await response.json();
+        console.log('🎨 Fetched themes from API:', apiData.length, 'themes');
+        setApiThemes(apiData);
+        
+        // Convert API themes to our theme format
+        const convertedThemes = {};
+        apiData.forEach(theme => {
+          convertedThemes[theme._id] = {
+            id: theme._id,
+            name: theme.name,
+            description: theme.description,
+            colors: generateColorsFromPrimary(theme.primaryColor, theme.secondaryColor),
+            darkColors: generateDarkColorsFromPrimary(theme.primaryColor, theme.secondaryColor),
+            isDefault: theme.isDefault
+          };
+        });
+        
+        // Merge with fallback themes, prioritizing API themes
+        setThemes({ ...fallbackThemes, ...convertedThemes });
+        
+        // Set default theme if one exists in API
+        const defaultTheme = apiData.find(theme => theme.isDefault);
+        if (defaultTheme) {
+          const savedTheme = localStorage.getItem('selectedTheme');
+          if (!savedTheme) {
+            setCurrentTheme(defaultTheme._id);
+          }
+        }
+      } else {
+        console.warn('Failed to fetch themes from API, using fallback themes');
+      }
+    } catch (error) {
+      console.error('Error fetching themes:', error);
+      console.log('Using fallback themes due to API error');
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Generate colors from primary and secondary colors
+  const generateColorsFromPrimary = (primary, secondary) => {
+    return {
+      primary: primary || '#475569',
+      secondary: secondary || '#F8FAFC',
+      accent: adjustColor(primary, -20) || '#64748B',
+      background: secondary || '#FEFEFE',
+      foreground: '#1E293B',
+      card: secondary || '#F8FAFC',
+      'card-foreground': '#1E293B',
+      muted: adjustColor(secondary, -5) || '#F1F5F9',
+      'muted-foreground': adjustColor(primary, 20) || '#64748B',
+      border: adjustColor(secondary, -10) || '#E2E8F0',
+      input: secondary || '#F8FAFC',
+      ring: primary || '#475569'
+    };
+  };
+
+  const generateDarkColorsFromPrimary = (primary, secondary) => {
+    return {
+      primary: adjustColor(primary, 40) || '#94A3B8',
+      secondary: adjustColor(primary, -40) || '#1E293B',
+      accent: adjustColor(primary, 60) || '#CBD5E1',
+      background: '#0F172A',
+      foreground: '#F8FAFC',
+      card: adjustColor(primary, -30) || '#1E293B',
+      'card-foreground': '#F8FAFC',
+      muted: adjustColor(primary, -20) || '#334155',
+      'muted-foreground': adjustColor(primary, 30) || '#94A3B8',
+      border: adjustColor(primary, -25) || '#334155',
+      input: adjustColor(primary, -30) || '#1E293B',
+      ring: adjustColor(primary, 40) || '#94A3B8'
+    };
+  };
+
+  // Helper function to adjust color brightness
+  const adjustColor = (color, percent) => {
+    if (!color) return null;
+    try {
+      const num = parseInt(color.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = (num >> 16) + amt;
+      const G = (num >> 8 & 0x00FF) + amt;
+      const B = (num & 0x0000FF) + amt;
+      return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+    } catch {
+      return color;
+    }
+  };
+
 
   // Apply theme whenever current theme or dark mode changes
   useEffect(() => {
@@ -425,8 +529,15 @@ export const ThemeProvider = ({ children }) => {
   const value = {
     currentTheme,
     themes,
-    switchTheme,
+    apiThemes,
+    loading,
+    switchTheme: (themeId) => {
+      if (themes[themeId]) {
+        applyTheme(themeId, darkMode);
+      }
+    },
     darkMode,
+    fetchThemesFromAPI,
     getCurrentThemeData: () => themes[currentTheme]
   };
 

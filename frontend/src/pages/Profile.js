@@ -384,8 +384,6 @@ const Profile = () => {
             </Card>
           )}
 
-          {/* Theme Selection Panel */}
-          <ThemeSelector />
         </div>
 
         {/* Main Profile Form */}
@@ -459,6 +457,16 @@ const Profile = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                 />
+              </div>
+              
+              {/* Theme Selection Panel - Moved under Personal Information */}
+              <Separator />
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">{t('profile.themePreferences', 'Theme Preferences')}</h3>
+                </div>
+                <ThemeSelector />
               </div>
             </CardContent>
           </Card>

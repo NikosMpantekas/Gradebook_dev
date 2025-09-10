@@ -524,6 +524,14 @@ app.use(
   require("./routes/reportingRoutes")
 ); // Attendance Reports API
 
+// Theme Management Routes
+app.use(
+  "/api/themes",
+  protect,
+  checkMaintenanceMode,
+  require("./routes/themeRoutes")
+); // Theme Management API
+
 logger.info("SERVER", "Routes configured with proper middleware ordering");
 
 // Add essential middleware AFTER route definitions but BEFORE frontend serving

@@ -29,6 +29,7 @@ import {
   BadgeAlert,
   Wrench,
   UserCheck,
+  Palette,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback} from '../ui/avatar';
@@ -106,6 +107,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         { icon: Shield, label: t('navigation.superAdmin'), path: '/superadmin/dashboard' },
         { icon: Building, label: t('navigation.schoolManagement'), path: '/superadmin/school-permissions' },
         { icon: Users, label: t('navigation.userManagement'), path: '/superadmin/create-school-owner' },
+        { icon: Palette, label: t('navigation.themeEditor', 'Theme Editor'), path: '/superadmin/theme-editor' },
         { icon: Mail, label: t('navigation.contactMessages'), path: '/superadmin/contact' },
         { icon: BarChart3, label: t('navigation.systemLogs'), path: '/superadmin/system-logs' },
         { icon: Wrench, label: t('navigation.maintenanceAnnouncements'), path: '/superadmin/maintenance-announcements' },

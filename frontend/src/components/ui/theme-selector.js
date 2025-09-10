@@ -1,15 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Palette, Check } from 'lucide-react';
+import { Palette, Check, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Button } from './button';
 import { Badge } from './badge';
-import { useTheme, themes } from '../../contexts/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { cn } from '../../lib/utils';
 
 const ThemeSelector = () => {
   const { t } = useTranslation();
-  const { currentTheme, switchTheme } = useTheme();
+  const { currentTheme, themes, loading, switchTheme } = useTheme();
 
   const getThemePreview = (theme) => {
     return (
@@ -46,10 +46,23 @@ const ThemeSelector = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Theme Grid - 2 rows x 5 columns */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 w-full">
-            {Object.entries(themes).map(([themeId, theme]) => (
-              <div key={themeId} className="relative group">
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {t('profile.loadingThemes', 'Loading themes...')}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Theme Grid - Dynamic layout based on number of themes */}
+          {!loading && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full">
+              {Object.entries(themes).map(([themeId, theme]) => (
+                <div key={themeId} className="relative group">
                 <Button
                   variant="ghost"
                   onClick={() => switchTheme(themeId)}
@@ -84,9 +97,10 @@ const ThemeSelector = () => {
                   {/* Hover effect overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Button>
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Current Theme Display */}
           <div className="glass-subtle p-4 rounded-xl border border-primary/20">
