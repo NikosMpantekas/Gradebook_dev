@@ -20,24 +20,30 @@ const TimePickerWheel = ({ value, onChange, placeholder = "Select time", classNa
     }
   }, [value]);
 
-  // Working wheel component with proper infinite scrolling
+  // Fixed wheel component with proper center selection
   const WheelPicker = ({ max, selectedValue, onChange: onValueChange, label }) => {
     const containerRef = useRef(null);
     const itemHeight = 40;
     const visibleItems = 7;
-    const centerIndex = 3;
+    const centerIndex = 3; // Middle item position (0,1,2,[3],4,5,6)
+    const resetingRef = useRef(false);
     
-    // Create items array with padding for infinite scroll
+    // Create array with multiple cycles for infinite scroll
     const items = [];
-    for (let i = 0; i < max * 3; i++) {
+    const cycles = 5;
+    for (let i = 0; i < max * cycles; i++) {
       items.push(i % max);
     }
     
     const scrollToItem = (targetValue) => {
       if (!containerRef.current) return;
-      const targetIndex = max + targetValue; // Start from middle section
+      // Find target value in middle cycle to avoid boundary issues
+      const middleCycleStart = Math.floor(cycles / 2) * max;
+      const targetIndex = middleCycleStart + targetValue;
       const scrollTop = (targetIndex - centerIndex) * itemHeight;
+      resetingRef.current = true;
       containerRef.current.scrollTop = scrollTop;
+      setTimeout(() => { resetingRef.current = false; }, 100);
     };
     
     // Initialize scroll position when dialog opens
@@ -48,24 +54,38 @@ const TimePickerWheel = ({ value, onChange, placeholder = "Select time", classNa
     }, [isOpen, selectedValue]);
     
     const handleScroll = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || resetingRef.current) return;
       
       const scrollTop = containerRef.current.scrollTop;
-      const itemIndex = Math.round(scrollTop / itemHeight) + centerIndex;
-      const newValue = items[itemIndex] || 0;
       
-      if (newValue !== selectedValue) {
-        onValueChange(newValue);
+      // Simple and correct calculation:
+      // How many full items have we scrolled past?
+      const itemsScrolled = Math.round(scrollTop / itemHeight);
+      // The item at the center is the one at centerIndex + itemsScrolled
+      const centerItemIndex = centerIndex + itemsScrolled;
+      
+      // Get the value and update only if it's different
+      if (centerItemIndex >= 0 && centerItemIndex < items.length) {
+        const newValue = items[centerItemIndex];
+        if (newValue !== selectedValue) {
+          onValueChange(newValue);
+        }
       }
       
-      // Handle infinite scroll boundaries
+      // Handle infinite scroll - only when approaching actual boundaries
       const totalHeight = items.length * itemHeight;
       const containerHeight = visibleItems * itemHeight;
+      const cycleHeight = max * itemHeight;
       
-      if (scrollTop < max * itemHeight * 0.5) {
-        containerRef.current.scrollTop += max * itemHeight;
-      } else if (scrollTop > totalHeight - containerHeight - max * itemHeight * 0.5) {
-        containerRef.current.scrollTop -= max * itemHeight;
+      // Reset when we get close to the actual start/end
+      if (scrollTop < cycleHeight * 0.5) {
+        resetingRef.current = true;
+        containerRef.current.scrollTop = scrollTop + cycleHeight;
+        setTimeout(() => { resetingRef.current = false; }, 50);
+      } else if (scrollTop > totalHeight - containerHeight - cycleHeight * 0.5) {
+        resetingRef.current = true;
+        containerRef.current.scrollTop = scrollTop - cycleHeight;
+        setTimeout(() => { resetingRef.current = false; }, 50);
       }
     };
     
