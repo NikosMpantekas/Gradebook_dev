@@ -3,171 +3,171 @@ import { useSelector } from 'react-redux';
 
 const ThemeContext = createContext();
 
-// Define our 5 color themes with muted, readable colors (light and dark variants)
+// Define our 5 premium color themes with sophisticated palettes and gradients
 export const themes = {
   default: {
     id: 'default',
-    name: 'Ocean Blue',
-    description: 'Classic blue theme',
+    name: 'Ocean Elegance',
+    description: 'Sophisticated deep ocean blues with premium feel',
     colors: {
-      primary: '#2563EB',
-      secondary: '#F1F5F9',
-      accent: '#3B82F6',
-      background: '#FFFFFF',
+      primary: '#1E40AF', // Rich royal blue
+      secondary: '#F8FAFF', // Softer blue-white
+      accent: '#3B82F6', // Vibrant accent blue
+      background: '#FDFDFF', // Ultra-subtle blue tint
       foreground: '#0F172A',
-      card: '#FAFAFA',
+      card: '#F9FAFB', // Premium card background
       'card-foreground': '#0F172A',
       muted: '#F1F5F9',
-      'muted-foreground': '#64748B',
-      border: '#E2E8F0',
+      'muted-foreground': '#475569', // Deeper muted text
+      border: '#E1E7EF', // Subtle blue-gray border
       input: '#F8FAFC',
-      ring: '#2563EB'
+      ring: '#1E40AF'
     },
     darkColors: {
-      primary: '#3B82F6',
+      primary: '#60A5FA', // Luminous blue for dark
       secondary: '#1E293B',
-      accent: '#60A5FA',
-      background: '#0F172A',
-      foreground: '#F8FAFC',
-      card: '#1E293B',
-      'card-foreground': '#F8FAFC',
-      muted: '#334155',
+      accent: '#93C5FD', // Lighter accent for dark
+      background: '#020617', // Deep navy background
+      foreground: '#F1F5F9',
+      card: '#0F1629', // Rich dark card
+      'card-foreground': '#F1F5F9',
+      muted: '#1E293B',
       'muted-foreground': '#94A3B8',
-      border: '#334155',
-      input: '#1E293B',
-      ring: '#3B82F6'
+      border: '#1E293B',
+      input: '#0F1629',
+      ring: '#60A5FA'
     }
   },
   warm: {
     id: 'warm',
-    name: 'Warm Sand',
-    description: 'Cozy warm tones',
+    name: 'Golden Warmth',
+    description: 'Luxurious warm golden tones with emerald accents',
     colors: {
-      primary: '#047857',
-      secondary: '#FEF3E2',
-      accent: '#059669',
-      background: '#FFFBF7',
-      foreground: '#1C2917',
-      card: '#FDF8F3',
-      'card-foreground': '#1C2917',
-      muted: '#FEF3E2',
-      'muted-foreground': '#78716C',
-      border: '#E7E5E4',
-      input: '#FAF5F0',
-      ring: '#047857'
+      primary: '#B45309', // Rich amber gold
+      secondary: '#FEF9F3', // Cream white
+      accent: '#0891B2', // Sophisticated teal accent
+      background: '#FFFCF5', // Warm ivory
+      foreground: '#1C1917',
+      card: '#FEF7ED', // Soft warm card
+      'card-foreground': '#1C1917',
+      muted: '#F3E8D3', // Golden muted
+      'muted-foreground': '#57534E', // Warm brown text
+      border: '#E7D4B5', // Golden border
+      input: '#FEF3E2',
+      ring: '#B45309'
     },
     darkColors: {
-      primary: '#10B981',
-      secondary: '#292524',
-      accent: '#34D399',
-      background: '#1C1917',
-      foreground: '#FEF3E2',
-      card: '#292524',
-      'card-foreground': '#FEF3E2',
-      muted: '#44403C',
+      primary: '#FBBF24', // Bright gold for dark
+      secondary: '#1C1917',
+      accent: '#06B6D4', // Cyan accent for contrast
+      background: '#0C0A09', // Deep brown-black
+      foreground: '#FEF7ED',
+      card: '#1C1917', // Rich dark brown
+      'card-foreground': '#FEF7ED',
+      muted: '#292524',
       'muted-foreground': '#A8A29E',
-      border: '#44403C',
-      input: '#292524',
-      ring: '#10B981'
+      border: '#292524',
+      input: '#1C1917',
+      ring: '#FBBF24'
     }
   },
   sunset: {
     id: 'sunset',
-    name: 'Sunset Glow',
-    description: 'Vibrant sunset colors',
+    name: 'Sunset Radiance',
+    description: 'Mesmerizing sunset gradients with coral elegance',
     colors: {
-      primary: '#DC2626',
-      secondary: '#FEF3C7',
-      accent: '#EA580C',
-      background: '#FFFEF7',
+      primary: '#EA580C', // Vibrant sunset orange
+      secondary: '#FFF7ED', // Soft peach white
+      accent: '#F472B6', // Pink accent for warmth
+      background: '#FFFBF7', // Warm off-white
       foreground: '#1C1917',
-      card: '#FDF9F0',
+      card: '#FEF3E2', // Warm peach card
       'card-foreground': '#1C1917',
-      muted: '#FEF3C7',
-      'muted-foreground': '#A3A3A3',
-      border: '#E5E7EB',
-      input: '#FBF7ED',
-      ring: '#DC2626'
+      muted: '#FED7AA', // Soft orange muted
+      'muted-foreground': '#92400E', // Deep orange text
+      border: '#FDBA74', // Warm orange border
+      input: '#FFF7ED',
+      ring: '#EA580C'
     },
     darkColors: {
-      primary: '#F87171',
-      secondary: '#451A03',
-      accent: '#FB923C',
-      background: '#1C1917',
-      foreground: '#FEF3C7',
-      card: '#451A03',
-      'card-foreground': '#FEF3C7',
-      muted: '#78716C',
-      'muted-foreground': '#D6D3D1',
-      border: '#78716C',
-      input: '#451A03',
-      ring: '#F87171'
+      primary: '#FB923C', // Bright sunset for dark
+      secondary: '#1C1917',
+      accent: '#EC4899', // Vibrant pink accent
+      background: '#0A0A0A', // Deep charcoal
+      foreground: '#FFF7ED',
+      card: '#1F1611', // Dark warm brown
+      'card-foreground': '#FFF7ED',
+      muted: '#292017',
+      'muted-foreground': '#FDBA74',
+      border: '#292017',
+      input: '#1F1611',
+      ring: '#FB923C'
     }
   },
   earth: {
     id: 'earth',
-    name: 'Earth Tones',
-    description: 'Natural earth colors',
+    name: 'Earth Sophistication',
+    description: 'Refined natural tones with sage and terracotta',
     colors: {
-      primary: '#374151',
-      secondary: '#F3F4F6',
-      accent: '#4B5563',
-      background: '#FAFAFA',
-      foreground: '#111827',
-      card: '#F9FAFB',
-      'card-foreground': '#111827',
-      muted: '#F3F4F6',
-      'muted-foreground': '#6B7280',
-      border: '#E5E7EB',
-      input: '#F9FAFB',
-      ring: '#374151'
+      primary: '#15803D', // Rich forest green
+      secondary: '#F7F9F7', // Soft sage white
+      accent: '#A855F7', // Purple accent for sophistication
+      background: '#FEFFFE', // Natural white
+      foreground: '#1F2937',
+      card: '#F3F7F3', // Sage card background
+      'card-foreground': '#1F2937',
+      muted: '#E8F1E8', // Soft green muted
+      'muted-foreground': '#4B5563', // Natural gray text
+      border: '#D4E4D4', // Gentle green border
+      input: '#F7F9F7',
+      ring: '#15803D'
     },
     darkColors: {
-      primary: '#9CA3AF',
+      primary: '#22C55E', // Vibrant green for dark
       secondary: '#1F2937',
-      accent: '#6B7280',
-      background: '#111827',
-      foreground: '#F9FAFB',
-      card: '#1F2937',
-      'card-foreground': '#F9FAFB',
-      muted: '#374151',
-      'muted-foreground': '#D1D5DB',
-      border: '#374151',
-      input: '#1F2937',
-      ring: '#9CA3AF'
+      accent: '#C084FC', // Light purple accent
+      background: '#0F1419', // Deep forest background
+      foreground: '#F7F9F7',
+      card: '#1A2B1A', // Dark forest card
+      'card-foreground': '#F7F9F7',
+      muted: '#1F2B1F',
+      'muted-foreground': '#86EFAC',
+      border: '#1F2B1F',
+      input: '#1A2B1A',
+      ring: '#22C55E'
     }
   },
   nature: {
     id: 'nature',
-    name: 'Fresh Nature',
-    description: 'Vibrant green theme',
+    name: 'Verdant Luxury',
+    description: 'Premium botanical greens with gold highlights',
     colors: {
-      primary: '#16A34A',
-      secondary: '#F0FDF4',
-      accent: '#22C55E',
-      background: '#FEFFFE',
-      foreground: '#14532D',
-      card: '#F7FEF7',
-      'card-foreground': '#14532D',
-      muted: '#F0FDF4',
-      'muted-foreground': '#65A30D',
-      border: '#DCFCE7',
-      input: '#F0FDF4',
-      ring: '#16A34A'
+      primary: '#059669', // Deep emerald
+      secondary: '#F0FDF9', // Mint white
+      accent: '#F59E0B', // Gold accent for luxury
+      background: '#FDFFFE', // Pure white with green tint
+      foreground: '#064E3B',
+      card: '#ECFDF5', // Soft mint card
+      'card-foreground': '#064E3B',
+      muted: '#D1FAE5', // Light emerald muted
+      'muted-foreground': '#047857', // Deep green text
+      border: '#A7F3D0', // Elegant mint border
+      input: '#F0FDF9',
+      ring: '#059669'
     },
     darkColors: {
-      primary: '#4ADE80',
-      secondary: '#14532D',
-      accent: '#22C55E',
-      background: '#0F172A',
-      foreground: '#F0FDF4',
-      card: '#14532D',
-      'card-foreground': '#F0FDF4',
-      muted: '#166534',
-      'muted-foreground': '#BBF7D0',
-      border: '#166534',
-      input: '#14532D',
-      ring: '#4ADE80'
+      primary: '#34D399', // Bright emerald for dark
+      secondary: '#064E3B',
+      accent: '#FBBF24', // Bright gold accent
+      background: '#022C22', // Deep forest background
+      foreground: '#ECFDF5',
+      card: '#064E3B', // Rich emerald card
+      'card-foreground': '#ECFDF5',
+      muted: '#0F5132',
+      'muted-foreground': '#6EE7B7',
+      border: '#0F5132',
+      input: '#064E3B',
+      ring: '#34D399'
     }
   }
 };
