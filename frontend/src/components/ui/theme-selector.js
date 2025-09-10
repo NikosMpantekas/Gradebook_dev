@@ -13,86 +13,112 @@ const ThemeSelector = () => {
 
   const getThemePreview = (theme) => {
     return (
-      <div className="w-full h-16 rounded-md border overflow-hidden flex">
+      <div className="w-full h-12 rounded-lg overflow-hidden flex shadow-sm">
         <div 
-          className="flex-1" 
+          className="flex-[2]" 
           style={{ backgroundColor: theme.colors.primary }}
         />
         <div 
-          className="flex-1" 
+          className="flex-[3]" 
           style={{ backgroundColor: theme.colors.secondary }}
         />
         <div 
-          className="w-4" 
-          style={{ backgroundColor: theme.colors.background }}
+          className="flex-1" 
+          style={{ backgroundColor: theme.colors.accent }}
         />
       </div>
     );
   };
 
   return (
-    <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary">
-          <Palette className="h-5 w-5" />
-          {t('profile.themeSelection', 'Theme Selection')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {t('profile.themeDescription', 'Choose a color theme that suits your style. The theme will be applied across the entire application.')}
-        </p>
+    <div className="w-full max-w-none">
+      <Card className="glass-card border-gradient shadow-premium-lg">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-gradient text-lg">
+            <div className="p-2 rounded-lg bg-gradient-primary">
+              <Palette className="h-5 w-5 text-white" />
+            </div>
+            {t('profile.themeSelection', 'Theme Selection')}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            {t('profile.themeDescription', 'Choose from our curated collection of elegant themes. Each theme creates a unique visual experience across your entire application.')}
+          </p>
+        </CardHeader>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {Object.entries(themes).map(([themeId, theme]) => (
-            <div key={themeId} className="relative">
-              <Button
-                variant="ghost"
-                onClick={() => switchTheme(themeId)}
-                className={cn(
-                  "h-auto p-4 w-full flex-col space-y-3 hover:bg-primary/5 border-2 transition-all duration-300",
-                  currentTheme === themeId 
-                    ? "border-primary bg-primary/10 shadow-lg" 
-                    : "border-border hover:border-primary/30"
-                )}
-              >
-                {/* Theme Preview */}
-                {getThemePreview(theme)}
-                
-                {/* Theme Info */}
-                <div className="w-full text-left space-y-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">{theme.name}</h4>
-                    {currentTheme === themeId && (
-                      <Badge variant="default" className="h-5 px-2 text-xs">
-                        <Check className="h-3 w-3 mr-1" />
-                        {t('common.active', 'Active')}
-                      </Badge>
-                    )}
+        <CardContent className="space-y-6">
+          {/* Theme Grid - 2 rows x 5 columns */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 w-full">
+            {Object.entries(themes).map(([themeId, theme]) => (
+              <div key={themeId} className="relative group">
+                <Button
+                  variant="ghost"
+                  onClick={() => switchTheme(themeId)}
+                  className={cn(
+                    "premium-card h-auto p-3 w-full flex-col space-y-2 transition-all duration-300 relative overflow-hidden",
+                    currentTheme === themeId 
+                      ? "border-2 border-primary/50 shadow-premium-lg scale-[1.02]" 
+                      : "border border-border/50 hover:border-primary/30 hover:shadow-premium-md"
+                  )}
+                >
+                  {/* Active indicator */}
+                  {currentTheme === themeId && (
+                    <div className="absolute top-1 right-1 z-10">
+                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Theme Preview */}
+                  <div className="w-full">
+                    {getThemePreview(theme)}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {theme.description}
+                  
+                  {/* Theme Name */}
+                  <div className="w-full text-center">
+                    <h4 className="font-semibold text-xs leading-tight text-foreground">
+                      {theme.name}
+                    </h4>
+                  </div>
+                  
+                  {/* Hover effect overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Current Theme Display */}
+          <div className="glass-subtle p-4 rounded-xl border border-primary/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-primary/10 border border-primary/20">
+                  <Palette className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">
+                      {t('profile.currentTheme', 'Active Theme')}:
+                    </span>
+                    <span className="text-sm font-bold text-primary">
+                      {themes[currentTheme]?.name}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {themes[currentTheme]?.description}
                   </p>
                 </div>
-              </Button>
+              </div>
+              
+              {/* Current theme preview */}
+              <div className="w-20">
+                {getThemePreview(themes[currentTheme])}
+              </div>
             </div>
-          ))}
-        </div>
-
-        {/* Current Theme Info */}
-        <div className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-primary/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Palette className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">
-              {t('profile.currentTheme', 'Current Theme')}: {themes[currentTheme]?.name}
-            </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {themes[currentTheme]?.description}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
