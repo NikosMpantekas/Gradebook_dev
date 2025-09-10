@@ -530,8 +530,8 @@ const getClassAttendanceByDate = asyncHandler(async (req, res) => {
 
     // Find sessions for this class and date
     const sessions = await Session.find({
-      class: classId,
-      scheduledStart: {
+      classId: classId,
+      scheduledStartAt: {
         $gte: startOfDay,
         $lte: endOfDay
       }
@@ -557,15 +557,15 @@ const getClassAttendanceByDate = asyncHandler(async (req, res) => {
     const attendanceData = {
       sessionId: session._id,
       wasHeld: session.status === 'held',
-      startTime: session.scheduledStart ? 
-        `${session.scheduledStart.getHours().toString().padStart(2, '0')}:${session.scheduledStart.getMinutes().toString().padStart(2, '0')}` : '',
-      endTime: session.scheduledEnd ? 
-        `${session.scheduledEnd.getHours().toString().padStart(2, '0')}:${session.scheduledEnd.getMinutes().toString().padStart(2, '0')}` : '',
+      startTime: session.scheduledStartAt ? 
+        `${session.scheduledStartAt.getHours().toString().padStart(2, '0')}:${session.scheduledStartAt.getMinutes().toString().padStart(2, '0')}` : '',
+      endTime: session.scheduledEndAt ? 
+        `${session.scheduledEndAt.getHours().toString().padStart(2, '0')}:${session.scheduledEndAt.getMinutes().toString().padStart(2, '0')}` : '',
       students: attendanceRecords.map(record => ({
         studentId: record.studentId._id,
         present: record.status === 'present',
         note: record.note || '',
-        studentName: record.studentId.fullName
+        studentName: record.studentId.name || record.studentId.fullName
       })),
       notes: session.notes || ''
     };
@@ -595,6 +595,13 @@ const getClassAttendanceByDate = asyncHandler(async (req, res) => {
 const getProcessedClasses = asyncHandler(async (req, res) => {
   const { startDate, endDate } = req.query;
 
+  logger.info('CLASS_ATTENDANCE', 'Fetching processed classes', {
+    userId: req.user._id,
+    userRole: req.user.role,
+    startDate,
+    endDate
+  });
+
   try {
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
@@ -602,23 +609,73 @@ const getProcessedClasses = asyncHandler(async (req, res) => {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
+    logger.info('CLASS_ATTENDANCE', 'Date range for query', {
+      start: start.toISOString(),
+      end: end.toISOString()
+    });
+
+    // First, let's check all sessions in the date range regardless of status
+    const allSessions = await Session.find({
+      scheduledStartAt: { $gte: start, $lte: end }
+    }).populate('classId');
+
+    logger.info('CLASS_ATTENDANCE', 'All sessions in date range', {
+      count: allSessions.length,
+      sessions: allSessions.map(s => ({
+        id: s._id,
+        classId: s.classId?._id,
+        className: s.classId?.name,
+        scheduledStartAt: s.scheduledStartAt,
+        status: s.status
+      }))
+    });
+
     // Find all sessions with attendance in the date range
     const sessions = await Session.find({
-      scheduledStart: { $gte: start, $lte: end },
+      scheduledStartAt: { $gte: start, $lte: end },
       status: 'held'
-    }).populate('class');
+    }).populate('classId');
+
+    logger.info('CLASS_ATTENDANCE', 'Found sessions in date range', {
+      count: sessions.length,
+      sessionIds: sessions.map(s => s._id)
+    });
 
     // Check if user has access to these classes
     const accessibleSessions = sessions.filter(session => {
+      if (!session.classId) {
+        logger.warn('CLASS_ATTENDANCE', 'Session without classId found', { sessionId: session._id });
+        return false;
+      }
+      
       const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
-      const isTeacherOfClass = session.class.teachers.includes(req.user._id);
-      return isAdmin || isTeacherOfClass;
+      const isTeacherOfClass = session.classId.teachers && session.classId.teachers.includes(req.user._id);
+      const hasAccess = isAdmin || isTeacherOfClass;
+      
+      logger.info('CLASS_ATTENDANCE', 'Session access check', {
+        sessionId: session._id,
+        classId: session.classId._id,
+        isAdmin,
+        isTeacherOfClass,
+        hasAccess
+      });
+      
+      return hasAccess;
+    });
+
+    logger.info('CLASS_ATTENDANCE', 'Accessible sessions after filtering', {
+      count: accessibleSessions.length
     });
 
     const processedClasses = accessibleSessions.map(session => ({
-      classId: session.class._id,
-      date: session.scheduledStart.toISOString().split('T')[0]
+      classId: session.classId._id,
+      date: session.scheduledStartAt.toISOString().split('T')[0]
     }));
+
+    logger.info('CLASS_ATTENDANCE', 'Processed classes result', {
+      count: processedClasses.length,
+      data: processedClasses
+    });
 
     res.json({
       success: true,
@@ -631,7 +688,8 @@ const getProcessedClasses = asyncHandler(async (req, res) => {
       userId: req.user._id,
       startDate,
       endDate,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
     
     res.status(500);
