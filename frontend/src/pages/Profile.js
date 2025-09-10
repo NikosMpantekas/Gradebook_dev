@@ -33,6 +33,7 @@ import { Spinner } from '../components/ui/spinner';
 import { updateProfile } from '../features/auth/authSlice';
 import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
+import ThemeSelector from '../components/ui/theme-selector';
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -382,6 +383,9 @@ const Profile = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Theme Selection Panel */}
+          <ThemeSelector />
         </div>
 
         {/* Main Profile Form */}
