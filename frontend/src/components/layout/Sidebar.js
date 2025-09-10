@@ -299,19 +299,19 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
   // Sidebar content
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gradient-to-b from-card/50 to-card">
       {/* User Profile Section */}
-      <div className="p-4">
+      <div className="p-4 bg-gradient-to-br from-primary/5 via-background/50 to-secondary/5 border-b border-border/50">
         <div className="flex flex-col items-center space-y-3">
-          <Avatar className="h-16 w-16 hover:scale-105 transition-transform duration-200 border border-background">
-            <AvatarFallback className="text-lg font-semibold">
+          <Avatar className="h-16 w-16 hover:scale-105 transition-transform duration-200 border-2 border-primary/20 shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10">
+            <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/20 to-secondary/20 text-primary">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <h3 className="font-semibold text-sm">{user?.name || 'User'}</h3>
-            <p className="text-xs text-muted-foreground capitalize">
-              {t('sidebar.accountType')} {user?.role === 'admin' ? t('sidebar.administrator') : user?.role === 'teacher' ? t('sidebar.teacher') : user?.role === 'student' ? t('sidebar.student') : user?.role === 'parent' ? t('sidebar.parent') : t('sidebar.user')}
+            <h3 className="font-semibold text-sm text-foreground">{user?.name || 'User'}</h3>
+            <p className="text-xs text-primary/80 capitalize font-medium">
+              {user?.role === 'admin' ? t('sidebar.administrator') : user?.role === 'teacher' ? t('sidebar.teacher') : user?.role === 'student' ? t('sidebar.student') : user?.role === 'parent' ? t('sidebar.parent') : t('sidebar.user')}
             </p>
             <p className="text-xs text-muted-foreground truncate max-w-[180px]">
               {user?.email}
@@ -320,27 +320,31 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         </div>
       </div>
 
-      {/* Modern Divider */}
-      <div className="px-4 pb-2">
-        <div className="h-px bg-background"></div>
+      {/* Enhanced Divider */}
+      <div className="px-4 py-2">
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
       </div>
 
       {/* Navigation Menu */}
-      <ScrollArea className="flex-1 px-3 py-4 space-y-1">
-        <nav className="space-y-1">
+      <ScrollArea className="flex-1 px-3 py-4 space-y-1 bg-gradient-to-b from-card/20 to-transparent">
+        <nav className="space-y-2">
         {/* Dashboard Button - Role Specific */}
         <Button
           variant={isPathSelected(getDashboardPath()) ? "secondary" : "ghost"}
           className={cn(
-            "w-full justify-start h-auto py-3 px-3 rounded-md transition-all duration-300 ease-in-out",
+            "w-full justify-start h-auto py-3 px-4 rounded-lg transition-all duration-300 ease-in-out group relative overflow-hidden",
             isPathSelected(getDashboardPath()) 
-              ? "bg-background text-primary shadow-sm hover:bg-background" 
-              : "hover:shadow-md hover:border-primary hover:bg-background hover:text-foreground"
+              ? "bg-gradient-to-r from-primary/15 to-secondary/10 text-primary shadow-lg border border-primary/20 hover:from-primary/20 hover:to-secondary/15" 
+              : "hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 hover:shadow-md hover:border hover:border-primary/10 hover:text-foreground"
           )}
           onClick={() => handleNavigation(getDashboardPath())}
         >
-          <LayoutDashboard className="mr-3 h-5 w-5 flex-shrink-0" />
+          <LayoutDashboard className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors", 
+            isPathSelected(getDashboardPath()) ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
           <span className="text-sm font-medium">{t('navigation.dashboard')}</span>
+          {isPathSelected(getDashboardPath()) && (
+            <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
+          )}
         </Button>
 
         {/* Role-specific navigation items */}
@@ -353,50 +357,58 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
               key={item.path}
               variant={isSelected ? "secondary" : "ghost"}
               className={cn(
-                "w-full justify-start h-auto py-3 px-3 rounded-md transition-all duration-300 ease-in-out",
+                "w-full justify-start h-auto py-3 px-4 rounded-lg transition-all duration-300 ease-in-out group relative overflow-hidden",
                 isSelected 
-                  ? "bg-background text-primary shadow-sm hover:bg-background" 
-                  : "hover:shadow-md hover:border-primary hover:bg-background hover:text-foreground"
+                  ? "bg-gradient-to-r from-primary/15 to-secondary/10 text-primary shadow-lg border border-primary/20 hover:from-primary/20 hover:to-secondary/15" 
+                  : "hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 hover:shadow-md hover:border hover:border-primary/10 hover:text-foreground"
               )}
               onClick={() => handleNavigation(item.path)}
             >
-              <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+              <Icon className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors", 
+                isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
               <span className="text-sm font-medium">{item.label}</span>
+              {isSelected && (
+                <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
+              )}
             </Button>
           );
         })}
         </nav>
       </ScrollArea>
 
-      {/* Modern Divider */}
+      {/* Enhanced Divider */}
       <div className="px-4 py-2">
-        <div className="h-px bg-background"></div>
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
       </div>
 
       {/* Profile and Logout Section */}
-      <div className="p-3 space-y-1">
+      <div className="p-3 space-y-2 bg-gradient-to-br from-secondary/5 to-primary/5 border-t border-border/50">
         {/* Profile Button - Always available */}
         <Button
           variant={isPathSelected('/app/profile') ? "secondary" : "ghost"}
           className={cn(
-            "w-full justify-start h-auto py-3 px-3 rounded-md transition-all duration-300 ease-in-out",
+            "w-full justify-start h-auto py-3 px-4 rounded-lg transition-all duration-300 ease-in-out group relative overflow-hidden",
             isPathSelected('/app/profile') 
-              ? "bg-background text-primary shadow-sm hover:bg-background" 
-              : "hover:shadow-md hover:border-primary hover:bg-background hover:text-foreground"
+              ? "bg-gradient-to-r from-primary/15 to-secondary/10 text-primary shadow-lg border border-primary/20 hover:from-primary/20 hover:to-secondary/15" 
+              : "hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 hover:shadow-md hover:border hover:border-primary/10 hover:text-foreground"
           )}
           onClick={() => handleNavigation('/app/profile')}
         >
-          <User className="mr-3 h-5 w-5" />
+          <User className={cn("mr-3 h-5 w-5 transition-colors", 
+            isPathSelected('/app/profile') ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
           <span className="text-sm font-medium">{t('navigation.profile')}</span>
+          {isPathSelected('/app/profile') && (
+            <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
+          )}
         </Button>
 
         {/* Logout Button */}
         <Button
           variant="ghost"
-          className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md transition-all duration-200"
+          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5 hover:shadow-md hover:border hover:border-destructive/20 transition-all duration-300 group"
           onClick={handleLogoutClick}
         >
-          <LogOut className="mr-3 h-5 w-5" />
+          <LogOut className="mr-3 h-5 w-5 transition-colors group-hover:text-destructive" />
           <span className="text-sm font-medium">{t('sidebar.logout')}</span>
         </Button>
       </div>
