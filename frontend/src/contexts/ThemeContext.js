@@ -1,26 +1,41 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 const ThemeContext = createContext();
 
-// Define our 5 color themes with proper contrast ratios
+// Define our 5 color themes with muted, readable colors (light and dark variants)
 export const themes = {
   default: {
     id: 'default',
     name: 'Ocean Blue',
     description: 'Classic blue theme',
     colors: {
-      primary: '#3577B8', // Original primary color
+      primary: '#2563EB',
       secondary: '#F1F5F9',
-      accent: '#6366F1',
+      accent: '#3B82F6',
       background: '#FFFFFF',
       foreground: '#0F172A',
-      card: '#FFFFFF',
+      card: '#FAFAFA',
       'card-foreground': '#0F172A',
       muted: '#F1F5F9',
       'muted-foreground': '#64748B',
       border: '#E2E8F0',
-      input: '#E2E8F0',
-      ring: '#3577B8'
+      input: '#F8FAFC',
+      ring: '#2563EB'
+    },
+    darkColors: {
+      primary: '#3B82F6',
+      secondary: '#1E293B',
+      accent: '#60A5FA',
+      background: '#0F172A',
+      foreground: '#F8FAFC',
+      card: '#1E293B',
+      'card-foreground': '#F8FAFC',
+      muted: '#334155',
+      'muted-foreground': '#94A3B8',
+      border: '#334155',
+      input: '#1E293B',
+      ring: '#3B82F6'
     }
   },
   warm: {
@@ -28,18 +43,32 @@ export const themes = {
     name: 'Warm Sand',
     description: 'Cozy warm tones',
     colors: {
-      primary: '#618A7F', // Teal green from your pair
-      secondary: '#F3DDC2', // Light peachy from your pair
-      accent: '#7C9885',
-      background: '#FEFCF8',
-      foreground: '#2D3748',
-      card: '#F8F6F1',
-      'card-foreground': '#2D3748',
-      muted: '#F3DDC2',
-      'muted-foreground': '#4A5568',
-      border: '#E8DCC6',
-      input: '#E8DCC6',
-      ring: '#618A7F'
+      primary: '#047857',
+      secondary: '#FEF3E2',
+      accent: '#059669',
+      background: '#FFFBF7',
+      foreground: '#1C2917',
+      card: '#FDF8F3',
+      'card-foreground': '#1C2917',
+      muted: '#FEF3E2',
+      'muted-foreground': '#78716C',
+      border: '#E7E5E4',
+      input: '#FAF5F0',
+      ring: '#047857'
+    },
+    darkColors: {
+      primary: '#10B981',
+      secondary: '#292524',
+      accent: '#34D399',
+      background: '#1C1917',
+      foreground: '#FEF3E2',
+      card: '#292524',
+      'card-foreground': '#FEF3E2',
+      muted: '#44403C',
+      'muted-foreground': '#A8A29E',
+      border: '#44403C',
+      input: '#292524',
+      ring: '#10B981'
     }
   },
   sunset: {
@@ -47,18 +76,32 @@ export const themes = {
     name: 'Sunset Glow',
     description: 'Vibrant sunset colors',
     colors: {
-      primary: '#F88363', // Coral from your pair
-      secondary: '#FAEFCA', // Light yellow from your pair
-      accent: '#FF9A7B',
+      primary: '#DC2626',
+      secondary: '#FEF3C7',
+      accent: '#EA580C',
       background: '#FFFEF7',
-      foreground: '#2D1B15',
-      card: '#FDF8F0',
-      'card-foreground': '#2D1B15',
-      muted: '#FAEFCA',
-      'muted-foreground': '#8B4513',
-      border: '#F0E4C1',
-      input: '#F0E4C1',
-      ring: '#F88363'
+      foreground: '#1C1917',
+      card: '#FDF9F0',
+      'card-foreground': '#1C1917',
+      muted: '#FEF3C7',
+      'muted-foreground': '#A3A3A3',
+      border: '#E5E7EB',
+      input: '#FBF7ED',
+      ring: '#DC2626'
+    },
+    darkColors: {
+      primary: '#F87171',
+      secondary: '#451A03',
+      accent: '#FB923C',
+      background: '#1C1917',
+      foreground: '#FEF3C7',
+      card: '#451A03',
+      'card-foreground': '#FEF3C7',
+      muted: '#78716C',
+      'muted-foreground': '#D6D3D1',
+      border: '#78716C',
+      input: '#451A03',
+      ring: '#F87171'
     }
   },
   earth: {
@@ -66,18 +109,32 @@ export const themes = {
     name: 'Earth Tones',
     description: 'Natural earth colors',
     colors: {
-      primary: '#5B5850', // Dark brown from your pair
-      secondary: '#C2C0AA', // Light beige from your pair
-      accent: '#6B6B5D',
-      background: '#FDFDF9',
-      foreground: '#2A2922',
-      card: '#F9F9F4',
-      'card-foreground': '#2A2922',
-      muted: '#C2C0AA',
-      'muted-foreground': '#4A4A42',
-      border: '#B5B39E',
-      input: '#B5B39E',
-      ring: '#5B5850'
+      primary: '#374151',
+      secondary: '#F3F4F6',
+      accent: '#4B5563',
+      background: '#FAFAFA',
+      foreground: '#111827',
+      card: '#F9FAFB',
+      'card-foreground': '#111827',
+      muted: '#F3F4F6',
+      'muted-foreground': '#6B7280',
+      border: '#E5E7EB',
+      input: '#F9FAFB',
+      ring: '#374151'
+    },
+    darkColors: {
+      primary: '#9CA3AF',
+      secondary: '#1F2937',
+      accent: '#6B7280',
+      background: '#111827',
+      foreground: '#F9FAFB',
+      card: '#1F2937',
+      'card-foreground': '#F9FAFB',
+      muted: '#374151',
+      'muted-foreground': '#D1D5DB',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#9CA3AF'
     }
   },
   nature: {
@@ -85,18 +142,32 @@ export const themes = {
     name: 'Fresh Nature',
     description: 'Vibrant green theme',
     colors: {
-      primary: '#568203', // Green from your pair
-      secondary: '#FFF8B9', // Light yellow from your pair
-      accent: '#6B9A0A',
+      primary: '#16A34A',
+      secondary: '#F0FDF4',
+      accent: '#22C55E',
       background: '#FEFFFE',
-      foreground: '#1A2E05',
-      card: '#FBFFF5',
-      'card-foreground': '#1A2E05',
-      muted: '#FFF8B9',
-      'muted-foreground': '#4A5D15',
-      border: '#F0F5A8',
-      input: '#F0F5A8',
-      ring: '#568203'
+      foreground: '#14532D',
+      card: '#F7FEF7',
+      'card-foreground': '#14532D',
+      muted: '#F0FDF4',
+      'muted-foreground': '#65A30D',
+      border: '#DCFCE7',
+      input: '#F0FDF4',
+      ring: '#16A34A'
+    },
+    darkColors: {
+      primary: '#4ADE80',
+      secondary: '#14532D',
+      accent: '#22C55E',
+      background: '#0F172A',
+      foreground: '#F0FDF4',
+      card: '#14532D',
+      'card-foreground': '#F0FDF4',
+      muted: '#166534',
+      'muted-foreground': '#BBF7D0',
+      border: '#166534',
+      input: '#14532D',
+      ring: '#4ADE80'
     }
   }
 };
@@ -129,20 +200,24 @@ function hexToHsl(hex) {
 }
 
 export const ThemeProvider = ({ children }) => {
+  const { darkMode } = useSelector((state) => state.ui);
   const [currentTheme, setCurrentTheme] = useState(() => {
     // Load theme from localStorage or default to 'default'
     const saved = localStorage.getItem('gradebook-theme');
     return saved && themes[saved] ? saved : 'default';
   });
 
-  const applyTheme = (themeId) => {
+  const applyTheme = (themeId, isDark = false) => {
     const theme = themes[themeId];
     if (!theme) return;
 
     const root = document.documentElement;
     
+    // Choose light or dark colors based on dark mode
+    const colors = isDark ? theme.darkColors || theme.colors : theme.colors;
+    
     // Apply CSS custom properties
-    Object.entries(theme.colors).forEach(([key, value]) => {
+    Object.entries(colors).forEach(([key, value]) => {
       const cssVar = `--${key.replace('_', '-')}`;
       root.style.setProperty(cssVar, hexToHsl(value));
     });
@@ -154,6 +229,17 @@ export const ThemeProvider = ({ children }) => {
     // Apply border radius
     root.style.setProperty('--radius', '0.5rem');
 
+    // Apply theme to body background for full coverage
+    document.body.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
+    document.body.style.color = `hsl(${hexToHsl(colors.foreground)})`;
+    
+    // Apply to html element as well for full coverage
+    document.documentElement.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
+    document.documentElement.style.color = `hsl(${hexToHsl(colors.foreground)})`;
+
+    // Ensure dark class is properly set for shadcn components
+    root.classList.toggle('dark', Boolean(isDark));
+
     // Save to localStorage
     localStorage.setItem('gradebook-theme', themeId);
     setCurrentTheme(themeId);
@@ -161,19 +247,20 @@ export const ThemeProvider = ({ children }) => {
 
   const switchTheme = (themeId) => {
     if (themes[themeId]) {
-      applyTheme(themeId);
+      applyTheme(themeId, darkMode);
     }
   };
 
-  // Apply theme on mount
+  // Apply theme whenever current theme or dark mode changes
   useEffect(() => {
-    applyTheme(currentTheme);
-  }, []);
+    applyTheme(currentTheme, darkMode);
+  }, [currentTheme, darkMode]);
 
   const value = {
     currentTheme,
     themes,
     switchTheme,
+    darkMode,
     getCurrentThemeData: () => themes[currentTheme]
   };
 
