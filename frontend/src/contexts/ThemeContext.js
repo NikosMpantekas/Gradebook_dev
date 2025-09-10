@@ -7,167 +7,333 @@ const ThemeContext = createContext();
 export const themes = {
   default: {
     id: 'default',
-    name: 'Ocean Elegance',
-    description: 'Sophisticated deep ocean blues with premium feel',
+    name: 'Soft Ocean',
+    description: 'Gentle ocean blues with calming elegance',
     colors: {
-      primary: '#1E40AF', // Rich royal blue
-      secondary: '#F8FAFF', // Softer blue-white
-      accent: '#3B82F6', // Vibrant accent blue
-      background: '#FDFDFF', // Ultra-subtle blue tint
-      foreground: '#0F172A',
-      card: '#F9FAFB', // Premium card background
-      'card-foreground': '#0F172A',
+      primary: '#475569', // Muted slate blue
+      secondary: '#F8FAFC', // Pure soft white
+      accent: '#64748B', // Subtle slate accent
+      background: '#FEFEFE', // Clean white
+      foreground: '#1E293B',
+      card: '#F8FAFC', // Soft card background
+      'card-foreground': '#1E293B',
       muted: '#F1F5F9',
-      'muted-foreground': '#475569', // Deeper muted text
-      border: '#E1E7EF', // Subtle blue-gray border
+      'muted-foreground': '#64748B', // Gentle text
+      border: '#E2E8F0', // Soft border
       input: '#F8FAFC',
-      ring: '#1E40AF'
+      ring: '#475569'
     },
     darkColors: {
-      primary: '#60A5FA', // Luminous blue for dark
+      primary: '#94A3B8', // Soft blue for dark
       secondary: '#1E293B',
-      accent: '#93C5FD', // Lighter accent for dark
-      background: '#020617', // Deep navy background
-      foreground: '#F1F5F9',
-      card: '#0F1629', // Rich dark card
-      'card-foreground': '#F1F5F9',
-      muted: '#1E293B',
+      accent: '#CBD5E1', // Light accent for dark
+      background: '#0F172A', // Deep navy background
+      foreground: '#F8FAFC',
+      card: '#1E293B', // Gentle dark card
+      'card-foreground': '#F8FAFC',
+      muted: '#334155',
       'muted-foreground': '#94A3B8',
-      border: '#1E293B',
-      input: '#0F1629',
-      ring: '#60A5FA'
+      border: '#334155',
+      input: '#1E293B',
+      ring: '#94A3B8'
     }
   },
   warm: {
     id: 'warm',
-    name: 'Golden Warmth',
-    description: 'Luxurious warm golden tones with emerald accents',
+    name: 'Soft Warmth',
+    description: 'Gentle warm tones with subtle elegance',
     colors: {
-      primary: '#B45309', // Rich amber gold
-      secondary: '#FEF9F3', // Cream white
-      accent: '#0891B2', // Sophisticated teal accent
-      background: '#FFFCF5', // Warm ivory
-      foreground: '#1C1917',
-      card: '#FEF7ED', // Soft warm card
-      'card-foreground': '#1C1917',
-      muted: '#F3E8D3', // Golden muted
-      'muted-foreground': '#57534E', // Warm brown text
-      border: '#E7D4B5', // Golden border
-      input: '#FEF3E2',
-      ring: '#B45309'
+      primary: '#78716C', // Muted warm brown
+      secondary: '#FAFAF9', // Soft cream
+      accent: '#6B7280', // Gentle gray accent
+      background: '#FEFEFE', // Pure white
+      foreground: '#292524',
+      card: '#F9F9F8', // Soft warm card
+      'card-foreground': '#292524',
+      muted: '#F5F5F4', // Subtle muted
+      'muted-foreground': '#57534E', // Soft brown text
+      border: '#E7E5E4', // Gentle border
+      input: '#FAFAF9',
+      ring: '#78716C'
     },
     darkColors: {
-      primary: '#FBBF24', // Bright gold for dark
+      primary: '#A8A29E', // Soft brown for dark
       secondary: '#1C1917',
-      accent: '#06B6D4', // Cyan accent for contrast
-      background: '#0C0A09', // Deep brown-black
-      foreground: '#FEF7ED',
-      card: '#1C1917', // Rich dark brown
-      'card-foreground': '#FEF7ED',
+      accent: '#9CA3AF', // Gentle gray accent
+      background: '#0A0A0A', // Deep background
+      foreground: '#FAFAF9',
+      card: '#1C1917', // Dark brown card
+      'card-foreground': '#FAFAF9',
       muted: '#292524',
       'muted-foreground': '#A8A29E',
       border: '#292524',
       input: '#1C1917',
-      ring: '#FBBF24'
+      ring: '#A8A29E'
     }
   },
   sunset: {
     id: 'sunset',
-    name: 'Sunset Radiance',
-    description: 'Mesmerizing sunset gradients with coral elegance',
+    name: 'Gentle Rose',
+    description: 'Soft rose tones with subtle warmth',
     colors: {
-      primary: '#EA580C', // Vibrant sunset orange
-      secondary: '#FFF7ED', // Soft peach white
-      accent: '#F472B6', // Pink accent for warmth
-      background: '#FFFBF7', // Warm off-white
-      foreground: '#1C1917',
-      card: '#FEF3E2', // Warm peach card
-      'card-foreground': '#1C1917',
-      muted: '#FED7AA', // Soft orange muted
-      'muted-foreground': '#92400E', // Deep orange text
-      border: '#FDBA74', // Warm orange border
-      input: '#FFF7ED',
-      ring: '#EA580C'
+      primary: '#9F1239', // Muted rose
+      secondary: '#FDF2F8', // Soft pink white
+      accent: '#BE185D', // Gentle pink accent
+      background: '#FEFEFE', // Clean white
+      foreground: '#1F2937',
+      card: '#FDF2F8', // Soft rose card
+      'card-foreground': '#1F2937',
+      muted: '#FCE7F3', // Light pink muted
+      'muted-foreground': '#6B7280', // Gentle text
+      border: '#F9A8D4', // Soft pink border
+      input: '#FDF2F8',
+      ring: '#9F1239'
     },
     darkColors: {
-      primary: '#FB923C', // Bright sunset for dark
-      secondary: '#1C1917',
-      accent: '#EC4899', // Vibrant pink accent
-      background: '#0A0A0A', // Deep charcoal
-      foreground: '#FFF7ED',
-      card: '#1F1611', // Dark warm brown
-      'card-foreground': '#FFF7ED',
-      muted: '#292017',
-      'muted-foreground': '#FDBA74',
-      border: '#292017',
-      input: '#1F1611',
-      ring: '#FB923C'
+      primary: '#F472B6', // Soft rose for dark
+      secondary: '#1F2937',
+      accent: '#EC4899', // Pink accent
+      background: '#111827', // Deep background
+      foreground: '#FDF2F8',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#FDF2F8',
+      muted: '#374151',
+      'muted-foreground': '#F472B6',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#F472B6'
     }
   },
   earth: {
     id: 'earth',
-    name: 'Earth Sophistication',
-    description: 'Refined natural tones with sage and terracotta',
+    name: 'Soft Sage',
+    description: 'Calming sage greens with natural elegance',
     colors: {
-      primary: '#15803D', // Rich forest green
-      secondary: '#F7F9F7', // Soft sage white
-      accent: '#A855F7', // Purple accent for sophistication
-      background: '#FEFFFE', // Natural white
+      primary: '#6B7280', // Muted sage
+      secondary: '#F9FAFB', // Soft white
+      accent: '#84CC16', // Gentle green accent
+      background: '#FEFEFE', // Pure white
       foreground: '#1F2937',
-      card: '#F3F7F3', // Sage card background
+      card: '#F9FAFB', // Soft card
       'card-foreground': '#1F2937',
-      muted: '#E8F1E8', // Soft green muted
-      'muted-foreground': '#4B5563', // Natural gray text
-      border: '#D4E4D4', // Gentle green border
-      input: '#F7F9F7',
-      ring: '#15803D'
+      muted: '#F3F4F6', // Light muted
+      'muted-foreground': '#6B7280', // Gentle text
+      border: '#E5E7EB', // Soft border
+      input: '#F9FAFB',
+      ring: '#6B7280'
     },
     darkColors: {
-      primary: '#22C55E', // Vibrant green for dark
+      primary: '#9CA3AF', // Soft sage for dark
       secondary: '#1F2937',
-      accent: '#C084FC', // Light purple accent
-      background: '#0F1419', // Deep forest background
-      foreground: '#F7F9F7',
-      card: '#1A2B1A', // Dark forest card
-      'card-foreground': '#F7F9F7',
-      muted: '#1F2B1F',
-      'muted-foreground': '#86EFAC',
-      border: '#1F2B1F',
-      input: '#1A2B1A',
-      ring: '#22C55E'
+      accent: '#A3E635', // Green accent
+      background: '#111827', // Deep background
+      foreground: '#F9FAFB',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#F9FAFB',
+      muted: '#374151',
+      'muted-foreground': '#9CA3AF',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#9CA3AF'
     }
   },
   nature: {
     id: 'nature',
-    name: 'Verdant Luxury',
-    description: 'Premium botanical greens with gold highlights',
+    name: 'Soft Mint',
+    description: 'Gentle mint greens with subtle freshness',
     colors: {
-      primary: '#059669', // Deep emerald
-      secondary: '#F0FDF9', // Mint white
-      accent: '#F59E0B', // Gold accent for luxury
-      background: '#FDFFFE', // Pure white with green tint
-      foreground: '#064E3B',
-      card: '#ECFDF5', // Soft mint card
-      'card-foreground': '#064E3B',
-      muted: '#D1FAE5', // Light emerald muted
-      'muted-foreground': '#047857', // Deep green text
-      border: '#A7F3D0', // Elegant mint border
-      input: '#F0FDF9',
-      ring: '#059669'
+      primary: '#6B7280', // Muted green-gray
+      secondary: '#F0FDF4', // Soft mint white
+      accent: '#22C55E', // Gentle green accent
+      background: '#FEFEFE', // Clean white
+      foreground: '#1F2937',
+      card: '#F0FDF4', // Soft mint card
+      'card-foreground': '#1F2937',
+      muted: '#DCFCE7', // Light mint muted
+      'muted-foreground': '#6B7280', // Gentle text
+      border: '#BBF7D0', // Soft green border
+      input: '#F0FDF4',
+      ring: '#6B7280'
     },
     darkColors: {
-      primary: '#34D399', // Bright emerald for dark
-      secondary: '#064E3B',
-      accent: '#FBBF24', // Bright gold accent
-      background: '#022C22', // Deep forest background
-      foreground: '#ECFDF5',
-      card: '#064E3B', // Rich emerald card
-      'card-foreground': '#ECFDF5',
-      muted: '#0F5132',
-      'muted-foreground': '#6EE7B7',
-      border: '#0F5132',
-      input: '#064E3B',
-      ring: '#34D399'
+      primary: '#9CA3AF', // Soft green-gray for dark
+      secondary: '#1F2937',
+      accent: '#4ADE80', // Green accent
+      background: '#111827', // Deep background
+      foreground: '#F0FDF4',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#F0FDF4',
+      muted: '#374151',
+      'muted-foreground': '#9CA3AF',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#9CA3AF'
+    }
+  },
+  // NEW ELEGANT THEMES
+  lavender: {
+    id: 'lavender',
+    name: 'Soft Lavender',
+    description: 'Calming lavender with elegant purple tones',
+    colors: {
+      primary: '#7C3AED', // Muted purple
+      secondary: '#FAF5FF', // Soft lavender white
+      accent: '#A78BFA', // Light purple accent
+      background: '#FEFEFE', // Pure white
+      foreground: '#1F2937',
+      card: '#FAF5FF', // Soft lavender card
+      'card-foreground': '#1F2937',
+      muted: '#F3E8FF', // Light purple muted
+      'muted-foreground': '#6B7280', // Gentle text
+      border: '#DDD6FE', // Soft purple border
+      input: '#FAF5FF',
+      ring: '#7C3AED'
+    },
+    darkColors: {
+      primary: '#A78BFA', // Soft purple for dark
+      secondary: '#1F2937',
+      accent: '#C4B5FD', // Light purple accent
+      background: '#111827', // Deep background
+      foreground: '#FAF5FF',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#FAF5FF',
+      muted: '#374151',
+      'muted-foreground': '#A78BFA',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#A78BFA'
+    }
+  },
+  cream: {
+    id: 'cream',
+    name: 'Elegant Cream',
+    description: 'Sophisticated cream with warm undertones',
+    colors: {
+      primary: '#92400E', // Warm brown
+      secondary: '#FFFBEB', // Soft cream
+      accent: '#D97706', // Amber accent
+      background: '#FEFEFE', // Pure white
+      foreground: '#1F2937',
+      card: '#FFFBEB', // Cream card
+      'card-foreground': '#1F2937',
+      muted: '#FEF3C7', // Light cream muted
+      'muted-foreground': '#78716C', // Warm text
+      border: '#FDE68A', // Soft yellow border
+      input: '#FFFBEB',
+      ring: '#92400E'
+    },
+    darkColors: {
+      primary: '#F59E0B', // Warm amber for dark
+      secondary: '#1F2937',
+      accent: '#FBBF24', // Light amber accent
+      background: '#111827', // Deep background
+      foreground: '#FFFBEB',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#FFFBEB',
+      muted: '#374151',
+      'muted-foreground': '#F59E0B',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#F59E0B'
+    }
+  },
+  pearl: {
+    id: 'pearl',
+    name: 'Pearl Gray',
+    description: 'Sophisticated pearl with subtle shimmer',
+    colors: {
+      primary: '#4B5563', // Sophisticated gray
+      secondary: '#F9FAFB', // Pearl white
+      accent: '#6366F1', // Subtle indigo accent
+      background: '#FEFEFE', // Pure white
+      foreground: '#1F2937',
+      card: '#F9FAFB', // Pearl card
+      'card-foreground': '#1F2937',
+      muted: '#F3F4F6', // Light gray muted
+      'muted-foreground': '#6B7280', // Medium text
+      border: '#E5E7EB', // Soft border
+      input: '#F9FAFB',
+      ring: '#4B5563'
+    },
+    darkColors: {
+      primary: '#9CA3AF', // Soft gray for dark
+      secondary: '#1F2937',
+      accent: '#818CF8', // Light indigo accent
+      background: '#111827', // Deep background
+      foreground: '#F9FAFB',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#F9FAFB',
+      muted: '#374151',
+      'muted-foreground': '#9CA3AF',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#9CA3AF'
+    }
+  },
+  blush: {
+    id: 'blush',
+    name: 'Soft Blush',
+    description: 'Delicate blush pink with gentle elegance',
+    colors: {
+      primary: '#BE185D', // Elegant pink
+      secondary: '#FDF2F8', // Soft blush white
+      accent: '#EC4899', // Rose accent
+      background: '#FEFEFE', // Pure white
+      foreground: '#1F2937',
+      card: '#FDF2F8', // Blush card
+      'card-foreground': '#1F2937',
+      muted: '#FCE7F3', // Light pink muted
+      'muted-foreground': '#78716C', // Soft text
+      border: '#F9A8D4', // Gentle pink border
+      input: '#FDF2F8',
+      ring: '#BE185D'
+    },
+    darkColors: {
+      primary: '#F472B6', // Soft pink for dark
+      secondary: '#1F2937',
+      accent: '#F9A8D4', // Light pink accent
+      background: '#111827', // Deep background
+      foreground: '#FDF2F8',
+      card: '#1F2937', // Dark card
+      'card-foreground': '#FDF2F8',
+      muted: '#374151',
+      'muted-foreground': '#F472B6',
+      border: '#374151',
+      input: '#1F2937',
+      ring: '#F472B6'
+    }
+  },
+  slate: {
+    id: 'slate',
+    name: 'Modern Slate',
+    description: 'Clean slate tones with contemporary feel',
+    colors: {
+      primary: '#475569', // Modern slate
+      secondary: '#F8FAFC', // Crisp white
+      accent: '#0EA5E9', // Sky blue accent
+      background: '#FEFEFE', // Pure white
+      foreground: '#1E293B',
+      card: '#F8FAFC', // Slate card
+      'card-foreground': '#1E293B',
+      muted: '#F1F5F9', // Light slate muted
+      'muted-foreground': '#64748B', // Medium text
+      border: '#E2E8F0', // Soft border
+      input: '#F8FAFC',
+      ring: '#475569'
+    },
+    darkColors: {
+      primary: '#94A3B8', // Soft slate for dark
+      secondary: '#1E293B',
+      accent: '#38BDF8', // Light blue accent
+      background: '#0F172A', // Deep slate background
+      foreground: '#F8FAFC',
+      card: '#1E293B', // Dark slate card
+      'card-foreground': '#F8FAFC',
+      muted: '#334155',
+      'muted-foreground': '#94A3B8',
+      border: '#334155',
+      input: '#1E293B',
+      ring: '#94A3B8'
     }
   }
 };
