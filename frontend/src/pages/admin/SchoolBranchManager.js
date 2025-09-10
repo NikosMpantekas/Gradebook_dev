@@ -61,19 +61,12 @@ const SchoolBranchManager = () => {
     address: '',
     phone: '',
     email: '',
-    website: '',
-    // These fields will be auto-populated based on admin's domain
-    schoolDomain: '', // Will be set from admin's email domain
-    emailDomain: '', // Will be set from admin's email domain
     parentCluster: null,
-    isClusterSchool: false,
     branchDescription: '',
   });
   
-  // Get current user's email domain to set domain values automatically
+  // Get current user
   const { user } = useSelector((state) => state.auth);
-  const userDomain = user?.email ? user.email.split('@')[1] : '';
-  const schoolDomainBase = userDomain ? userDomain.split('.')[0] : '';
   
   // ID of school to delete
   const [schoolIdToDelete, setSchoolIdToDelete] = useState(null);
@@ -112,10 +105,6 @@ const SchoolBranchManager = () => {
 
       let filtered = schools;
       
-      // Filter by cluster school visibility
-      if (!showClusterSchools) {
-        filtered = schools.filter(school => !school.isClusterSchool);
-      }
       
       // Apply search filter
       if (searchTerm.trim() !== '') {
@@ -154,11 +143,7 @@ const SchoolBranchManager = () => {
       address: '',
       phone: '',
       email: '',
-      website: '',
-      schoolDomain: schoolDomainBase,
-      emailDomain: userDomain,
       parentCluster: null,
-      isClusterSchool: false,
       branchDescription: '',
     });
     setFormErrors({});
@@ -172,11 +157,7 @@ const SchoolBranchManager = () => {
       address: '',
       phone: '',
       email: '',
-      website: '',
-      schoolDomain: '',
-      emailDomain: '',
       parentCluster: null,
-      isClusterSchool: false,
       branchDescription: '',
     });
     setFormErrors({});
@@ -198,11 +179,7 @@ const SchoolBranchManager = () => {
       address: '',
       phone: '',
       email: '',
-      website: '',
-      schoolDomain: '',
-      emailDomain: '',
       parentCluster: null,
-      isClusterSchool: false,
       branchDescription: '',
     });
     setFormErrors({});
@@ -262,10 +239,6 @@ const SchoolBranchManager = () => {
       errors.email = t('admin.manageSchoolsPage.form.errors.validEmail');
     }
     
-    if (schoolBranch.website && !/^https?:\/\/.+/.test(schoolBranch.website)) {
-      errors.website = t('admin.manageSchoolsPage.form.errors.websiteProtocol');
-    }
-    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -298,11 +271,7 @@ const SchoolBranchManager = () => {
         address: schoolBranch.address,
         phone: schoolBranch.phone,
         email: schoolBranch.email,
-        website: schoolBranch.website,
-        schoolDomain: schoolBranch.schoolDomain,
-        emailDomain: schoolBranch.emailDomain,
         parentCluster: schoolBranch.parentCluster,
-        isClusterSchool: schoolBranch.isClusterSchool,
         branchDescription: schoolBranch.branchDescription,
       };
       
@@ -381,11 +350,6 @@ const SchoolBranchManager = () => {
                     <h3 className="font-bold text-lg text-foreground">
                       {school.name}
                     </h3>
-                    {school.isClusterSchool && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full dark:bg-blue-900 dark:text-blue-200">
-                        {t('admin.manageSchoolsPage.messages.clusterSchool')}
-                      </span>
-                    )}
                   </div>
                   
                   <div className="space-y-1 text-sm text-muted-foreground">
@@ -401,12 +365,6 @@ const SchoolBranchManager = () => {
                       <div className="flex items-center gap-2">
                         <EmailIcon className="h-4 w-4" />
                         <span>{school.email}</span>
-                      </div>
-                    )}
-                    {school.website && (
-                      <div className="flex items-center gap-2">
-                        <LinkIcon className="h-4 w-4" />
-                        <span className="truncate">{school.website}</span>
                       </div>
                     )}
                   </div>
@@ -459,9 +417,6 @@ const SchoolBranchManager = () => {
                   {t('admin.manageSchoolsPage.table.contact')}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  {t('admin.manageSchoolsPage.table.type')}
-                </th>
-                <th className="text-left p-4 text-foreground font-medium">
                   {t('admin.manageSchoolsPage.table.actions')}
                 </th>
               </tr>
@@ -469,7 +424,7 @@ const SchoolBranchManager = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12">
+                  <td colSpan={4} className="text-center py-12">
                     <div className="flex justify-center items-center gap-3 py-6">
                       <Spinner size="sm" />
                       <span className="text-base text-foreground">{t('admin.manageSchoolsPage.messages.loadingSchools')}</span>
@@ -517,17 +472,6 @@ const SchoolBranchManager = () => {
                           </div>
                         )}
                       </div>
-                    </td>
-                    <td className="p-4">
-                      {school.isClusterSchool ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          {t('admin.manageSchoolsPage.messages.clusterSchool')}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          {t('admin.manageSchoolsPage.messages.branch')}
-                        </span>
-                      )}
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -612,16 +556,6 @@ const SchoolBranchManager = () => {
             />
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="show-cluster"
-              checked={showClusterSchools}
-              onCheckedChange={setShowClusterSchools}
-            />
-            <Label htmlFor="show-cluster" className="text-sm">
-              {t('admin.manageSchoolsPage.showClusterSchools')}
-            </Label>
-          </div>
         </div>
         
         <Button
@@ -701,63 +635,21 @@ const SchoolBranchManager = () => {
               )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.email')}
-                </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={schoolBranch.email}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="website" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.website')}
-                </Label>
-                <Input
-                  id="website"
-                  name="website"
-                  value={schoolBranch.website}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="schoolDomain" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.schoolDomain')}
-                </Label>
-                <Input
-                  id="schoolDomain"
-                  name="schoolDomain"
-                  value={schoolBranch.schoolDomain}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                  placeholder={`${schoolDomainBase}.school`}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="emailDomain" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.emailDomain')}
-                </Label>
-                <Input
-                  id="emailDomain"
-                  name="emailDomain"
-                  value={schoolBranch.emailDomain}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                  placeholder={`${schoolDomainBase}.edu`}
-                />
-              </div>
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium">
+                {t('admin.manageSchoolsPage.form.email')}
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={schoolBranch.email}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+              {formErrors.email && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
+              )}
             </div>
             
             <div>
@@ -773,17 +665,6 @@ const SchoolBranchManager = () => {
               />
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isClusterSchool"
-                name="isClusterSchool"
-                checked={schoolBranch.isClusterSchool}
-                onCheckedChange={(checked) => handleInputChange({ target: { name: 'isClusterSchool', value: checked } })}
-              />
-              <Label htmlFor="isClusterSchool" className="text-sm">
-                {t('admin.manageSchoolsPage.form.isClusterSchool')}
-              </Label>
-            </div>
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseAddDialog}>
@@ -862,61 +743,21 @@ const SchoolBranchManager = () => {
               )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-email" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.email')}
-                </Label>
-                <Input
-                  id="edit-email"
-                  name="email"
-                  type="email"
-                  value={schoolBranch.email}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-website" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.website')}
-                </Label>
-                <Input
-                  id="edit-website"
-                  name="website"
-                  value={schoolBranch.website}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-schoolDomain" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.schoolDomain')}
-                </Label>
-                <Input
-                  id="edit-schoolDomain"
-                  name="schoolDomain"
-                  value={schoolBranch.schoolDomain}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-emailDomain" className="text-sm font-medium">
-                  {t('admin.manageSchoolsPage.form.emailDomain')}
-                </Label>
-                <Input
-                  id="edit-emailDomain"
-                  name="emailDomain"
-                  value={schoolBranch.emailDomain}
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
+            <div>
+              <Label htmlFor="edit-email" className="text-sm font-medium">
+                {t('admin.manageSchoolsPage.form.email')}
+              </Label>
+              <Input
+                id="edit-email"
+                name="email"
+                type="email"
+                value={schoolBranch.email}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+              {formErrors.email && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
+              )}
             </div>
             
             <div>
@@ -932,17 +773,6 @@ const SchoolBranchManager = () => {
               />
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="edit-isClusterSchool"
-                name="isClusterSchool"
-                checked={schoolBranch.isClusterSchool}
-                onCheckedChange={(checked) => handleInputChange({ target: { name: 'isClusterSchool', value: checked } })}
-              />
-              <Label htmlFor="edit-isClusterSchool" className="text-sm">
-                {t('admin.manageSchoolsPage.form.isClusterSchool')}
-              </Label>
-            </div>
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseEditDialog}>

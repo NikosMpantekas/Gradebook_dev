@@ -255,6 +255,7 @@ const SchoolPermissionsManager = () => {
 
   const featureCategories = {
     'Core Management': ['enableUserManagement', 'enableClasses'],
+    'Attendance Management': ['enableAttendance'],
     'Grade Management': ['enableGrades', 'enableAnalytics', 'enableRatings'],
     'Notification Management': ['enableNotifications'],
     'School Administration': ['enableSchedule', 'enableSchoolSettings'],
@@ -266,6 +267,7 @@ const SchoolPermissionsManager = () => {
     const names = {
       enableUserManagement: 'User Management',
       enableClasses: 'Class Management',
+      enableAttendance: 'Attendance Management',
       enableGrades: 'Grade Management',
       enableAnalytics: 'Analytics & Reports',
       enableRatings: 'Rating System (/app/ratings)',
