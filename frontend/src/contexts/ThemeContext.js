@@ -391,7 +391,8 @@ export const ThemeProvider = ({ children }) => {
       console.log('🎨 User authenticated, fetching themes from API');
       fetchThemesFromAPI();
     } else {
-      console.log('🎨 No authenticated user, using fallback themes for public pages');
+      console.log('🎨 No authenticated user, applying public page CSS with dark mode support');
+      applyPublicPageCSS(darkMode);
       setLoading(false);
     }
   }, []);
@@ -615,10 +616,83 @@ export const ThemeProvider = ({ children }) => {
   };
 
 
+  // Apply independent dark/light mode colors for public pages
+  const applyPublicPageCSS = (isDark = false) => {
+    const root = document.documentElement;
+    
+    // Define independent public page colors (not user theme colors)
+    const publicColors = {
+      light: {
+        background: '#FFFFFF',
+        foreground: '#1F2937',
+        card: '#F9FAFB',
+        'card-foreground': '#1F2937',
+        muted: '#F3F4F6',
+        'muted-foreground': '#6B7280',
+        border: '#E5E7EB',
+        primary: '#2563EB', // Blue for public pages
+        'primary-foreground': '#FFFFFF',
+        secondary: '#F1F5F9',
+        'secondary-foreground': '#0F172A'
+      },
+      dark: {
+        background: '#111827',
+        foreground: '#F9FAFB', 
+        card: '#1F2937',
+        'card-foreground': '#F9FAFB',
+        muted: '#374151',
+        'muted-foreground': '#9CA3AF',
+        border: '#4B5563',
+        primary: '#3B82F6', // Lighter blue for dark mode
+        'primary-foreground': '#FFFFFF',
+        secondary: '#374151',
+        'secondary-foreground': '#F9FAFB'
+      }
+    };
+    
+    const colors = isDark ? publicColors.dark : publicColors.light;
+    
+    // Apply the public page colors
+    Object.entries(colors).forEach(([key, value]) => {
+      const cssVar = `--${key.replace('_', '-')}`;
+      const hslValue = hexToHsl(value);
+      root.style.setProperty(cssVar, hslValue);
+    });
+    
+    // Apply to body and html for full coverage
+    document.body.style.backgroundColor = colors.background;
+    document.body.style.color = colors.foreground;
+    document.documentElement.style.backgroundColor = colors.background;
+    document.documentElement.style.color = colors.foreground;
+    
+    // Set dark class appropriately
+    root.classList.toggle('dark', Boolean(isDark));
+    
+    console.log(`🎨 Applied ${isDark ? 'dark' : 'light'} mode CSS for public pages`);
+  };
+
   // Apply theme whenever current theme or dark mode changes
   useEffect(() => {
-    if (!loading && themes[currentTheme]) {
+    // Only apply themes if user is authenticated
+    const getUserFromStorage = () => {
+      try {
+        const sessionUser = sessionStorage.getItem('user');
+        const localUser = localStorage.getItem('user');
+        const userStr = sessionUser || localUser;
+        return userStr ? JSON.parse(userStr) : null;
+      } catch {
+        return null;
+      }
+    };
+    
+    const user = getUserFromStorage();
+    
+    if (!loading && themes[currentTheme] && user && user.token) {
+      console.log('🎨 Applying theme for authenticated user:', currentTheme);
       applyTheme(currentTheme, darkMode);
+    } else if (!user || !user.token) {
+      console.log('🎨 No authenticated user, applying public page CSS with dark mode:', darkMode);
+      applyPublicPageCSS(darkMode);
     }
   }, [currentTheme, darkMode, loading, themes]);
 
@@ -633,6 +707,7 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('selectedTheme', themeId);
       }
     },
+    applyPublicPageCSS, // Expose this method for logout handling
     darkMode,
     fetchThemesFromAPI,
     getCurrentThemeData: () => themes[currentTheme]
