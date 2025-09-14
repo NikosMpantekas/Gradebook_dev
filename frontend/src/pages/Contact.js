@@ -1,7 +1,5 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { useSelector, useDispatch } from 'react-redux';
-import { toggleDarkMode } from '../features/ui/uiSlice';
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -94,14 +92,15 @@ const useRateLimit = () => {
   return { isRateLimited, recordAttempt, getRemainingTime };
 };
 
-const Logo = () => {
+const Logo = ({ darkMode }) => {
   return (
     <a 
       href="/home"
       className={cn(
         "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
-        "no-underline text-foreground hover:text-primary transition-colors",
-        "relative inline-block"
+        "no-underline hover:text-primary transition-colors",
+        "relative inline-block",
+        darkMode ? "text-foreground" : "text-[#23262b]"
       )}
     >
       GradeBook
@@ -117,8 +116,11 @@ const navLinks = [
 
 const Contact = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { darkMode } = useSelector((state) => state.ui);
+  // Persistent theme state for public pages
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('publicPageTheme');
+    return saved ? JSON.parse(saved) : true; // defaults to dark
+  });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -138,7 +140,13 @@ const Contact = () => {
   const { isRateLimited, recordAttempt, getRemainingTime } = useRateLimit();
   
   const handleDrawerToggle = () => setDrawerOpen((prev) => !prev);
-  const handleToggleDarkMode = () => dispatch(toggleDarkMode());
+  const handleToggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const newMode = !prev;
+      localStorage.setItem('publicPageTheme', JSON.stringify(newMode));
+      return newMode;
+    });
+  };
 
   // Input validation
   const validateField = (name, value) => {
@@ -384,7 +392,10 @@ const Contact = () => {
                       key={link.label}
                       variant="ghost"
                       asChild
-                      className="justify-start text-foreground hover:text-primary"
+                      className={cn(
+                        "justify-start hover:text-primary",
+                        darkMode ? "text-foreground" : "text-[#23262b]"
+                      )}
                     >
                       <a href={link.href}>{link.label}</a>
                     </Button>
@@ -393,7 +404,7 @@ const Contact = () => {
               </div>
             </SheetContent>
           </Sheet>
-          <Logo />
+          <Logo darkMode={darkMode} />
           <div className="flex-1" />
           <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
@@ -457,7 +468,9 @@ const Contact = () => {
                   <form onSubmit={handleSubmit} className="mt-3 space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Όνομα *</Label>
+                        <Label htmlFor="name" className={cn(
+                          darkMode ? "text-foreground" : "text-[#23262b]"
+                        )}>Όνομα *</Label>
                         <Input
                           id="name"
                           name="name"
@@ -480,7 +493,9 @@ const Contact = () => {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email *</Label>
+                        <Label htmlFor="email" className={cn(
+                          darkMode ? "text-foreground" : "text-[#23262b]"
+                        )}>Email *</Label>
                         <Input
                           id="email"
                           name="email"
@@ -506,7 +521,9 @@ const Contact = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="subject">Θέμα *</Label>
+                      <Label htmlFor="subject" className={cn(
+                        darkMode ? "text-foreground" : "text-[#23262b]"
+                      )}>Θέμα *</Label>
                       <Input
                         id="subject"
                         name="subject"
@@ -530,7 +547,9 @@ const Contact = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="message">Μήνυμα *</Label>
+                      <Label htmlFor="message" className={cn(
+                        darkMode ? "text-foreground" : "text-[#23262b]"
+                      )}>Μήνυμα *</Label>
                       <Textarea
                         id="message"
                         name="message"
