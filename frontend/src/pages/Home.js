@@ -100,14 +100,16 @@ export default function Home() {
 
   return (
     <div className={cn(
-      "min-h-screen font-sans flex flex-col overflow-auto transition-colors duration-100",
+      "min-h-screen font-sans flex flex-col transition-colors duration-100",
       darkMode ? "bg-[#181b20] text-foreground" : "bg-[#f5f6fa] text-[#23262b]"
     )}>
-      <header className={cn(
-        "sticky top-0 z-50 w-full transition-colors duration-100",
-        darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
-        "border-b shadow-sm"
-      )}>
+      <header 
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 w-full transition-colors duration-100",
+          darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
+          "border-b shadow-sm"
+        )}
+      >
         <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
@@ -173,7 +175,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pt-14">
         <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center justify-center">
             <div className="">
