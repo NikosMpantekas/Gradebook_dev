@@ -508,9 +508,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         </SheetContent>
       </Sheet>
 
-      {/* Desktop Sidebar with safe area support */}
+      {/* Desktop Sidebar - No animations */}
       <aside 
-        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30 pl-safe-left pt-safe-top"
+        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30"
         style={{
           backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
         }}
