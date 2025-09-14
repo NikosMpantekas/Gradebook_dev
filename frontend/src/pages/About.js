@@ -67,12 +67,12 @@ export default function About() {
 
   return (
     <div className={cn(
-      "min-h-screen font-sans flex flex-col overflow-auto transition-colors duration-100 no-scrollbar",
+      "min-h-screen font-sans flex flex-col transition-colors duration-100 pl-safe-left pr-safe-right",
       darkMode ? "bg-[#181b20] text-foreground" : "bg-[#f5f6fa] text-[#23262b]"
-    )}>
+    )} style={{ minHeight: 'calc(100vh + var(--safe-area-inset-bottom, 0px))' }}>
       <header className={cn(
-        "sticky top-0 z-50 w-full transition-colors duration-100",
-        darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
+        "fixed top-0 left-0 right-0 z-50 w-full transition-colors duration-100 header-safe-area backdrop-blur-xl",
+        darkMode ? "bg-[#23262b]/90 border-[#23262b]" : "bg-white/90 border-[#e0e0e0]",
         "border-b shadow-sm"
       )}>
         <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
@@ -140,7 +140,7 @@ export default function About() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col" style={{ paddingTop: 'var(--header-height, 3.5rem)' }}> {/* Add padding for fixed header with safe area */}
         <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
           <div className="text-center mb-8">
             <h1 className={cn(
@@ -230,7 +230,7 @@ export default function About() {
       <footer className={cn(
         "mt-auto py-6 border-t text-center transition-colors duration-100 flex items-center justify-center",
         darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-[#f5f6fa] border-[#e0e0e0]"
-      )}>
+      )} style={{ paddingBottom: 'calc(1.5rem + var(--safe-area-inset-bottom, 0px))' }}>
         <p className={cn(
           "text-sm transition-colors duration-100",
           darkMode ? "text-gray-400" : "text-gray-700"
