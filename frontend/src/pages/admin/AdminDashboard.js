@@ -385,10 +385,10 @@ const AdminDashboard = () => {
                     key={notification._id} 
                     className="flex items-center space-x-3 p-3 rounded-lg border bg-card/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
                     style={{
-                      borderColor: notification.type === 'info' ? '#3b82f6' :
-                                  notification.type === 'success' ? '#10b981' :
-                                  notification.type === 'warning' ? '#f59e0b' :
-                                  notification.type === 'error' ? '#ef4444' : 'hsl(var(--background))',
+                      borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
+                                  notification.type === 'success' ? 'hsl(var(--success))' :
+                                  notification.type === 'warning' ? 'hsl(var(--warning))' :
+                                  notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
                       animationDelay: `${(index + 1) * 0.1}s`
                     }}
                     onClick={() => navigate(`/app/admin/notifications/${notification._id}`)}

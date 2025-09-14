@@ -1,62 +1,31 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleDarkMode } from "../features/ui/uiSlice";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "../components/ui/sheet";
+import { cn } from "../lib/utils";
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  IconButton,
-  Box,
-  Container,
-  Grid,
-  Card,
-  CardContent,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Stack,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
-import {
-  Menu as MenuIcon,
-  Brightness4 as Brightness4Icon,
-  Brightness7 as Brightness7Icon,
-  School as SchoolIcon,
-  Security as SecurityIcon,
-  Speed as SpeedIcon,
-  Support as SupportIcon,
-} from "@mui/icons-material";
+  Menu,
+  Sun,
+  Moon,
+  GraduationCap,
+  Shield,
+  Zap,
+  HeadphonesIcon,
+} from "lucide-react";
 
 const Logo = () => (
-  <Button
+  <a 
     href="/home"
-    sx={{
-      textTransform: "none",
-      p: 0,
-      minWidth: 0,
-      "&:hover": {
-        bgcolor: "transparent",
-        color: "#337ab7",
-      },
-    }}
+    className={cn(
+      "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
+      "no-underline text-foreground hover:text-primary transition-colors",
+      "relative inline-block"
+    )}
   >
-    <Box
-      sx={{
-        fontWeight: 100,
-        fontSize: { xs: 28, sm: 32, md: 34, lg: 36 },
-        color: "#337ab7",
-        letterSpacing: 1,
-        mr: 2,
-        fontFamily: "Roboto, Arial, sans-serif",
-      }}
-    >
-      GradeBook
-    </Box>
-  </Button>
+    GradeBook
+  </a>
 );
 
 const navLinks = [
@@ -66,8 +35,6 @@ const navLinks = [
 ];
 
 export default function About() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { darkMode } = useSelector((state) => state.ui);
   const dispatch = useDispatch();
@@ -75,325 +42,202 @@ export default function About() {
   const handleDrawerToggle = () => setDrawerOpen((prev) => !prev);
   const handleToggleDarkMode = () => dispatch(toggleDarkMode());
 
-  const colors = darkMode
-    ? {
-        background: "#181b20",
-        appBar: "#23262b",
-        card: "#23262b",
-        text: "#fff",
-        subText: "grey.300",
-        footer: "#23262b",
-        border: "1px solid #23262b",
-        button: "#337ab7",
-        buttonHover: "#245a8d",
-        icon: "#337ab7",
-      }
-    : {
-        background: "#f5f6fa",
-        appBar: "#fff",
-        card: "#fff",
-        text: "#23262b",
-        subText: "grey.800",
-        footer: "#f5f6fa",
-        border: "1px solid #e0e0e0",
-        button: "#337ab7",
-        buttonHover: "#245a8d",
-        icon: "#337ab7",
-      };
-
   const features = [
     {
-      icon: <SchoolIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      icon: <GraduationCap className="w-10 h-10 text-primary" />,
       title: "Διαχείριση Φροντιστηρίων",
       description: "Πλήρης έλεγχος των τάξεων, μαθητών και βαθμολογιών με εύκολη και διαισθητική διασύνδεση.",
     },
     {
-      icon: <SecurityIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      icon: <Shield className="w-10 h-10 text-primary" />,
       title: "Ασφάλεια Δεδομένων",
       description: "Προστασία των ευαίσθητων πληροφοριών των μαθητών με σύγχρονες τεχνολογίες κρυπτογράφησης.",
     },
     {
-      icon: <SpeedIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      icon: <Zap className="w-10 h-10 text-primary" />,
       title: "Γρήγορη Ενημέρωση",
       description: "Άμεση επικοινωνία με γονείς και μαθητές μέσω push notifications και email ειδοποιήσεων.",
     },
     {
-      icon: <SupportIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      icon: <HeadphonesIcon className="w-10 h-10 text-primary" />,
       title: "24/7 Υποστήριξη",
       description: "Συνεχής τεχνική υποστήριξη για όλες τις ανάγκες του φροντιστηρίου σας.",
     },
   ];
 
   return (
-    <Box
-      sx={{
-        bgcolor: colors.background,
-        minHeight: "100vh",
-        fontFamily: "Roboto, Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "auto",
-        transition: 'background-color 0.1s',
-        overscrollBehavior: 'none',
-        overscrollColor: colors.icon,
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          backgroundColor: colors.background,
-        },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: colors.icon,
-          borderRadius: '4px',
-        },
-        '&::-webkit-scrollbar-thumb:hover': {
-          backgroundColor: colors.buttonHover,
-        },
-      }}
-    >
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{ bgcolor: colors.appBar, borderBottom: colors.border, transition: 'background-color 0.1s, border-bottom-color 0.1s' }}
-      >
-        <Toolbar sx={{ minHeight: 64, px: { xs: 1, sm: 3 } }}>
-          <IconButton
-            sx={{
-              display: { xs: "flex", md: "none" },
-              color: colors.icon,
-              mr: 1,
-              transition: 'color 0.1s',
-            }}
-            onClick={handleDrawerToggle}
-            aria-label="menu"
-          >
-            <MenuIcon />
-          </IconButton>
+    <div className={cn(
+      "min-h-screen font-sans flex flex-col overflow-auto transition-colors duration-100 no-scrollbar",
+      darkMode ? "bg-[#181b20] text-foreground" : "bg-[#f5f6fa] text-[#23262b]"
+    )}>
+      <header className={cn(
+        "sticky top-0 z-50 w-full transition-colors duration-100",
+        darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
+        "border-b shadow-sm"
+      )}>
+        <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex md:hidden text-primary mr-1"
+                aria-label="menu"
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className={cn(
+              "w-[220px] p-0 backdrop-blur-md border-r",
+              darkMode 
+                ? "bg-[#181b20]/80 text-foreground border-[#2a3441]/50" 
+                : "bg-[#f5f6fa]/80 text-[#23262b] border-[#e0e0e0]/50"
+            )}>
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>Main navigation menu for the application</SheetDescription>
+              </SheetHeader>
+              <div className="pt-8 px-4">
+                <nav className="flex flex-col gap-2">
+                  {navLinks.map((link) => (
+                    <Button
+                      key={link.label}
+                      variant="ghost"
+                      asChild
+                      className="justify-start text-foreground hover:text-primary"
+                    >
+                      <a href={link.href}>{link.label}</a>
+                    </Button>
+                  ))}
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
           <Logo />
-          <Box sx={{ flexGrow: 1 }} />
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ display: { xs: "none", md: "flex" } }}
-          >
+          <div className="flex-1" />
+          <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
               <Button
                 key={link.label}
-                href={link.href}
-                sx={{
-                  color: colors.icon,
-                  fontWeight: 500,
-                  fontSize: 16,
-                  borderRadius: 2,
-                  px: 2,
-                  textTransform: "none",
-                  transition: 'color 0.1s, background-color 0.1s',
-                  "&:hover": { bgcolor: colors.appBar },
-                }}
+                variant="ghost"
+                asChild
+                className="text-primary font-medium hover:bg-accent"
               >
-                {link.label}
+                <a href={link.href}>{link.label}</a>
               </Button>
             ))}
-          </Stack>
-          <IconButton
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleToggleDarkMode}
-            sx={{ color: colors.icon, ml: 2, transition: 'color 0.1s' }}
+            className="ml-2 text-primary"
             aria-label="Toggle dark mode"
             title="Toggle dark mode"
           >
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+        </div>
+      </header>
 
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        PaperProps={{
-          sx: {
-            width: 220,
-            bgcolor: colors.appBar,
-            color: colors.text,
-            boxShadow: 3,
-            transition: 'background-color 0.1s, color 0.1s',
-          },
-        }}
-      >
-        <Box
-          sx={{
-            width: 220,
-            pt: 2,
-            px: 2,
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-            bgcolor: colors.appBar,
-            color: colors.text,
-            transition: 'background-color 0.1s, color 0.1s',
-          }}
-          role="presentation"
-          onClick={handleDrawerToggle}
-          onKeyDown={handleDrawerToggle}
-        >
-          <List sx={{ mt: 2 }}>
-            {navLinks.map((link) => (
-              <ListItem key={link.label} disablePadding>
-                <ListItemButton
-                  component="a"
-                  href={link.href}
-                  sx={{ color: colors.text, transition: 'color 0.1s' }}
-                >
-                  <ListItemText primary={link.label} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-          <Box sx={{ textAlign: "center", mb: 8 }}>
-            <Typography
-              variant="h2"
-              fontWeight="bold"
-              sx={{
-                color: colors.text,
-                mb: 3,
-                fontSize: { xs: 32, md: 48 },
-                lineHeight: 1.2,
-              }}
-            >
+      <div className="flex-1 flex flex-col">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
+          <div className="text-center mb-8">
+            <h1 className={cn(
+              "font-bold mb-3 text-3xl md:text-5xl leading-tight",
+              darkMode ? "text-foreground" : "text-[#23262b]"
+            )}>
               Σχετικά με το GradeBook
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                color: colors.subText,
-                maxWidth: 800,
-                mx: "auto",
-                fontWeight: 400,
-                fontSize: { xs: 16, md: 18 },
-              }}
-            >
-              Το GradeBook είναι μια σύγχρονη πλατφόρμα διαχείρισης φροντιστηρίων που αναπτύχθηκε 
+            </h1>
+            <p className={cn(
+              "max-w-[800px] mx-auto font-normal text-base md:text-lg",
+              darkMode ? "text-muted-foreground" : "text-gray-600"
+            )}>
+              Το GradeBook είναι μια σύγχρονη πλατφόρμα διαχείρισης φροντιστηρίων που αναπτύχθηκε
               για να απλοποιήσει και να βελτιώσει την εκπαιδευτική διαδικασία.
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
-          <Grid container spacing={4} sx={{ mb: 8 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {features.map((feature, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Card
-                  elevation={0}
-                  sx={{
-                    height: "100%",
-                    bgcolor: colors.card,
-                    transition: 'background-color 0.1s',
-                    boxShadow: "0 1px 6px 0 rgba(51,122,183,0.04)",
-                    "&:hover": {
-                      boxShadow: "0 4px 16px 0 rgba(51,122,183,0.10)",
-                    },
-                  }}
-                >
-                  <CardContent sx={{ textAlign: "center", p: 3 }}>
-                    <Box sx={{ mb: 2 }}>{feature.icon}</Box>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ color: colors.text, mb: 2, transition: 'color 0.1s' }}
-                    >
-                      {feature.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: colors.subText, transition: 'color 0.1s' }}
-                    >
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
+              <Card
+                key={index}
+                className={cn(
+                  "h-full transition-all duration-300 ease-in-out",
+                  "hover:shadow-lg hover:-translate-y-2 hover:scale-[1.03]",
+                  "cursor-pointer",
+                  darkMode 
+                    ? "bg-[#2a3441] shadow-md hover:shadow-xl" 
+                    : "bg-white shadow-md hover:shadow-xl"
+                )}
+              >
+                <CardContent className="text-center p-6">
+                  <div className="mb-4 flex justify-center">{feature.icon}</div>
+                  <h3 className={cn(
+                    "font-bold mb-2 text-lg",
+                    darkMode ? "text-card-foreground" : "text-[#23262b]"
+                  )}>
+                    {feature.title}
+                  </h3>
+                  <p className={cn(
+                    "text-sm",
+                    darkMode ? "text-muted-foreground" : "text-gray-600"
+                  )}>
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
-          </Grid>
+          </div>
 
-          <Box sx={{ textAlign: "center", mb: 8 }}>
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              sx={{
-                color: colors.text,
-                mb: 4,
-                fontSize: { xs: 24, md: 32 },
-              }}
-            >
+          <div className="text-center mb-8">
+            <h2 className={cn(
+              "font-bold mb-4 text-2xl md:text-3xl",
+              darkMode ? "text-foreground" : "text-[#23262b]"
+            )}>
               Η Ιστορία μας
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: colors.subText,
-                maxWidth: 900,
-                mx: "auto",
-                lineHeight: 1.8,
-                fontSize: { xs: 16, md: 18 },
-              }}
-            >
-              Το GradeBook ξεκίνησε ως μια απλή ιδέα για να βελτιώσουμε τον τρόπο που τα φροντιστήρια 
-              διαχειρίζονται τις πληροφορίες των μαθητών τους. Με την εξέλιξη της τεχνολογίας και τις 
-              αυξανόμενες απαιτήσεις για ψηφιακές λύσεις, αναπτύξαμε μια πλατφόρμα που συνδυάζει 
+            </h2>
+            <p className={cn(
+              "max-w-[900px] mx-auto leading-relaxed text-base md:text-lg",
+              darkMode ? "text-muted-foreground" : "text-gray-600"
+            )}>
+              Το GradeBook ξεκίνησε ως μια απλή ιδέα για να βελτιώσουμε τον τρόπο που τα φροντιστήρια
+              διαχειρίζονται τις πληροφορίες των μαθητών τους. Με την εξέλιξη της τεχνολογίας και τις
+              αυξανόμενες απαιτήσεις για ψηφιακές λύσεις, αναπτύξαμε μια πλατφόρμα που συνδυάζει
               ευκολία χρήσης με ισχυρές λειτουργίες.
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
-          <Box sx={{ textAlign: "center" }}>
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              sx={{
-                color: colors.text,
-                mb: 4,
-                fontSize: { xs: 24, md: 32 },
-              }}
-            >
+          <div className="text-center">
+            <h2 className={cn(
+              "font-bold mb-4 text-2xl md:text-3xl",
+              darkMode ? "text-foreground" : "text-[#23262b]"
+            )}>
               Η Αποστολή μας
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: colors.subText,
-                maxWidth: 900,
-                mx: "auto",
-                lineHeight: 1.8,
-                fontSize: { xs: 16, md: 18 },
-              }}
-            >
-              Στόχος μας είναι να παρέχουμε στους εκπαιδευτικούς και τα φροντιστήρια τα εργαλεία που 
-              χρειάζονται για να εστιάσουν σε αυτό που κάνουν καλύτερα: την εκπαίδευση των μαθητών. 
+            </h2>
+            <p className={cn(
+              "max-w-[900px] mx-auto leading-relaxed text-base md:text-lg",
+              darkMode ? "text-muted-foreground" : "text-gray-600"
+            )}>
+              Στόχος μας είναι να παρέχουμε στους εκπαιδευτικούς και τα φροντιστήρια τα εργαλεία που
+              χρειάζονται για να εστιάσουν σε αυτό που κάνουν καλύτερα: την εκπαίδευση των μαθητών.
               Με το GradeBook, η διαχείριση γίνεται απλή και αποδοτική.
-            </Typography>
-          </Box>
-        </Container>
-      </Box>
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <Box
-        sx={{
-          mt: "auto",
-          py: 3,
-          bgcolor: colors.footer,
-          borderTop: colors.border,
-          textAlign: "center",
-          transition: 'background-color 0.1s, border-top-color 0.1s',
-        }}
-      >
-        <Typography variant="body2" sx={{ color: darkMode ? "grey.400" : "grey.700", transition: 'color 0.1s' }}>
+      <footer className={cn(
+        "mt-auto py-6 border-t text-center transition-colors duration-100 flex items-center justify-center",
+        darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-[#f5f6fa] border-[#e0e0e0]"
+      )}>
+        <p className={cn(
+          "text-sm transition-colors duration-100",
+          darkMode ? "text-gray-400" : "text-gray-700"
+        )}>
           © {new Date().getFullYear()} GradeBook Team.
-        </Typography>
-      </Box>
-    </Box>
+        </p>
+      </footer>
+    </div>
   );
 } 

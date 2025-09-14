@@ -1,34 +1,24 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from 'react-i18next';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleDarkMode } from '../features/ui/uiSlice';
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "../components/ui/sheet";
+import { cn } from "../lib/utils";
 import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  useTheme,
-  useMediaQuery,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Stack,
-  Snackbar,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
-import MenuIcon from "@mui/icons-material/Menu";
-import Drawer from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import EmailIcon from "@mui/icons-material/Email";
-import SendIcon from "@mui/icons-material/Send";
+  Menu,
+  Sun,
+  Moon,
+  Mail,
+  Send,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import axios from "axios";
 import { API_URL } from "../config/appConfig";
 
@@ -106,31 +96,16 @@ const useRateLimit = () => {
 
 const Logo = () => {
   return (
-    <Button
+    <a 
       href="/home"
-      sx={{
-        textTransform: "none",
-        p: 0,
-        minWidth: 0,
-        "&:hover": {
-          bgcolor: "transparent",
-          color: "#337ab7",
-        },
-      }}
+      className={cn(
+        "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
+        "no-underline text-foreground hover:text-primary transition-colors",
+        "relative inline-block"
+      )}
     >
-      <Box
-        sx={{
-          fontWeight: 100,
-          fontSize: { xs: 28, sm: 32, md: 34, lg: 36 },
-          color: "#337ab7",
-          letterSpacing: 1,
-          mr: 2,
-          fontFamily: "Roboto, Arial, sans-serif",
-        }}
-      >
-        GradeBook
-      </Box>
-    </Button>
+      GradeBook
+    </a>
   );
 };
 
@@ -142,10 +117,9 @@ const navLinks = [
 
 const Contact = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const dispatch = useDispatch();
+  const { darkMode } = useSelector((state) => state.ui);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -164,33 +138,7 @@ const Contact = () => {
   const { isRateLimited, recordAttempt, getRemainingTime } = useRateLimit();
   
   const handleDrawerToggle = () => setDrawerOpen((prev) => !prev);
-  const handleToggleDarkMode = () => setDarkMode((prev) => !prev);
-
-  const colors = darkMode
-    ? {
-        background: "#181b20",
-        appBar: "#23262b",
-        card: "#23262b",
-        text: "#fff",
-        subText: "grey.300",
-        footer: "#23262b",
-        border: "1px solid #23262b",
-        button: "#337ab7",
-        buttonHover: "#245a8d",
-        icon: "#337ab7",
-      }
-    : {
-        background: "#f5f6fa",
-        appBar: "#fff",
-        card: "#fff",
-        text: "#23262b",
-        subText: "grey.800",
-        footer: "#f5f6fa",
-        border: "1px solid #e0e0e0",
-        button: "#337ab7",
-        buttonHover: "#245a8d",
-        icon: "#337ab7",
-      };
+  const handleToggleDarkMode = () => dispatch(toggleDarkMode());
 
   // Input validation
   const validateField = (name, value) => {
@@ -375,19 +323,12 @@ const Contact = () => {
 
   const contactInfo = [
     {
-      icon: <EmailIcon sx={{ fontSize: 40, color: colors.icon }} />,
+      icon: <Mail className="w-10 h-10 text-primary" />,
       title: "Email",
       value: (
         <a 
           href="mailto:info@gradebook.pro" 
-          style={{ 
-            color: colors.icon, 
-            textDecoration: 'none',
-            fontWeight: 500,
-            transition: 'color 0.1s'
-          }}
-          onMouseEnter={(e) => e.target.style.color = colors.buttonHover}
-          onMouseLeave={(e) => e.target.style.color = colors.icon}
+          className="text-primary hover:text-primary/80 no-underline font-medium transition-colors"
         >
           info@gradebook.pro
         </a>
@@ -395,7 +336,7 @@ const Contact = () => {
       description: "Για οποιαδήποτε απορία ή αίτηση συνεργασίας στείλτε μας email.",
     },
     {
-      icon: <img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/discord.svg" alt="Discord" style={{ width: 40, height: 40, color: colors.icon, verticalAlign: 'middle' }} />,
+      icon: <img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/discord.svg" alt="Discord" className="w-10 h-10 align-middle" />,
       title: "Discord",
       value: "To be Discord link..",
       description: "Συζητήστε μαζί μας ή με άλλους χρήστες στο Discord server μας.",
@@ -403,444 +344,323 @@ const Contact = () => {
   ];
 
   return (
-    <Box
-      sx={{
-        bgcolor: colors.background,
-        minHeight: "100vh",
-        fontFamily: "Roboto, Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "auto",
-        transition: 'background-color 0.1s',
-        overscrollBehavior: 'none',
-        overscrollColor: colors.icon,
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          backgroundColor: colors.background,
-        },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: colors.icon,
-          borderRadius: '4px',
-        },
-        '&::-webkit-scrollbar-thumb:hover': {
-          backgroundColor: colors.buttonHover,
-        },
-      }}
-    >
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{ bgcolor: colors.appBar, borderBottom: colors.border, transition: 'background-color 0.1s, border-bottom-color 0.1s' }}
-      >
-        <Toolbar sx={{ minHeight: 64, px: { xs: 1, sm: 3 } }}>
-          <IconButton
-            sx={{
-              display: { xs: "flex", md: "none" },
-              color: colors.icon,
-              mr: 1,
-              transition: 'color 0.1s',
-            }}
-            onClick={handleDrawerToggle}
-            aria-label="menu"
-          >
-            <MenuIcon />
-          </IconButton>
+    <div className={cn(
+      "min-h-screen font-sans flex flex-col overflow-auto transition-colors duration-100 no-scrollbar",
+      darkMode ? "bg-[#181b20] text-foreground" : "bg-[#f5f6fa] text-[#23262b]"
+    )}>
+      <header className={cn(
+        "sticky top-0 z-50 w-full transition-colors duration-100",
+        darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
+        "border-b shadow-sm"
+      )}>
+        <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex md:hidden text-primary mr-1"
+                aria-label="menu"
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className={cn(
+              "w-[220px] p-0 backdrop-blur-md border-r",
+              darkMode 
+                ? "bg-[#181b20]/80 text-foreground border-[#2a3441]/50" 
+                : "bg-[#f5f6fa]/80 text-[#23262b] border-[#e0e0e0]/50"
+            )}>
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>Main navigation menu for the application</SheetDescription>
+              </SheetHeader>
+              <div className="pt-8 px-4">
+                <nav className="flex flex-col gap-2">
+                  {navLinks.map((link) => (
+                    <Button
+                      key={link.label}
+                      variant="ghost"
+                      asChild
+                      className="justify-start text-foreground hover:text-primary"
+                    >
+                      <a href={link.href}>{link.label}</a>
+                    </Button>
+                  ))}
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
           <Logo />
-          <Box sx={{ flexGrow: 1 }} />
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ display: { xs: "none", md: "flex" } }}
-          >
+          <div className="flex-1" />
+          <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
               <Button
                 key={link.label}
-                href={link.href}
-                sx={{
-                  color: colors.icon,
-                  fontWeight: 500,
-                  fontSize: 16,
-                  borderRadius: 2,
-                  px: 2,
-                  textTransform: "none",
-                  transition: 'color 0.1s, background-color 0.1s',
-                  "&:hover": { bgcolor: colors.appBar },
-                }}
+                variant="ghost"
+                asChild
+                className="text-primary font-medium hover:bg-accent"
               >
-                {link.label}
+                <a href={link.href}>{link.label}</a>
               </Button>
             ))}
-          </Stack>
-          <IconButton
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleToggleDarkMode}
-            sx={{ color: colors.icon, ml: 2, transition: 'color 0.1s' }}
+            className="ml-2 text-primary"
             aria-label="Toggle dark mode"
             title="Toggle dark mode"
           >
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+        </div>
+      </header>
 
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        PaperProps={{
-          sx: {
-            width: 220,
-            bgcolor: colors.appBar,
-            color: colors.text,
-            boxShadow: 3,
-            transition: 'background-color 0.1s, color 0.1s',
-          },
-        }}
-      >
-        <Box
-          sx={{
-            width: 220,
-            pt: 2,
-            px: 2,
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-            bgcolor: colors.appBar,
-            color: colors.text,
-            transition: 'background-color 0.1s, color 0.1s',
-          }}
-          role="presentation"
-          onClick={handleDrawerToggle}
-          onKeyDown={handleDrawerToggle}
-        >
-          <List sx={{ mt: 2 }}>
-            {navLinks.map((link) => (
-              <ListItem key={link.label} disablePadding>
-                <ListItemButton
-                  component="a"
-                  href={link.href}
-                  sx={{ color: colors.text, transition: 'color 0.1s' }}
-                >
-                  <ListItemText primary={link.label} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-          <Box sx={{ textAlign: "center", mb: 8 }}>
-            <Typography
-              variant="h2"
-              fontWeight="bold"
-              sx={{
-                color: colors.text,
-                mb: 3,
-                fontSize: { xs: 32, md: 48 },
-                lineHeight: 1.2,
-              }}
-            >
+      <div className="flex-1 flex flex-col">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
+          <div className="text-center mb-8">
+            <h1 className={cn(
+              "font-bold mb-3 text-3xl md:text-5xl leading-tight",
+              darkMode ? "text-foreground" : "text-[#23262b]"
+            )}>
               Επικοινωνήστε μαζί μας
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                color: colors.subText,
-                maxWidth: 800,
-                mx: "auto",
-                fontWeight: 400,
-                fontSize: { xs: 16, md: 18 },
-              }}
-            >
+            </h1>
+            <p className={cn(
+              "max-w-[800px] mx-auto font-normal text-base md:text-lg",
+              darkMode ? "text-muted-foreground" : "text-gray-600"
+            )}>
               Έχετε ερωτήσεις ή χρειάζεστε βοήθεια; Επικοινωνήστε μαζί μας και θα σας απαντήσουμε άμεσα.
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
-          <Grid container spacing={6}>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Contact Form */}
-            <Grid item xs={12} md={8}>
+            <div className="md:col-span-8">
               <Card
-                elevation={0}
-                sx={{
-                  bgcolor: colors.card,
-                  transition: 'background-color 0.1s',
-                  boxShadow: "0 1px 6px 0 rgba(51,122,183,0.04)",
-                }}
+                className={cn(
+                  "shadow-md transition-colors duration-100",
+                  darkMode ? "bg-[#2a3441]" : "bg-white"
+                )}
               >
-                <CardContent sx={{ p: 4 }}>
-                  <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    sx={{
-                      color: colors.text,
-                      mb: 4,
-                      fontSize: { xs: 24, md: 28 },
-                    }}
-                  >
+                <CardContent className="p-6">
+                  <h2 className={cn(
+                    "font-bold mb-4 text-2xl md:text-3xl",
+                    darkMode ? "text-card-foreground" : "text-[#23262b]"
+                  )}>
                     Στείλτε μας μήνυμα
-                  </Typography>
+                  </h2>
                   
-                  <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Όνομα"
+                  <form onSubmit={handleSubmit} className="mt-3 space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Όνομα *</Label>
+                        <Input
+                          id="name"
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
-                          error={!!formErrors.name}
-                          helperText={formErrors.name}
                           required
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              color: colors.text,
-                              "& fieldset": {
-                                borderColor: colors.subText,
-                              },
-                              "&:hover fieldset": {
-                                borderColor: colors.icon,
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: colors.icon,
-                              },
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: colors.subText,
-                              "&.Mui-focused": {
-                                color: colors.icon,
-                              },
-                            },
-                          }}
+                          className={cn(
+                            "transition-colors duration-100",
+                            darkMode 
+                              ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                              : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                            formErrors.name && "border-destructive"
+                          )}
                         />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Email"
+                        {formErrors.name && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-4 w-4" />
+                            {formErrors.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
                           name="email"
                           type="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          error={!!formErrors.email}
-                          helperText={formErrors.email}
                           required
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              color: colors.text,
-                              "& fieldset": {
-                                borderColor: colors.subText,
-                              },
-                              "&:hover fieldset": {
-                                borderColor: colors.icon,
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: colors.icon,
-                              },
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: colors.subText,
-                              "&.Mui-focused": {
-                                color: colors.icon,
-                              },
-                            },
-                          }}
+                          className={cn(
+                            "transition-colors duration-100",
+                            darkMode 
+                              ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                              : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                            formErrors.email && "border-destructive"
+                          )}
                         />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Θέμα"
-                          name="subject"
-                          value={formData.subject}
-                          onChange={handleInputChange}
-                          error={!!formErrors.subject}
-                          helperText={formErrors.subject}
-                          required
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              color: colors.text,
-                              "& fieldset": {
-                                borderColor: colors.subText,
-                              },
-                              "&:hover fieldset": {
-                                borderColor: colors.icon,
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: colors.icon,
-                              },
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: colors.subText,
-                              "&.Mui-focused": {
-                                color: colors.icon,
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Μήνυμα"
-                          name="message"
-                          multiline
-                          rows={6}
-                          value={formData.message}
-                          onChange={handleInputChange}
-                          error={!!formErrors.message}
-                          helperText={formErrors.message}
-                          required
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              color: colors.text,
-                              "& fieldset": {
-                                borderColor: colors.subText,
-                              },
-                              "&:hover fieldset": {
-                                borderColor: colors.icon,
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: colors.icon,
-                              },
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: colors.subText,
-                              "&.Mui-focused": {
-                                color: colors.icon,
-                              },
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Button
-                          type="submit"
-                          variant="contained"
-                          size="large"
-                          endIcon={isSubmitting ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-                          sx={{
-                            bgcolor: colors.button,
-                            color: "white",
-                            borderRadius: 2,
-                            px: 4,
-                            py: 1.5,
-                            fontWeight: "bold",
-                            fontSize: 16,
-                            textTransform: "none",
-                            transition: "all 0.2s",
-                            "&:hover": {
-                              bgcolor: colors.buttonHover,
-                              transform: "translateY(-2px)",
-                            },
-                          }}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Αποστολή..." : "Αποστολή Μηνύματος"}
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </Box>
+                        {formErrors.email && (
+                          <p className="text-sm text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-4 w-4" />
+                            {formErrors.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Θέμα *</Label>
+                      <Input
+                        id="subject"
+                        name="subject"
+                        value={formData.subject}
+                        onChange={handleInputChange}
+                        required
+                        className={cn(
+                          "transition-colors duration-100",
+                          darkMode 
+                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                          formErrors.subject && "border-destructive"
+                        )}
+                      />
+                      {formErrors.subject && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {formErrors.subject}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Μήνυμα *</Label>
+                      <Textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        rows={6}
+                        required
+                        className={cn(
+                          "transition-colors duration-100",
+                          darkMode 
+                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                          formErrors.message && "border-destructive"
+                        )}
+                      />
+                      {formErrors.message && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {formErrors.message}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="">
+                      <Button
+                        type="submit"
+                        size="lg"
+                        disabled={isSubmitting}
+                        className="bg-primary text-primary-foreground rounded-md px-6 py-3 font-bold text-base transition-all duration-200 hover:bg-primary/90 hover:-translate-y-0.5 flex items-center gap-2"
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Send className="h-5 w-5" />
+                        )}
+                        {isSubmitting ? "Αποστολή..." : "Αποστολή Μηνύματος"}
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
-            </Grid>
+            </div>
 
             {/* Contact Information */}
-            <Grid item xs={12} md={4}>
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h5"
-                  fontWeight="bold"
-                  sx={{
-                    color: colors.text,
-                    mb: 3,
-                    fontSize: { xs: 20, md: 24 },
-                  }}
-                >
+            <div className="md:col-span-4">
+              <div className="mb-4">
+                <h2 className={cn(
+                  "font-bold mb-3 text-xl md:text-2xl",
+                  darkMode ? "text-foreground" : "text-[#23262b]"
+                )}>
                   Πληροφορίες Επικοινωνίας
-                </Typography>
+                </h2>
                 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div className="flex flex-col gap-3">
                   {contactInfo.map((info, index) => (
                     <Card
                       key={index}
-                      elevation={0}
-                      sx={{
-                        bgcolor: colors.card,
-                        transition: 'background-color 0.1s',
-                        boxShadow: "0 1px 6px 0 rgba(51,122,183,0.04)",
-                      }}
+                      className={cn(
+                        "transition-all duration-300 ease-in-out",
+                        "hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02]",
+                        "cursor-pointer",
+                        darkMode 
+                          ? "bg-[#2a3441] shadow-md hover:shadow-xl" 
+                          : "bg-white shadow-md hover:shadow-xl"
+                      )}
                     >
-                      <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center mb-2">
                           {info.icon}
-                        </Box>
-                        <Typography
-                          variant="h6"
-                          fontWeight="bold"
-                          sx={{ color: colors.text, mb: 1, transition: 'color 0.1s' }}
-                        >
+                        </div>
+                        <h3 className={cn(
+                          "font-bold mb-1 text-lg",
+                          darkMode ? "text-card-foreground" : "text-[#23262b]"
+                        )}>
                           {info.title}
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          sx={{ color: colors.icon, mb: 1, fontWeight: 500, transition: 'color 0.1s' }}
-                        >
+                        </h3>
+                        <div className="text-primary mb-1 font-medium">
                           {info.value}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: colors.subText, transition: 'color 0.1s' }}
-                        >
+                        </div>
+                        <p className={cn(
+                          "text-sm",
+                          darkMode ? "text-muted-foreground" : "text-gray-600"
+                        )}>
                           {info.description}
-                        </Typography>
+                        </p>
                       </CardContent>
                     </Card>
                   ))}
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Box
-        sx={{
-          mt: "auto",
-          py: 3,
-          bgcolor: colors.footer,
-          borderTop: colors.border,
-          textAlign: "center",
-          transition: 'background-color 0.1s, border-top-color 0.1s',
-        }}
-      >
-        <Typography variant="body2" sx={{ color: darkMode ? "grey.400" : "grey.700", transition: 'color 0.1s' }}>
+      <footer className={cn(
+        "mt-auto py-6 border-t text-center transition-colors duration-100 flex items-center justify-center",
+        darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-[#f5f6fa] border-[#e0e0e0]"
+      )}>
+        <p className={cn(
+          "text-sm transition-colors duration-100",
+          darkMode ? "text-gray-400" : "text-gray-700"
+        )}>
           © {new Date().getFullYear()} GradeBook Team.
-        </Typography>
-      </Box>
+        </p>
+      </footer>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      {/* Notification Toast */}
+      {snackbar.open && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+          <div className={cn(
+            "rounded-lg px-4 py-3 flex items-center gap-2 shadow-lg",
+            snackbar.severity === "success" 
+              ? "bg-green-600 text-white" 
+              : "bg-red-600 text-white"
+          )}>
+            {snackbar.severity === "success" ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
+            <span>{snackbar.message}</span>
+            <button
+              onClick={handleCloseSnackbar}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

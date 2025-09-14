@@ -26,6 +26,7 @@ import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { getMyNotifications, markNotificationAsRead } from '../../features/notifications/notificationSlice';
 import { useIsMobile } from '../hooks/use-mobile';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Custom hook to fetch latest version from patch notes
 const useLatestVersion = () => {
@@ -72,6 +73,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
   const { notifications } = useSelector((state) => state.notifications);
+  const { getCurrentThemeData } = useTheme();
   
   // Use the mobile detection hook instead of Tailwind breakpoints
   const isMobile = useIsMobile();
@@ -192,15 +194,55 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   
   // Prepare notification preview
   const notifPreview = (notifications || []).filter(n => !n.isRead).slice(0, 5);
+  
+  // Get themed background color for header
+  const getThemedHeaderBg = () => {
+    const themeData = getCurrentThemeData();
+    if (!themeData) return darkMode ? "bg-[#181b20]/90" : "bg-background/90";
+    
+    try {
+      const primaryColor = darkMode 
+        ? themeData.darkColors?.primary || themeData.colors.primary
+        : themeData.colors.primary;
+      
+      const hex = primaryColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      if (darkMode) {
+        // Make header darker than body for better contrast in dark mode
+        const tintedR = Math.max(18, Math.min(30, 18 + Math.round(r * 0.04)));
+        const tintedG = Math.max(21, Math.min(33, 21 + Math.round(g * 0.04)));
+        const tintedB = Math.max(26, Math.min(38, 26 + Math.round(b * 0.04)));
+        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.6)`;
+      } else {
+        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
+        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
+        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
+        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.7)`;
+      }
+    } catch {
+      return darkMode ? "bg-[#181b20]/90" : "bg-background/90";
+    }
+  };
 
+  const themedHeaderBg = getThemedHeaderBg();
+  
   return (
     <TooltipProvider>
       <header 
         className={cn(
-          "fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+          "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100", // Enhanced frosted glass
           "lg:ml-64 lg:w-[calc(100%-256px)]", // Fixed: 256px = 64 * 4 (lg:w-64 from sidebar)
-          "shadow-lg" // Add shadow for better visual separation
+          "shadow-sm", // Subtle shadow
+          darkMode 
+            ? "border-[#2a3441]/30" 
+            : "border-border/30"
         )}
+        style={{
+          backgroundColor: typeof themedHeaderBg === 'string' && themedHeaderBg.startsWith('rgba') ? themedHeaderBg : undefined
+        }}
       >
         <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
           {/* Sidebar toggle button - shown on mobile, tablet, and small desktop screens */}

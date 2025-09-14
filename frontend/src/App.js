@@ -114,7 +114,6 @@ import { FeatureToggleProvider } from './context/FeatureToggleContext';
 
 // Custom components
 import HomeScreenPrompt from './components/HomeScreenPrompt';
-import AndroidInstallPrompt from './components/AndroidInstallPrompt';
 import FloatingPushToggle from './components/FloatingPushToggle';
 
 function App() {

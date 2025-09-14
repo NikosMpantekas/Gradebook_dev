@@ -48,7 +48,7 @@ export function GradesGraph({ recentGrades }) {
   }, [subjects, selectedSubject]);
 
   return (
-    <Card>
+    <>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center space-x-2">
           <BarChart3 className="h-5 w-5 text-primary" />
@@ -159,6 +159,6 @@ export function GradesGraph({ recentGrades }) {
           </div>
         )}
       </CardContent>
-    </Card>
+    </>
   );
 }

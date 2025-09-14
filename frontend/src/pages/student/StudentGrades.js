@@ -166,10 +166,10 @@ const StudentGrades = () => {
   };
 
   const getGradeColor = (grade) => {
-    if (grade >= 80) return 'bg-green-500 text-white font-semibold';
-    if (grade >= 60) return 'bg-blue-500 text-white font-semibold';
-    if (grade >= 50) return 'bg-yellow-500 text-white font-semibold';
-    return 'bg-red-500 text-white font-semibold';
+    if (grade >= 80) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--success))]';
+    if (grade >= 60) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--info))]';
+    if (grade >= 50) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--warning))]';
+    return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--error))]';
   };
 
   if (isLoading) {
@@ -215,10 +215,10 @@ const StudentGrades = () => {
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
                     <div className="flex items-center justify-center mb-2">
-                      <Award className="h-5 w-5 text-green-500" />
+                      <Award className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">{t('student.highest')}</p>
-                    <p className="text-2xl font-bold text-green-500">{gradeStats.highestGrade}</p>
+                    <p className="text-2xl font-bold" style={{color: 'hsl(var(--success))'}}>{gradeStats.highestGrade}</p>
                   </CardContent>
                 </Card>
 
@@ -226,10 +226,10 @@ const StudentGrades = () => {
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
                     <div className="flex items-center justify-center mb-2">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">{t('student.lowest')}</p>
-                    <p className="text-2xl font-bold text-red-500">{gradeStats.lowestGrade}</p>
+                    <p className="text-2xl font-bold" style={{color: 'hsl(var(--error))'}}>{gradeStats.lowestGrade}</p>
                   </CardContent>
                 </Card>
 
@@ -237,10 +237,10 @@ const StudentGrades = () => {
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
                     <div className="flex items-center justify-center mb-2">
-                      <CheckCircle className="h-5 w-5 text-blue-500" />
+                      <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">{t('student.passingRate')}</p>
-                    <p className="text-2xl font-bold text-blue-500">{gradeStats.passingRate}%</p>
+                    <p className="text-2xl font-bold" style={{color: 'hsl(var(--info))'}}>{gradeStats.passingRate}%</p>
                   </CardContent>
                 </Card>
               </div>
@@ -331,11 +331,7 @@ const StudentGrades = () => {
                       {filteredGrades
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                         .map((grade) => (
-                          <TableRow key={grade._id} className={`border-b hover:bg-gray-50 ${
-                            darkMode 
-                              ? 'border-gray-600 hover:bg-gray-900' 
-                              : 'border-gray-200'
-                          }`}>
+                          <TableRow key={grade._id} className="border-b hover:bg-muted/50 transition-colors duration-200">
                             <TableCell className="font-medium">
                               {grade.subject?.name || 'N/A'}
                             </TableCell>
@@ -356,9 +352,7 @@ const StudentGrades = () => {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleViewGrade(grade._id)}
-                                    className={`h-8 w-8 p-0 hover:bg-gray-100 ${
-                                      darkMode ? 'hover:bg-gray-700' : ''
-                                    }`}
+                                    className="h-8 w-8 p-0 hover:bg-muted/50 transition-colors duration-200"
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>

@@ -3,9 +3,12 @@ import axios from 'axios';
 import { API_URL, appConfig } from '../../config/appConfig';
 import { useSelector } from 'react-redux';
 import { Separator } from '../ui/separator';
+import { useTheme } from '../../contexts/ThemeContext';
+import { cn } from '../../lib/utils';
 
 const Footer = () => {
   const { darkMode } = useSelector((state) => state.ui);
+  const { getCurrentThemeData } = useTheme();
   
   // Start with appConfig version immediately (no loading state)
   const [version, setVersion] = useState(appConfig.version);
@@ -63,18 +66,61 @@ const Footer = () => {
     fetchLatestVersion();
   }, []);
   
+  // Get themed background color matching the body
+  const getThemedFooterBg = () => {
+    const themeData = getCurrentThemeData();
+    if (!themeData) return darkMode ? "#181b20" : undefined;
+    
+    try {
+      const primaryColor = darkMode 
+        ? themeData.darkColors?.primary || themeData.colors.primary
+        : themeData.colors.primary;
+      
+      const hex = primaryColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      if (darkMode) {
+        // Same tint as the main background
+        const tintedR = Math.max(24, Math.min(35, 24 + Math.round(r * 0.05)));
+        const tintedG = Math.max(27, Math.min(38, 27 + Math.round(g * 0.05)));
+        const tintedB = Math.max(32, Math.min(43, 32 + Math.round(b * 0.05)));
+        return `rgb(${tintedR}, ${tintedG}, ${tintedB})`;
+      } else {
+        // Same tint as the main background  
+        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
+        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
+        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
+        return `rgb(${tintedR}, ${tintedG}, ${tintedB})`;
+      }
+    } catch {
+      return darkMode ? "#181b20" : undefined;
+    }
+  };
+  
+  const themedFooterBg = getThemedFooterBg();
+  
   return (
-    <footer className="w-full border-t border-border bg-background transition-colors duration-200">
+    <footer 
+      className={cn(
+        "w-full border-t border-border transition-all duration-200",
+        !themedFooterBg && "bg-background"
+      )}
+      style={{
+        backgroundColor: themedFooterBg || undefined
+      }}
+    >
       <div className="container mx-auto px-4 h-28 flex items-center justify-center">
         <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm" style={{ color: darkMode ? '#9CA3AF' : '#6B7280' }}>
             © {new Date().getFullYear()} GradeBook - Progressive Web App created by the GradeBook Team.
           </p>
           
           {showVersion && (
             <>
-              <Separator className="w-20 mx-auto" />
-              <p className="text-xs text-muted-foreground/70">
+              <Separator className="w-20 mx-auto" style={{ backgroundColor: darkMode ? '#4B5563' : '#D1D5DB' }} />
+              <p className="text-xs" style={{ color: darkMode ? '#6B7280' : '#9CA3AF' }}>
                 Version: {version}
               </p>
             </>

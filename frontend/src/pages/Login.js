@@ -44,6 +44,7 @@ const Login = () => {
   const { user, isLoading, isError, isSuccess, message } = useSelector(
     (state) => state.auth
   );
+  const { darkMode } = useSelector((state) => state.ui);
 
   useEffect(() => {
     // Debug the login state
@@ -123,31 +124,31 @@ const Login = () => {
     }
   };
 
-  // Zoom animation sequence
+  // Professional zoom animation sequence - faster and cleaner
   const startZoomAnimation = async (user) => {
-    console.log('Starting smooth zoom animation sequence');
+    console.log('Starting professional login animation');
     
-    // Step 1: Brief validation state (200ms)
+    // Step 1: Brief validation state (150ms)
     setAnimationStep('validating');
     
     // Start preloading dashboard data immediately
     preloadDashboard(user);
     
-    // Step 2: Calculate gap position and start scaling (600ms)
+    // Step 2: Calculate gap position and start scaling (300ms)
     setTimeout(() => {
       calculateGapPosition();
       setAnimationStep('scaling');
       
-      // Step 3: Zoom into the gap (800ms)
+      // Step 3: Zoom into the gap (400ms)
       setTimeout(() => {
         setAnimationStep('zooming');
         
-        // Step 4: Navigate after zoom completes (800ms)
+        // Step 4: Navigate after zoom completes (400ms)
         setTimeout(() => {
           performNavigation(user);
-        }, 800); // Faster zoom completion
-      }, 600); // Faster scaling
-    }, 200); // Brief validation delay
+        }, 400); // Faster navigation
+      }, 300); // Faster scaling
+    }, 150); // Brief validation delay
   };
   
   const performNavigation = (user) => {
@@ -311,35 +312,40 @@ const Login = () => {
   };
 
   return (
-    <div 
-      ref={containerRef}
-      className={cn(
-        "container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden",
-        animationStep === 'scaling' && "scale-150",
-        animationStep === 'zooming' && "scale-[50] opacity-0"
-      )}
-      style={{
-        transformOrigin: animationStep === 'zooming' ? `${gapPosition.left}% ${gapPosition.top}%` : 'center',
-        transition: animationStep === 'scaling' ? 'transform 600ms linear' : 
-                   animationStep === 'zooming' ? 'transform 800ms linear, opacity 800ms linear' : 
-                   'transform 200ms linear'
-      }}
-    >
+    <div className={cn(
+      "min-h-screen transition-colors duration-100",
+      darkMode ? "bg-[#181b20] text-foreground" : "bg-[#f5f6fa] text-[#23262b]"
+    )}>
+      <div 
+        ref={containerRef}
+        className={cn(
+          "container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden",
+          animationStep === 'scaling' && "scale-150",
+          animationStep === 'zooming' && "scale-[50] opacity-0"
+        )}
+        style={{
+          transformOrigin: animationStep === 'zooming' ? `${gapPosition.left}% ${gapPosition.top}%` : 'center',
+          transition: animationStep === 'scaling' ? 'transform 300ms ease-out' : 
+                     animationStep === 'zooming' ? 'transform 400ms ease-in, opacity 400ms ease-in' : 
+                     'transform 150ms ease-out'
+        }}
+      >
       <Card 
         ref={formRef}
         className={cn(
-          "w-full",
-          animationStep === 'validating' && "scale-105 shadow-lg transition-all duration-200 ease-linear",
-          animationStep === 'scaling' && "scale-110 shadow-xl transition-all duration-600 ease-linear",
-          animationStep === 'zooming' && "scale-100 transition-all duration-800 ease-linear"
+          "w-full transition-colors duration-100",
+          darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
+          animationStep === 'validating' && "scale-[1.02] shadow-md transition-all duration-150 ease-out",
+          animationStep === 'scaling' && "scale-[1.05] shadow-lg transition-all duration-300 ease-out",
+          animationStep === 'zooming' && "scale-100 transition-all duration-400 ease-in"
         )}
       >
         <CardHeader className="flex flex-col items-center space-y-2">
           <Avatar className={cn(
-            "bg-primary transition-all ease-linear",
-            animationStep === 'validating' && "animate-pulse bg-blue-500 duration-200",
-            animationStep === 'scaling' && "bg-green-500 scale-125 duration-600",
-            animationStep === 'zooming' && "bg-green-600 scale-150 duration-800"
+            "bg-[#337ab7] transition-all ease-out",
+            animationStep === 'validating' && "animate-pulse duration-150",
+            animationStep === 'scaling' && "bg-[#22c55e] scale-110 duration-300",
+            animationStep === 'zooming' && "bg-[#16a34a] scale-125 duration-400"
           )}>
             <AvatarFallback>
               {animationStep === 'validating' ? (
@@ -352,9 +358,10 @@ const Login = () => {
             </AvatarFallback>
           </Avatar>
           <CardTitle className={cn(
-            "text-2xl font-normal transition-all ease-linear",
-            animationStep === 'validating' && "text-blue-600 duration-200",
-            (animationStep === 'scaling' || animationStep === 'zooming') && "text-green-600 duration-600"
+            "text-2xl font-normal transition-all ease-out",
+            darkMode ? "text-foreground" : "text-[#23262b]",
+            animationStep === 'validating' && "duration-150",
+            (animationStep === 'scaling' || animationStep === 'zooming') && "text-[#16a34a] duration-300"
           )}>
             {animationStep === 'validating' ? 'Validating...' : 
              (animationStep === 'scaling' || animationStep === 'zooming') ? 'Logging in...' : 
@@ -375,6 +382,12 @@ const Login = () => {
                 autoFocus
                 value={email}
                 onChange={onChange}
+                className={cn(
+                  "transition-colors duration-100",
+                  darkMode 
+                    ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                    : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                )}
               />
             </div>
             
@@ -389,6 +402,12 @@ const Login = () => {
                 required
                 value={password}
                 onChange={onChange}
+                className={cn(
+                  "transition-colors duration-100",
+                  darkMode 
+                    ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                    : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                )}
               />
             </div>
             
@@ -409,10 +428,10 @@ const Login = () => {
             <Button
               type="submit"
               className={cn(
-                "w-full transition-all duration-500 ease-in-out transform",
-                animationStep === 'validating' && "bg-yellow-500 hover:bg-yellow-600 scale-105 shadow-lg",
-                animationStep === 'success' && "bg-green-500 hover:bg-green-600 scale-110 shadow-xl",
-                animationStep === 'zooming' && "scale-95 opacity-70"
+                "w-full transition-all duration-200 ease-out",
+                animationStep === 'validating' && "scale-[0.98] opacity-80",
+                animationStep === 'scaling' && "scale-[1.02] shadow-sm",
+                animationStep === 'zooming' && "scale-95 opacity-50"
               )}
               disabled={isLoading || animationStep !== 'idle'}
             >
@@ -439,7 +458,12 @@ const Login = () => {
             <Button
               type="button"
               variant="ghost"
-              className="w-full bg-muted hover:bg-muted-foreground/20 text-foreground hover:text-foreground transition-colors"
+              className={cn(
+                "w-full transition-colors",
+                darkMode 
+                  ? "bg-muted hover:bg-muted-foreground/20 text-foreground hover:text-foreground" 
+                  : "bg-gray-100 hover:bg-gray-200 text-[#23262b] hover:text-[#23262b]"
+              )}
               onClick={handleForgotOpen}
             >
               Forgot password?
@@ -448,7 +472,12 @@ const Login = () => {
             <Button
               asChild
               variant="outline"
-              className="w-full"
+              className={cn(
+                "w-full transition-colors duration-100",
+                darkMode 
+                  ? "bg-[#1a1e24] border-[#2a3441] text-foreground hover:bg-[#2a3441] hover:text-foreground" 
+                  : "bg-[#f0f2f5] border-[#d1d5db] text-[#23262b] hover:bg-[#e5e7eb] hover:text-[#23262b]"
+              )}
             >
               <RouterLink to="/" className="flex items-center justify-center space-x-2">
                 <ArrowLeft className="h-4 w-4" />
@@ -461,7 +490,10 @@ const Login = () => {
 
       {/* Forgot password dialog */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent className="sm:max-w-md fade-in">
+        <DialogContent className={cn(
+          "sm:max-w-md fade-in transition-colors duration-100",
+          darkMode ? "bg-[#23262b] border-[#23262b] text-foreground" : "bg-white border-[#e0e0e0] text-[#23262b]"
+        )}>
           <DialogHeader>
             <DialogTitle>Forgot Password</DialogTitle>
             <DialogDescription>
@@ -469,7 +501,10 @@ const Login = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <p className={cn(
+              "text-sm transition-colors duration-100",
+              darkMode ? "text-muted-foreground" : "text-gray-600"
+            )}>
               Enter the email you use to sign in. We will notify the appropriate administrator to help reset your password.
             </p>
             <form onSubmit={handleForgot} className="space-y-4" autoComplete="off">
@@ -483,6 +518,12 @@ const Login = () => {
                   onChange={(e) => setForgotEmail(e.target.value)}
                   autoComplete="off"
                   autoFocus
+                  className={cn(
+                    "transition-colors duration-100",
+                    darkMode 
+                      ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                      : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                  )}
                 />
               </div>
               <DialogFooter>
@@ -505,11 +546,15 @@ const Login = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="mt-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} GradeBook - Progressive Web App<br />
-          Created by the GradeBook Team
-        </p>
+        <div className="mt-8 text-center">
+          <p className={cn(
+            "text-sm transition-colors duration-100",
+            darkMode ? "text-muted-foreground" : "text-gray-600"
+          )}>
+            © {new Date().getFullYear()} GradeBook - Progressive Web App<br />
+            Created by the GradeBook Team
+          </p>
+        </div>
       </div>
     </div>
   );
