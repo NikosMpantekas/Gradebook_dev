@@ -61,6 +61,16 @@
     --sidebar-accent-foreground: var(--accent-foreground);
     --sidebar-border: var(--border);
     --sidebar-ring: var(--ring);
+    
+    /* Semantic notification colors that adapt to theme */
+    --success: 142 70% 49%;        /* Default green success */
+    --success-foreground: 355 20% 98%;
+    --warning: 38 92% 50%;          /* Default amber warning */
+    --warning-foreground: 0 0% 0%;
+    --info: 217 91% 60%;            /* Default blue info */
+    --info-foreground: 0 0% 98%;
+    --error: 0 84% 60%;             /* Default red error */
+    --error-foreground: 0 0% 98%;
   }
 
   .dark {
@@ -88,7 +98,7 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 18%;
+    --border: 220 13% 12%;
     --input: 220 13% 18%;
     --ring: 207 56% 46%;
     
@@ -100,6 +110,16 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Dark mode semantic notification colors */
+    --success: 142 76% 73%;         /* Brighter green for dark */
+    --success-foreground: 142 10% 15%;
+    --warning: 38 95% 69%;          /* Brighter amber for dark */
+    --warning-foreground: 20 14% 4%;
+    --info: 217 91% 73%;            /* Brighter blue for dark */
+    --info-foreground: 222 84% 5%;
+    --error: 0 93% 73%;             /* Brighter red for dark */
+    --error-foreground: 0 13% 6%;
   }
 }
 
@@ -625,5 +645,37 @@
 }
 *::-webkit-scrollbar {
   display: none;
+}
+
+/* ================================
+   Subtle Dashboard Cards
+   - Blend with background, vibrant accents only
+   ================================ */
+.dark [data-card], .dark .bg-card {
+  background-color: hsl(var(--background) / 0.3) !important;
+  backdrop-filter: blur(8px);
+  border-color: hsl(var(--border) / 0.2) !important;
+}
+
+.light [data-card], .light .bg-card {
+  background-color: hsl(var(--background) / 0.4) !important;
+  backdrop-filter: blur(8px);
+  border-color: hsl(var(--border) / 0.3) !important;
+}
+
+/* Make cards even more subtle - override Card component default */
+[class*="bg-card"] {
+  background-color: transparent !important;
+  backdrop-filter: blur(12px);
+}
+
+.dark [class*="bg-card"] {
+  background-color: hsl(217 32% 12% / 0.2) !important;
+  border-color: hsl(217 32% 17% / 0.3) !important;
+}
+
+:root:not(.dark) [class*="bg-card"] {
+  background-color: hsl(var(--background) / 0.3) !important;
+  border-color: hsl(var(--border) / 0.25) !important;
 }
 

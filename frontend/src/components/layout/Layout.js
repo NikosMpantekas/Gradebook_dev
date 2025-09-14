@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { cn } from '../../lib/utils';
+import { useTheme } from '../../contexts/ThemeContext';
 
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -25,6 +26,7 @@ const Layout = () => {
 
   const { darkMode } = useSelector((state) => state.ui);
   const { user } = useSelector((state) => state.auth);
+  const { getCurrentThemeData } = useTheme();
 
   // Debug logging for layout rendering
   useEffect(() => {
@@ -48,6 +50,43 @@ const Layout = () => {
 
   // Sidebar width for layout spacing
   const drawerWidth = 256; // Fixed: 256px = 64 * 4 (lg:w-64)
+  
+  // Get current theme data for background hue shift
+  const themeData = getCurrentThemeData();
+  
+  // Create hue-shifted background based on primary color
+  const getThemedBackground = () => {
+    if (!themeData) return darkMode ? "bg-[#181b20]" : "bg-background";
+    
+    try {
+      const primaryColor = darkMode 
+        ? themeData.darkColors?.primary || themeData.colors.primary
+        : themeData.colors.primary;
+      
+      // Convert hex to RGB to create a subtle hue-shifted background
+      const hex = primaryColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      if (darkMode) {
+        // Create a very subtle tint in dark mode
+        const tintedR = Math.max(24, Math.min(35, 24 + Math.round(r * 0.05)));
+        const tintedG = Math.max(27, Math.min(38, 27 + Math.round(g * 0.05)));
+        const tintedB = Math.max(32, Math.min(43, 32 + Math.round(b * 0.05)));
+        return `rgb(${tintedR}, ${tintedG}, ${tintedB})`;
+      } else {
+        // Create a very subtle tint in light mode
+        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
+        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
+        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
+        return `rgb(${tintedR}, ${tintedG}, ${tintedB})`;
+      }
+    } catch (error) {
+      console.error('Error creating themed background:', error);
+      return darkMode ? "bg-[#181b20]" : "bg-background";
+    }
+  };
 
   // Store the current section in localStorage to maintain context across refreshes
   useEffect(() => {
@@ -88,11 +127,18 @@ const Layout = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileOpen, isMobile]);
 
+  const themedBg = getThemedBackground();
+  
   return (
-    <div className={cn(
-      "flex min-h-screen layout-stable",
-      "bg-background"
-    )}>
+    <div 
+      className={cn(
+        "flex min-h-screen layout-stable transition-all duration-100",
+        "text-foreground"
+      )}
+      style={{
+        backgroundColor: typeof themedBg === 'string' && themedBg.startsWith('rgb') ? themedBg : undefined
+      }}
+    >
       <Header 
         drawerWidth={drawerWidth} 
         handleDrawerToggle={handleDrawerToggle} 

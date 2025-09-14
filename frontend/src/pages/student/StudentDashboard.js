@@ -343,8 +343,8 @@ const StudentDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
                 onClick={() => navigate('/app/student/grades')}
-                variant="outline"
-                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+                variant="ghost"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
               >
                 <BookOpen className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
                 <span className="transition-colors duration-300 group-hover:text-primary">{t('student.viewMyGrades')}</span>
@@ -352,8 +352,8 @@ const StudentDashboard = () => {
 
               <Button
                 onClick={() => navigate('/app/student/schedule')}
-                variant="outline"
-                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+                variant="ghost"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
               >
                 <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
                 <span className="transition-colors duration-300 group-hover:text-primary">{t('student.mySchedule')}</span>
@@ -361,16 +361,16 @@ const StudentDashboard = () => {
 
               <Button
                 onClick={() => navigate('/app/student/notifications')}
-                variant="outline"
-                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+                variant="ghost"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
               >
                 <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
                 <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
                 onClick={() => navigate('/app/student/grades')}
-                variant="outline"
-                className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group"
+                variant="ghost"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
               >
                 <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
                 <span className="transition-colors duration-300 group-hover:text-primary">{t('student.myStats')}</span>
@@ -407,7 +407,7 @@ const StudentDashboard = () => {
               onClick={() => navigate('/app/notifications')}
               className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
             >
-              {t('student.viewAll')}
+              {t('navigation.viewAll')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -420,21 +420,21 @@ const StudentDashboard = () => {
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-card/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
                     style={{
-                      borderColor: notification.type === 'info' ? '#3b82f6' :
-                                  notification.type === 'success' ? '#10b981' :
-                                  notification.type === 'warning' ? '#f59e0b' :
-                                  notification.type === 'error' ? '#ef4444' : 'hsl(var(--background))',
+                      borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
+                                  notification.type === 'success' ? 'hsl(var(--success))' :
+                                  notification.type === 'warning' ? 'hsl(var(--warning))' :
+                                  notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
                       animationDelay: `${(index + 1) * 0.1}s`
                     }}
                     onClick={() => navigate(`/app/notifications/${notification._id}`)}
                   >
                     <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-                      {notification.type === 'info' && <Info className="h-5 w-5 text-blue-500" />}
-                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                      {notification.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
-                      {notification.type === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
+                      {notification.type === 'info' && <Info className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />}
+                      {notification.type === 'success' && <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />}
+                      {notification.type === 'warning' && <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--warning))'}} />}
+                      {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>

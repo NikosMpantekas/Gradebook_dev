@@ -34,7 +34,7 @@ import {
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback} from '../ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
-import { Sheet, SheetContent } from '../ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 import { useSelector, useDispatch } from 'react-redux';
@@ -42,6 +42,7 @@ import { logout } from '../../features/auth/authSlice';
 import { API_URL } from '../../config/appConfig';
 import { ScrollArea } from '../ui/scroll-area';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { t } = useTranslation();
@@ -49,7 +50,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { darkMode } = useSelector((state) => state.ui);
   const { isFeatureEnabled, loading: permissionsLoading } = useFeatureToggles();
+  const { getCurrentThemeData } = useTheme();
   
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [logoutAnimating, setLogoutAnimating] = useState(false);
@@ -298,12 +301,44 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       handleDrawerToggle();
     }
   };
+  
+  // Get themed background color for sidebar (desktop)
+  const getThemedSidebarBg = () => {
+    const themeData = getCurrentThemeData();
+    if (!themeData) return darkMode ? "bg-[#181b20]/95" : "bg-background/95";
+    
+    try {
+      const primaryColor = darkMode 
+        ? themeData.darkColors?.primary || themeData.colors.primary
+        : themeData.colors.primary;
+      
+      const hex = primaryColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      if (darkMode) {
+        // Make sidebar darker than body for better contrast in dark mode
+        const tintedR = Math.max(19, Math.min(31, 19 + Math.round(r * 0.04)));
+        const tintedG = Math.max(22, Math.min(34, 22 + Math.round(g * 0.04)));
+        const tintedB = Math.max(27, Math.min(39, 27 + Math.round(b * 0.04)));
+        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.98)`;
+      } else {
+        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
+        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
+        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
+        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.95)`;
+      }
+    } catch {
+      return darkMode ? "bg-[#181b20]/95" : "bg-background/95";
+    }
+  };
 
   // Sidebar content
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-gradient-to-b from-card/50 to-card">
+    <div className="flex flex-col h-full">
       {/* User Profile Section */}
-      <div className="p-4 bg-gradient-to-br from-primary/5 via-background/50 to-secondary/5 border-b border-border/50">
+      <div className="p-4">
         <div className="flex flex-col items-center space-y-3">
           <Avatar className="h-16 w-16 hover:scale-105 transition-transform duration-200 border-2 border-primary/20 shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10">
             <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/20 to-secondary/20 text-primary">
@@ -328,7 +363,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       </div>
 
       {/* Navigation Menu */}
-      <ScrollArea className="flex-1 px-3 py-4 space-y-1 bg-gradient-to-b from-card/20 to-transparent">
+      <ScrollArea className="flex-1 px-3 py-4 space-y-1">
         <nav className="space-y-2">
         {/* Dashboard Button - Role Specific */}
         <Button
@@ -384,7 +419,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       </div>
 
       {/* Profile and Logout Section */}
-      <div className="p-3 space-y-2 bg-gradient-to-br from-secondary/5 to-primary/5 border-t border-border/50">
+      <div className="p-3 space-y-2">
         {/* Profile Button - Always available */}
         <Button
           variant={isPathSelected('/app/profile') ? "secondary" : "ghost"}
@@ -416,15 +451,57 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       </div>
     </div>
   );
-
+  
+  // Get themed background for mobile sidebar with frosted glass effect
+  const getThemedMobileSidebarBg = () => {
+    const themeData = getCurrentThemeData();
+    if (!themeData) return darkMode ? "rgba(24, 27, 32, 0.6)" : "rgba(248, 250, 250, 0.7)";
+    
+    try {
+      const primaryColor = darkMode 
+        ? themeData.darkColors?.primary || themeData.colors.primary
+        : themeData.colors.primary;
+      
+      const hex = primaryColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      if (darkMode) {
+        // Frosted glass effect for mobile - lower opacity
+        const tintedR = Math.max(19, Math.min(31, 19 + Math.round(r * 0.04)));
+        const tintedG = Math.max(22, Math.min(34, 22 + Math.round(g * 0.04)));
+        const tintedB = Math.max(27, Math.min(39, 27 + Math.round(b * 0.04)));
+        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.6)`;
+      } else {
+        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
+        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
+        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
+        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.7)`;
+      }
+    } catch {
+      return darkMode ? "rgba(24, 27, 32, 0.6)" : "rgba(248, 250, 250, 0.7)";
+    }
+  };
+  
+  const themedSidebarBg = getThemedSidebarBg();
+  const themedMobileSidebarBg = getThemedMobileSidebarBg();
+  
   return (
     <>
       {/* Mobile Sidebar */}
       <Sheet open={mobileOpen} onOpenChange={handleDrawerToggle}>
         <SheetContent 
           side="left" 
-          className="w-64 p-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-r border-border overflow-hidden sidebar-animation"
+          className="w-64 p-0 backdrop-blur-xl overflow-hidden sidebar-animation transition-all duration-100 border-r border-[#2a3441]/30"
+          style={{
+            backgroundColor: typeof themedMobileSidebarBg === 'string' && themedMobileSidebarBg.startsWith('rgba') ? themedMobileSidebarBg : undefined
+          }}
         >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+            <SheetDescription>Main navigation menu for the application</SheetDescription>
+          </SheetHeader>
           <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
             {sidebarContent}
           </div>
@@ -432,13 +509,23 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       </Sheet>
 
       {/* Desktop Sidebar - No animations */}
-      <aside className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 bg-card border-r border-border no-animation overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
+      <aside 
+        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30"
+        style={{
+          backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
+        }}
+      >
         {sidebarContent}
       </aside>
 
       {/* Logout Confirmation Dialog */}
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent className="w-[90vw] max-w-sm sm:max-w-md fade-in">
+        <DialogContent className={cn(
+          "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
+          darkMode 
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+            : "bg-background text-foreground border-border"
+        )}>
           <DialogHeader>
             <DialogTitle>{t('sidebar.logoutConfirmTitle')}</DialogTitle>
           </DialogHeader>

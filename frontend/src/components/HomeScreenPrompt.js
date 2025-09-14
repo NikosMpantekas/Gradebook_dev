@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { X, Smartphone, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { cn } from '../lib/utils';
 
 const HomeScreenPrompt = () => {
+  const { darkMode } = useSelector((state) => state.ui);
   const [open, setOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
@@ -90,7 +93,12 @@ const HomeScreenPrompt = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={cn(
+        "max-w-md transition-colors duration-100",
+        darkMode 
+          ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          : "bg-[#f5f6fa] text-[#23262b] border-[#e0e0e0]/50"
+      )}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center space-x-2">
@@ -178,7 +186,12 @@ const HomeScreenPrompt = () => {
             </div>
           )}
           
-          <div className="bg-muted/50 p-3 rounded-lg">
+          <div className={cn(
+            "p-3 rounded-lg transition-colors duration-100",
+            darkMode 
+              ? "bg-[#2a3441]/50" 
+              : "bg-[#e0e0e0]/30"
+          )}>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground">
               <Smartphone className="h-4 w-4" />
               <span>Installation is free and takes just a few seconds</span>
