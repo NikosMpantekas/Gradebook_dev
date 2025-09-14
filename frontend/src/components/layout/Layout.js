@@ -133,7 +133,7 @@ const Layout = () => {
     <div 
       className={cn(
         "flex min-h-screen layout-stable transition-all duration-100",
-        "text-foreground"
+        "text-foreground pl-safe-left pr-safe-right"
       )}
       style={{
         backgroundColor: typeof themedBg === 'string' && themedBg.startsWith('rgb') ? themedBg : undefined
@@ -150,21 +150,22 @@ const Layout = () => {
       />
       <main className={cn(
         "flex-1 flex flex-col min-h-screen overflow-x-hidden layout-stable",
-        "lg:ml-64" // Fixed: Account for sidebar width on desktop (64 * 4 = 256px)
+        "lg:sidebar-aware-content" // Account for sidebar width and safe area on desktop
       )}>
-        {/* Main content area */}
+        {/* Main content area with safe area support */}
         <div className={cn(
-          "flex-1 flex flex-col w-full",
-          "mt-14 sm:mt-16", // Account for header height
-          "p-1 sm:p-2 md:p-3"
+          "flex-1 flex flex-col w-full main-content-safe-area layout-main-content layout-content-with-sidebar",
+          "p-1 sm:p-2 md:p-3", // Standard padding for content
+          // On desktop, ensure content doesn't extend into sidebar area
+          isMobile ? "" : "pl-2 md:pl-3" // Override left padding on desktop since sidebar provides the spacing
         )}>
           <OfflineDetector>
             <Outlet />
           </OfflineDetector>
         </div>
         
-        {/* Footer - positioned at bottom of main content */}
-        <div className="mt-auto pt-4">
+        {/* Footer - positioned at bottom of main content with safe area */}
+        <div className="mt-auto pt-4 pb-safe-bottom">
           <Footer />
         </div>
       </main>
