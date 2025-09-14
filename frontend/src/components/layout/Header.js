@@ -233,8 +233,8 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     <TooltipProvider>
       <header 
         className={cn(
-          "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100 header-safe-area", // Enhanced frosted glass with safe area
-          "lg:sidebar-aware-content", // Use safe-area aware sidebar positioning
+          "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100", // Enhanced frosted glass
+          "lg:ml-64 lg:w-[calc(100%-256px)]", // Fixed: 256px = 64 * 4 (lg:w-64 from sidebar)
           "shadow-sm", // Subtle shadow
           darkMode 
             ? "border-[#2a3441]/30" 
