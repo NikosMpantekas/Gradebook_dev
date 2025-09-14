@@ -15,6 +15,21 @@ const ScrollFix = () => {
         height: auto !important;
         overflow-y: auto !important;
         overflow-x: hidden;
+        /* Fix iOS overscroll background color */
+        background-color: #181b20 !important;
+      }
+      
+      /* Dynamic background color for light/dark mode support */
+      @media (prefers-color-scheme: light) {
+        body, html, #root {
+          background-color: #f5f6fa !important;
+        }
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        body, html, #root {
+          background-color: #181b20 !important;
+        }
       }
       
       /* Fix for shadcn/ui containers that might block scrolling */
@@ -44,6 +59,36 @@ const ScrollFix = () => {
         width: 100%;
         max-width: 1200px;
         margin: 0 auto;
+      }
+      
+      /* iOS PWA specific fixes for overscroll */
+      @supports (-webkit-touch-callout: none) {
+        /* iOS Safari specific */
+        body {
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: none;
+          background-attachment: fixed;
+        }
+        
+        /* Fix for iOS PWA overscroll bounce showing wrong color */
+        html {
+          background-color: inherit;
+          overscroll-behavior: none;
+        }
+        
+        #root {
+          overscroll-behavior: none;
+          background-color: inherit;
+        }
+      }
+      
+      /* PWA specific fixes */
+      @media (display-mode: standalone) {
+        body, html, #root {
+          overscroll-behavior: none !important;
+          -webkit-overflow-scrolling: touch;
+          background-attachment: fixed;
+        }
       }
       
       /* Fix for any remaining Material-UI classes that might exist */

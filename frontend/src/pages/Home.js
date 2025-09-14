@@ -105,9 +105,9 @@ export default function Home() {
     )}>
       <header 
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 w-full transition-colors duration-100",
-          darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
-          "border-b shadow-sm"
+          "fixed top-0 left-0 right-0 z-50 w-full transition-colors duration-100 backdrop-blur-xl",
+          darkMode ? "bg-[#23262b]/80 border-[#23262b]/50" : "bg-white/80 border-[#e0e0e0]/50",
+          "border-b shadow-lg"
         )}
       >
         <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
