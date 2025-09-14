@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { X, Smartphone, Download } from 'lucide-react';
+import { Smartphone, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '../lib/utils';
@@ -92,7 +92,7 @@ const HomeScreenPrompt = () => {
   if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className={cn(
         "max-w-md transition-colors duration-100",
         darkMode 
@@ -100,20 +100,10 @@ const HomeScreenPrompt = () => {
           : "bg-[#f5f6fa] text-[#23262b] border-[#e0e0e0]/50"
       )}>
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center space-x-2">
-              <Smartphone className="h-5 w-5" />
-              <span>Add to Home Screen</span>
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="flex items-center space-x-2">
+            <Smartphone className="h-5 w-5" />
+            <span>Add to Home Screen</span>
+          </DialogTitle>
           <DialogDescription>
             Install GradeBook on your device for a better experience
           </DialogDescription>
