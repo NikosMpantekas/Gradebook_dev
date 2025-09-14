@@ -140,12 +140,22 @@ const AndroidInstallPrompt = () => {
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDismiss}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              Install GradeBook App
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-semibold">
+                Install GradeBook App
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDismiss}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
             <DialogDescription>
               Get the full app experience by installing GradeBook on your device
             </DialogDescription>
