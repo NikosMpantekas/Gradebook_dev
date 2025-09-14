@@ -10,10 +10,25 @@ const ScrollFix = () => {
     const style = document.createElement('style');
     style.textContent = `
       /* Critical scroll fixes */
-      body, html, #root {
+      html {
+        height: 100%;
+        overflow-x: hidden;
+        /* Fix iOS overscroll background color */
+        background-color: #181b20 !important;
+      }
+      
+      body {
         min-height: 100%;
-        height: auto !important;
+        height: auto;
         overflow-y: auto !important;
+        overflow-x: hidden;
+        /* Fix iOS overscroll background color */
+        background-color: #181b20 !important;
+      }
+      
+      #root {
+        min-height: 100%;
+        height: auto;
         overflow-x: hidden;
         /* Fix iOS overscroll background color */
         background-color: #181b20 !important;
@@ -21,13 +36,13 @@ const ScrollFix = () => {
       
       /* Dynamic background color for light/dark mode support */
       @media (prefers-color-scheme: light) {
-        body, html, #root {
+        html, body, #root {
           background-color: #f5f6fa !important;
         }
       }
       
       @media (prefers-color-scheme: dark) {
-        body, html, #root {
+        html, body, #root {
           background-color: #181b20 !important;
         }
       }
@@ -63,31 +78,60 @@ const ScrollFix = () => {
       
       /* iOS PWA specific fixes for overscroll */
       @supports (-webkit-touch-callout: none) {
-        /* iOS Safari specific */
-        body {
-          -webkit-overflow-scrolling: touch;
-          overscroll-behavior: none;
-          background-attachment: fixed;
-        }
-        
-        /* Fix for iOS PWA overscroll bounce showing wrong color */
+        /* iOS Safari specific - preserve fixed positioning */
         html {
+          position: relative;
+          height: 100%;
           background-color: inherit;
           overscroll-behavior: none;
+        }
+        
+        body {
+          position: relative;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: none;
+          /* Remove background-attachment: fixed as it can interfere with positioning */
         }
         
         #root {
+          position: relative;
           overscroll-behavior: none;
           background-color: inherit;
+        }
+        
+        /* Ensure fixed headers work properly on iOS */
+        header[class*="fixed"] {
+          position: -webkit-sticky !important;
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 50 !important;
         }
       }
       
       /* PWA specific fixes */
       @media (display-mode: standalone) {
-        body, html, #root {
+        html {
+          position: relative;
+          height: 100%;
+          overscroll-behavior: none !important;
+        }
+        
+        body {
+          position: relative;
           overscroll-behavior: none !important;
           -webkit-overflow-scrolling: touch;
-          background-attachment: fixed;
+        }
+        
+        #root {
+          position: relative;
+          overscroll-behavior: none !important;
+        }
+        
+        /* Preserve sticky/fixed headers in PWA mode */
+        header[class*="fixed"] {
+          position: -webkit-sticky !important;
+          position: sticky !important;
+          top: 0 !important;
         }
       }
       

@@ -44,7 +44,8 @@ const Login = () => {
   const { user, isLoading, isError, isSuccess, message } = useSelector(
     (state) => state.auth
   );
-  const { darkMode } = useSelector((state) => state.ui);
+  // Fixed theme for login page - always dark for consistency
+  const [darkMode] = useState(true);
 
   useEffect(() => {
     // Debug the login state
@@ -371,7 +372,9 @@ const Login = () => {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
             <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.emailPlaceholder')}</Label>
+              <Label htmlFor="email" className={cn(
+                darkMode ? "text-foreground" : "text-[#23262b]"
+              )}>{t('auth.emailPlaceholder')}</Label>
               <Input
                 ref={emailRef}
                 id="email"
@@ -392,7 +395,9 @@ const Login = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.passwordPlaceholder')}</Label>
+              <Label htmlFor="password" className={cn(
+                darkMode ? "text-foreground" : "text-[#23262b]"
+              )}>{t('auth.passwordPlaceholder')}</Label>
               <Input
                 ref={passwordRef}
                 id="password"

@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { toggleDarkMode } from "../features/ui/uiSlice";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "../components/ui/sheet";
@@ -15,13 +13,14 @@ import {
   BarChart3,
 } from "lucide-react";
 
-const Logo = () => (
+const Logo = ({ darkMode }) => (
   <a 
     href="/home"
     className={cn(
       "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
-      "no-underline text-foreground hover:text-primary transition-colors",
-      "relative inline-block"
+      "no-underline hover:text-primary transition-colors",
+      "relative inline-block",
+      darkMode ? "text-foreground" : "text-[#23262b]"
     )}
   >
     GradeBook
@@ -69,11 +68,20 @@ const DashboardMockup = () => (
 
 export default function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { darkMode } = useSelector((state) => state.ui);
-  const dispatch = useDispatch();
+  // Persistent theme state for public pages
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('publicPageTheme');
+    return saved ? JSON.parse(saved) : true; // defaults to dark
+  });
 
   const handleDrawerToggle = () => setDrawerOpen((prev) => !prev);
-  const handleToggleDarkMode = () => dispatch(toggleDarkMode());
+  const handleToggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const newMode = !prev;
+      localStorage.setItem('publicPageTheme', JSON.stringify(newMode));
+      return newMode;
+    });
+  };
 
   const features = [
     {
@@ -139,7 +147,10 @@ export default function Home() {
                       key={link.label}
                       variant="ghost"
                       asChild
-                      className="justify-start text-foreground hover:text-primary"
+                      className={cn(
+                        "justify-start hover:text-primary",
+                        darkMode ? "text-foreground" : "text-[#23262b]"
+                      )}
                     >
                       <a href={link.href}>{link.label}</a>
                     </Button>
@@ -148,7 +159,7 @@ export default function Home() {
               </div>
             </SheetContent>
           </Sheet>
-          <Logo />
+          <Logo darkMode={darkMode} />
           <div className="flex-1" />
           <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
