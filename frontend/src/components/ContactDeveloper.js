@@ -8,6 +8,8 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { useSelector } from 'react-redux';
+import { cn } from '../lib/utils';
 
 const ContactDeveloper = ({ open, onClose }) => {
   const [formData, setFormData] = useState({
@@ -17,6 +19,7 @@ const ContactDeveloper = ({ open, onClose }) => {
   });
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null);
+  const { darkMode } = useSelector((state) => state.ui);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,7 +89,12 @@ const ContactDeveloper = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={!sending ? onClose : undefined}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={cn(
+        "max-w-md transition-colors duration-100",
+        darkMode 
+          ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          : "bg-background text-foreground border-border"
+      )}>
         <DialogHeader>
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
