@@ -293,7 +293,7 @@ const StudentDashboard = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -304,7 +304,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -315,7 +315,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
@@ -328,11 +328,11 @@ const StudentDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="panel-slide-in overflow-hidden">
+        <Card className="simple-fade-in overflow-hidden">
           <GradesGraph recentGrades={dashboardData.grades} />
         </Card>
         {/* Quick Actions */}
-        <Card className="panel-slide-in flex flex-col">
+        <Card className="simple-fade-in flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
@@ -382,7 +382,7 @@ const StudentDashboard = () => {
       {/* Recent Notifications and Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Monthly Calendar Widget */}
-        <Card className="panel-slide-in">
+        <Card className="simple-fade-in">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-primary" />
@@ -395,7 +395,7 @@ const StudentDashboard = () => {
         </Card>
 
         {/* Recent Notifications */}
-        <Card className="panel-slide-in lg:col-span-2">
+        <Card className="simple-fade-in lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-primary" />

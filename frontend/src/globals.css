@@ -555,6 +555,20 @@
 .fade-in-up-stagger { animation: fadeInUpStagger 0.6s ease-out forwards; }
 .panel-slide-in { animation: panelSlideIn 0.5s ease-out forwards; }
 
+/* Simple fade-in animation for dashboard cards */
+@keyframes simpleFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.simple-fade-in {
+  animation: simpleFadeIn 0.6s ease-out forwards;
+}
+
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

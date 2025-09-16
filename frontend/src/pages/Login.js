@@ -3,7 +3,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { Lock, ArrowLeft, Check } from 'lucide-react';
+import { Lock, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -26,9 +26,10 @@ const Login = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Animation states
-  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'validating', 'scaling', 'zooming'
+  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'transitioning'
   const [gapPosition, setGapPosition] = useState({ top: 0, left: 0 });
   const [dashboardPreloaded, setDashboardPreloaded] = useState(false);
   const containerRef = useRef(null);
@@ -71,7 +72,7 @@ const Login = () => {
       console.log('Is first login:', user?.isFirstLogin);
       
       // Start the success animation sequence
-      if (animationStep === 'idle' || animationStep === 'validating') {
+      if (animationStep === 'idle') {
         startZoomAnimation(user);
       }
     }
@@ -89,6 +90,10 @@ const Login = () => {
       ...prevState,
       [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
     }));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   // Calculate gap position between email and password fields
@@ -125,31 +130,21 @@ const Login = () => {
     }
   };
 
-  // Professional zoom animation sequence - faster and cleaner
+  // Smooth single-phase login animation
   const startZoomAnimation = async (user) => {
-    console.log('Starting professional login animation');
-    
-    // Step 1: Brief validation state (150ms)
-    setAnimationStep('validating');
+    console.log('Starting smooth login animation');
     
     // Start preloading dashboard data immediately
     preloadDashboard(user);
+    calculateGapPosition();
     
-    // Step 2: Calculate gap position and start scaling (300ms)
+    // Single smooth transition combining validation and zoom
+    setAnimationStep('transitioning');
+    
+    // Navigate after smooth transition completes
     setTimeout(() => {
-      calculateGapPosition();
-      setAnimationStep('scaling');
-      
-      // Step 3: Zoom into the gap (400ms)
-      setTimeout(() => {
-        setAnimationStep('zooming');
-        
-        // Step 4: Navigate after zoom completes (400ms)
-        setTimeout(() => {
-          performNavigation(user);
-        }, 400); // Faster navigation
-      }, 300); // Faster scaling
-    }, 150); // Brief validation delay
+      performNavigation(user);
+    }, 800); // Single smooth animation duration
   };
   
   const performNavigation = (user) => {
@@ -189,9 +184,6 @@ const Login = () => {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    
-    // Start validation animation
-    setAnimationStep('validating');
 
     const userData = {
       email,
@@ -321,14 +313,13 @@ const Login = () => {
         ref={containerRef}
         className={cn(
           "container mx-auto max-w-sm min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden",
-          animationStep === 'scaling' && "scale-150",
-          animationStep === 'zooming' && "scale-[50] opacity-0"
+          animationStep === 'transitioning' && "scale-[20] opacity-0"
         )}
         style={{
-          transformOrigin: animationStep === 'zooming' ? `${gapPosition.left}% ${gapPosition.top}%` : 'center',
-          transition: animationStep === 'scaling' ? 'transform 300ms ease-out' : 
-                     animationStep === 'zooming' ? 'transform 400ms ease-in, opacity 400ms ease-in' : 
-                     'transform 150ms ease-out'
+          transformOrigin: animationStep === 'transitioning' ? `${gapPosition.left}% ${gapPosition.top}%` : 'center',
+          transition: animationStep === 'transitioning' 
+            ? 'transform 800ms cubic-bezier(0.4, 0, 0.6, 1), opacity 800ms cubic-bezier(0.4, 0, 0.6, 1)' 
+            : 'transform 200ms ease-out'
         }}
       >
       <Card 
@@ -336,22 +327,21 @@ const Login = () => {
         className={cn(
           "w-full transition-colors duration-100",
           darkMode ? "bg-[#23262b] border-[#23262b]" : "bg-white border-[#e0e0e0]",
-          animationStep === 'validating' && "scale-[1.02] shadow-md transition-all duration-150 ease-out",
-          animationStep === 'scaling' && "scale-[1.05] shadow-lg transition-all duration-300 ease-out",
-          animationStep === 'zooming' && "scale-100 transition-all duration-400 ease-in"
+          animationStep === 'transitioning' && "scale-110 shadow-2xl"
         )}
+        style={{
+          transition: animationStep === 'transitioning'
+            ? 'transform 800ms cubic-bezier(0.4, 0, 0.6, 1), box-shadow 800ms cubic-bezier(0.4, 0, 0.6, 1)'
+            : 'all 200ms ease-out'
+        }}
       >
         <CardHeader className="flex flex-col items-center space-y-2">
           <Avatar className={cn(
-            "bg-[#337ab7] transition-all ease-out",
-            animationStep === 'validating' && "animate-pulse duration-150",
-            animationStep === 'scaling' && "bg-[#22c55e] scale-110 duration-300",
-            animationStep === 'zooming' && "bg-[#16a34a] scale-125 duration-400"
+            "bg-[#337ab7] transition-all ease-out duration-800",
+            animationStep === 'transitioning' && "bg-[#16a34a] scale-125"
           )}>
             <AvatarFallback>
-              {animationStep === 'validating' ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
-              ) : (animationStep === 'scaling' || animationStep === 'zooming') ? (
+              {animationStep === 'transitioning' ? (
                 <Check className="h-6 w-6 animate-pulse" />
               ) : (
                 <Lock className="h-6 w-6" />
@@ -359,14 +349,11 @@ const Login = () => {
             </AvatarFallback>
           </Avatar>
           <CardTitle className={cn(
-            "text-2xl font-normal transition-all ease-out",
+            "text-2xl font-normal transition-all ease-out duration-800",
             darkMode ? "text-foreground" : "text-[#23262b]",
-            animationStep === 'validating' && "duration-150",
-            (animationStep === 'scaling' || animationStep === 'zooming') && "text-[#16a34a] duration-300"
+            animationStep === 'transitioning' && "text-[#16a34a]"
           )}>
-            {animationStep === 'validating' ? 'Validating...' : 
-             (animationStep === 'scaling' || animationStep === 'zooming') ? 'Logging in...' : 
-             t('auth.loginTitle')}
+            {animationStep === 'transitioning' ? 'Welcome back!' : t('auth.loginTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -398,22 +385,44 @@ const Login = () => {
               <Label htmlFor="password" className={cn(
                 darkMode ? "text-foreground" : "text-[#23262b]"
               )}>{t('auth.passwordPlaceholder')}</Label>
-              <Input
-                ref={passwordRef}
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={onChange}
-                className={cn(
-                  "transition-colors duration-100",
-                  darkMode 
-                    ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
-                    : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                )}
-              />
+              <div className="relative">
+                <Input
+                  ref={passwordRef}
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={onChange}
+                  className={cn(
+                    "transition-colors duration-100 pr-10",
+                    darkMode 
+                      ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                      : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent",
+                    darkMode ? "text-muted-foreground hover:text-foreground" : "text-gray-400 hover:text-gray-600"
+                  )}
+                  onClick={togglePasswordVisibility}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -433,22 +442,15 @@ const Login = () => {
             <Button
               type="submit"
               className={cn(
-                "w-full transition-all duration-200 ease-out",
-                animationStep === 'validating' && "scale-[0.98] opacity-80",
-                animationStep === 'scaling' && "scale-[1.02] shadow-sm",
-                animationStep === 'zooming' && "scale-95 opacity-50"
+                "w-full transition-all duration-800 ease-out",
+                animationStep === 'transitioning' && "scale-105 shadow-lg"
               )}
               disabled={isLoading || animationStep !== 'idle'}
             >
-              {animationStep === 'validating' ? (
+              {animationStep === 'transitioning' ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  <span>Validating credentials...</span>
-                </div>
-              ) : animationStep === 'success' ? (
-                <div className="flex items-center space-x-2">
-                  <Check className="h-4 w-4 animate-bounce" />
-                  <span>Login successful!</span>
+                  <Check className="h-4 w-4 animate-pulse" />
+                  <span>Welcome back!</span>
                 </div>
               ) : isLoading ? (
                 <div className="flex items-center space-x-2">
