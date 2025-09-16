@@ -2,26 +2,20 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  Typography,
-  Paper,
-  Box,
-  Button,
-  Grid,
-  Divider,
-  CircularProgress,
-  Card,
-  CardContent,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  CalendarToday as CalendarIcon,
-  Person as PersonIcon,
-  School as SchoolIcon,
-  Description as DescriptionIcon,
-} from '@mui/icons-material';
+  ArrowLeft,
+  Calendar,
+  User,
+  GraduationCap,
+  FileText,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { getGrade, reset } from '../../features/grades/gradeSlice';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Separator } from '../../components/ui/separator';
+import { Badge } from '../../components/ui/badge';
+import LoadingState from '../../components/common/LoadingState';
 
 const GradeDetail = () => {
   const { id } = useParams();
@@ -71,172 +65,123 @@ const GradeDetail = () => {
   };
 
   if (isLoading || !grade) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingState message="Loading grade details..." fullPage={true} />;
   }
 
   const gradeStatus = getGradeStatus();
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <div className="flex-1 space-y-6">
       <Button
-        startIcon={<ArrowBackIcon />}
+        variant="outline"
         onClick={handleBack}
-        sx={{ mb: 2 }}
+        className="mb-6"
       >
+        <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Grades
       </Button>
 
-      <Grid container spacing={3}>
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Grade Summary Card */}
-        <Grid item xs={12} md={4}>
-          <Card elevation={3} sx={{ height: '100%', borderRadius: 2 }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4 }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>
+        <div className="md:col-span-1">
+          <Card className="h-full">
+            <CardContent className="flex flex-col items-center p-8">
+              <CardTitle className="mb-6 text-center">
                 {grade.subject?.name || 'Subject'}
-              </Typography>
+              </CardTitle>
               
-              <Box 
-                sx={{ 
-                  width: 150, 
-                  height: 150, 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  background: `conic-gradient(${gradeStatus.color} ${grade.value}%, #e0e0e0 0)`,
-                  mb: 3,
-                  position: 'relative',
-                }}
-              >
-                <Box 
-                  sx={{ 
-                    width: 130, 
-                    height: 130, 
-                    borderRadius: '50%', 
-                    bgcolor: 'background.paper',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'column',
+              {/* Circular Progress */}
+              <div className="relative mb-6">
+                <div 
+                  className="w-40 h-40 rounded-full flex items-center justify-center relative"
+                  style={{
+                    background: `conic-gradient(${gradeStatus.color} ${grade.value * 3.6}deg, hsl(var(--muted)) 0deg)`
                   }}
                 >
-                  <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                    {grade.value}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    out of 100
-                  </Typography>
-                </Box>
-              </Box>
+                  <div className="absolute inset-2 flex flex-col items-center justify-center bg-background rounded-full border">
+                    <span className="text-4xl font-bold">{grade.value}</span>
+                    <span className="text-xs text-muted-foreground">out of 100</span>
+                  </div>
+                </div>
+              </div>
               
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  color: gradeStatus.color,
-                  mb: 1,
-                }}
+              <Badge 
+                variant="secondary"
+                className="mb-3 text-lg px-4 py-2"
+                style={{ backgroundColor: `${gradeStatus.color}15`, color: gradeStatus.color }}
               >
                 {gradeStatus.status}
-              </Typography>
+              </Badge>
               
-              <Typography variant="body2" color="text.secondary">
+              <p className="text-sm text-muted-foreground text-center">
                 Submitted on {formatDate(grade.date)}
-              </Typography>
+              </p>
             </CardContent>
           </Card>
-        </Grid>
+        </div>
         
         {/* Grade Details Card */}
-        <Grid item xs={12} md={8}>
-          <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-              Grade Details
-            </Typography>
-            
-            <Divider sx={{ mb: 3 }} />
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                  <SchoolIcon color="primary" sx={{ mr: 2, mt: 0.5 }} />
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Subject
-                    </Typography>
-                    <Typography variant="body1">
-                      {grade.subject?.name || 'N/A'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Grade Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Separator />
               
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                  <PersonIcon color="primary" sx={{ mr: 2, mt: 0.5 }} />
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Teacher
-                    </Typography>
-                    <Typography variant="body1">
-                      {grade.teacher?.name || 'N/A'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="flex items-start space-x-3">
+                  <GraduationCap className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Subject</p>
+                    <p className="text-base">{grade.subject?.name || 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <User className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Teacher</p>
+                    <p className="text-base">{grade.teacher?.name || 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <Calendar className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Date Assigned</p>
+                    <p className="text-base">{formatDate(grade.date)}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3 md:col-span-2">
+                  <FileText className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Description</p>
+                    <p className="text-base">{grade.description || 'No description provided'}</p>
+                  </div>
+                </div>
+              </div>
               
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                  <CalendarIcon color="primary" sx={{ mr: 2, mt: 0.5 }} />
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Date Assigned
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(grade.date)}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
+              <Separator />
               
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                  <DescriptionIcon color="primary" sx={{ mr: 2, mt: 0.5 }} />
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Description
-                    </Typography>
-                    <Typography variant="body1">
-                      {grade.description || 'No description provided'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-            
-            <Divider sx={{ my: 3 }} />
-            
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Feedback
-            </Typography>
-            
-            <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1 }}>
-              <Typography variant="body1">
-                {grade.description ? (
-                  grade.description
-                ) : (
-                  'No feedback provided for this grade.'
-                )}
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Feedback</h3>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-base leading-relaxed">
+                    {grade.description ? (
+                      grade.description
+                    ) : (
+                      'No feedback provided for this grade.'
+                    )}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 };
 
