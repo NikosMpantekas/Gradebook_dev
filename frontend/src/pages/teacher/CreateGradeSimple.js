@@ -24,6 +24,7 @@ import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { Spinner } from '../../components/ui/spinner';
+import { DatePicker } from '../../components/ui/date-picker';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
 
@@ -543,14 +544,30 @@ const CreateGradeSimple = () => {
                   {/* Date */}
                   <div className="space-y-2">
                     <Label htmlFor="date">{t('teacherGrades.createPage.dateLabel')} *</Label>
-                    <Input
-                      id="date"
-                      name="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className={errors.date ? 'border-destructive' : ''}
-                    />
+                    {/* Mobile: Native date input */}
+                    <div className="block sm:hidden">
+                      <Input
+                        id="date"
+                        name="date"
+                        type="date"
+                        value={formData.date}
+                        onChange={handleInputChange}
+                        max={new Date().toISOString().split('T')[0]}
+                        className={`w-full min-w-0 ${errors.date ? 'border-destructive' : ''}`}
+                        style={{ WebkitAppearance: 'none' }}
+                        inputMode="none"
+                      />
+                    </div>
+                    {/* Desktop: Beautiful DatePicker */}
+                    <div className="hidden sm:block">
+                      <DatePicker
+                        placeholder={t('teacherGrades.createPage.dateLabel')}
+                        value={formData.date}
+                        onChange={(value) => handleInputChange({ target: { name: 'date', value } })}
+                        max={new Date().toISOString().split('T')[0]}
+                        className={`w-full ${errors.date ? 'border-destructive' : ''}`}
+                      />
+                    </div>
                     {errors.date && (
                       <p className="text-sm text-destructive">{errors.date}</p>
                     )}

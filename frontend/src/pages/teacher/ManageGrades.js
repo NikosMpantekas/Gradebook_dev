@@ -14,6 +14,7 @@ import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { Checkbox } from '../../components/ui/checkbox';
+import { DatePicker } from '../../components/ui/date-picker';
 import { EditGradeDialog } from '../../components/grades/GradeDialogs';
 import { Spinner } from '../../components/ui/spinner';
 
@@ -564,21 +565,59 @@ const ManageGrades = () => {
                 {/* Date From */}
                 <div className="space-y-2">
                   <Label>{t('teacherGrades.dateFrom')}</Label>
-                  <Input
-                    type="date"
-                    value={filters.dateFrom}
-                    onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                  />
+                  {/* Mobile: Native date input */}
+                  <div className="block sm:hidden">
+                    <Input
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                      max={filters.dateTo || new Date().toISOString().split('T')[0]}
+                      className="w-full min-w-0"
+                      style={{ WebkitAppearance: 'none' }}
+                      inputMode="none"
+                    />
+                  </div>
+                  {/* Desktop: Beautiful DatePicker */}
+                  <div className="hidden sm:block">
+                    <DatePicker
+                      placeholder={t('teacherGrades.dateFrom')}
+                      value={filters.dateFrom}
+                      onChange={(value) => handleFilterChange('dateFrom', value)}
+                      max={filters.dateTo || new Date().toISOString().split('T')[0]}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
 
                 {/* Date To */}
                 <div className="space-y-2">
                   <Label>{t('teacherGrades.dateTo')}</Label>
-                  <Input
-                    type="date"
-                    value={filters.dateTo}
-                    onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                  />
+                  {/* Mobile: Native date input */}
+                  <div className="block sm:hidden">
+                    <Input
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                      disabled={!filters.dateFrom}
+                      min={filters.dateFrom}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full min-w-0"
+                      style={{ WebkitAppearance: 'none' }}
+                      inputMode="none"
+                    />
+                  </div>
+                  {/* Desktop: Beautiful DatePicker */}
+                  <div className="hidden sm:block">
+                    <DatePicker
+                      placeholder={t('teacherGrades.dateTo')}
+                      value={filters.dateTo}
+                      onChange={(value) => handleFilterChange('dateTo', value)}
+                      disabled={!filters.dateFrom}
+                      min={filters.dateFrom}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
