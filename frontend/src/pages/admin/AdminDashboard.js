@@ -25,6 +25,7 @@ import {
   Info,
   Package,
   Euro,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -269,7 +270,7 @@ const AdminDashboard = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -280,7 +281,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.students')}</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -291,7 +292,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.teachers')}</CardTitle>
             <UserCog className="h-4 w-4 text-muted-foreground" />
@@ -302,7 +303,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.classes')}</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
@@ -315,7 +316,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card className="panel-slide-in">
+      <Card className="simple-fade-in">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-primary" />
@@ -324,31 +325,31 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button onClick={handleManageUsers} variant="outline" className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group">
+            <Button onClick={handleManageUsers} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
               <Users className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
               <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageUsers')}</span>
             </Button>
             
-            <Button onClick={handleManageSchools} variant="outline" className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group">
+            <Button onClick={handleManageSchools} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
               <Building className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
               <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.schoolBranches')}</span>
             </Button>
             
-            <Button onClick={handleManageGrades} variant="outline" className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group">
+            <Button onClick={handleManageGrades} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
               <Book className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
               <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageGrades')}</span>
             </Button>
             
-            <Button onClick={handleManageSubjects} variant="outline" className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group">
+            <Button onClick={handleManageSubjects} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
               <FileText className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
               <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageClasses')}</span>
             </Button>
             
-            <Button onClick={handleStudentProgress} variant="outline" className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group">
+            <Button onClick={handleStudentProgress} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
               <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
               <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.studentProgress')}</span>
             </Button>
-            <Button onClick={handleManageSchedule} variant="outline" className="h-auto p-4 flex-col transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary hover:bg-primary/5 group">
+            <Button onClick={handleManageSchedule} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
               <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
               <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageSchedule')}</span>
             </Button>
@@ -358,7 +359,7 @@ const AdminDashboard = () => {
 
       {/* Recent Notifications */}
       {isFeatureEnabled('enableNotifications') && (
-        <Card className="panel-slide-in">
+        <Card className="simple-fade-in">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-primary" />
@@ -381,9 +382,9 @@ const AdminDashboard = () => {
             ) : dashboardData.notifications.length > 0 ? (
               <div className="space-y-3">
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
-                  <div 
-                    key={notification._id} 
-                    className="flex items-center space-x-3 p-3 rounded-lg border bg-card/50 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                  <div
+                    key={notification._id}
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -394,10 +395,10 @@ const AdminDashboard = () => {
                     onClick={() => navigate(`/app/admin/notifications/${notification._id}`)}
                   >
                     <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-                      {notification.type === 'info' && <Info className="h-5 w-5 text-blue-500" />}
-                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                      {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-yellow-500" />}
-                      {notification.type === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
+                      {notification.type === 'info' && <Info className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />}
+                      {notification.type === 'success' && <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />}
+                      {notification.type === 'warning' && <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--warning))'}} />}
+                      {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
@@ -405,7 +406,7 @@ const AdminDashboard = () => {
                     </div>
                     <Badge 
                       variant="secondary" 
-                      className="text-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
+                      className="text-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
                     >
                       {new Date(notification.createdAt).toLocaleDateString()}
                     </Badge>

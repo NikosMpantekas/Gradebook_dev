@@ -30,6 +30,7 @@ import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
 import { Spinner } from '../components/ui/spinner';
+import { DatePicker } from '../components/ui/date-picker';
 import { updateProfile } from '../features/auth/authSlice';
 import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
@@ -135,6 +136,21 @@ const Profile = () => {
       setErrors(prev => ({
         ...prev,
         [name]: ''
+      }));
+    }
+  };
+
+  const handleDateChange = (dateValue) => {
+    setFormData(prev => ({
+      ...prev,
+      dateOfBirth: dateValue
+    }));
+    
+    // Clear error when user changes date
+    if (errors.dateOfBirth) {
+      setErrors(prev => ({
+        ...prev,
+        dateOfBirth: ''
       }));
     }
   };
@@ -449,14 +465,16 @@ const Profile = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth">{t('profile.dateOfBirth')}</Label>
-                <Input
+                <DatePicker
                   id="dateOfBirth"
-                  name="dateOfBirth"
-                  type="date"
+                  placeholder={t('profile.selectDateOfBirth', 'Select your date of birth')}
                   value={formData.dateOfBirth}
-                  onChange={handleInputChange}
+                  onChange={handleDateChange}
                   disabled={!isEditing}
+                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                  className={errors.dateOfBirth ? 'border-destructive' : ''}
                 />
+                {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
               </div>
               
               {/* Theme Selection Panel - Moved under Personal Information */}
