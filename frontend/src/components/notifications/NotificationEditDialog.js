@@ -12,6 +12,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
+import { useSelector } from 'react-redux';
+import { cn } from '../../lib/utils';
 
 const NotificationEditDialog = ({
   open,
@@ -22,6 +24,7 @@ const NotificationEditDialog = ({
   onSave,
   isLoading
 }) => {
+  const { darkMode } = useSelector((state) => state.ui);
   
   const handleInputChange = (field) => (event) => {
     const value = field === 'isImportant' ? event.target.checked : event.target.value;
@@ -30,7 +33,12 @@ const NotificationEditDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={cn(
+        "max-w-md transition-colors duration-100",
+        darkMode 
+          ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          : "bg-background text-foreground border-border"
+      )}>
         <DialogHeader>
           <DialogTitle>Edit Notification</DialogTitle>
           <DialogDescription>
