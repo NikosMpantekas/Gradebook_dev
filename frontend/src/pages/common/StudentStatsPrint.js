@@ -1,28 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  CircularProgress,
-} from '@mui/material';
-import PrintIcon from '@mui/icons-material/Print';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Spinner } from '../../components/ui/spinner';
+import { Printer, FileText, ArrowLeft } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { API_URL } from '../../config/appConfig';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const StudentStatsPrint = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [gradesData, setGradesData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { getCurrentThemeData, darkMode } = useTheme();
+  const themeData = getCurrentThemeData();
 
   // Get parameters from URL state
   const { selectedStudent, selectedStudentData, startDate, endDate } = location.state || {};
@@ -128,205 +121,240 @@ const StudentStatsPrint = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-screen" style={{
+        backgroundColor: darkMode ? themeData?.darkColors?.background : themeData?.colors?.background
+      }}>
+        <Spinner size="lg" style={{
+          color: darkMode ? themeData?.darkColors?.primary : themeData?.colors?.primary
+        }} />
+      </div>
     );
   }
 
   return (
-    <Box sx={{ backgroundColor: 'white', minHeight: '100vh', p: 0 }}>
+    <div className="min-h-screen" style={{
+      backgroundColor: darkMode ? themeData?.darkColors?.background : themeData?.colors?.background
+    }}>
       {/* Print Controls - Hidden when printing */}
-      <Box 
-        className="no-print" 
-        sx={{ 
-          p: 2, 
-          borderBottom: '1px solid #ddd', 
-          display: 'flex', 
-          gap: 2, 
-          justifyContent: 'space-between',
-          backgroundColor: '#f5f5f5'
-        }}
-      >
+      <div className="no-print border-b p-4 flex justify-between items-center gap-4" style={{
+        backgroundColor: darkMode ? themeData?.darkColors?.muted : themeData?.colors?.muted,
+        borderColor: darkMode ? themeData?.darkColors?.border : themeData?.colors?.border
+      }}>
         <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
+          variant="outline"
           onClick={() => navigate(-1)}
+          className="flex items-center gap-2"
         >
+          <ArrowLeft className="h-4 w-4" />
           Back to Analysis
         </Button>
         
-        <Box display="flex" gap={2}>
+        <div className="flex gap-2">
           <Button
-            variant="contained"
-            color="primary"
-            startIcon={<PrintIcon />}
             onClick={handlePrint}
+            className="flex items-center gap-2"
           >
+            <Printer className="h-4 w-4" />
             Print
           </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<PictureAsPdfIcon />}
-            onClick={handleSavePDF}
-          >
-            Save as PDF
-          </Button>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {/* Printable Content */}
-      <Box sx={{ p: 4, maxWidth: '800px', margin: '0 auto' }}>
+      <div className="p-4 max-w-4xl mx-auto">
         {/* Header */}
-        <Box textAlign="center" mb={4}>
-          <Typography variant="h4" component="h1" sx={{ mb: 1, color: 'black', fontWeight: 'bold' }}>
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold mb-1 print:text-black" style={{
+            color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
+          }}>
             Student Grade Analysis Report
-          </Typography>
-          <Typography variant="h5" sx={{ mb: 2, color: '#333' }}>
+          </h1>
+          <h2 className="text-xl font-semibold mb-2 print:text-black" style={{
+            color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
+          }}>
             {selectedStudentData?.name || 'Student Name'}
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#666' }}>
+          </h2>
+          <p className="text-lg text-muted-foreground mb-2 print:text-gray-600 no-print">
             Period: {formatDate(startDate)} - {formatDate(endDate)}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#666' }}>
+          </p>
+          <p className="text-sm text-muted-foreground print:text-gray-600 no-print">
             Generated on: {new Date().toLocaleDateString()}
-          </Typography>
-        </Box>
+          </p>
+        </div>
 
         {/* Grades by Subject */}
         {gradesData?.subjectAnalysis && Object.keys(gradesData.subjectAnalysis).length > 0 ? (
-          Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData]) => (
-            <Box key={subjectName} sx={{ mb: 4 }}>
-              {/* Subject Header */}
-              <Typography variant="h6" sx={{ mb: 2, borderBottom: '2px solid #333', pb: 1, color: 'black' }}>
-                {subjectName}
-              </Typography>
+          Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData], index) => (
+            <Card key={subjectName} className={`mb-4 print:shadow-none print:border print:border-black ${index > 0 ? 'print:break-before-page' : ''}`} style={{
+              backgroundColor: darkMode ? themeData?.darkColors?.card : themeData?.colors?.card,
+              borderColor: darkMode ? themeData?.darkColors?.border : themeData?.colors?.border
+            }}>
+              <CardHeader>
+                <CardTitle className="text-xl font-bold border-b-2 pb-2 print:text-black print:border-black" style={{
+                  color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground,
+                  borderColor: darkMode ? themeData?.darkColors?.primary : themeData?.colors?.primary
+                }}>
+                  {subjectName}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Summary */}
+                <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="text-center">
+                    <p className="text-sm print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
+                    }}>Student Average:</p>
+                    <p className="text-lg font-bold print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
+                    }}>
+                      {subjectData.studentAverage?.toFixed(1) || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
+                    }}>Class Average:</p>
+                    <p className="text-lg font-bold print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
+                    }}>
+                      {subjectData.classAverage?.toFixed(1) || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
+                    }}>Total Grades:</p>
+                    <p className="text-lg font-bold print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
+                    }}>
+                      {subjectData.grades?.length || 0}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
+                    }}>Performance:</p>
+                    <p className="text-lg font-bold print:text-black" style={{
+                      color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
+                    }}>
+                      {subjectData.studentAverage >= subjectData.classAverage ? 'Above Average' : 'Below Average'}
+                    </p>
+                  </div>
+                </div>
 
-              {/* Summary */}
-              <Box sx={{ mb: 3, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                <Box>
-                  <Typography variant="body2" sx={{ color: '#666' }}>Student Average:</Typography>
-                  <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                    {subjectData.studentAverage?.toFixed(1) || 'N/A'}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: '#666' }}>Class Average:</Typography>
-                  <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                    {subjectData.classAverage?.toFixed(1) || 'N/A'}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: '#666' }}>Total Grades:</Typography>
-                  <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                    {subjectData.grades?.length || 0}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: '#666' }}>Performance:</Typography>
-                  <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                    {subjectData.studentAverage >= subjectData.classAverage ? 'Above Average' : 'Below Average'}
-                  </Typography>
-                </Box>
-              </Box>
+                {/* Progress Graph for multiple grades */}
+                {subjectData.grades && subjectData.grades.length > 1 && (
+                  <div className="mb-4">
+                    <h3 className="text-base font-semibold mb-2 text-foreground print:text-black">
+                      📈 Grade Progress Over Time
+                    </h3>
+                    <div className="w-full h-64 mb-3">
+                      <ResponsiveContainer>
+                        <LineChart data={prepareChartData(subjectData.grades)}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={
+                            darkMode ? themeData?.darkColors?.border || '#374151' : themeData?.colors?.border || '#e5e7eb'
+                          } />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ 
+                              fontSize: 12, 
+                              fill: darkMode ? themeData?.darkColors?.['muted-foreground'] || '#f9fafb' : themeData?.colors?.['muted-foreground'] || '#374151'
+                            }}
+                          />
+                          <YAxis 
+                            domain={[0, 20]}
+                            tick={{ 
+                              fontSize: 12, 
+                              fill: darkMode ? themeData?.darkColors?.['muted-foreground'] || '#f9fafb' : themeData?.colors?.['muted-foreground'] || '#374151'
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value) => [value, 'Grade']}
+                            labelFormatter={(label) => `Date: ${label}`}
+                            contentStyle={{ 
+                              backgroundColor: darkMode ? themeData?.darkColors?.card || '#1f2937' : themeData?.colors?.card || '#f9fafb', 
+                              border: `1px solid ${darkMode ? themeData?.darkColors?.border || '#374151' : themeData?.colors?.border || '#e5e7eb'}`,
+                              borderRadius: '6px',
+                              color: darkMode ? themeData?.darkColors?.['card-foreground'] || '#f9fafb' : themeData?.colors?.['card-foreground'] || '#374151'
+                            }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="grade" 
+                            stroke={darkMode ? themeData?.darkColors?.primary || themeData?.colors?.primary || '#3b82f6' : themeData?.colors?.primary || '#3b82f6'}
+                            strokeWidth={3}
+                            dot={{ 
+                              fill: darkMode ? themeData?.darkColors?.primary || themeData?.colors?.primary || '#3b82f6' : themeData?.colors?.primary || '#3b82f6', 
+                              strokeWidth: 2, 
+                              r: 6 
+                            }}
+                            name="Grade"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
 
-              {/* Progress Graph for multiple grades */}
-              {subjectData.grades && subjectData.grades.length > 1 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2, color: 'black' }}>
-                    📈 Grade Progress Over Time
-                  </Typography>
-                  <Box sx={{ width: '100%', height: 300, mb: 2 }}>
-                    <ResponsiveContainer>
-                      <LineChart data={prepareChartData(subjectData.grades)}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
-                        <XAxis 
-                          dataKey="date" 
-                          tick={{ fontSize: 12, fill: 'black' }}
-                        />
-                        <YAxis 
-                          domain={[0, 20]}
-                          tick={{ fontSize: 12, fill: 'black' }}
-                        />
-                        <Tooltip 
-                          formatter={(value) => [value, 'Grade']}
-                          labelFormatter={(label) => `Date: ${label}`}
-                          contentStyle={{ backgroundColor: '#f9f9f9', border: '1px solid #ddd' }}
-                        />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="grade" 
-                          stroke="#1976d2" 
-                          strokeWidth={3}
-                          dot={{ fill: '#1976d2', strokeWidth: 2, r: 6 }}
-                          name="Grade"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
-              )}
-
-              {/* Grades Table */}
-              <TableContainer sx={{ mb: 3 }}>
-                <Table size="small" sx={{ border: '1px solid #ddd' }}>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'black', border: '1px solid #ddd' }}>Date</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'black', border: '1px solid #ddd' }}>Grade</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'black', border: '1px solid #ddd' }}>Description</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'black', border: '1px solid #ddd' }}>Teacher</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'black', border: '1px solid #ddd' }}>vs Class Avg</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {subjectData.grades?.map((grade, index) => (
-                      <TableRow key={index}>
-                        <TableCell sx={{ border: '1px solid #ddd', color: 'black' }}>
-                          {formatDate(grade.date)}
-                        </TableCell>
-                        <TableCell sx={{ border: '1px solid #ddd', color: 'black', fontWeight: 'bold' }}>
-                          {grade.value}
-                        </TableCell>
-                        <TableCell sx={{ border: '1px solid #ddd', color: 'black' }}>
-                          {grade.description || '-'}
-                        </TableCell>
-                        <TableCell sx={{ border: '1px solid #ddd', color: 'black' }}>
-                          {grade.teacher?.name || 'Unknown'}
-                        </TableCell>
-                        <TableCell sx={{ border: '1px solid #ddd', color: 'black' }}>
-                          {grade.value >= subjectData.classAverage ? 'Above' : 'Below'}
-                        </TableCell>
+                {/* Grades Table */}
+                <div className="mb-4">
+                  <Table className="print:border print:border-collapse">
+                    <TableHeader>
+                      <TableRow className="bg-muted print:bg-gray-100">
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Date</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Grade</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Description</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Teacher</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">vs Class Avg</TableHead>
                       </TableRow>
-                    )) || (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ border: '1px solid #ddd', color: '#666' }}>
-                          No grades found for this period
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
+                    </TableHeader>
+                    <TableBody>
+                      {subjectData.grades?.map((grade, index) => (
+                        <TableRow key={index} className="hover:bg-muted/50">
+                          <TableCell className="text-foreground print:text-black print:border print:border-black">
+                            {formatDate(grade.date)}
+                          </TableCell>
+                          <TableCell className="font-bold text-foreground print:text-black print:border print:border-black">
+                            {grade.value}
+                          </TableCell>
+                          <TableCell className="text-foreground print:text-black print:border print:border-black">
+                            {grade.description || '-'}
+                          </TableCell>
+                          <TableCell className="text-foreground print:text-black print:border print:border-black">
+                            {grade.teacher?.name || 'Unknown'}
+                          </TableCell>
+                          <TableCell className="text-foreground print:text-black print:border print:border-black">
+                            {grade.value >= subjectData.classAverage ? 'Above' : 'Below'}
+                          </TableCell>
+                        </TableRow>
+                      )) || (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground print:text-black print:border print:border-black">
+                            No grades found for this period
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           ))
         ) : (
-          <Box textAlign="center" sx={{ py: 4 }}>
-            <Typography variant="h6" sx={{ color: '#666' }}>
+          <div className="text-center py-8">
+            <h3 className="text-xl font-semibold text-muted-foreground print:text-black">
               No grades found for the selected period
-            </Typography>
-          </Box>
+            </h3>
+          </div>
         )}
 
         {/* Footer */}
-        <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #ddd', textAlign: 'center' }}>
-          <Typography variant="body2" sx={{ color: '#999' }}>
+        <div className="mt-4 pt-3 border-t border-border text-center print:border-gray-300 no-print">
+          <p className="text-sm text-muted-foreground print:text-gray-400">
             GradeBook System - Student Grade Analysis Report
-          </Typography>
-        </Box>
-      </Box>
+          </p>
+        </div>
+      </div>
 
       {/* Print-specific CSS */}
       <style jsx>{`
@@ -335,24 +363,79 @@ const StudentStatsPrint = () => {
             display: none !important;
           }
           
+          /* Hide all floating elements, notifications, and toggles */
+          .fixed, .absolute, [role="dialog"], [role="tooltip"],
+          .notification, .toast, .popup, .modal, .overlay,
+          button[class*="toggle"], button[class*="notification"],
+          .floating, [class*="floating"], [id*="notification"],
+          [class*="notification"], .push-toggle, .notification-toggle {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          
           body {
             margin: 0;
             padding: 0;
             background: white !important;
+            color: black !important;
           }
           
           * {
+            box-shadow: none !important;
             color: black !important;
-            background: transparent !important;
           }
           
-          table {
+          h1, h2, h3, h4, h5, h6, p, span, div, td, th, label {
+            color: black !important;
+          }
+          
+          .print\:break-before-page {
+            page-break-before: always !important;
+            break-before: page !important;
+          }
+          
+          .print\:text-black {
+            color: black !important;
+          }
+          
+          .print\:text-gray-800 {
+            color: #1f2937 !important;
+          }
+          
+          .print\:text-gray-600 {
+            color: #4b5563 !important;
+          }
+          
+          .print\:text-gray-500 {
+            color: #6b7280 !important;
+          }
+          
+          .print\:text-gray-400 {
+            color: #9ca3af !important;
+          }
+          
+          .print\:border {
+            border: 1px solid black !important;
+          }
+          
+          .print\:border-black {
+            border-color: black !important;
+          }
+          
+          .print\:border-gray-300 {
+            border-color: #d1d5db !important;
+          }
+          
+          .print\:bg-gray-100 {
+            background-color: #f3f4f6 !important;
+          }
+          
+          .print\:shadow-none {
+            box-shadow: none !important;
+          }
+          
+          .print\:border-collapse {
             border-collapse: collapse !important;
-          }
-          
-          th, td {
-            border: 1px solid #000 !important;
-            padding: 8px !important;
           }
           
           @page {
@@ -361,7 +444,7 @@ const StudentStatsPrint = () => {
           }
         }
       `}</style>
-    </Box>
+    </div>
   );
 };
 
