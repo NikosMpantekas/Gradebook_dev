@@ -356,13 +356,17 @@ const ManageUsers = () => {
   const getRoleColor = (role) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-500 text-white';
+        return 'bg-red-500 text-white dark:bg-red-600 dark:text-white';
       case 'teacher':
-        return 'bg-blue-500 text-white';
+        return 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white';
       case 'student':
-        return 'bg-green-500 text-white';
+        return 'bg-green-500 text-white dark:bg-green-600 dark:text-white';
+      case 'parent':
+        return 'bg-purple-500 text-white dark:bg-purple-600 dark:text-white';
+      case 'secretary':
+        return 'bg-orange-500 text-white dark:bg-orange-600 dark:text-white';
       default:
-        return 'bg-gray-500 text-white';
+        return 'bg-gray-500 text-white dark:bg-gray-600 dark:text-white';
     }
   };
 
@@ -419,7 +423,7 @@ const ManageUsers = () => {
               <CardContent className="p-3 sm:p-6">
                 <div className="flex items-start gap-3">
                   <Avatar className={`w-12 h-12 flex-shrink-0 ${getRoleColor(user.role)}`}>
-                    <AvatarFallback>{getAvatarLetter(user.name)}</AvatarFallback>
+                    <AvatarFallback className="text-black dark:text-white font-medium">{getAvatarLetter(user.name)}</AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-grow min-w-0">
@@ -485,7 +489,7 @@ const ManageUsers = () => {
                     <div className="flex items-center gap-2">
                       <ScheduleIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {t('admin.manageUsersPage.createdAt')}: {user.createdAt ? format(new Date(user.createdAt), 'PP') : t('admin.manageUsersPage.unknown')}
+                        {t('admin.manageUsersPage.tableHeaders.created')}: {user.createdAt ? format(new Date(user.createdAt), 'PP') : t('admin.manageUsersPage.unknown')}
                       </span>
                     </div>
                   </div>
@@ -534,19 +538,19 @@ const ManageUsers = () => {
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-600">
                 <th className="text-left p-4 text-foreground font-medium">
-                  {t('admin.manageUsersPage.name')}
+                  {t('admin.manageUsersPage.tableHeaders.name')}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  {t('admin.manageUsersPage.email')}
+                  {t('admin.manageUsersPage.tableHeaders.email')}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  {t('admin.manageUsersPage.role')}
+                  {t('admin.manageUsersPage.tableHeaders.role')}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  {t('admin.manageUsersPage.createdAt')}
+                  {t('admin.manageUsersPage.tableHeaders.created')}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  {t('admin.manageUsersPage.actions')}
+                  {t('admin.manageUsersPage.tableHeaders.actions')}
                 </th>
               </tr>
             </thead>
@@ -559,7 +563,7 @@ const ManageUsers = () => {
                       <td className="p-4">
                         <div className="flex items-center gap-4">
                           <Avatar className={`w-10 h-10 ${getRoleColor(user.role)}`}>
-                            <AvatarFallback className="text-sm font-medium">
+                            <AvatarFallback className="text-black dark:text-white text-sm font-medium">
                               {getAvatarLetter(user.name)}
                             </AvatarFallback>
                           </Avatar>
@@ -766,7 +770,7 @@ const ManageUsers = () => {
       <div className="p-4 mb-6 rounded-lg border bg-card dark:border-gray-600">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
           <div className="md:col-span-4">
-            <Label htmlFor="search" className="text-sm font-medium mb-2 block text-foreground">{t('admin.manageUsersPage.search')}</Label>
+            <Label htmlFor="search" className="text-sm font-medium mb-2 block text-foreground">{t('common.search')}</Label>
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input

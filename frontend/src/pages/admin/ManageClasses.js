@@ -41,6 +41,7 @@ import {
 
 // Import our custom components
 import { useIsMobile } from '../../components/hooks/use-mobile';
+import { cn } from '../../lib/utils';
 
 const ManageClasses = () => {
   const dispatch = useDispatch();
@@ -52,6 +53,7 @@ const ManageClasses = () => {
   );
   const { schools } = useSelector((state) => state.schools);
   const { users } = useSelector((state) => state.users);
+  const { darkMode } = useSelector((state) => state.ui);
   const { t } = useTranslation();
   
   // State for dialog operations
@@ -848,7 +850,12 @@ const ManageClasses = () => {
       
       {/* Delete confirmation dialog */}
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
+        <DialogContent className={cn(
+          "w-[90vw] max-w-md transition-colors duration-100",
+          darkMode 
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+            : "bg-background text-foreground border-border"
+        )}>
           <DialogHeader>
             <DialogTitle>{t('admin.manageClassesPage.dialogs.deleteClass.title')}</DialogTitle>
             <DialogDescription>
@@ -868,12 +875,18 @@ const ManageClasses = () => {
       
       {/* Add/Edit form dialog */}
       <Dialog open={formOpen} onOpenChange={handleFormClose}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className={cn(
+          "w-[90vw] max-w-4xl max-h-[90vh] transition-colors duration-100 overflow-hidden",
+          darkMode 
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+            : "bg-background text-foreground border-border"
+        )}>
           <DialogHeader>
             <DialogTitle>{formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.title') : t('admin.manageClassesPage.dialogs.editClass.title')}</DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleFormSubmit} className="space-y-6">
+          <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+            <form onSubmit={handleFormSubmit} className="space-y-6">
             <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="basic">{t('admin.manageClassesPage.tabs.basicInfo')}</TabsTrigger>
@@ -1118,7 +1131,7 @@ const ManageClasses = () => {
                     {t('admin.manageClassesPage.form.scheduleDescription')}
                   </p>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-2 bg-muted/10">
                     {classData.schedule.map((daySchedule, index) => (
                       <Card key={daySchedule.day} className={`p-4 ${daySchedule.active ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''}`}>
                         <div className="flex items-center space-x-4">
@@ -1181,6 +1194,7 @@ const ManageClasses = () => {
               </Button>
             </DialogFooter>
           </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

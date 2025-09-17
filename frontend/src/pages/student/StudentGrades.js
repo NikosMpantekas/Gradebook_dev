@@ -30,6 +30,10 @@ import { TooltipProvider } from '../../components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '../../components/ui/spinner';
 
+// Import mobile detection and utilities
+import { useIsMobile } from '../../components/hooks/use-mobile';
+import { cn } from '../../lib/utils';
+
 // Register ChartJS components
 ChartJS.register(ArcElement, ChartTooltip, Legend);
 
@@ -38,6 +42,7 @@ const StudentGrades = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { darkMode } = useTheme();
+  const isMobile = useIsMobile();
   
   const { user } = useSelector((state) => state.auth);
   const { grades, isLoading } = useSelector((state) => state.grades);
@@ -170,6 +175,168 @@ const StudentGrades = () => {
     if (grade >= 60) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--info))]';
     if (grade >= 50) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--warning))]';
     return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--error))]';
+  };
+
+  // Mobile card layout for grades
+  const renderMobileContent = () => {
+    const paginatedGrades = filteredGrades.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    
+    if (paginatedGrades.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t('student.noGradesAvailable')}</h3>
+          <p className="text-muted-foreground">
+            {!grades || grades.length === 0 ? t('student.noGradesYet') : t('student.noGradesMatch')}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-1 sm:px-2">
+        {paginatedGrades.map((grade) => (
+          <Card
+            key={grade._id}
+            className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-600 dark:hover:shadow-gray-800/50"
+          >
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
+                      {grade.subject?.name || 'N/A'}
+                    </h3>
+                    <Badge className={getGradeColor(grade.value) + ' text-sm'}>
+                      {grade.value}
+                    </Badge>
+                  </div>
+                  
+                  {grade.teacher?.name && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {grade.teacher.name}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
+                    </span>
+                  </div>
+                  
+                  {grade.description && (
+                    <div className="mb-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {grade.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Action button */}
+              <div className="flex justify-end mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewGrade(grade._id)}
+                  title={t('student.viewDetails')}
+                  className="hover:bg-muted dark:hover:bg-gray-700 gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  {t('student.viewDetails')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  // Desktop table layout
+  const renderDesktopContent = () => {
+    return (
+      <div className="rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-gray-200 dark:border-gray-600">
+                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.subject')}</TableHead>
+                <TableHead className="text-center p-4 text-foreground font-medium">{t('student.grade')}</TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.description')}</TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.teacher')}</TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.date')}</TableHead>
+                <TableHead className="text-center p-4 text-foreground font-medium">{t('student.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredGrades
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .length > 0 ? (
+                filteredGrades
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((grade) => (
+                    <TableRow key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                      <TableCell className="p-4 font-medium text-foreground text-base">
+                        {grade.subject?.name || 'N/A'}
+                      </TableCell>
+                      <TableCell className="p-4 text-center">
+                        <Badge className={getGradeColor(grade.value)}>
+                          {grade.value}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="p-4 text-foreground text-base max-w-xs truncate">
+                        {grade.description || 'N/A'}
+                      </TableCell>
+                      <TableCell className="p-4 text-foreground text-base">
+                        {grade.teacher?.name || 'N/A'}
+                      </TableCell>
+                      <TableCell className="p-4 text-foreground text-base">
+                        {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
+                      </TableCell>
+                      <TableCell className="p-4 text-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewGrade(grade._id)}
+                              title={t('student.viewDetails')}
+                              className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t('student.viewDetails')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12">
+                    <div className="text-center">
+                      <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">{t('student.noGradesAvailable')}</h3>
+                      <p className="text-muted-foreground">
+                        {!grades || grades.length === 0 ? t('student.noGradesYet') : t('student.noGradesMatch')}
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -309,67 +476,18 @@ const StudentGrades = () => {
               </div>
             </div>
 
-            {/* Grades Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('student.grades')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('student.subject')}</TableHead>
-                        <TableHead className="text-center">{t('student.grade')}</TableHead>
-                        <TableHead>{t('student.description')}</TableHead>
-                        <TableHead>{t('student.teacher')}</TableHead>
-                        <TableHead>{t('student.date')}</TableHead>
-                        <TableHead className="text-center">{t('student.actions')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredGrades
-                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((grade) => (
-                          <TableRow key={grade._id} className="border-b hover:bg-muted/50 transition-colors duration-200">
-                            <TableCell className="font-medium">
-                              {grade.subject?.name || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge className={getGradeColor(grade.value)}>
-                                {grade.value}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{grade.description || 'N/A'}</TableCell>
-                            <TableCell>{grade.teacher?.name || 'N/A'}</TableCell>
-                            <TableCell>
-                              {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleViewGrade(grade._id)}
-                                    className="h-8 w-8 p-0 hover:bg-muted/50 transition-colors duration-200"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{t('student.viewDetails')}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination */}
-                <div className="flex items-center justify-between space-x-2 py-4">
+            {/* Grades List */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-foreground mb-4">
+                {t('student.grades')}
+              </h2>
+              
+              {/* Responsive layout */}
+              {isMobile ? renderMobileContent() : renderDesktopContent()}
+              
+              {/* Pagination */}
+              {filteredGrades.length > 0 && (
+                <div className="flex items-center justify-between space-x-2 py-4 mt-4">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">{t('student.rowsPerPage')}</p>
                     <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
@@ -405,8 +523,8 @@ const StudentGrades = () => {
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </>
         ) : (
           <Card>
