@@ -41,6 +41,7 @@ const StudentDashboard = () => {
     notifications: [],
     grades: [],
     classes: [],
+    scheduleData: {},
     stats: {
       totalSubjects: 0,
       averageGrade: 0,
@@ -116,6 +117,9 @@ const StudentDashboard = () => {
         setPanelLoading(prev => ({ ...prev, classes: true }));
         promises.push(fetchUpcomingClasses());
         dataKeys.push('classes');
+        // Also fetch the complete schedule data for calendar
+        promises.push(fetchScheduleData());
+        dataKeys.push('scheduleData');
       }
       
       // Execute all enabled data fetches
@@ -231,6 +235,31 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error('StudentDashboard: Error fetching upcoming classes:', error);
       return [];
+    }
+  };
+
+  const fetchScheduleData = async () => {
+    try {
+      // Fetch complete schedule data for the calendar
+      const response = await axios.get(`${API_URL}/api/schedule`, getAuthConfig());
+      
+      console.log('StudentDashboard: Full schedule response for calendar:', response.data);
+      
+      if (response.data && response.data.schedule) {
+        console.log('StudentDashboard: Returning complete schedule data:', response.data.schedule);
+        return response.data.schedule;
+      }
+      
+      // Handle direct schedule format
+      if (response.data && typeof response.data === 'object') {
+        console.log('StudentDashboard: Using direct schedule format:', response.data);
+        return response.data;
+      }
+      
+      return {};
+    } catch (error) {
+      console.error('StudentDashboard: Error fetching schedule data:', error);
+      return {};
     }
   };
 
@@ -390,7 +419,7 @@ const StudentDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <MonthlyCalendar classes={dashboardData.classes} />
+            <MonthlyCalendar scheduleData={dashboardData.scheduleData} />
           </CardContent>
         </Card>
 
