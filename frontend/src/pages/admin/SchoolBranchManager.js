@@ -36,6 +36,7 @@ import {
 
 // Import our custom components
 import { useIsMobile } from '../../components/hooks/use-mobile';
+import { cn } from '../../lib/utils';
 
 const SchoolBranchManager = () => {
   const dispatch = useDispatch();
@@ -44,6 +45,7 @@ const SchoolBranchManager = () => {
   const { schools, isLoading, isError, isSuccess, message } = useSelector(
     (state) => state.schools
   );
+  const { darkMode } = useSelector((state) => state.ui);
   
   // Filter states
   const [filteredSchools, setFilteredSchools] = useState([]);
@@ -572,7 +574,12 @@ const SchoolBranchManager = () => {
       
       {/* Add School Branch Dialog */}
       <Dialog open={openAddDialog} onOpenChange={handleCloseAddDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={cn(
+          "w-[90vw] max-w-2xl transition-colors duration-100",
+          darkMode 
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+            : "bg-background text-foreground border-border"
+        )}>
           <DialogHeader>
             <DialogTitle>{t('admin.manageSchoolsPage.dialogs.addSchool.title')}</DialogTitle>
             <DialogDescription>
@@ -680,7 +687,12 @@ const SchoolBranchManager = () => {
       
       {/* Edit School Branch Dialog */}
       <Dialog open={openEditDialog} onOpenChange={handleCloseEditDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={cn(
+          "w-[90vw] max-w-2xl transition-colors duration-100",
+          darkMode 
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+            : "bg-background text-foreground border-border"
+        )}>
           <DialogHeader>
             <DialogTitle>{t('admin.manageSchoolsPage.dialogs.editSchool.title')}</DialogTitle>
             <DialogDescription>
@@ -788,7 +800,12 @@ const SchoolBranchManager = () => {
       
       {/* Delete School Branch Dialog */}
       <Dialog open={openDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
-        <DialogContent>
+        <DialogContent className={cn(
+          "w-[90vw] max-w-md transition-colors duration-100",
+          darkMode 
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+            : "bg-background text-foreground border-border"
+        )}>
           <DialogHeader>
             <DialogTitle>{t('admin.manageSchoolsPage.dialogs.deleteSchool.title')}</DialogTitle>
             <DialogDescription>

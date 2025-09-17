@@ -19,7 +19,11 @@ import { EditGradeDialog } from '../../components/grades/GradeDialogs';
 import { Spinner } from '../../components/ui/spinner';
 
 // Icons
-import { BookOpen, Plus, Trash2, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, Plus, Trash2, Search, Filter, ChevronDown, ChevronUp, Edit as EditIcon } from 'lucide-react';
+
+// Import mobile detection and utilities
+import { useIsMobile } from '../../components/hooks/use-mobile';
+import { cn } from '../../lib/utils';
 
 const ManageGrades = () => {
   const [grades, setGrades] = useState([]);
@@ -56,6 +60,7 @@ const ManageGrades = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   // Get token from user object or localStorage as fallback
   const authToken = user?.token || localStorage.getItem('token');
@@ -447,6 +452,224 @@ const ManageGrades = () => {
 
   const filteredGrades = getFilteredAndSortedGrades();
 
+  // Mobile card layout for grades
+  const renderMobileContent = () => {
+    if (filteredGrades.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t('teacherGrades.noGrades')}</h3>
+          <p className="text-muted-foreground">
+            {grades.length === 0 ? t('teacherGrades.noGradesYet') : t('teacherGrades.noGradesMatch')}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-1 sm:px-2">
+        {filteredGrades.map((grade) => (
+          <Card
+            key={grade._id}
+            className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-600 dark:hover:shadow-gray-800/50"
+          >
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center">
+                  <Checkbox 
+                    checked={selectedGrades.includes(grade._id)}
+                    onCheckedChange={() => handleGradeSelection(grade._id)}
+                  />
+                </div>
+                
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
+                      {grade.student?.name || t('teacherGrades.unknownStudent')}
+                    </h3>
+                    <Badge variant={grade.value >= 5 ? 'default' : 'destructive'} className="text-sm">
+                      {grade.value}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {grade.subject?.name || t('teacherGrades.unknownSubject')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(grade.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  {grade.description && (
+                    <div className="mb-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {grade.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Action buttons */}
+              <div className="flex justify-end mt-4 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditGrade(grade)}
+                  title={t('teacherGrades.edit')}
+                  className="hover:bg-muted dark:hover:bg-gray-700"
+                >
+                  <EditIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteGrade(grade._id)}
+                  title={t('common.delete')}
+                  className="hover:bg-red-700 dark:hover:bg-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  // Desktop table layout
+  const renderDesktopContent = () => {
+    return (
+      <div className="rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="text-left p-4 text-foreground font-medium">
+                  <Checkbox 
+                    checked={selectedGrades.length === filteredGrades.length && filteredGrades.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedGrades(filteredGrades.map(grade => grade._id));
+                      } else {
+                        setSelectedGrades([]);
+                      }
+                    }}
+                  />
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('student')}
+                >
+                  {t('teacherGrades.tableStudent')}
+                  {sortConfig.field === 'student' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('subject')}
+                >
+                  {t('teacherGrades.tableSubject')}
+                  {sortConfig.field === 'subject' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('value')}
+                >
+                  {t('teacherGrades.tableGrade')}
+                  {sortConfig.field === 'value' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('createdAt')}
+                >
+                  {t('teacherGrades.tableDate')}
+                  {sortConfig.field === 'createdAt' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">{t('teacherGrades.tableDescription')}</th>
+                <th className="text-left p-4 text-foreground font-medium">{t('teacherGrades.tableActions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredGrades.length > 0 ? (
+                filteredGrades.map((grade) => (
+                  <tr key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                    <td className="p-4">
+                      <Checkbox 
+                        checked={selectedGrades.includes(grade._id)}
+                        onCheckedChange={() => handleGradeSelection(grade._id)}
+                      />
+                    </td>
+                    <td className="p-4 font-medium text-foreground text-base">{grade.student?.name || t('teacherGrades.unknownStudent')}</td>
+                    <td className="p-4 text-foreground text-base">{grade.subject?.name || t('teacherGrades.unknownSubject')}</td>
+                    <td className="p-4">
+                      <Badge variant={grade.value >= 5 ? 'default' : 'destructive'} className="text-sm">
+                        {grade.value}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {new Date(grade.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 text-foreground text-base max-w-xs truncate">
+                      {grade.description || '-'}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditGrade(grade)}
+                          title={t('teacherGrades.edit')}
+                          className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                        >
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteGrade(grade._id)}
+                          title={t('common.delete')}
+                          className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <div className="text-center">
+                      <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">{t('teacherGrades.noGrades')}</h3>
+                      <p className="text-muted-foreground">
+                        {grades.length === 0 ? t('teacherGrades.noGradesYet') : t('teacherGrades.noGradesMatch')}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -656,125 +879,15 @@ const ManageGrades = () => {
         </Card>
       )}
       
-      {/* Grades Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('teacherGrades.gradesHeading', { count: filteredGrades.length })}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredGrades.length === 0 ? (
-            <div className="text-center py-8">
-              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">{t('teacherGrades.noGrades')}</h3>
-              <p className="text-muted-foreground">
-                {grades.length === 0 ? t('teacherGrades.noGradesYet') : t('teacherGrades.noGradesMatch')}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-600">
-                    <th className="text-left p-2">
-                      <Checkbox 
-                        checked={selectedGrades.length === filteredGrades.length}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedGrades(filteredGrades.map(grade => grade._id));
-                          } else {
-                            setSelectedGrades([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
-                      onClick={() => handleSort('student')}
-                    >
-                      {t('teacherGrades.tableStudent')}
-                      {sortConfig.field === 'subject' && (
-                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </th>
-                    <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
-                      onClick={() => handleSort('subject')}
-                    >
-                      {t('teacherGrades.tableSubject')}
-                      {sortConfig.field === 'subject' && (
-                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </th>
-                    <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
-                      onClick={() => handleSort('value')}
-                    >
-                      {t('teacherGrades.tableGrade')}
-                      {sortConfig.field === 'value' && (
-                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </th>
-                    <th 
-                      className="text-left p-2 cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
-                      onClick={() => handleSort('createdAt')}
-                    >
-                      {t('teacherGrades.tableDate')}
-                      {sortConfig.field === 'createdAt' && (
-                        <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </th>
-                    <th className="text-left p-2">{t('teacherGrades.tableDescription')}</th>
-                    <th className="text-left p-2">{t('teacherGrades.tableActions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredGrades.map((grade) => (
-                    <tr key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
-                      <td className="p-2">
-                        <Checkbox 
-                          checked={selectedGrades.includes(grade._id)}
-                          onCheckedChange={() => handleGradeSelection(grade._id)}
-                        />
-                      </td>
-                      <td className="p-2 font-medium">{grade.student?.name || t('teacherGrades.unknownStudent')}</td>
-                      <td className="p-2">{grade.subject?.name || t('teacherGrades.unknownSubject')}</td>
-                      <td className="p-2">
-                        <Badge variant={grade.value >= 5 ? 'default' : 'destructive'}>
-                          {grade.value}
-                        </Badge>
-                      </td>
-                      <td className="p-2 text-sm text-muted-foreground">
-                        {new Date(grade.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-2 text-sm text-muted-foreground max-w-xs truncate">
-                        {grade.description || '-'}
-                      </td>
-                      <td className="p-2">
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditGrade(grade)}
-                          >
-                            {t('teacherGrades.edit')}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteGrade(grade._id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Grades List */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
+          {t('teacherGrades.gradesHeading', { count: filteredGrades.length })}
+        </h2>
+        
+        {/* Responsive layout */}
+        {isMobile ? renderMobileContent() : renderDesktopContent()}
+      </div>
 
       {/* Edit Grade Dialog */}
       <EditGradeDialog

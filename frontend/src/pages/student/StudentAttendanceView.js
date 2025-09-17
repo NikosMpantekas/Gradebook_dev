@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, isValid } from 'date-fns';
 import { 
   Card, 
   CardContent, 
@@ -29,6 +29,18 @@ import axios from 'axios';
 const StudentAttendanceView = () => {
   const { t } = useTranslation();
   const { user, token } = useSelector((state) => state.auth);
+
+  // Helper function to safely parse and validate dates
+  const safeParseDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+      const parsed = parseISO(dateString);
+      return isValid(parsed) ? parsed : null;
+    } catch (error) {
+      console.warn('Invalid date string:', dateString, error);
+      return null;
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -135,9 +147,15 @@ const StudentAttendanceView = () => {
   };
 
   const getAttendanceForDay = (date) => {
-    return attendanceData.find(record => 
-      record.session && isSameDay(parseISO(record.session.scheduledStartAt), date)
-    );
+    return attendanceData.find(record => {
+      if (!record.session) return false;
+      
+      // Try different possible date fields
+      const sessionDate = record.session.scheduledStartAt || record.session.date || record.date;
+      const parsedDate = safeParseDate(sessionDate);
+      
+      return parsedDate && isSameDay(parsedDate, date);
+    });
   };
 
   const getDaysInMonth = () => {
@@ -150,13 +168,13 @@ const StudentAttendanceView = () => {
   const getAttendanceColor = (status) => {
     switch (status) {
       case 'present':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700';
       case 'absent':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700';
       case 'late':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600';
     }
   };
 
@@ -184,10 +202,10 @@ const StudentAttendanceView = () => {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           {t('attendance.myAttendance')}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           {t('attendance.viewAttendanceHistory')}
         </p>
       </div>
@@ -199,8 +217,8 @@ const StudentAttendanceView = () => {
             <div className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('attendance.totalSessions')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalSessions}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.totalSessions')}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalSessions}</p>
               </div>
             </div>
           </CardContent>
@@ -211,8 +229,8 @@ const StudentAttendanceView = () => {
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('attendance.attendedSessions')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.presentSessions}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.attendedSessions')}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.presentSessions}</p>
               </div>
             </div>
           </CardContent>
@@ -223,8 +241,8 @@ const StudentAttendanceView = () => {
             <div className="flex items-center space-x-2">
               <XCircle className="h-8 w-8 text-red-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('attendance.missedSessions')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.absentSessions}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.missedSessions')}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.absentSessions}</p>
               </div>
             </div>
           </CardContent>
@@ -235,8 +253,8 @@ const StudentAttendanceView = () => {
             <div className="flex items-center space-x-2">
               <TrendingUp className="h-8 w-8 text-purple-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('attendance.attendanceRate')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.attendanceRate}%</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.attendanceRate')}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.attendanceRate}%</p>
               </div>
             </div>
           </CardContent>
@@ -249,7 +267,7 @@ const StudentAttendanceView = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <BookOpen className="h-5 w-5" />
-              <span>{t('common.classes')}</span>
+              <span>{t('navigation.classes')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -313,7 +331,7 @@ const StudentAttendanceView = () => {
               <div className="grid grid-cols-7 gap-2">
                 {/* Day headers */}
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <div key={day} className="text-center font-medium text-gray-600 p-2">
+                  <div key={day} className="text-center font-medium text-gray-600 dark:text-gray-300 p-2">
                     {day}
                   </div>
                 ))}
@@ -327,11 +345,14 @@ const StudentAttendanceView = () => {
                     <div
                       key={date.toISOString()}
                       className={`
-                        min-h-[60px] p-2 border rounded-md relative
-                        ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
+                        min-h-[60px] p-2 border rounded-md relative transition-colors
+                        ${isToday 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' 
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }
                       `}
                     >
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {format(date, 'd')}
                       </div>
                       {attendance && (
@@ -347,7 +368,7 @@ const StudentAttendanceView = () => {
                 })}
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                 {t('attendance.selectClassToViewCalendar')}
               </div>
             )}
@@ -367,8 +388,14 @@ const StudentAttendanceView = () => {
           <CardContent>
             <div className="space-y-3">
               {attendanceData.length > 0 ? (
-                attendanceData.map((session, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                attendanceData
+                  .filter(session => {
+                    // Filter out sessions with completely invalid data
+                    const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
+                    return sessionDate; // Only include sessions that have some date field
+                  })
+                  .map((session, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                     <div className="flex items-center space-x-3">
                       {session.status === 'present' ? (
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -376,9 +403,22 @@ const StudentAttendanceView = () => {
                         <XCircle className="h-5 w-5 text-red-600" />
                       )}
                       <div>
-                        <p className="font-medium">{format(parseISO(session.date), 'EEEE, MMM dd, yyyy')}</p>
+                        {(() => {
+                          // Try different possible date fields
+                          const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
+                          const parsedDate = safeParseDate(sessionDate);
+                          
+                          return (
+                            <p className="font-medium">
+                              {parsedDate 
+                                ? format(parsedDate, 'EEEE, MMM dd, yyyy')
+                                : 'Invalid Date'
+                              }
+                            </p>
+                          );
+                        })()}
                         {session.note && (
-                          <p className="text-sm text-gray-500">{session.note}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{session.note}</p>
                         )}
                       </div>
                     </div>
@@ -391,7 +431,7 @@ const StudentAttendanceView = () => {
                   </div>
                 ))
               ) : (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                   {loading ? t('common.loading') : t('attendance.noAttendanceData')}
                 </div>
               )}

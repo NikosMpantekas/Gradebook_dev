@@ -201,62 +201,27 @@ const StudentStats = () => {
             
             <div className="space-y-2">
               <Label htmlFor="startDate">{t('student.startDate')}</Label>
-              {/* Mobile: Native date input */}
-              <div className="block sm:hidden">
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  disabled={!selectedStudent}
-                  max={endDate || new Date().toISOString().split('T')[0]}
-                  className="w-full min-w-0"
-                  style={{ WebkitAppearance: 'none' }}
-                  inputMode="none"
-                />
-              </div>
-              {/* Desktop: Beautiful DatePicker */}
-              <div className="hidden sm:block">
-                <DatePicker
-                  placeholder={t('student.startDate')}
-                  value={startDate}
-                  onChange={setStartDate}
-                  disabled={!selectedStudent}
-                  max={endDate || new Date().toISOString().split('T')[0]}
-                  className="w-full"
-                />
-              </div>
+              <DatePicker
+                placeholder={t('student.startDate')}
+                value={startDate}
+                onChange={setStartDate}
+                disabled={!selectedStudent}
+                max={endDate || new Date().toISOString().split('T')[0]}
+                className="w-full"
+              />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="endDate">{t('student.endDate')}</Label>
-              {/* Mobile: Native date input */}
-              <div className="block sm:hidden">
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  disabled={!selectedStudent || !startDate}
-                  min={startDate}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full min-w-0"
-                  style={{ WebkitAppearance: 'none' }}
-                  inputMode="none"
-                />
-              </div>
-              {/* Desktop: Beautiful DatePicker */}
-              <div className="hidden sm:block">
-                <DatePicker
-                  placeholder={t('student.endDate')}
-                  value={endDate}
-                  onChange={setEndDate}
-                  disabled={!selectedStudent || !startDate}
-                  min={startDate}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full"
-                />
-              </div>
+              <DatePicker
+                placeholder={t('student.endDate')}
+                value={endDate}
+                onChange={setEndDate}
+                disabled={!selectedStudent || !startDate}
+                min={startDate}
+                max={new Date().toISOString().split('T')[0]}
+                className="w-full"
+              />
             </div>
           </div>
           
