@@ -532,7 +532,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
         senderName: superAdminUser.name,
         senderRole: 'admin', // Use 'admin' instead of 'superadmin' as it's not in enum
         schoolId: recipientSchoolId, // Required field
-        recipients: [recipient._id], // Array of recipients
+        recipients: [{ user: recipient._id }], // Correct format: array of objects with 'user' field
         targetRole: 'all', // Default target role
         sendToAll: false,
         status: 'sent',
@@ -544,6 +544,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
       };
       
       console.log(`📢 Creating notification for ${recipient.name} in school ${recipientSchoolId}`);
+      console.log(`📢 Notification data being sent to database:`, JSON.stringify(notificationData, null, 2));
       
       const notification = await Notification.create(notificationData);
       notifications.push(notification);

@@ -1,37 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  Chip,
-  CircularProgress,
-  Divider,
-  Paper,
-  Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Autocomplete
-} from '@mui/material';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Separator } from '../../components/ui/separator';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Textarea } from '../../components/ui/textarea';
 import {
   Send as SendIcon,
-  Notifications as NotificationsIcon,
-  People as PeopleIcon,
+  Bell as NotificationsIcon,
+  Users as PeopleIcon,
   School as SchoolIcon,
-  Person as PersonIcon,
-  AdminPanelSettings as AdminIcon,
-  Search as SearchIcon
-} from '@mui/icons-material';
+  User as PersonIcon,
+  ShieldCheck as AdminIcon,
+  Search as SearchIcon,
+  Loader2
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -56,10 +42,10 @@ const SuperAdminNotifications = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   
   const recipientOptions = [
-    { value: 'all_admins', label: 'All Admin Accounts', icon: <AdminIcon />, description: 'Send to all school administrators' },
-    { value: 'all_users', label: 'All Users', icon: <PeopleIcon />, description: 'Send to all users (admins, teachers, students)' },
-    { value: 'specific_school', label: 'Specific School', icon: <SchoolIcon />, description: 'Send to all users in a particular school' },
-    { value: 'specific_user', label: 'Specific User', icon: <PersonIcon />, description: 'Send to a single user' }
+    { value: 'all_admins', label: 'All Admin Accounts', icon: AdminIcon, description: 'Send to all school administrators' },
+    { value: 'all_users', label: 'All Users', icon: PeopleIcon, description: 'Send to all users (admins, teachers, students)' },
+    { value: 'specific_school', label: 'Specific School', icon: SchoolIcon, description: 'Send to all users in a particular school' },
+    { value: 'specific_user', label: 'Specific User', icon: PersonIcon, description: 'Send to a single user' }
   ];
 
   // Load schools when component mounts
@@ -79,41 +65,85 @@ const SuperAdminNotifications = () => {
 
   const fetchSchools = async () => {
     try {
+      if (!user?.token) {
+        console.error('No authentication token available for fetching schools');
+        return;
+      }
+      
       const config = {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user.token}`
-        }
+        },
+        timeout: 10000
       };
 
+      console.log('Fetching schools from:', `${API_URL}/api/superadmin/schools`);
       const response = await axios.get(`${API_URL}/api/superadmin/schools`, config);
-      setSchools(response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setSchools(response.data);
+        console.log(`Loaded ${response.data.length} schools`);
+      } else {
+        console.warn('Unexpected schools response format:', response.data);
+        setSchools([]);
+      }
     } catch (error) {
-      console.error('Error fetching schools:', error);
-      toast.error('Failed to load schools');
+      console.error('Error fetching schools:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      toast.error(`Failed to load schools: ${error.response?.data?.message || error.message}`);
     }
   };
 
   const searchUsers = async () => {
     if (!userSearchQuery.trim()) return;
     
+    if (!user?.token) {
+      console.error('No authentication token available for user search');
+      toast.error('Authentication required. Please log in again.');
+      return;
+    }
+    
     setSearchLoading(true);
     try {
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`
-        }
+        },
+        timeout: 10000
       };
 
       const params = new URLSearchParams({
-        query: userSearchQuery
+        query: userSearchQuery.trim()
       });
 
+      console.log('Searching users:', `${API_URL}/api/superadmin/users/search?${params}`);
       const response = await axios.get(`${API_URL}/api/superadmin/users/search?${params}`, config);
-      setUsers(response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setUsers(response.data);
+        console.log(`Found ${response.data.length} users matching '${userSearchQuery}'`);
+      } else {
+        console.warn('Unexpected user search response format:', response.data);
+        setUsers([]);
+      }
     } catch (error) {
-      console.error('Error searching users:', error);
-      toast.error('Failed to search users');
+      console.error('Error searching users:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        query: userSearchQuery
+      });
+      
+      if (error.response?.status === 404) {
+        // No users found - not really an error
+        setUsers([]);
+      } else {
+        toast.error(`Failed to search users: ${error.response?.data?.message || error.message}`);
+      }
     } finally {
       setSearchLoading(false);
     }
@@ -139,19 +169,26 @@ const SuperAdminNotifications = () => {
     }
   };
 
-  const handleUserSelect = (event, newValue) => {
-    setSelectedUser(newValue);
+  const handleUserSelect = (userId) => {
+    const user = users.find(u => u._id === userId);
+    setSelectedUser(user || null);
     setFormData({
       ...formData,
-      userId: newValue ? newValue._id : ''
+      userId: userId || ''
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.title.trim() || !formData.message.trim()) {
-      toast.error('Please provide both title and message');
+    // Enhanced validation
+    if (!formData.title.trim()) {
+      toast.error('Please provide a notification title');
+      return;
+    }
+    
+    if (!formData.message.trim()) {
+      toast.error('Please provide a notification message');
       return;
     }
 
@@ -165,19 +202,52 @@ const SuperAdminNotifications = () => {
       return;
     }
 
+    // Validate token exists
+    if (!user?.token) {
+      toast.error('Authentication token not found. Please log in again.');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Prepare request payload with proper validation
+      const requestPayload = {
+        title: formData.title.trim(),
+        message: formData.message.trim(),
+        recipientType: formData.recipientType
+      };
+      
+      // Add conditional fields only if they exist and are valid
+      if (formData.recipientType === 'specific_school' && formData.schoolId) {
+        requestPayload.schoolId = formData.schoolId;
+      }
+      
+      if (formData.recipientType === 'specific_user' && formData.userId) {
+        requestPayload.userId = formData.userId;
+      }
+      
+      console.log('Sending notification request:', {
+        url: `${API_URL}/api/superadmin/notifications`,
+        payload: requestPayload,
+        recipientType: formData.recipientType
+      });
+
       const config = {
         headers: {
           'Content-Type': 'application/json',  
           Authorization: `Bearer ${user.token}`
-        }
+        },
+        timeout: 30000 // 30 second timeout
       };
 
-      const response = await axios.post(`${API_URL}/api/superadmin/notifications`, formData, config);
+      const response = await axios.post(`${API_URL}/api/superadmin/notifications`, requestPayload, config);
       
-      toast.success(`✅ Notification sent successfully to ${response.data.recipientCount} recipient(s)!`);
+      console.log('Notification sent successfully:', response.data);
+      
+      // Handle different response formats
+      const recipientCount = response.data?.recipientCount || response.data?.count || 'unknown';
+      toast.success(`✅ Notification sent successfully to ${recipientCount} recipient(s)!`);
       
       // Reset form
       setFormData({
@@ -191,8 +261,45 @@ const SuperAdminNotifications = () => {
       setUserSearchQuery('');
       
     } catch (error) {
-      console.error('Error sending notification:', error);
-      toast.error(error.response?.data?.message || 'Failed to send notification');
+      console.error('Detailed error sending notification:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
+      // Enhanced error messages based on error type
+      let errorMessage = 'Failed to send notification';
+      
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 400) {
+          errorMessage = data?.message || 'Invalid request data. Please check your inputs.';
+        } else if (status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (status === 403) {
+          errorMessage = 'You do not have permission to send notifications.';
+        } else if (status === 404) {
+          errorMessage = 'Notification service not found. Please contact support.';
+        } else if (status === 500) {
+          errorMessage = data?.message || 'Server error occurred. Please try again later.';
+        } else {
+          errorMessage = data?.message || `Server error (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else {
+        // Other error
+        errorMessage = error.message || 'An unexpected error occurred.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -204,288 +311,284 @@ const SuperAdminNotifications = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <NotificationsIcon sx={{ fontSize: 32, mr: 2, color: 'primary.main' }} />
-          <Typography variant="h4" component="h1">
-            SuperAdmin Notifications
-          </Typography>
-        </Box>
-        <Typography variant="body1" color="text.secondary">
-          Send targeted notifications to users across the platform with easy-to-use filters.
-        </Typography>
-      </Paper>
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <NotificationsIcon className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold">SuperAdmin Notifications</h1>
+              <p className="text-muted-foreground">Send targeted notifications to users across the platform with easy-to-use filters.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <Card elevation={2}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <SendIcon className="h-5 w-5" />
+                <span>Send Notification</span>
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                <SendIcon sx={{ mr: 1 }} />
-                Send Notification
-              </Typography>
-              
-              <Box component="form" onSubmit={handleSubmit}>
-                <Grid container spacing={3}>
-                  {/* Recipient Type Selection */}
-                  <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Recipient Type</InputLabel>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Recipient Type Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="recipientType">Recipient Type</Label>
+                  <Select
+                    value={formData.recipientType}
+                    onValueChange={(value) => handleChange({ target: { name: 'recipientType', value } })}
+                    disabled={loading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {recipientOptions.map((option) => {
+                        const IconComponent = option.icon;
+                        return (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center space-x-2">
+                              <IconComponent className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">{option.label}</div>
+                                <div className="text-xs text-muted-foreground">{option.description}</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* School Selection for specific school */}
+                {formData.recipientType === 'specific_school' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="schoolId">Select School</Label>
+                    <Select
+                      value={formData.schoolId}
+                      onValueChange={(value) => handleChange({ target: { name: 'schoolId', value } })}
+                      disabled={loading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a school..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {schools.map((school) => (
+                          <SelectItem key={school._id} value={school._id}>
+                            <div>
+                              <div className="font-medium">{school.name}</div>
+                              <div className="text-xs text-muted-foreground">{school.emailDomain}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* User Selection for specific user */}
+                {formData.recipientType === 'specific_user' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="userSearch">Search and Select User</Label>
+                    <div className="relative">
+                      <Input
+                        id="userSearch"
+                        type="text"
+                        placeholder="Type name or email to search..."
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        disabled={loading}
+                        className="pr-8"
+                      />
+                      {searchLoading && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    {users.length > 0 && (
                       <Select
-                        name="recipientType"
-                        value={formData.recipientType}
-                        onChange={handleChange}
-                        label="Recipient Type"
+                        value={formData.userId}
+                        onValueChange={handleUserSelect}
                         disabled={loading}
                       >
-                        {recipientOptions.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              {option.icon}
-                              <Box sx={{ ml: 2 }}>
-                                <Typography variant="body1">{option.label}</Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {option.description}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {/* School Selection for specific school */}
-                  {formData.recipientType === 'specific_school' && (
-                    <Grid item xs={12}>
-                      <FormControl fullWidth>
-                        <InputLabel>Select School</InputLabel>
-                        <Select
-                          name="schoolId"
-                          value={formData.schoolId}
-                          onChange={handleChange}
-                          label="Select School"
-                          disabled={loading}
-                        >
-                          {schools.map((school) => (
-                            <MenuItem key={school._id} value={school._id}>
-                              <Box>
-                                <Typography variant="body1">{school.name}</Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {school.emailDomain}
-                                </Typography>
-                              </Box>
-                            </MenuItem>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a user..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map((user) => (
+                            <SelectItem key={user._id} value={user._id}>
+                              <div className="flex items-center space-x-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback className="text-xs">
+                                    {user.name.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-medium">{user.name}</div>
+                                  <div className="text-xs text-muted-foreground">{user.email} • {user.role}</div>
+                                </div>
+                              </div>
+                            </SelectItem>
                           ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+
+                {/* Notification Title */}
+                <div className="space-y-2">
+                  <Label htmlFor="title">Notification Title *</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    disabled={loading}
+                    required
+                    placeholder="Enter a clear, descriptive title..."
+                  />
+                </div>
+
+                {/* Notification Message */}
+                <div className="space-y-2">
+                  <Label htmlFor="message">Notification Message *</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    disabled={loading}
+                    required
+                    rows={4}
+                    placeholder="Enter your message here..."
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <SendIcon className="mr-2 h-4 w-4" />
+                      Send Notification
+                    </>
                   )}
-
-                  {/* User Selection for specific user */}
-                  {formData.recipientType === 'specific_user' && (
-                    <Grid item xs={12}>
-                      <Autocomplete
-                        options={users}
-                        getOptionLabel={(option) => `${option.name} (${option.email})`}
-                        value={selectedUser}
-                        onChange={handleUserSelect}
-                        onInputChange={(event, newInputValue) => {
-                          setUserSearchQuery(newInputValue);
-                        }}
-                        loading={searchLoading}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Search and Select User"
-                            placeholder="Type name or email to search..."
-                            InputProps={{
-                              ...params.InputProps,
-                              endAdornment: (
-                                <>
-                                  {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                                  {params.InputProps.endAdornment}
-                                </>
-                              ),
-                            }}
-                          />
-                        )}
-                        renderOption={(props, option) => (
-                          <Box component="li" {...props}>
-                            <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-                              {option.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body1">{option.name}</Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {option.email} • {option.role}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        )}
-                        disabled={loading}
-                      />
-                    </Grid>
-                  )}
-
-                  {/* Notification Title */}
-                  <Grid item xs={12}>
-                    <TextField
-                      name="title"
-                      label="Notification Title"
-                      fullWidth
-                      value={formData.title}
-                      onChange={handleChange}
-                      disabled={loading}
-                      required
-                      placeholder="Enter a clear, descriptive title..."
-                    />
-                  </Grid>
-
-                  {/* Notification Message */}
-                  <Grid item xs={12}>
-                    <TextField
-                      name="message"
-                      label="Notification Message"
-                      fullWidth
-                      multiline
-                      rows={4}
-                      value={formData.message}
-                      onChange={handleChange}
-                      disabled={loading}
-                      required
-                      placeholder="Enter your message here..."
-                    />
-                  </Grid>
-
-                  {/* Submit Button */}
-                  <Grid item xs={12}>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
-                      disabled={loading}
-                      fullWidth
-                    >
-                      {loading ? 'Sending...' : 'Send Notification'}
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Box>
+                </Button>
+              </form>
             </CardContent>
           </Card>
-        </Grid>
+        </div>
 
-        <Grid item xs={12} md={4}>
-          <Card elevation={2}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                📋 Notification Preview
-              </Typography>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Recipient Type:
-                </Typography>
-                <Chip 
-                  icon={getRecipientInfo().icon}
-                  label={getRecipientInfo().label}
-                  color="primary"
-                  variant="outlined"
-                />
-              </Box>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">📋 Notification Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-primary">Recipient Type:</Label>
+                <Badge variant="outline" className="mt-1 flex w-fit items-center space-x-1">
+                  {(() => {
+                    const recipientInfo = getRecipientInfo();
+                    const IconComponent = recipientInfo.icon;
+                    return (
+                      <>
+                        <IconComponent className="h-3 w-3" />
+                        <span>{recipientInfo.label}</span>
+                      </>
+                    );
+                  })()}
+                </Badge>
+              </div>
 
               {formData.schoolId && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="primary" gutterBottom>
-                    Selected School:
-                  </Typography>
-                  <Typography variant="body2">
+                <div>
+                  <Label className="text-sm font-medium text-primary">Selected School:</Label>
+                  <p className="text-sm mt-1">
                     {schools.find(s => s._id === formData.schoolId)?.name || 'Loading...'}
-                  </Typography>
-                </Box>
+                  </p>
+                </div>
               )}
 
               {selectedUser && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="primary" gutterBottom>
-                    Selected User:
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Avatar sx={{ mr: 1, width: 24, height: 24, fontSize: 12 }}>
-                      {selectedUser.name.charAt(0).toUpperCase()}
+                <div>
+                  <Label className="text-sm font-medium text-primary">Selected User:</Label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-xs">
+                        {selectedUser.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
-                    <Box>
-                      <Typography variant="body2">{selectedUser.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {selectedUser.email}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
+                    <div>
+                      <p className="text-sm font-medium">{selectedUser.name}</p>
+                      <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
+                    </div>
+                  </div>
+                </div>
               )}
 
-              <Divider sx={{ my: 2 }} />
+              <Separator />
 
-              <Box>
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Title:
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 2, fontStyle: formData.title ? 'normal' : 'italic' }}>
+              <div>
+                <Label className="text-sm font-medium text-primary">Title:</Label>
+                <p className={`text-sm mt-1 ${formData.title ? '' : 'italic text-muted-foreground'}`}>
                   {formData.title || 'Enter notification title...'}
-                </Typography>
+                </p>
+              </div>
 
-                <Typography variant="subtitle2" color="primary" gutterBottom>
-                  Message:
-                </Typography>
-                <Typography variant="body2" sx={{ fontStyle: formData.message ? 'normal' : 'italic' }}>
+              <div>
+                <Label className="text-sm font-medium text-primary">Message:</Label>
+                <p className={`text-sm mt-1 ${formData.message ? '' : 'italic text-muted-foreground'}`}>
                   {formData.message || 'Enter notification message...'}
-                </Typography>
-              </Box>
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          <Card elevation={2} sx={{ mt: 2 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">💡 Quick Tips</CardTitle>
+            </CardHeader>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                💡 Quick Tips
-              </Typography>
-              <List dense>
-                <ListItem>
-                  <ListItemText 
-                    primary="All Admins"
-                    secondary="Sends to all school administrators across all schools"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="All Users" 
-                    secondary="Sends to every user in the system (admins, teachers, students)"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Specific School"
-                    secondary="Sends to all users within a selected school"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Specific User"
-                    secondary="Sends to one individual user by searching their name or email"
-                  />
-                </ListItem>
-              </List>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-medium text-sm">All Admins</h4>
+                  <p className="text-xs text-muted-foreground">Sends to all school administrators across all schools</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">All Users</h4>
+                  <p className="text-xs text-muted-foreground">Sends to every user in the system (admins, teachers, students)</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Specific School</h4>
+                  <p className="text-xs text-muted-foreground">Sends to all users within a selected school</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Specific User</h4>
+                  <p className="text-xs text-muted-foreground">Sends to one individual user by searching their name or email</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 };
 

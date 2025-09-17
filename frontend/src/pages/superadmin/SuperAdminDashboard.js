@@ -2,43 +2,31 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { 
-  Typography, 
-  Grid, 
-  Paper, 
-  Box, 
-  Card, 
-  CardContent, 
-  Button,
-  Avatar,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Divider
-} from '@mui/material';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Separator } from '../../components/ui/separator';
+import { Avatar } from '../../components/ui/avatar';
 import { 
   School, 
-  AdminPanelSettings, 
+  ShieldCheck, 
   Check as CheckIcon,
-  Block as BlockIcon,
-  Add as AddIcon,
-  ArrowForward as ArrowForwardIcon,
-  Notifications as NotificationsIcon,
-  Grade as GradeIcon,
+  X as BlockIcon,
+  Plus as AddIcon,
+  ArrowRight as ArrowForwardIcon,
+  Bell as NotificationsIcon,
+  GraduationCap as GradeIcon,
   Settings as SettingsIcon,
-  People as PeopleIcon,
+  Users as PeopleIcon,
   Star as StarIcon,
-  StarBorder as StarBorderIcon,
+  Star as StarBorderIcon,
   Euro as EuroIcon,
   Edit as EditIcon
-} from '@mui/icons-material';
+} from 'lucide-react';
 import { getSchoolOwners, updateSchoolOwnerStatus, updateAdminPack, reset } from '../../features/superadmin/superAdminSlice';
 import LoadingState from '../../components/common/LoadingState';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
@@ -133,257 +121,257 @@ function SuperAdminDashboard() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-        <AdminPanelSettings sx={{ mr: 1 }} /> Super Admin Dashboard
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        Welcome to the Super Admin Control Panel
-      </Typography>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center space-x-2">
+        <ShieldCheck className="h-8 w-8 text-primary" />
+        <div>
+          <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
+          <p className="text-muted-foreground">Welcome to the Super Admin Control Panel</p>
+        </div>
+      </div>
 
       {/* Maintenance Notifications */}
       <MaintenanceNotifications />
       
       {/* School Owner Statistics */}
-      <Grid container spacing={3} sx={{ mt: 2, mb: 4 }}>
-            <Grid item xs={12} sm={3}>
-              <Paper elevation={3} sx={{ p: 2, borderRadius: 2, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                    <School />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4">{stats.totalOwners}</Typography>
-                    <Typography variant="body2" color="text.secondary">Total School Owners</Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Paper elevation={3} sx={{ p: 2, borderRadius: 2, height: '100%', bgcolor: 'success.light' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
-                    <CheckIcon />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4">{stats.activeOwners}</Typography>
-                    <Typography variant="body2">Active Schools</Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Paper elevation={3} sx={{ p: 2, borderRadius: 2, height: '100%', bgcolor: 'error.light' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar sx={{ bgcolor: 'error.main', mr: 2 }}>
-                    <BlockIcon />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4">{stats.inactiveOwners}</Typography>
-                    <Typography variant="body2">Inactive Schools</Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Paper elevation={3} sx={{ p: 2, borderRadius: 2, height: '100%', bgcolor: 'info.light' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar sx={{ bgcolor: 'info.main', mr: 2 }}>
-                    <PeopleIcon />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4">{stats.totalUsers}</Typography>
-                    <Typography variant="body2">Total Users</Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-          </Grid>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="p-2 bg-blue-100 rounded-lg mr-4">
+              <School className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{stats.totalOwners}</p>
+              <p className="text-sm text-muted-foreground">Total School Owners</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="p-2 bg-green-100 rounded-lg mr-4">
+              <CheckIcon className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{stats.activeOwners}</p>
+              <p className="text-sm text-muted-foreground">Active Schools</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="p-2 bg-red-100 rounded-lg mr-4">
+              <BlockIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{stats.inactiveOwners}</p>
+              <p className="text-sm text-muted-foreground">Inactive Schools</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="p-2 bg-blue-100 rounded-lg mr-4">
+              <PeopleIcon className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{stats.totalUsers}</p>
+              <p className="text-sm text-muted-foreground">Total Users</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h6">
-                School Owners
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={() => navigate('/superadmin/create-school-owner')}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>School Owners</CardTitle>
+            <Button
+              onClick={() => navigate('/superadmin/create-school-owner')}
+              className="flex items-center space-x-2"
+            >
+              <AddIcon className="h-4 w-4" />
+              <span>Add School Owner</span>
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {schoolOwners.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {schoolOwners.map((owner) => (
+                <Card key={owner._id} className="h-full">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-semibold text-lg">{owner.name}</h3>
+                      <Badge variant={owner.active ? 'default' : 'destructive'}>
+                        {owner.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground">{owner.email}</p>
+                    
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <School className="h-4 w-4" />
+                      <span>{owner.schoolName || 'No School Assigned'}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <PeopleIcon className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-600">
+                        {owner.userCount || 0} Users
+                      </span>
+                    </div>
+
+                    <Separator />
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Pack & Pricing</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePackEdit(owner)}
+                          className="h-8 px-2"
+                        >
+                          <EditIcon className="h-3 w-3" />
+                          Edit
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={owner.packType === 'pro' ? 'default' : 'secondary'} className="flex items-center space-x-1">
+                          <StarIcon className="h-3 w-3" />
+                          <span>{owner.packType === 'pro' ? 'PRO' : 'LITE'}</span>
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center space-x-1">
+                        <EuroIcon className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-600">
+                          €{owner.monthlyPrice || 0}/month
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between space-x-2 pt-2">
+                      <Button
+                        variant={owner.active ? "destructive" : "default"}
+                        size="sm"
+                        onClick={() => {
+                          dispatch(updateSchoolOwnerStatus({
+                            id: owner._id,
+                            statusData: { active: !owner.active }
+                          }))
+                            .unwrap()
+                            .then(() => {
+                              toast.success(`School owner ${owner.active ? 'disabled' : 'enabled'} successfully`);
+                            })
+                            .catch((error) => {
+                              toast.error(`Error: ${error}`);
+                            });
+                        }}
+                        className="flex items-center space-x-1"
+                      >
+                        {owner.active ? <BlockIcon className="h-3 w-3" /> : <CheckIcon className="h-3 w-3" />}
+                        <span>{owner.active ? 'Disable' : 'Enable'}</span>
+                      </Button>
+                      
+                      <Button
+                        size="sm"
+                        asChild
+                        className="flex items-center space-x-1"
+                      >
+                        <RouterLink to={`/superadmin/school-owner/${owner._id}`}>
+                          Details
+                          <ArrowForwardIcon className="h-3 w-3" />
+                        </RouterLink>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                No school owners found
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Create your first school owner to get started
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pack Management Dialog */}
+      <Dialog open={packDialog.open} onOpenChange={(open) => !open && handlePackDialogClose()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Pack for {packDialog.admin?.name}</DialogTitle>
+            <DialogDescription>
+              Update the subscription package and pricing for this school owner.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="pack-type">Pack Type</Label>
+              <Select
+                value={packDialog.packType}
+                onValueChange={(value) => setPackDialog(prev => ({ ...prev, packType: value }))}
               >
-                Add School Owner
-              </Button>
-            </Box>
-
-            <Box sx={{ mt: 3 }}>
-              {schoolOwners.length > 0 ? (
-                <Grid container spacing={2}>
-                  {schoolOwners.map((owner) => (
-                    <Grid item xs={12} sm={6} md={4} key={owner._id}>
-                      <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <CardContent sx={{ flexGrow: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                            <Typography variant="h6" gutterBottom>
-                              {owner.name}
-                            </Typography>
-                            <Chip 
-                              size="small"
-                              label={owner.active ? 'Active' : 'Inactive'}
-                              color={owner.active ? 'success' : 'error'}
-                            />
-                          </Box>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            {owner.email}
-                          </Typography>
-                          
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            <School fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
-                            {owner.schoolName || 'No School Assigned'}
-                          </Typography>
-
-                          {/* User Count */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <PeopleIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                            <Typography variant="body2" color="primary.main" fontWeight="bold">
-                              {owner.userCount || 0} Users
-                            </Typography>
-                          </Box>
-
-                          {/* Pack Information */}
-                          <Box sx={{ mb: 2 }}>
-                            <Divider sx={{ mb: 1 }} />
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                              <Typography variant="body2" fontWeight="bold">Pack & Pricing</Typography>
-                              <Button
-                                size="small"
-                                startIcon={<EditIcon />}
-                                onClick={() => handlePackEdit(owner)}
-                                sx={{ minWidth: 'auto', p: 0.5 }}
-                              >
-                                Edit
-                              </Button>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                              <Chip
-                                icon={owner.packType === 'pro' ? <StarIcon /> : <StarBorderIcon />}
-                                label={owner.packType === 'pro' ? 'PRO' : 'LITE'}
-                                color={owner.packType === 'pro' ? 'primary' : 'default'}
-                                size="small"
-                              />
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <EuroIcon fontSize="small" color="success" />
-                              <Typography variant="body2" color="success.main" fontWeight="bold">
-                                €{owner.monthlyPrice || 0}/month
-                              </Typography>
-                            </Box>
-                          </Box>
-                          
-                          <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between' }}>
-                            <Button
-                              variant="outlined"
-                              color={owner.active ? 'error' : 'success'}
-                              size="small"
-                              startIcon={owner.active ? <BlockIcon /> : <CheckIcon />}
-                              onClick={() => {
-                                dispatch(updateSchoolOwnerStatus({
-                                  id: owner._id,
-                                  statusData: { active: !owner.active }
-                                }))
-                                  .unwrap()
-                                  .then(() => {
-                                    toast.success(`School owner ${owner.active ? 'disabled' : 'enabled'} successfully`);
-                                  })
-                                  .catch((error) => {
-                                    toast.error(`Error: ${error}`);
-                                  });
-                              }}
-                            >
-                              {owner.active ? 'Disable' : 'Enable'}
-                            </Button>
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              size="small"
-                              endIcon={<ArrowForwardIcon />}
-                              component={RouterLink}
-                              to={`/superadmin/school-owner/${owner._id}`}
-                            >
-                              Details
-                            </Button>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography variant="h6" color="text.secondary">
-                    No school owners found
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Create your first school owner to get started
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Paper>
-
-          {/* Pack Management Dialog */}
-          <Dialog open={packDialog.open} onClose={handlePackDialogClose} maxWidth="sm" fullWidth>
-            <DialogTitle>
-              Edit Pack for {packDialog.admin?.name}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ pt: 2 }}>
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>Pack Type</InputLabel>
-                  <Select
-                    value={packDialog.packType}
-                    label="Pack Type"
-                    onChange={(e) => setPackDialog(prev => ({ ...prev, packType: e.target.value }))}
-                  >
-                    <MenuItem value="lite">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <StarBorderIcon />
-                        LITE Package
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="pro">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <StarIcon />
-                        PRO Package
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-                
-                <TextField
-                  fullWidth
-                  label="Monthly Price (EUR)"
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lite">
+                    <div className="flex items-center space-x-2">
+                      <StarBorderIcon className="h-4 w-4" />
+                      <span>LITE Package</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pro">
+                    <div className="flex items-center space-x-2">
+                      <StarIcon className="h-4 w-4" />
+                      <span>PRO Package</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="monthly-price">Monthly Price (EUR)</Label>
+              <div className="relative">
+                <EuroIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="monthly-price"
                   type="number"
                   value={packDialog.monthlyPrice}
                   onChange={(e) => setPackDialog(prev => ({ ...prev, monthlyPrice: parseFloat(e.target.value) || 0 }))}
-                  InputProps={{
-                    startAdornment: <EuroIcon sx={{ mr: 1 }} />,
-                  }}
-                  inputProps={{ min: 0, step: 0.01 }}
+                  className="pl-10"
+                  min="0"
+                  step="0.01"
                 />
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handlePackDialogClose}>Cancel</Button>
-              <Button 
-                onClick={handlePackUpdate} 
-                variant="contained" 
-                disabled={isLoading}
-              >
-                Update Pack
-              </Button>
-            </DialogActions>
-          </Dialog>
-    </Box>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handlePackDialogClose}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePackUpdate} 
+              disabled={isLoading}
+            >
+              Update Pack
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

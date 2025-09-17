@@ -316,29 +316,34 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                   className="w-80 dropdown-slide-in"
                   sideOffset={8}
                 >
-                  <DropdownMenuLabel className="flex items-center">
-                    <Bell className="mr-2 h-4 w-4" />
-                    Unread Notifications ({notifUnreadCount})
-                  </DropdownMenuLabel>
-                  
-                  {notifPreview.length === 0 ? (
-                    <DropdownMenuItem disabled>
-                      No unread notifications
-                    </DropdownMenuItem>
-                  ) : (
-                    notifPreview.map(n => (
-                      <DropdownMenuItem key={n._id} onClick={() => handleViewNotification(n._id)}>
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium truncate">{n.title || 'Notification'}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(n.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                      </DropdownMenuItem>
-                    ))
-                  )}
+                  {/* Only show notifications section for non-superadmin users */}
+                  {user?.role !== 'superadmin' && (
+                    <>
+                      <DropdownMenuLabel className="flex items-center">
+                        <Bell className="mr-2 h-4 w-4" />
+                        Unread Notifications ({notifUnreadCount})
+                      </DropdownMenuLabel>
+                      
+                      {notifPreview.length === 0 ? (
+                        <DropdownMenuItem disabled>
+                          No unread notifications
+                        </DropdownMenuItem>
+                      ) : (
+                        notifPreview.map(n => (
+                          <DropdownMenuItem key={n._id} onClick={() => handleViewNotification(n._id)}>
+                            <div className="flex flex-col space-y-1">
+                              <p className="text-sm font-medium truncate">{n.title || 'Notification'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(n.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
 
-                  <DropdownMenuSeparator />
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
 
                   <DropdownMenuLabel className="flex items-center">
                     <Mail className="mr-2 h-4 w-4" />
@@ -364,9 +369,12 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={handleViewAllNotifications}>
-                    View all notifications
-                  </DropdownMenuItem>
+                  {/* Only show "View all notifications" for non-superadmin users */}
+                  {user?.role !== 'superadmin' && (
+                    <DropdownMenuItem onClick={handleViewAllNotifications}>
+                      View all notifications
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleViewContactMessages}>
                     Open contact messages
                   </DropdownMenuItem>

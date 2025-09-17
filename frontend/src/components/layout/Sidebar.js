@@ -107,10 +107,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     
     if (isSuperAdmin) {
       return [
-        { icon: Shield, label: t('navigation.superAdmin'), path: '/superadmin/dashboard' },
         { icon: Building, label: t('navigation.schoolManagement'), path: '/superadmin/school-permissions' },
-        { icon: Users, label: t('navigation.userManagement'), path: '/superadmin/create-school-owner' },
         { icon: Palette, label: t('navigation.themeEditor', 'Theme Editor'), path: '/superadmin/theme-editor' },
+        { icon: Bell, label: t('navigation.notifications', 'Notifications'), path: '/superadmin/notifications' },
         { icon: Mail, label: t('navigation.contactMessages'), path: '/superadmin/contact' },
         { icon: BarChart3, label: t('navigation.systemLogs'), path: '/superadmin/system-logs' },
         { icon: Wrench, label: t('navigation.maintenanceAnnouncements'), path: '/superadmin/maintenance-announcements' },
@@ -215,14 +214,15 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: Star, label: t('navigation.ratingSubmission'), path: '/app/student/ratings' });
       }
       
-      if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/student/contact' });
-      }
-      
       // Attendance System - Students can view their attendance
       if (isFeatureEnabled('enableClasses')) {
         items.push({ icon: UserCheck, label: t('navigation.myAttendance'), path: '/app/student/attendance' });
       }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/student/contact' });
+      }
+      
     }
 
     if (isParent) {
@@ -378,7 +378,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         >
           <LayoutDashboard className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors", 
             isPathSelected(getDashboardPath()) ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
-          <span className="text-sm font-medium">{t('navigation.dashboard')}</span>
+          <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('navigation.dashboard')}</span>
           {isPathSelected(getDashboardPath()) && (
             <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
           )}
@@ -403,7 +403,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
             >
               <Icon className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors", 
                 isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
-              <span className="text-sm font-medium">{item.label}</span>
+              <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{item.label}</span>
               {isSelected && (
                 <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
               )}
@@ -431,9 +431,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           )}
           onClick={() => handleNavigation('/app/profile')}
         >
-          <User className={cn("mr-3 h-5 w-5 transition-colors", 
+          <User className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors", 
             isPathSelected('/app/profile') ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
-          <span className="text-sm font-medium">{t('navigation.profile')}</span>
+          <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('navigation.profile')}</span>
           {isPathSelected('/app/profile') && (
             <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
           )}
@@ -442,11 +442,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         {/* Logout Button */}
         <Button
           variant="ghost"
-          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5 hover:shadow-md hover:border hover:border-destructive/20 transition-all duration-300 group"
+          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5 hover:shadow-md hover:border hover:border-destructive/20 transition-all duration-300 group overflow-hidden"
           onClick={handleLogoutClick}
         >
-          <LogOut className="mr-3 h-5 w-5 transition-colors group-hover:text-destructive" />
-          <span className="text-sm font-medium">{t('sidebar.logout')}</span>
+          <LogOut className="mr-3 h-5 w-5 flex-shrink-0 transition-colors group-hover:text-destructive" />
+          <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('sidebar.logout')}</span>
         </Button>
       </div>
     </div>
@@ -502,7 +502,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
             <SheetTitle>Navigation Menu</SheetTitle>
             <SheetDescription>Main navigation menu for the application</SheetDescription>
           </SheetHeader>
-          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
+          <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
             {sidebarContent}
           </div>
         </SheetContent>
@@ -510,7 +510,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Desktop Sidebar - No animations */}
       <aside 
-        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30"
+        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30"
         style={{
           backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
         }}
