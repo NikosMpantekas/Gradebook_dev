@@ -3,38 +3,24 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { format } from 'date-fns';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Textarea } from '../../components/ui/textarea';
+import { Label } from '../../components/ui/label';
 import {
-  Container,
-  Typography,
-  Paper,
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Chip,
-  Divider,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  TextField,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import {
-  MarkEmailRead as MarkReadIcon,
-  Email as EmailIcon,
+  MailOpen as MarkReadIcon,
+  Mail as EmailIcon,
   CheckCircle as DoneIcon,
-  Refresh as RefreshIcon,
+  RefreshCw as RefreshIcon,
   Reply as ReplyIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+  Trash2 as DeleteIcon,
+  AlertCircle,
+  Loader2,
+  CheckCircle
+} from 'lucide-react';
 import LoadingState from '../../components/common/LoadingState';
 import ErrorState from '../../components/common/ErrorState';
 
@@ -48,8 +34,7 @@ const ContactMessages = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const { user } = useSelector((state) => state.auth);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // Remove MUI theme and media query dependencies
 
   // Check if user has proper permission (admin or superadmin)
   useEffect(() => {
@@ -218,17 +203,17 @@ const ContactMessages = () => {
     }
   }, [user]);
 
-  // Status chip color mapping
-  const getStatusColor = (status) => {
+  // Status badge variant mapping
+  const getStatusVariant = (status) => {
     switch (status) {
       case 'new':
-        return 'error';
+        return 'destructive';
       case 'read':
-        return 'primary';
-      case 'replied':
-        return 'success';
-      default:
         return 'default';
+      case 'replied':
+        return 'default';
+      default:
+        return 'secondary';
     }
   };
 
@@ -243,260 +228,209 @@ const ContactMessages = () => {
   }
 
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      <Box sx={{ mb: { xs: 2, sm: 4 } }}>
-        <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-          <Grid item xs={12} sm>
-            <Typography variant="h5" component="h1" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-              Contact Messages
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-              View and respond to user feedback and support requests
-            </Typography>
-          </Grid>
-          <Grid item xs={12} sm="auto">
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchMessages}
-              sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                fontSize: { xs: '0.875rem', sm: '1rem' }
-              }}
-            >
-              Refresh
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
+    <div className="w-full max-w-full p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Contact Messages</h1>
+          <p className="text-muted-foreground mt-1">
+            View and respond to user feedback and support requests
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={fetchMessages}
+          className="w-full sm:w-auto"
+        >
+          <RefreshIcon className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
 
       {messages.length === 0 ? (
-        <Paper sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            No contact messages yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-            When users send messages, they will appear here
-          </Typography>
-        </Paper>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              No contact messages yet
+            </h3>
+            <p className="text-muted-foreground">
+              When users send messages, they will appear here
+            </p>
+          </CardContent>
+        </Card>
       ) : (
-        <Grid container spacing={{ xs: 1, sm: 2 }}>
+        <div className="space-y-4">
           {messages.map((message) => (
-            <Grid item xs={12} key={message._id}>
-              <Card 
-                variant="outlined" 
-                sx={{ 
-                  borderLeft: message.read ? '4px solid transparent' : '4px solid #f44336',
-                  bgcolor: message.read ? 'transparent' : 'rgba(244, 67, 54, 0.05)'
-                }}
-              >
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 2 } }}>
-                      <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{message.subject}</Typography>
-                      <Chip 
-                        label={message.status} 
-                        size="small" 
-                        color={getStatusColor(message.status)}
-                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                      />
-                    </Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                      {message.createdAt ? format(new Date(message.createdAt), 'PPpp') : 'Date unknown'}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    From: <strong>{message.userName}</strong> ({message.userRole}) - {message.userEmail}
-                  </Typography>
-                  
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      whiteSpace: 'pre-wrap',
-                      bgcolor: 'background.paper', 
-                      p: { xs: 1, sm: 2 }, 
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      fontSize: { xs: '0.875rem', sm: '1rem' }
-                    }}
-                  >
-                    {message.message}
-                  </Typography>
-                </CardContent>
+            <Card 
+              key={message._id}
+              className={`${!message.read ? 'border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20' : ''}`}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                    <h3 className="text-lg font-semibold">{message.subject}</h3>
+                    <Badge variant={getStatusVariant(message.status)} className="w-fit">
+                      {message.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {message.createdAt ? format(new Date(message.createdAt), 'PPpp') : 'Date unknown'}
+                  </p>
+                </div>
                 
-                <CardActions sx={{ justifyContent: 'flex-end', p: { xs: 1, sm: 2 }, pt: 0, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
-                  <Button
-                    size="small"
-                    startIcon={<MarkReadIcon />}
-                    onClick={() => handleToggleRead(message._id, message.read)}
-                    sx={{ 
-                      width: { xs: '100%', sm: 'auto' },
-                      fontSize: { xs: '0.875rem', sm: '1rem' }
-                    }}
-                  >
-                    Mark as {message.read ? 'Unread' : 'Read'}
-                  </Button>
-                  
-                  {/* Show Approve/Deny for password reset requests */}
-                  {message.subject?.startsWith('[Password Reset]') && (
-                    <>
-                      <Button
-                        size="small"
-                        color="success"
-                        onClick={() => { /* no-op for now */ }}
-                        sx={{ 
-                          width: { xs: '100%', sm: 'auto' },
-                          fontSize: { xs: '0.875rem', sm: '1rem' }
-                        }}
-                      >
-                        Approve Reset
-                      </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        onClick={() => { /* no-op for now */ }}
-                        sx={{ 
-                          width: { xs: '100%', sm: 'auto' },
-                          fontSize: { xs: '0.875rem', sm: '1rem' }
-                        }}
-                      >
-                        Deny
-                      </Button>
-                    </>
-                  )}
-                  
-                  <Button
-                    size="small"
-                    color="primary"
-                    startIcon={<ReplyIcon />}
-                    onClick={() => handleOpenReply(message)}
-                    disabled={message.status === 'replied'}
-                    sx={{ 
-                      width: { xs: '100%', sm: 'auto' },
-                      fontSize: { xs: '0.875rem', sm: '1rem' }
-                    }}
-                  >
-                    Reply
-                  </Button>
-                  
-                  {/* Delete button - only for superadmin */}
-                  {user?.role === 'superadmin' && (
+                <p className="text-muted-foreground">
+                  From: <strong>{message.userName}</strong> ({message.userRole}) - {message.userEmail}
+                </p>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="bg-muted/30 rounded-lg p-4 border">
+                  <p className="whitespace-pre-wrap text-sm">
+                    {message.message}
+                  </p>
+                </div>
+              </CardContent>
+              
+              <CardFooter className="flex flex-col sm:flex-row gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleToggleRead(message._id, message.read)}
+                  className="w-full sm:w-auto"
+                >
+                  <MarkReadIcon className="mr-2 h-4 w-4" />
+                  Mark as {message.read ? 'Unread' : 'Read'}
+                </Button>
+                
+                {/* Show Approve/Deny for password reset requests */}
+                {message.subject?.startsWith('[Password Reset]') ? (
+                  <>
                     <Button
-                      size="small"
-                      color="error"
-                      startIcon={<DeleteIcon />}
-                      onClick={() => handleOpenDeleteConfirm(message)}
-                      sx={{ 
-                        width: { xs: '100%', sm: 'auto' },
-                        fontSize: { xs: '0.875rem', sm: '1rem' }
-                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto text-green-600 border-green-600 hover:bg-green-50"
+                      onClick={() => { /* no-op for now */ }}
                     >
-                      Delete
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Approve Reset
                     </Button>
-                  )}
-                </CardActions>
-              </Card>
-            </Grid>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto text-red-600 border-red-600 hover:bg-red-50"
+                      onClick={() => { /* no-op for now */ }}
+                    >
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      Deny
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenReply(message)}
+                      disabled={message.status === 'replied'}
+                      className="w-full sm:w-auto"
+                    >
+                      <ReplyIcon className="mr-2 h-4 w-4" />
+                      Reply
+                    </Button>
+                    
+                    {/* Delete button - only for superadmin */}
+                    {user?.role === 'superadmin' && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleOpenDeleteConfirm(message)}
+                        className="w-full sm:w-auto"
+                      >
+                        <DeleteIcon className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    )}
+                  </>
+                )}
+              </CardFooter>
+            </Card>
           ))}
-        </Grid>
+        </div>
       )}
 
       {/* Reply Dialog */}
-      <Dialog 
-        open={replyOpen} 
-        onClose={handleCloseReply} 
-        fullWidth 
-        maxWidth="md"
-        sx={{
-          '& .MuiDialog-paper': {
-            width: { xs: '95%', sm: '80%', md: '60%' },
-            maxWidth: '600px'
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-          Reply to: {selectedMessage?.subject}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-            You are replying to <strong>{selectedMessage?.userName}</strong> ({selectedMessage?.userEmail})
-          </DialogContentText>
-          <TextField
-            autoFocus
-            multiline
-            rows={isMobile ? 6 : 10}
-            fullWidth
-            variant="outlined"
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            placeholder="Type your reply here..."
-            sx={{
-              '& .MuiInputBase-input': {
-                fontSize: { xs: '0.875rem', sm: '1rem' }
-              }
-            }}
-          />
+      <Dialog open={replyOpen} onOpenChange={(open) => !open && handleCloseReply()}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reply to: {selectedMessage?.subject}</DialogTitle>
+            <DialogDescription>
+              You are replying to <strong>{selectedMessage?.userName}</strong> ({selectedMessage?.userEmail})
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reply-text">Your Reply</Label>
+              <Textarea
+                id="reply-text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Type your reply here..."
+                rows={8}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleCloseReply}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendReply} 
+              disabled={!replyText}
+              className="w-full sm:w-auto"
+            >
+              Mark as Replied
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions sx={{ p: { xs: 2, sm: 3 }, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
-          <Button 
-            onClick={handleCloseReply}
-            sx={{ 
-              width: { xs: '100%', sm: 'auto' },
-              fontSize: { xs: '0.875rem', sm: '1rem' }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSendReply} 
-            variant="contained" 
-            color="primary"
-            disabled={!replyText}
-            sx={{ 
-              width: { xs: '100%', sm: 'auto' },
-              fontSize: { xs: '0.875rem', sm: '1rem' }
-            }}
-          >
-            Mark as Replied
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteConfirmOpen}
-        onClose={handleCloseDeleteConfirm}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          Delete Contact Message
-        </DialogTitle>
+      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => !open && handleCloseDeleteConfirm()}>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this message from <strong>{messageToDelete?.userName}</strong>?
-            <br />
-            Subject: <strong>{messageToDelete?.subject}</strong>
-            <br /><br />
-            This action cannot be undone.
-          </DialogContentText>
+          <DialogHeader>
+            <DialogTitle>Delete Contact Message</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this message from <strong>{messageToDelete?.userName}</strong>?
+              <br />
+              Subject: <strong>{messageToDelete?.subject}</strong>
+              <br /><br />
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleCloseDeleteConfirm}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => handleDeleteMessage(messageToDelete?._id)}
+              className="w-full sm:w-auto"
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteConfirm}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={() => handleDeleteMessage(messageToDelete?._id)} 
-            color="error"
-            variant="contained"
-          >
-            Delete
-          </Button>
-        </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 

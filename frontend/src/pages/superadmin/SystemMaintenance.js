@@ -22,6 +22,8 @@ import {
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../components/ui/use-toast';
+import { DatePicker } from '../../components/ui/date-picker';
+import { TimePicker } from '../../components/ui/time-picker';
 import { 
   Settings, 
   Power, 
@@ -258,12 +260,12 @@ const SystemMaintenance = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">System Maintenance</h1>
-          <p className="text-gray-600">Manage system-wide maintenance mode</p>
+          <p className="text-muted-foreground">Manage system-wide maintenance mode</p>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -282,7 +284,7 @@ const SystemMaintenance = () => {
       </div>
 
       {/* Current Status Card */}
-      <Card className={`border-l-4 ${formData.isMaintenanceMode ? 'border-l-red-500 bg-red-50' : 'border-l-green-500 bg-green-50'}`}>
+      <Card className={`border-l-4 ${formData.isMaintenanceMode ? 'border-l-red-500 bg-red-50/50' : 'border-l-green-500 bg-green-50/30'}`}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -292,7 +294,7 @@ const SystemMaintenance = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label className="text-sm font-medium text-gray-600">Maintenance Mode</Label>
+              <Label className="text-sm font-medium text-foreground">Maintenance Mode</Label>
               <p className={`text-lg font-semibold ${formData.isMaintenanceMode ? 'text-red-600' : 'text-green-600'}`}>
                 {formData.isMaintenanceMode ? 'ACTIVE' : 'DISABLED'}
               </p>
@@ -300,16 +302,16 @@ const SystemMaintenance = () => {
             
             {maintenanceData?.estimatedCompletion && (
               <div>
-                <Label className="text-sm font-medium text-gray-600">Estimated Completion</Label>
-                <p className="text-lg font-semibold">
+                <Label className="text-sm font-medium text-foreground">Estimated Completion</Label>
+                <p className="text-lg font-semibold text-foreground">
                   {formatTimestamp(maintenanceData.estimatedCompletion)}
                 </p>
               </div>
             )}
             
             <div>
-              <Label className="text-sm font-medium text-gray-600">Last Modified</Label>
-              <p className="text-sm">
+              <Label className="text-sm font-medium text-foreground">Last Modified</Label>
+              <p className="text-sm text-foreground">
                 {maintenanceData?.lastModifiedBy?.name || 'Unknown'} - {formatTimestamp(maintenanceData?.updatedAt)}
               </p>
             </div>
@@ -341,7 +343,7 @@ const SystemMaintenance = () => {
               <Label className="text-base font-medium">
                 {formData.isMaintenanceMode ? 'Disable' : 'Enable'} Maintenance Mode
               </Label>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 {formData.isMaintenanceMode ? 
                   'Turn off maintenance mode to allow users back into the system' :
                   'Turn on maintenance mode to prevent users from accessing the system'
@@ -379,13 +381,42 @@ const SystemMaintenance = () => {
 
           {/* Estimated Completion */}
           <div className="space-y-2">
-            <Label htmlFor="estimatedCompletion">Estimated Completion Time (Optional)</Label>
-            <Input
-              id="estimatedCompletion"
-              type="datetime-local"
-              value={formData.estimatedCompletion}
-              onChange={(e) => setFormData(prev => ({ ...prev, estimatedCompletion: e.target.value }))}
+            <Label htmlFor="estimatedCompletion">Estimated Completion Date (Optional)</Label>
+            <DatePicker
+              placeholder="Select completion date"
+              value={formData.estimatedCompletion ? formData.estimatedCompletion.split('T')[0] : ''}
+              onChange={(dateValue) => {
+                if (dateValue) {
+                  // Keep existing time or set to current time if none exists
+                  const existingTime = formData.estimatedCompletion?.split('T')[1] || new Date().toTimeString().slice(0, 5);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    estimatedCompletion: `${dateValue}T${existingTime}` 
+                  }));
+                } else {
+                  setFormData(prev => ({ ...prev, estimatedCompletion: '' }));
+                }
+              }}
             />
+            {formData.estimatedCompletion && (
+              <div className="mt-2">
+                <Label htmlFor="estimatedCompletionTime" className="text-sm">Time</Label>
+                <TimePicker
+                  placeholder="Select time"
+                  value={formData.estimatedCompletion?.split('T')[1]?.slice(0, 5) || ''}
+                  onChange={(timeValue) => {
+                    if (timeValue) {
+                      const date = formData.estimatedCompletion?.split('T')[0] || new Date().toISOString().split('T')[0];
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        estimatedCompletion: `${date}T${timeValue}` 
+                      }));
+                    }
+                  }}
+                  className="mt-1"
+                />
+              </div>
+            )}
           </div>
 
           {/* Allowed Roles */}
@@ -402,7 +433,7 @@ const SystemMaintenance = () => {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               SuperAdmins always have access during maintenance
             </p>
           </div>
@@ -463,7 +494,7 @@ const SystemMaintenance = () => {
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No maintenance history available</p>
             </div>
@@ -491,7 +522,7 @@ const SystemMaintenance = () => {
                       <TableCell>
                         <div>
                           <p className="font-medium">{entry.modifiedBy?.name || 'Unknown'}</p>
-                          <p className="text-sm text-gray-500">{entry.modifiedBy?.email}</p>
+                          <p className="text-sm text-muted-foreground">{entry.modifiedBy?.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
