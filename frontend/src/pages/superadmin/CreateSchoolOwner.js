@@ -2,29 +2,26 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { 
-  Typography, 
-  Grid, 
-  Paper, 
-  Box, 
-  TextField, 
-  Button, 
-  Divider,
-  InputAdornment,
-  FormHelperText,
-  FormControl,
-  IconButton
-} from '@mui/material';
-import { 
-  Person, 
-  School, 
-  Email, 
-  Key, 
-  Language, 
-  LocationOn,
-  ArrowBack as ArrowBackIcon,
-  Save as SaveIcon
-} from '@mui/icons-material';
+
+// Shadcn UI components
+import { Button } from "src/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card";
+import { Input } from "src/components/ui/input";
+import { Label } from "src/components/ui/label";
+import { Spinner } from "src/components/ui/spinner";
+
+// Lucide React icons
+import {
+  User,
+  Building2,
+  Mail,
+  Key,
+  Globe,
+  MapPin,
+  ArrowLeft,
+  Save
+} from "lucide-react";
+
 import { createSchoolOwner, reset } from '../../features/superadmin/superAdminSlice';
 import LoadingState from '../../components/common/LoadingState';
 
@@ -140,244 +137,221 @@ function CreateSchoolOwner() {
   };
 
   if (isLoading) {
-    return <LoadingState fullPage={true} message="Creating school owner..." />;
+    return (
+      <div className="flex justify-center items-center h-[70vh]">
+        <div className="text-center">
+          <Spinner size="lg" className="mb-4" />
+          <p className="text-muted-foreground">Creating school owner...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton 
-          color="primary" 
+    <div className="p-6">
+      <div className="flex items-center mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm"
           onClick={() => navigate('/superadmin/dashboard')} 
-          sx={{ mr: 2 }}
+          className="mr-4"
         >
-          <ArrowBackIcon />
-        </IconButton>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div>
-          <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <School sx={{ mr: 1 }} /> Create New School Owner
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <h1 className="text-3xl font-bold flex items-center">
+            <Building2 className="mr-2 h-8 w-8" /> Create New School Owner
+          </h1>
+          <p className="text-muted-foreground mt-2">
             Create a school and its administrator account
-          </Typography>
+          </p>
         </div>
-      </Box>
+      </div>
 
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-        <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'medium' }}>
-            School Information
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="schoolName"
-                label="School Name"
-                name="schoolName"
-                value={schoolName}
-                onChange={onChange}
-                placeholder="Enter school name"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <School />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="schoolAddress"
-                label="School Address"
-                name="schoolAddress"
-                value={schoolAddress}
-                onChange={onChange}
-                placeholder="Enter school address"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LocationOn />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="emailDomain"
-                label="Email Domain (e.g., school.com)"
-                name="emailDomain"
-                value={emailDomain}
-                onChange={onChange}
-                placeholder="Enter email domain (e.g., school.com)"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Language />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                fullWidth
-                id="schoolEmail"
-                label="School Email (Optional)"
-                name="schoolEmail"
-                value={schoolEmail}
-                onChange={onChange}
-                placeholder="Enter school contact email (optional)"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
+      <Card>
+        <CardContent className="p-6">
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">
+                School Information
+              </h2>
+              <hr className="mb-6" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="schoolName">School Name *</Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="schoolName"
+                      name="schoolName"
+                      value={schoolName}
+                      onChange={onChange}
+                      placeholder="Enter school name"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="schoolAddress">School Address *</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="schoolAddress"
+                      name="schoolAddress"
+                      value={schoolAddress}
+                      onChange={onChange}
+                      placeholder="Enter school address"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="emailDomain">Email Domain (e.g., school.com) *</Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="emailDomain"
+                      name="emailDomain"
+                      value={emailDomain}
+                      onChange={onChange}
+                      placeholder="Enter email domain (e.g., school.com)"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="schoolEmail">School Email (Optional)</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="schoolEmail"
+                      name="schoolEmail"
+                      value={schoolEmail}
+                      onChange={onChange}
+                      placeholder="Enter school contact email (optional)"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <Typography variant="h6" sx={{ mt: 4, mb: 2, fontWeight: 'medium' }}>
-            School Owner (Admin) Account
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="name"
-                label="Name"
-                name="name"
-                value={name}
-                onChange={onChange}
-                placeholder="Enter school owner name"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth margin="normal" error={email && emailDomain && !email.endsWith('@' + emailDomain)}>
-                <TextField
-                  required
-                  fullWidth
-                  id="email"
-                  label="Email"
-                  name="email"
-                  value={email}
-                  onChange={onChange}
-                  placeholder={`Enter admin email (must use @${emailDomain || 'domain.com'})`}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email />
-                      </InputAdornment>
-                    ),
-                  }}
-                  error={email && emailDomain && !email.endsWith('@' + emailDomain)}
-                />
-                {email && emailDomain && !email.endsWith('@' + emailDomain) && (
-                  <FormHelperText error>
-                    Email must end with @{emailDomain}
-                  </FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                id="password"
-                value={password}
-                onChange={onChange}
-                autoComplete="new-password"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Key />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password2"
-                label="Confirm Password"
-                type="password"
-                id="password2"
-                value={password2}
-                onChange={onChange}
-                autoComplete="new-password"
-                error={password !== password2 && password2 !== ''}
-                helperText={password !== password2 && password2 !== '' ? 'Passwords do not match' : ''}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Key />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-4">
+                School Owner (Admin) Account
+              </h2>
+              <hr className="mb-6" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="name"
+                      name="name"
+                      value={name}
+                      onChange={onChange}
+                      placeholder="Enter school owner name"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={email}
+                      onChange={onChange}
+                      placeholder={`Enter admin email (must use @${emailDomain || 'domain.com'})`}
+                      className={`pl-10 ${email && emailDomain && !email.endsWith('@' + emailDomain) ? 'border-red-500 focus:border-red-500' : ''}`}
+                      required
+                    />
+                  </div>
+                  {email && emailDomain && !email.endsWith('@' + emailDomain) && (
+                    <p className="text-sm text-red-500">
+                      Email must end with @{emailDomain}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={password}
+                      onChange={onChange}
+                      placeholder="Enter password"
+                      className="pl-10"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password2">Confirm Password *</Label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="password2"
+                      name="password2"
+                      type="password"
+                      value={password2}
+                      onChange={onChange}
+                      placeholder="Confirm password"
+                      className={`pl-10 ${password !== password2 && password2 !== '' ? 'border-red-500 focus:border-red-500' : ''}`}
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+                  {password !== password2 && password2 !== '' && (
+                    <p className="text-sm text-red-500">
+                      Passwords do not match
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/superadmin/dashboard')}
-              startIcon={<ArrowBackIcon />}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<SaveIcon />}
-            >
-              Create School Owner
-            </Button>
-          </Box>
-        </Box>
-      </Paper>
-    </Box>
+            <div className="flex justify-between items-center mt-8 pt-6 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/superadmin/dashboard')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="lg"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Create School Owner
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

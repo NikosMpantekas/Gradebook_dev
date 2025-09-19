@@ -157,7 +157,9 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
   const handleViewContactMessages = () => {
     handleNotificationsClose();
-    if (user?.role === 'admin' || user?.role === 'superadmin') {
+    if (user?.role === 'superadmin') {
+      navigate('/superadmin/contact');
+    } else if (user?.role === 'admin') {
       navigate('/app/admin/contact');
     } else if (user?.role === 'teacher') {
       navigate('/app/teacher/contact');

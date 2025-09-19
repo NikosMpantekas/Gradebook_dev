@@ -158,14 +158,15 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: CreditCard, label: t('navigation.payments'), path: '/app/admin/payments' });
       }
       
-      if (isFeatureEnabled('enableContact')) {
-        items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/admin/contact' });
-      }
-      
       // Attendance System - Admin can manage everything
       if (isFeatureEnabled('enableClasses')) {
         items.push({ icon: UserCheck, label: t('navigation.attendanceManagement'), path: '/app/admin/attendance' });
       }
+      
+      if (isFeatureEnabled('enableContact')) {
+        items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/admin/contact' });
+      }
+      
     }
 
     if (isTeacher) {

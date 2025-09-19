@@ -3,33 +3,34 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { API_URL } from '../../config/appConfig';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  Button, 
-  Grid, 
-  Divider, 
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-
-  Paper
-} from '@mui/material';
 import axios from 'axios';
-import { 
-  ArrowBack, 
-  Check, 
-  Close, 
-  Delete, 
-  School,
-  WorkspacePremium as PremiumIcon,
-  LightMode as LightIcon
-} from '@mui/icons-material';
+
+// Shadcn UI components
+import { Button } from "src/components/ui/button";
+import { Card, CardContent, CardFooter } from "src/components/ui/card";
+import { Badge } from "src/components/ui/badge";
+import { Spinner } from "src/components/ui/spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "src/components/ui/alert-dialog";
+
+// Lucide React icons
+import {
+  ArrowLeft,
+  Check,
+  X,
+  Trash2,
+  Building2,
+  Crown,
+  Sun
+} from "lucide-react";
 
 function SchoolOwnerDetails() {
   const [schoolOwner, setSchoolOwner] = useState(null);
@@ -114,196 +115,188 @@ function SchoolOwnerDetails() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center h-[70vh]">
+        <Spinner size="lg" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography color="error" variant="h6">{error}</Typography>
+      <div className="p-6">
+        <p className="text-xl font-semibold text-destructive mb-4">{error}</p>
         <Button 
-          variant="contained" 
-          startIcon={<ArrowBack />} 
           onClick={() => navigate('/superadmin/dashboard')}
-          sx={{ mt: 2 }}
+          className="mt-4"
         >
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
-      </Box>
+      </div>
     );
   }
 
   if (!schoolOwner) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">School owner not found</Typography>
+      <div className="p-6">
+        <p className="text-xl font-semibold mb-4">School owner not found</p>
         <Button 
-          variant="contained" 
-          startIcon={<ArrowBack />} 
           onClick={() => navigate('/superadmin/dashboard')}
-          sx={{ mt: 2 }}
+          className="mt-4"
         >
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
-      </Box>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <div className="p-6">
       <Button 
-        variant="outlined" 
-        startIcon={<ArrowBack />} 
+        variant="outline" 
         onClick={() => navigate('/superadmin/dashboard')}
-        sx={{ mb: 3 }}
+        className="mb-6"
       >
+        <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Dashboard
       </Button>
       
-      <Card sx={{ mb: 3, borderLeft: schoolOwner.active ? '5px solid #4caf50' : '5px solid #f44336' }}>
+      <Card className={`mb-6 ${schoolOwner.active ? 'border-l-[5px] border-l-green-500' : 'border-l-[5px] border-l-red-500'}`}>
         <CardContent>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={8}>
-              <Typography variant="h5" component="div" gutterBottom>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div className="sm:col-span-8">
+              <h2 className="text-2xl font-bold mb-2">
                 {schoolOwner.name}
-              </Typography>
-              <Typography color="textSecondary" gutterBottom>
+              </h2>
+              <p className="text-muted-foreground mb-4">
                 Email: {schoolOwner.email}
-              </Typography>
+              </p>
               {schoolOwner.school && (
-                <>
-                  <Typography variant="body1" gutterBottom>
-                    <strong>School Cluster:</strong> {schoolOwner.school.name}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Address:</strong> {schoolOwner.school.address}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Email Domain:</strong> {schoolOwner.school.emailDomain}
-                  </Typography>
-                </>
+                <div className="space-y-2">
+                  <p className="text-base">
+                    <span className="font-semibold">School Cluster:</span> {schoolOwner.school.name}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-semibold">Address:</span> {schoolOwner.school.address}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-semibold">Email Domain:</span> {schoolOwner.school.emailDomain}
+                  </p>
+                </div>
               )}
-            </Grid>
-            <Grid item xs={12} sm={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <Typography variant="body2" sx={{ 
-                bgcolor: schoolOwner.active ? '#e8f5e9' : '#ffebee', 
-                color: schoolOwner.active ? '#2e7d32' : '#c62828',
-                px: 2,
-                py: 0.5,
-                borderRadius: 1,
-                display: 'inline-block',
-                mb: 2
-              }}>
+            </div>
+            <div className="sm:col-span-4 flex flex-col items-end">
+              <Badge 
+                variant={schoolOwner.active ? "default" : "destructive"}
+                className={`mb-4 ${schoolOwner.active ? 'bg-green-100 text-green-800 hover:bg-green-100' : 'bg-red-100 text-red-800 hover:bg-red-100'}`}
+              >
                 Status: {schoolOwner.active ? 'Active' : 'Inactive'}
-              </Typography>
+              </Badge>
               
               <Button 
-                variant="outlined" 
-                color={schoolOwner.active ? "error" : "success"}
-                startIcon={schoolOwner.active ? <Close /> : <Check />}
+                variant="outline" 
+                className={`mb-2 ${schoolOwner.active ? 'text-red-500 border-red-500 hover:bg-red-50' : 'text-green-500 border-green-500 hover:bg-green-50'}`}
                 onClick={handleToggleStatus}
-                sx={{ mb: 1 }}
               >
+                {schoolOwner.active ? <X className="mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
                 {schoolOwner.active ? 'Deactivate' : 'Activate'}
               </Button>
               
               <Button 
-                variant="outlined" 
-                color="error"
-                startIcon={<Delete />}
+                variant="outline" 
+                className="text-red-500 border-red-500 hover:bg-red-50"
                 onClick={handleDeleteClick}
               >
+                <Trash2 className="mr-2 h-4 w-4" />
                 Delete
               </Button>
-            </Grid>
-          </Grid>
+            </div>
+          </div>
           
-          <Divider sx={{ my: 2 }} />
+          <hr className="my-4" />
           
-          <Typography variant="subtitle1" gutterBottom>
-            <strong>Created At:</strong> {new Date(schoolOwner.createdAt).toLocaleString()}
-          </Typography>
-          <Typography variant="subtitle1" gutterBottom>
-            <strong>Last Updated:</strong> {new Date(schoolOwner.updatedAt).toLocaleString()}
-          </Typography>
+          <p className="text-base mb-2">
+            <span className="font-semibold">Created At:</span> {new Date(schoolOwner.createdAt).toLocaleString()}
+          </p>
+          <p className="text-base mb-2">
+            <span className="font-semibold">Last Updated:</span> {new Date(schoolOwner.updatedAt).toLocaleString()}
+          </p>
           
-          <Divider sx={{ my: 2 }} />
+          <hr className="my-4" />
           
-          <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+          <h3 className="text-xl font-semibold mt-6 mb-2">
             Subscription Plan
-          </Typography>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
             Current subscription plan for this school owner
-          </Typography>
+          </p>
           
-          <Paper elevation={2} sx={{ p: 3, mt: 2 }}>
-            <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <div className="bg-card rounded-lg border shadow-sm p-6 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+              <div>
+                <div className="flex items-center mb-2">
                   {/* Display subscription pack - defaulting to 'pro' if not specified */}
                   {(schoolOwner.subscriptionPlan || 'pro') === 'pro' ? (
                     <>
-                      <PremiumIcon sx={{ mr: 2, fontSize: 40, color: 'primary.main' }} />
-                      <Box>
-                        <Typography variant="h6" color="primary.main">
+                      <Crown className="mr-4 h-8 w-8 text-primary" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-primary">
                           Pro Pack
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
                           Full feature access with premium support
-                        </Typography>
-                      </Box>
+                        </p>
+                      </div>
                     </>
                   ) : (
                     <>
-                      <LightIcon sx={{ mr: 2, fontSize: 40, color: 'warning.main' }} />
-                      <Box>
-                        <Typography variant="h6" color="warning.main">
+                      <Sun className="mr-4 h-8 w-8 text-amber-500" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-amber-500">
                           Light Pack
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
                           Basic features with limited access
-                        </Typography>
-                      </Box>
+                        </p>
+                      </div>
                     </>
                   )}
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Plan Status: <strong>Active</strong>
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Billing: <strong>Monthly</strong>
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Paper>
+                </div>
+              </div>
+              <div className="text-left sm:text-right">
+                <p className="text-sm text-muted-foreground">
+                  Plan Status: <span className="font-semibold">Active</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Billing: <span className="font-semibold">Monthly</span>
+                </p>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this school owner? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this school owner? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 

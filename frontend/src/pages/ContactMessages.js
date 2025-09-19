@@ -226,7 +226,7 @@ const ContactMessages = () => {
           {/* Desktop: Tabs */}
           <div className="hidden md:block">
             <Tabs value={tabValue} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${isAdminRole ? 'grid-cols-3' : 'grid-cols-2'} bg-gray-100 dark:bg-gray-800`}>
+              <TabsList className={`grid w-full grid-cols-2 bg-gray-100 dark:bg-gray-800`}>
                 {tabDefs.map((tab) => (
                   <TabsTrigger key={tab.key} value={tab.key} className="flex items-center gap-2">
                     {tab.icon}
