@@ -14,6 +14,7 @@ import {
   Info,
   Zap,
   AlertTriangle,
+  UserCheck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -397,12 +398,12 @@ const StudentDashboard = () => {
                 <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
-                onClick={() => navigate('/app/student/grades')}
+                onClick={() => navigate('/app/student/attendance')}
                 variant="ghost"
                 className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
               >
-                <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.myStats')}</span>
+                <UserCheck className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.myAttendance')}</span>
               </Button>
             </div>
           </CardContent>
@@ -449,7 +450,7 @@ const StudentDashboard = () => {
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -471,7 +472,7 @@ const StudentDashboard = () => {
                     </div>
                     <Badge 
                       variant="secondary" 
-                      className="text-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
+                      className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
                     >
                       {new Date(notification.createdAt).toLocaleDateString()}
                     </Badge>
