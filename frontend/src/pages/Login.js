@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Lock, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
+import { Spinner } from '../components/ui/spinner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -454,7 +455,7 @@ const Login = () => {
                 </div>
               ) : isLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  <Spinner size="sm" />
                   <span>Loading...</span>
                 </div>
               ) : (
@@ -540,7 +541,7 @@ const Login = () => {
                 <Button type="submit" disabled={isSubmittingForgot}>
                   {isSubmittingForgot ? (
                     <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      <Spinner size="sm" />
                       <span>Sending...</span>
                     </div>
                   ) : (

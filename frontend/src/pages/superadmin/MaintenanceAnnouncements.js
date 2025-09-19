@@ -227,19 +227,20 @@ const MaintenanceAnnouncements = () => {
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-light tracking-wide">Maintenance Announcements</h1>
-          <p className="text-muted-foreground">Create and manage scheduled maintenance messages for all users</p>
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-light tracking-wide">Maintenance Announcements</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">Create and manage scheduled maintenance messages for all users</p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setShowCreateDialog(true); }}>
+            <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Create Announcement
+              <span className="sm:inline">Create Announcement</span>
+              <span className="sm:hidden">Create Announcement</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>
                 {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
@@ -365,11 +366,13 @@ const MaintenanceAnnouncements = () => {
       <div className="space-y-4">
         {announcements.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-12">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No Announcements</h3>
-              <p className="text-muted-foreground mb-4">Create your first maintenance announcement to notify users about scheduled maintenance.</p>
-              <Button onClick={() => setShowCreateDialog(true)}>
+            <CardContent className="text-center py-8 sm:py-12 px-4">
+              <AlertTriangle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+              <h3 className="text-base sm:text-lg font-medium mb-2">No Announcements</h3>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 max-w-md mx-auto">
+                Create your first maintenance announcement to notify users about scheduled maintenance.
+              </p>
+              <Button onClick={() => setShowCreateDialog(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Announcement
               </Button>
@@ -379,34 +382,36 @@ const MaintenanceAnnouncements = () => {
           announcements.map((announcement) => (
             <Card key={announcement._id} className={`${isAnnouncementActive(announcement) ? 'border-l-4 border-l-green-500' : ''}`}>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${getTypeColor(announcement.type)}`}>
+                <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className={`p-2 rounded-lg ${getTypeColor(announcement.type)} flex-shrink-0`}>
                       {getTypeIcon(announcement.type)}
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant={announcement.isActive ? 'default' : 'secondary'}>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base sm:text-lg truncate">{announcement.title}</CardTitle>
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                        <Badge variant={announcement.isActive ? 'default' : 'secondary'} className="text-xs">
                           {announcement.isActive ? 'Active' : 'Inactive'}
                         </Badge>
-                        <Badge variant="outline" className="capitalize">
+                        <Badge variant="outline" className="capitalize text-xs">
                           {announcement.type}
                         </Badge>
                         {isAnnouncementActive(announcement) && (
-                          <Badge variant="default" className="bg-green-500">
-                            Currently Showing
+                          <Badge variant="default" className="bg-green-500 text-xs">
+                            <span className="hidden sm:inline">Currently Showing</span>
+                            <span className="sm:hidden">Live</span>
                           </Badge>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleActive(announcement)}
+                      className="p-2"
                     >
                       {announcement.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
@@ -414,6 +419,7 @@ const MaintenanceAnnouncements = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(announcement)}
+                      className="p-2"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -421,7 +427,7 @@ const MaintenanceAnnouncements = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(announcement._id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 p-2"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -432,32 +438,32 @@ const MaintenanceAnnouncements = () => {
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">{announcement.message}</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Start Time</p>
-                      <p className="text-muted-foreground">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                  <div className="flex items-start space-x-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs sm:text-sm">Start Time</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm break-words">
                         {new Date(announcement.scheduledStart).toLocaleString()}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">End Time</p>
-                      <p className="text-muted-foreground">
+                  <div className="flex items-start space-x-3">
+                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs sm:text-sm">End Time</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm break-words">
                         {new Date(announcement.scheduledEnd).toLocaleString()}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Target Roles</p>
-                      <p className="text-muted-foreground">
+                  <div className="flex items-start space-x-3 sm:col-span-2 lg:col-span-1">
+                    <Users className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs sm:text-sm">Target Roles</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm break-words">
                         {announcement.targetRoles.join(', ')}
                       </p>
                     </div>

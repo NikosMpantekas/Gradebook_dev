@@ -38,10 +38,13 @@ import { useToast } from '../../components/ui/use-toast';
 import { Plus, Search, Filter, Calendar, CheckCircle, XCircle, Clock, Download, Users, Lock } from 'lucide-react';
 import api from '../../app/axios';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useSelector } from 'react-redux';
+import { cn } from '../../lib/utils';
 
 const Payments = () => {
   const { toast } = useToast();
   const { isFeatureEnabled, loading: featureLoading } = useFeatureToggles();
+  const darkMode = useSelector((state) => state.ui?.darkMode || false);
   
   // State management
   const [payments, setPayments] = useState([]);
@@ -326,7 +329,12 @@ const Payments = () => {
                 Generate Monthly
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-md">
+            <DialogContent className={cn(
+              "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
+              darkMode 
+                ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+                : "bg-background text-foreground border-border"
+            )}>
               <DialogHeader>
                 <DialogTitle>Generate Monthly Payments</DialogTitle>
                 <DialogDescription>
@@ -341,6 +349,12 @@ const Payments = () => {
                     type="number"
                     value={generateForm.year}
                     onChange={(e) => setGenerateForm({...generateForm, year: parseInt(e.target.value)})}
+                    className={cn(
+                      "transition-colors duration-100",
+                      darkMode 
+                        ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                    )}
                   />
                 </div>
                 <div>
@@ -349,10 +363,18 @@ const Payments = () => {
                     value={generateForm.month.toString()} 
                     onValueChange={(value) => setGenerateForm({...generateForm, month: parseInt(value)})}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={cn(
+                      "transition-colors duration-100",
+                      darkMode 
+                        ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                    )}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={cn(
+                      "transition-colors duration-100",
+                      darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
+                    )}>
                       {Array.from({length: 12}, (_, i) => (
                         <SelectItem key={i+1} value={(i+1).toString()}>
                           {new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'long' })}
@@ -380,7 +402,12 @@ const Payments = () => {
                 Add Payment
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-md">
+            <DialogContent className={cn(
+              "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
+              darkMode 
+                ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+                : "bg-background text-foreground border-border"
+            )}>
               <DialogHeader>
                 <DialogTitle>
                   {selectedPayment ? 'Edit Payment' : 'Add Payment Record'}
@@ -395,10 +422,18 @@ const Payments = () => {
                         const selectedParent = students.find(p => p._id === value);
                         setPaymentForm({...paymentForm, parentId: value, linkedStudents: selectedParent?.linkedStudents || []});
                       }}>
-                        <SelectTrigger className="mt-1">
+                        <SelectTrigger className={cn(
+                          "mt-1 transition-colors duration-100",
+                          darkMode 
+                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                        )}>
                           <SelectValue placeholder="Select parent" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={cn(
+                          "transition-colors duration-100",
+                          darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
+                        )}>
                           {students.map((parent) => (
                             <SelectItem key={parent._id} value={parent._id}>
                               {parent.displayName}
@@ -412,10 +447,18 @@ const Payments = () => {
                       <div>
                         <Label htmlFor="specificStudent" className="text-sm">Select Student</Label>
                         <Select value={paymentForm.studentId} onValueChange={(value) => setPaymentForm({...paymentForm, studentId: value})}>
-                          <SelectTrigger className="mt-1">
+                        <SelectTrigger className={cn(
+                          "mt-1 transition-colors duration-100",
+                          darkMode 
+                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                        )}>
                             <SelectValue placeholder="Select specific student" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className={cn(
+                            "transition-colors duration-100",
+                            darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
+                          )}>
                             {paymentForm.linkedStudents.map((student) => (
                               <SelectItem key={student._id} value={student._id}>
                                 {student.name}
@@ -429,10 +472,18 @@ const Payments = () => {
                     <div>
                       <Label htmlFor="period" className="text-sm">Payment Period</Label>
                       <Select value={paymentForm.paymentPeriod} onValueChange={(value) => setPaymentForm({...paymentForm, paymentPeriod: value})}>
-                        <SelectTrigger className="mt-1">
+                        <SelectTrigger className={cn(
+                          "mt-1 transition-colors duration-100",
+                          darkMode 
+                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                        )}>
                           <SelectValue placeholder="Select period" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={cn(
+                          "transition-colors duration-100",
+                          darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
+                        )}>
                           {periodOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -447,10 +498,18 @@ const Payments = () => {
                 <div>
                   <Label htmlFor="status" className="text-sm">Status</Label>
                   <Select value={paymentForm.status} onValueChange={(value) => setPaymentForm({...paymentForm, status: value})}>
-                    <SelectTrigger className="mt-1">
+                  <SelectTrigger className={cn(
+                    "mt-1 transition-colors duration-100",
+                    darkMode 
+                      ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                      : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                  )}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={cn(
+                      "transition-colors duration-100",
+                      darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
+                    )}>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
                       <SelectItem value="overdue">Overdue</SelectItem>
@@ -461,10 +520,18 @@ const Payments = () => {
                 <div>
                   <Label htmlFor="paymentMethod" className="text-sm">Payment Method</Label>
                   <Select value={paymentForm.paymentMethod} onValueChange={(value) => setPaymentForm({...paymentForm, paymentMethod: value})}>
-                    <SelectTrigger className="mt-1">
+                  <SelectTrigger className={cn(
+                    "mt-1 transition-colors duration-100",
+                    darkMode 
+                      ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                      : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                  )}>
                       <SelectValue placeholder="Select method (optional)" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={cn(
+                      "transition-colors duration-100",
+                      darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
+                    )}>
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
@@ -482,7 +549,12 @@ const Payments = () => {
                     value={paymentForm.notes}
                     onChange={(e) => setPaymentForm({...paymentForm, notes: e.target.value})}
                     rows={3}
-                    className="mt-1"
+                    className={cn(
+                      "mt-1 transition-colors duration-100",
+                      darkMode 
+                        ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]" 
+                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                    )}
                   />
                 </div>
               </div>
