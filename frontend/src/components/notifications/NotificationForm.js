@@ -22,8 +22,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
+import { DatePicker } from '../ui/date-picker';
 
-const NotificationForm = ({ 
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkDevice = () => {
+      // Check for mobile using multiple methods
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      const isMobileWidth = window.innerWidth < 768
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      
+      setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent))
+    }
+
+    checkDevice()
+    window.addEventListener('resize', checkDevice)
+    
+    return () => window.removeEventListener('resize', checkDevice)
+  }, [])
+
+  return isMobile
+}
+
+const NotificationForm = ({
   notification = null, 
   recipients = [], 
   subjects = [], 
@@ -50,6 +74,7 @@ const NotificationForm = ({
   
   const [errors, setErrors] = useState({});
   const [selectedRecipients, setSelectedRecipients] = useState([]);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (notification) {
@@ -116,6 +141,34 @@ const NotificationForm = ({
     }));
     
     setSelectedRecipients(newRecipients);
+  };
+
+  const handleDateChange = (dateValue) => {
+    setFormData(prev => ({
+      ...prev,
+      scheduledDate: dateValue
+    }));
+    
+    if (errors.scheduledDate) {
+      setErrors(prev => ({
+        ...prev,
+        scheduledDate: ''
+      }));
+    }
+  };
+
+  const handleExpiryDateTimeChange = (dateTimeValue) => {
+    setFormData(prev => ({
+      ...prev,
+      expiresAt: dateTimeValue
+    }));
+    
+    if (errors.expiresAt) {
+      setErrors(prev => ({
+        ...prev,
+        expiresAt: ''
+      }));
+    }
   };
 
   const handleSelectAllRecipients = (checked) => {
@@ -442,20 +495,34 @@ const NotificationForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="scheduledDate">Date *</Label>
-                <Input
-                  id="scheduledDate"
-                  name="scheduledDate"
-                  type="date"
-                  value={formData.scheduledDate}
-                  onChange={handleInputChange}
-                  className={errors.scheduledDate ? 'border-destructive' : ''}
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                {isMobile ? (
+                  // Mobile: Use native date input
+                  <Input
+                    id="scheduledDate"
+                    name="scheduledDate"
+                    type="date"
+                    value={formData.scheduledDate}
+                    onChange={handleInputChange}
+                    className={errors.scheduledDate ? 'border-destructive' : ''}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                ) : (
+                  // Desktop: Use shadcn DatePicker
+                  <DatePicker
+                    id="scheduledDate"
+                    placeholder="Select scheduled date"
+                    value={formData.scheduledDate}
+                    onChange={handleDateChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    className={errors.scheduledDate ? 'border-destructive' : ''}
+                  />
+                )}
                 {errors.scheduledDate && <p className="text-sm text-destructive">{errors.scheduledDate}</p>}
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="scheduledTime">Time *</Label>
+                {/* Always use native time input as it works well on both desktop and mobile */}
                 <Input
                   id="scheduledTime"
                   name="scheduledTime"
@@ -471,6 +538,7 @@ const NotificationForm = ({
           
           <div className="space-y-2">
             <Label htmlFor="expiresAt">Expiration Date (Optional)</Label>
+            {/* Use native datetime-local input on both mobile and desktop as it provides better UX */}
             <Input
               id="expiresAt"
               name="expiresAt"

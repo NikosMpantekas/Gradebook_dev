@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, BookOpen } from 'lucide-react';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useTranslation } from 'react-i18next';
 
 export function MonthlyCalendar({ scheduleData = {} }) {
@@ -118,36 +120,93 @@ export function MonthlyCalendar({ scheduleData = {} }) {
       const classesForDay = getClassesForDate(currentDateForDay);
       
       days.push(
-        <div
-          key={day}
-          className={`h-12 flex flex-col items-center justify-center text-sm rounded-lg cursor-pointer transition-all duration-200 border ${
-            isToday 
-              ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-sm' 
-              : classesForDay.length > 0 
-                ? 'hover:bg-accent hover:text-accent-foreground border-border/50 hover:border-primary/30 hover:shadow-sm'
+        classesForDay.length > 0 ? (
+          <Popover key={day}>
+            <PopoverTrigger asChild>
+              <div
+                className={`h-12 flex flex-col items-center justify-center text-sm rounded-lg cursor-pointer transition-all duration-300 ease-out transform-gpu border ${
+                  isToday 
+                    ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-sm' 
+                    : 'hover:bg-accent hover:text-accent-foreground border-border/50 hover:border-primary/30 hover:shadow-md hover:scale-105 hover:-translate-y-1'
+                } will-change-transform`}
+              >
+                <span className={`text-xs mb-0.5 ${isToday ? 'font-semibold' : 'font-medium'}`}>{day}</span>
+                <div className="flex gap-1 flex-wrap justify-center max-w-full">
+                  {classesForDay.slice(0, 4).map((classItem, index) => (
+                    <div
+                      key={`${day}-${index}`}
+                      className="w-2 h-2 rounded-full shadow-sm"
+                      style={{ backgroundColor: subjectColors[classItem.subject] || '#6b7280' }}
+                    />
+                  ))}
+                  {classesForDay.length > 4 && (
+                    <div
+                      className="w-2 h-2 rounded-full bg-muted-foreground/70 shadow-sm"
+                    />
+                  )}
+                </div>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-64 p-0 shadow-xl border-2 border-primary/20 bg-background/95 backdrop-blur-sm animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2" 
+              side="top" 
+              sideOffset={8}
+              align="center"
+              avoidCollisions={true}
+              collisionPadding={8}
+            >
+              <div className="p-4 space-y-3">
+                <div className="text-sm font-semibold text-foreground border-b border-border pb-2">
+                  {currentDateForDay.toLocaleDateString('default', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {classesForDay.map((classItem, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex-shrink-0">
+                        <div
+                          className="w-3 h-3 rounded-full shadow-sm"
+                          style={{ backgroundColor: subjectColors[classItem.subject] || '#6b7280' }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <BookOpen className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-sm font-medium truncate">{classItem.subject}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {classItem.startTime} - {classItem.endTime}
+                          </span>
+                        </div>
+                        {classItem.room && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {t('schedule.room')}: {classItem.room}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <div
+            key={day}
+            className={`h-12 flex flex-col items-center justify-center text-sm rounded-lg transition-colors border ${
+              isToday 
+                ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-sm' 
                 : 'hover:bg-muted/50 hover:text-foreground border-transparent'
-          }`}
-        >
-          <span className={`text-xs mb-0.5 ${isToday ? 'font-semibold' : 'font-medium'}`}>{day}</span>
-          {classesForDay.length > 0 && (
-            <div className="flex gap-1 flex-wrap justify-center max-w-full">
-              {classesForDay.slice(0, 4).map((classItem, index) => (
-                <div
-                  key={`${day}-${index}`}
-                  className="w-2 h-2 rounded-full shadow-sm"
-                  style={{ backgroundColor: subjectColors[classItem.subject] || '#6b7280' }}
-                  title={`${classItem.subject} (${classItem.startTime}-${classItem.endTime})`}
-                />
-              ))}
-              {classesForDay.length > 4 && (
-                <div
-                  className="w-2 h-2 rounded-full bg-muted-foreground/70 shadow-sm"
-                  title={`+${classesForDay.length - 4} more classes`}
-                />
-              )}
-            </div>
-          )}
-        </div>
+            }`}
+          >
+            <span className={`text-xs mb-0.5 ${isToday ? 'font-semibold' : 'font-medium'}`}>{day}</span>
+          </div>
+        )
       );
     }
     

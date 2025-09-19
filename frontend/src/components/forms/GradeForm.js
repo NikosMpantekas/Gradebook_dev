@@ -20,6 +20,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { DatePicker } from '../ui/date-picker';
+
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkDevice = () => {
+      // Check for mobile using multiple methods
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      const isMobileWidth = window.innerWidth < 768
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      
+      setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent))
+    }
+
+    checkDevice()
+    window.addEventListener('resize', checkDevice)
+    
+    return () => window.removeEventListener('resize', checkDevice)
+  }, [])
+
+  return isMobile
+}
 
 const GradeForm = ({ 
   grade = null, 
@@ -30,6 +54,7 @@ const GradeForm = ({
   isEditing = false, 
   isLoading = false 
 }) => {
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
     studentId: '',
     subjectId: '',
@@ -106,6 +131,21 @@ const GradeForm = ({
     } else if (name === 'subjectId') {
       const subject = subjects.find(s => s._id === value);
       setSelectedSubject(subject);
+    }
+  };
+
+  const handleDateChange = (dateValue) => {
+    setFormData(prev => ({
+      ...prev,
+      date: dateValue
+    }));
+    
+    // Clear error when user changes date
+    if (errors.date) {
+      setErrors(prev => ({
+        ...prev,
+        date: ''
+      }));
     }
   };
 
@@ -300,14 +340,27 @@ const GradeForm = ({
             
             <div className="space-y-2">
               <Label htmlFor="date">Date *</Label>
-              <Input
-                id="date"
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={handleInputChange}
-                className={errors.date ? 'border-destructive' : ''}
-              />
+              {isMobile ? (
+                // Mobile: Use native date input for better UX
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  className={errors.date ? 'border-destructive' : ''}
+                />
+              ) : (
+                // Desktop: Use shadcn DatePicker
+                <DatePicker
+                  id="date"
+                  placeholder="Select date"
+                  value={formData.date}
+                  onChange={handleDateChange}
+                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                  className={errors.date ? 'border-destructive' : ''}
+                />
+              )}
               {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
             </div>
           </div>

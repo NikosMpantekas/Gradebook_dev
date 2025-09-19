@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { DatePicker } from '../ui/date-picker';
 import {
   User,
   Mail,
@@ -23,6 +24,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../ui/checkbox';
 import { Separator } from '../ui/separator';
 
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkDevice = () => {
+      // Check for mobile using multiple methods
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      const isMobileWidth = window.innerWidth < 768
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      
+      setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent))
+    }
+
+    checkDevice()
+    window.addEventListener('resize', checkDevice)
+    
+    return () => window.removeEventListener('resize', checkDevice)
+  }, [])
+
+  return isMobile
+}
+
 const UserForm = ({ 
   user = null, 
   onSubmit, 
@@ -30,6 +54,7 @@ const UserForm = ({
   isEditing = false, 
   isLoading = false 
 }) => {
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -115,6 +140,21 @@ const UserForm = ({
         [permission]: checked
       }
     }));
+  };
+
+  const handleDateChange = (dateValue) => {
+    setFormData(prev => ({
+      ...prev,
+      dateOfBirth: dateValue
+    }));
+    
+    // Clear error when user changes date
+    if (errors.dateOfBirth) {
+      setErrors(prev => ({
+        ...prev,
+        dateOfBirth: ''
+      }));
+    }
   };
 
   const validateForm = () => {
@@ -224,13 +264,26 @@ const UserForm = ({
             
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                name="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={handleInputChange}
-              />
+              {isMobile ? (
+                // Mobile: Use native date input for better UX
+                <Input
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={handleInputChange}
+                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                />
+              ) : (
+                // Desktop: Use shadcn DatePicker
+                <DatePicker
+                  id="dateOfBirth"
+                  placeholder="Select date of birth"
+                  value={formData.dateOfBirth}
+                  onChange={handleDateChange}
+                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                />
+              )}
             </div>
           </div>
           

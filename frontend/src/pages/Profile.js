@@ -36,11 +36,35 @@ import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
 import ThemeSelector from '../components/ui/theme-selector';
 
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkDevice = () => {
+      // Check for mobile using multiple methods
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      const isMobileWidth = window.innerWidth < 768
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      
+      setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent))
+    }
+
+    checkDevice()
+    window.addEventListener('resize', checkDevice)
+    
+    return () => window.removeEventListener('resize', checkDevice)
+  }, [])
+
+  return isMobile
+}
+
 const Profile = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
+  const isMobile = useIsMobile();
   
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -465,15 +489,30 @@ const Profile = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth">{t('profile.dateOfBirth')}</Label>
-                <DatePicker
-                  id="dateOfBirth"
-                  placeholder={t('profile.selectDateOfBirth', 'Select your date of birth')}
-                  value={formData.dateOfBirth}
-                  onChange={handleDateChange}
-                  disabled={!isEditing}
-                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
-                  className={errors.dateOfBirth ? 'border-destructive' : ''}
-                />
+                {isMobile ? (
+                  // Mobile: Use native date input for better UX
+                  <Input
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                    className={errors.dateOfBirth ? 'border-destructive' : ''}
+                  />
+                ) : (
+                  // Desktop: Use shadcn DatePicker
+                  <DatePicker
+                    id="dateOfBirth"
+                    placeholder={t('profile.selectDateOfBirth', 'Select your date of birth')}
+                    value={formData.dateOfBirth}
+                    onChange={handleDateChange}
+                    disabled={!isEditing}
+                    max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                    className={errors.dateOfBirth ? 'border-destructive' : ''}
+                  />
+                )}
                 {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
               </div>
               

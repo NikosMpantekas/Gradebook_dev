@@ -384,7 +384,7 @@ const AdminDashboard = () => {
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -406,7 +406,7 @@ const AdminDashboard = () => {
                     </div>
                     <Badge 
                       variant="secondary" 
-                      className="text-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
+                      className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
                     >
                       {new Date(notification.createdAt).toLocaleDateString()}
                     </Badge>
