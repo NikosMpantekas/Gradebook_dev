@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Bell,
-  Moon,
-  Sun,
+import { 
+  Bell, 
+  Moon, 
+  Sun, 
   Mail,
   Menu as MenuIcon
 } from 'lucide-react';
@@ -39,12 +39,12 @@ const useLatestVersion = () => {
         const response = await axios.get(`${API_URL}/api/patch-notes/public`, {
           timeout: 10000
         });
-
+        
         if (response.data && response.data.length > 0) {
           // Sort patch notes by creation date (newest first) and get the latest version
           const sortedPatchNotes = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           const latestPatchNote = sortedPatchNotes[0];
-
+          
           if (latestPatchNote.version) {
             setVersion(latestPatchNote.version);
           }
@@ -69,21 +69,21 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-
+  
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
   const { notifications } = useSelector((state) => state.notifications);
   const { getCurrentThemeData } = useTheme();
-
+  
   // Use the mobile detection hook instead of Tailwind breakpoints
   const isMobile = useIsMobile();
-
+  
   // Get latest version from patch notes
   const { version: latestVersion } = useLatestVersion();
-
+  
   // Check if version contains "beta"
   const isBetaVersion = latestVersion && latestVersion.toLowerCase().includes('beta');
-
+  
   // Count unread notifications
   const notifUnreadCount = notifications?.filter(n => !n.isRead).length || 0;
   const combinedUnreadCount = (notifUnreadCount || 0) + (contactUnreadCount || 0);
@@ -133,7 +133,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
   const handleViewNotification = async (id) => {
     handleNotificationsClose();
-
+    
     // Mark notification as read when clicked
     try {
       await dispatch(markNotificationAsRead(id)).unwrap();
@@ -142,7 +142,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
-
+    
     // Navigate to the appropriate notification detail page
     if (user?.role === 'superadmin') {
       navigate(`/superadmin/notifications/${id}`);
@@ -193,25 +193,25 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
       navigate('/app/notifications');
     }
   };
-
+  
   // Prepare notification preview
   const notifPreview = (notifications || []).filter(n => !n.isRead).slice(0, 5);
-
+  
   // Get themed background color for header
   const getThemedHeaderBg = () => {
     const themeData = getCurrentThemeData();
     if (!themeData) return darkMode ? "bg-[#181b20]/90" : "bg-background/90";
-
+    
     try {
-      const primaryColor = darkMode
+      const primaryColor = darkMode 
         ? themeData.darkColors?.primary || themeData.colors.primary
         : themeData.colors.primary;
-
+      
       const hex = primaryColor.replace('#', '');
       const r = parseInt(hex.substr(0, 2), 16);
       const g = parseInt(hex.substr(2, 2), 16);
       const b = parseInt(hex.substr(4, 2), 16);
-
+      
       if (darkMode) {
         // Make header darker than body for better contrast in dark mode
         const tintedR = Math.max(18, Math.min(30, 18 + Math.round(r * 0.04)));
@@ -230,16 +230,16 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   };
 
   const themedHeaderBg = getThemedHeaderBg();
-
+  
   return (
     <TooltipProvider>
-      <header
+      <header 
         className={cn(
-          "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100 pt-[env(safe-area-inset-top)]", // Enhanced frosted glass
+          "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100", // Enhanced frosted glass
           "lg:ml-64 lg:w-[calc(100%-256px)]", // Fixed: 256px = 64 * 4 (lg:w-64 from sidebar)
           "shadow-sm", // Subtle shadow
-          darkMode
-            ? "border-[#2a3441]/30"
+          darkMode 
+            ? "border-[#2a3441]/30" 
             : "border-border/30"
         )}
         style={{
@@ -262,7 +262,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
           {/* Logo */}
           <div className="flex flex-1 items-center">
-            <RouterLink
+            <RouterLink 
               to="/"
               className={cn(
                 "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
@@ -283,7 +283,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
           {user && (
             <div className="flex items-center space-x-3">
               <LanguageSwitcher variant="icon" />
-
+              
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -298,14 +298,14 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                   <p>Toggle dark mode</p>
                 </TooltipContent>
               </Tooltip>
-
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="relative">
                     <Bell className="h-5 w-5" />
                     {combinedUnreadCount > 0 && (
-                      <Badge
-                        variant="destructive"
+                      <Badge 
+                        variant="destructive" 
                         className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
                       >
                         {combinedUnreadCount}
@@ -313,8 +313,8 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
+                <DropdownMenuContent 
+                  align="end" 
                   className="w-80 dropdown-slide-in"
                   sideOffset={8}
                 >
@@ -325,7 +325,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                         <Bell className="mr-2 h-4 w-4" />
                         Unread Notifications ({notifUnreadCount})
                       </DropdownMenuLabel>
-
+                      
                       {notifPreview.length === 0 ? (
                         <DropdownMenuItem disabled>
                           No unread notifications
@@ -351,7 +351,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                     <Mail className="mr-2 h-4 w-4" />
                     Unread Contact Messages ({contactUnreadCount})
                   </DropdownMenuLabel>
-
+                  
                   {contactUnreadPreview.length === 0 ? (
                     <DropdownMenuItem disabled>
                       No unread contact messages
