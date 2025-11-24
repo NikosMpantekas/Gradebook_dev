@@ -65,7 +65,6 @@ body {
 /* Set minimum heights for mobile */
 html, body, #root {
   min-height: 100vh;
-  background-color: transparent;
 }
 
 

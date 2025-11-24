@@ -347,7 +347,7 @@ const Contact = () => {
       {/* Header */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 pt-[env(safe-area-inset-top)]",
+          "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300",
           scrolled
             ? (darkMode ? "bg-zinc-900/80 border-b border-zinc-800/50 backdrop-blur-md" : "bg-gray-50/80 border-b border-slate-200/50 backdrop-blur-md")
             : "bg-transparent border-transparent"
@@ -394,7 +394,7 @@ const Contact = () => {
         </div>
       </header>
 
-      <main className="flex-1 relative z-10 pt-[calc(5rem+env(safe-area-inset-top))]">
+      <main className="flex-1 relative z-10 pt-20">
         <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-6">
           <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
 
