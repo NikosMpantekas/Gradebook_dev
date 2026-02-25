@@ -12,11 +12,11 @@ import { useIsMobile } from '../hooks/use-mobile';
 
 const Layout = () => {
   const location = useLocation();
-  
+
   // Use the mobile detection hook for consistent behavior
   // This hook returns true for screens up to 1023px (mobile, tablet, small desktop)
   const isMobile = useIsMobile();
-  
+
   // Retrieve previous mobileOpen state from localStorage to prevent it from resetting on navigation
   const [mobileOpen, setMobileOpen] = useState(() => {
     const savedState = localStorage.getItem('sidebarOpen');
@@ -50,38 +50,33 @@ const Layout = () => {
 
   // Sidebar width for layout spacing
   const drawerWidth = 256; // Fixed: 256px = 64 * 4 (lg:w-64)
-  
+
   // Get current theme data for background hue shift
   const themeData = getCurrentThemeData();
-  
+
   // Create hue-shifted background based on primary color
   const getThemedBackground = () => {
     if (!themeData) return darkMode ? "bg-[#181b20]" : "bg-background";
-    
+
     try {
-      const primaryColor = darkMode 
-        ? themeData.darkColors?.primary || themeData.colors.primary
-        : themeData.colors.primary;
-      
-      // Convert hex to RGB to create a subtle hue-shifted background
-      const hex = primaryColor.replace('#', '');
-      const r = parseInt(hex.substr(0, 2), 16);
-      const g = parseInt(hex.substr(2, 2), 16);
-      const b = parseInt(hex.substr(4, 2), 16);
-      
-      if (darkMode) {
-        // Create a very subtle tint in dark mode
-        const tintedR = Math.max(24, Math.min(35, 24 + Math.round(r * 0.05)));
-        const tintedG = Math.max(27, Math.min(38, 27 + Math.round(g * 0.05)));
-        const tintedB = Math.max(32, Math.min(43, 32 + Math.round(b * 0.05)));
-        return `rgb(${tintedR}, ${tintedG}, ${tintedB})`;
-      } else {
-        // Create a very subtle tint in light mode
-        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
-        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
-        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
-        return `rgb(${tintedR}, ${tintedG}, ${tintedB})`;
-      }
+      const colors = darkMode ? themeData.darkColors || themeData.colors : themeData.colors;
+      const bgHex = colors.background.replace('#', '');
+      const bgR = parseInt(bgHex.substr(0, 2), 16);
+      const bgG = parseInt(bgHex.substr(2, 2), 16);
+      const bgB = parseInt(bgHex.substr(4, 2), 16);
+
+      const primaryHex = colors.primary.replace('#', '');
+      const pR = parseInt(primaryHex.substr(0, 2), 16);
+      const pG = parseInt(primaryHex.substr(2, 2), 16);
+      const pB = parseInt(primaryHex.substr(4, 2), 16);
+
+      // Blend a very subtle primary tint onto the actual background
+      const blend = darkMode ? 0.04 : 0.02;
+      const r = Math.round(bgR + (pR - bgR) * blend);
+      const g = Math.round(bgG + (pG - bgG) * blend);
+      const b = Math.round(bgB + (pB - bgB) * blend);
+
+      return `rgb(${r}, ${g}, ${b})`;
     } catch (error) {
       console.error('Error creating themed background:', error);
       return darkMode ? "bg-[#181b20]" : "bg-background";
@@ -128,9 +123,9 @@ const Layout = () => {
   }, [mobileOpen, isMobile]);
 
   const themedBg = getThemedBackground();
-  
+
   return (
-    <div 
+    <div
       className={cn(
         "flex min-h-screen layout-stable transition-all duration-100",
         "text-foreground"
@@ -139,12 +134,12 @@ const Layout = () => {
         backgroundColor: typeof themedBg === 'string' && themedBg.startsWith('rgb') ? themedBg : undefined
       }}
     >
-      <Header 
-        drawerWidth={drawerWidth} 
-        handleDrawerToggle={handleDrawerToggle} 
+      <Header
+        drawerWidth={drawerWidth}
+        handleDrawerToggle={handleDrawerToggle}
       />
-      <Sidebar 
-        drawerWidth={drawerWidth} 
+      <Sidebar
+        drawerWidth={drawerWidth}
         mobileOpen={mobileOpen}
         handleDrawerToggle={handleDrawerToggle}
       />
@@ -162,7 +157,7 @@ const Layout = () => {
             <Outlet />
           </OfflineDetector>
         </div>
-        
+
         {/* Footer - positioned at bottom of main content */}
         <div className="mt-auto pt-4">
           <Footer />

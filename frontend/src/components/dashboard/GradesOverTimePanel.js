@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import { subDays } from 'date-fns';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import useReducedMotion from '../hooks/useReducedMotion';
 
 /**
  * Grades Over Time Panel Component
@@ -26,6 +27,7 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
   const pathRef = useRef(null);
   const [dashLength, setDashLength] = useState(0);
   const [dashOffset, setDashOffset] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
 
   // Check if grades feature is enabled
   const featureEnabled = isFeatureEnabled('enableGrades');
@@ -33,7 +35,7 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
   // Process grades data for the graph
   const processGradesForGraph = () => {
     if (!grades || grades.length === 0) return [];
-    
+
     const today = new Date();
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const date = subDays(today, 6 - i);
@@ -56,8 +58,8 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
     // Calculate average grade for each day
     return last7Days.map(day => ({
       ...day,
-      averageGrade: day.grades.length > 0 ? 
-        day.grades.reduce((sum, grade) => sum + grade, 0) / day.grades.length : 
+      averageGrade: day.grades.length > 0 ?
+        day.grades.reduce((sum, grade) => sum + grade, 0) / day.grades.length :
         null
     }));
   };
@@ -71,17 +73,22 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
       if (path) {
         const length = path.getTotalLength();
         setDashLength(length);
-        setDashOffset(length);
-        
-        // Trigger animation after a short delay
-        setTimeout(() => {
+
+        if (prefersReducedMotion) {
+          // No animation — show immediately
           setDashOffset(0);
-        }, 100);
+        } else {
+          setDashOffset(length);
+          // Trigger animation after a short delay
+          setTimeout(() => {
+            setDashOffset(0);
+          }, 100);
+        }
       }
     };
 
-    setTimeout(start, animationDelayMs);
-  }, [grades, loading, animationDelayMs]);
+    setTimeout(start, prefersReducedMotion ? 0 : animationDelayMs);
+  }, [grades, loading, animationDelayMs, prefersReducedMotion]);
 
   // Helper functions to create a smooth curve through points using cubic Bezier segments
   const lineProps = (pointA, pointB) => {
@@ -106,15 +113,15 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
 
   const generateSmoothPath = (pts) => {
     if (pts.length < 2) return '';
-    
+
     let path = `M ${pts[0][0]},${pts[0][1]}`;
-    
+
     for (let i = 1; i < pts.length; i++) {
       const cp1 = controlPoint(pts[i - 1], pts[i - 2], pts[i]);
       const cp2 = controlPoint(pts[i], pts[i - 1], pts[i + 1], true);
       path += ` C ${cp1[0]},${cp1[1]} ${cp2[0]},${cp2[1]} ${pts[i][0]},${pts[i][1]}`;
     }
-    
+
     return path;
   };
 
@@ -129,15 +136,15 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
 
     // Filter out days with no grades for the line
     const dataWithGrades = data.filter(d => d.averageGrade !== null);
-    
+
     if (dataWithGrades.length === 0) {
       return (
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          height: 200, 
-          color: 'text.secondary' 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 200,
+          color: 'text.secondary'
         }}>
           <Typography variant="body2">
             📊 No grade data available for the chart
@@ -148,7 +155,7 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
 
     const yMin = 0;
     const yMax = 20;
-    
+
     // Create points for the line
     const points = dataWithGrades.map((d, i) => {
       const x = padding + (i / Math.max(dataWithGrades.length - 1, 1)) * graphWidth;
@@ -157,50 +164,50 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
     });
 
     const smoothPath = generateSmoothPath(points);
-    
+
     // Create area path (same as line path but closed to bottom)
     const areaPathData = smoothPath + ` L ${points[points.length - 1][0]},${height - padding} L ${points[0][0]},${height - padding} Z`;
-    
+
     // Create unique IDs for clip paths to avoid conflicts
     const lineClipPathId = `lineClip-${Math.random().toString(36).substr(2, 9)}`;
     const areaClipPathId = `areaClip-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Calculate step for x-axis labels
     const step = Math.max(1, Math.floor(data.length / 4));
 
     return (
       <Box sx={{ width: '100%', overflow: 'hidden' }}>
-        <svg 
-          width="100%" 
-          height={height} 
+        <svg
+          width="100%"
+          height={height}
           viewBox={`0 0 ${width} ${height}`}
           style={{ display: 'block' }}
         >
           <defs>
             <clipPath id={lineClipPathId}>
-              <rect 
-                x={0} 
-                y={0} 
+              <rect
+                x={0}
+                y={0}
                 width={dashLength > 0 ? (width * (dashLength - dashOffset)) / dashLength : 0}
                 height={height}
                 style={{
-                  transition: 'width 1.5s ease-out'
+                  transition: prefersReducedMotion ? 'none' : 'width 1.5s ease-out'
                 }}
               />
             </clipPath>
             <clipPath id={areaClipPathId}>
-              <rect 
-                x={0} 
-                y={0} 
+              <rect
+                x={0}
+                y={0}
                 width={dashLength > 0 ? (width * (dashLength - dashOffset)) / dashLength : 0}
                 height={graphHeight}
                 style={{
-                  transition: 'width 1.5s ease-out'
+                  transition: prefersReducedMotion ? 'none' : 'width 1.5s ease-out'
                 }}
               />
             </clipPath>
           </defs>
-          
+
           {/* Grid lines */}
           {Array.from({ length: 5 }, (_, i) => {
             const y = padding + (i / 4) * graphHeight;
@@ -217,7 +224,7 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
               />
             );
           })}
-          
+
           {/* Y-axis labels */}
           {Array.from({ length: 5 }, (_, i) => {
             const y = padding + (i / 4) * graphHeight;
@@ -270,7 +277,7 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
             style={{
               strokeDasharray: dashLength,
               strokeDashoffset: dashOffset,
-              transition: 'stroke-dashoffset 1.5s ease-out',
+              transition: prefersReducedMotion ? 'none' : 'stroke-dashoffset 1.5s ease-out',
               zIndex: 1
             }}
             clipPath={`url(#${lineClipPathId})`}
@@ -298,12 +305,12 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
 
   return (
     <Card>
-      <CardHeader 
-        title="Grades Overview" 
+      <CardHeader
+        title="Grades Overview"
         avatar={<ShowChartIcon color="primary" />}
         action={
-          <Button 
-            size="small" 
+          <Button
+            size="small"
             onClick={onViewAll}
             startIcon={<VisibilityIcon />}
             sx={{

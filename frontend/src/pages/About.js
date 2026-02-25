@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from "../components/ui/sheet";
@@ -14,33 +15,64 @@ import {
   HeadphonesIcon,
 } from "lucide-react";
 
-const Logo = ({ darkMode }) => (
-  <a
-    href="/home"
-    className={cn(
-      "text-xl font-bold tracking-tight font-serif",
-      "no-underline transition-all duration-300 hover:opacity-80",
-      darkMode ? "text-white" : "text-slate-900"
-    )}
-  >
-    GradeBook
-  </a>
-);
+const Logo = ({ darkMode, currentPath }) => {
+  const isHome = currentPath === "/home" || currentPath === "/";
+  return (
+    <Link
+      to="/home"
+      className={cn(
+        "relative text-xl font-bold tracking-tight font-serif py-1 group",
+        "no-underline transition-all duration-300",
+        isHome
+          ? (darkMode ? "text-white" : "text-slate-900")
+          : (darkMode ? "text-zinc-300 hover:text-white" : "text-slate-700 hover:text-slate-900")
+      )}
+    >
+      GradeBook
+      <span
+        className={cn(
+          "absolute -bottom-1 left-0 h-[2px] rounded-full transition-all duration-300 ease-out",
+          darkMode ? "bg-white" : "bg-slate-900",
+          isHome ? "w-full" : "w-0 group-hover:w-full"
+        )}
+      />
+    </Link>
+  );
+};
 
 const navLinks = [
   { label: "Πίνακας Ελέγχου", href: "/login" },
-  { label: "Σχετικά με εμάς", href: "/about" },
-  { label: "Επικοινωνία", href: "/contact" },
+  { label: "Σχετικά με εμάς", href: "/about", match: "/about" },
+  { label: "Επικοινωνία", href: "/contact", match: "/contact" },
 ];
 
 export default function About() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('publicPageTheme');
     return saved ? JSON.parse(saved) : true;
   });
+
+  // Check if user is already logged in
+  const loggedInUser = (() => {
+    try {
+      const stored = sessionStorage.getItem('user') || localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  })();
+
+  const dashboardPath = loggedInUser ? (
+    loggedInUser.role === 'superadmin' ? '/superadmin/dashboard' :
+      loggedInUser.role === 'admin' ? '/app/admin' :
+        loggedInUser.role === 'teacher' ? '/app/teacher' :
+          loggedInUser.role === 'student' ? '/app/student' :
+            loggedInUser.role === 'parent' ? '/app/parent' :
+              '/login'
+  ) : '/login';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,28 +142,57 @@ export default function About() {
             </SheetTrigger>
             <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
               <SheetHeader className="p-6 border-b border-zinc-100/10">
-                <Logo darkMode={darkMode} />
+                <Logo darkMode={darkMode} currentPath={currentPath} />
               </SheetHeader>
               <div className="p-4">
                 <nav className="flex flex-col gap-1">
-                  {navLinks.map((link) => (
-                    <Button key={link.label} variant="ghost" asChild className={cn("justify-start text-sm font-medium h-10 px-4 rounded-md", darkMode ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-slate-100 text-slate-600 hover:text-slate-900")}>
-                      <a href={link.href}>{link.label}</a>
-                    </Button>
-                  ))}
+                  {navLinks.map((link) => {
+                    const isActive = currentPath === link.match;
+                    const resolvedHref = link.href === '/login' && loggedInUser ? dashboardPath : link.href;
+                    return (
+                      <Button key={link.label} variant="ghost" asChild className={cn(
+                        "justify-start text-sm font-medium h-10 px-4 rounded-md",
+                        isActive
+                          ? (darkMode ? "bg-zinc-800 text-white" : "bg-slate-100 text-slate-900")
+                          : (darkMode ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-slate-100 text-slate-600 hover:text-slate-900")
+                      )}>
+                        <Link to={resolvedHref}>{link.label}</Link>
+                      </Button>
+                    );
+                  })}
                 </nav>
               </div>
             </SheetContent>
           </Sheet>
 
-          <Logo darkMode={darkMode} />
+          <Logo darkMode={darkMode} currentPath={currentPath} />
           <div className="flex-1" />
           <div className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <a key={link.label} href={link.href} className={cn("text-sm font-medium transition-colors", darkMode ? "text-zinc-400 hover:text-white" : "text-slate-600 hover:text-slate-900")}>
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = currentPath === link.match;
+              const resolvedHref = link.href === '/login' && loggedInUser ? dashboardPath : link.href;
+              return (
+                <Link
+                  key={link.label}
+                  to={resolvedHref}
+                  className={cn(
+                    "relative text-sm font-medium transition-colors duration-300 py-1 group",
+                    isActive
+                      ? (darkMode ? "text-white" : "text-slate-900")
+                      : (darkMode ? "text-zinc-400 hover:text-white" : "text-slate-600 hover:text-slate-900")
+                  )}
+                >
+                  {link.label}
+                  <span
+                    className={cn(
+                      "absolute -bottom-1 left-0 h-[2px] rounded-full transition-all duration-300 ease-out",
+                      darkMode ? "bg-white" : "bg-slate-900",
+                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                    )}
+                  />
+                </Link>
+              );
+            })}
           </div>
           <div className="w-px h-4 mx-6 bg-slate-200/20 hidden md:block" />
           <div className="flex items-center gap-2">
@@ -253,20 +314,12 @@ export default function About() {
         </section>
       </main>
 
-      <footer className={cn(
-        "py-12 border-t transition-colors duration-300",
-        darkMode ? "border-zinc-800" : "border-slate-200"
-      )}>
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <Logo darkMode={darkMode} />
-            <p className={cn("text-sm", darkMode ? "text-zinc-500" : "text-slate-500")}>
-              © {new Date().getFullYear()}
-            </p>
-          </div>
-          <div className="flex gap-8">
-            <a href="/contact" className={cn("text-sm hover:underline", darkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-500 hover:text-slate-800")}>Contact</a>
-          </div>
+      <footer className="py-8 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <Logo darkMode={darkMode} />
+          <p className={cn("text-sm", darkMode ? "text-zinc-600" : "text-slate-400")}>
+            © {new Date().getFullYear()} The GradeBook Team
+          </p>
         </div>
       </footer>
     </div>

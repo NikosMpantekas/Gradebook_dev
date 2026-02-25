@@ -14,7 +14,7 @@ try {
   } else if (sessionUser) {
     user = JSON.parse(sessionUser);
   }
-  
+
   // Validate that user has required fields
   if (user) {
     // Check if token exists and is valid
@@ -66,8 +66,8 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
   logger.info('AUTH', 'Login attempt', { email: user.email, saveCredentials: user.saveCredentials });
   try {
     const response = await authService.login(user);
-    logger.info('AUTH', 'Login successful', { 
-      userId: response._id, 
+    logger.info('AUTH', 'Login successful', {
+      userId: response._id,
       role: response.role,
       hasToken: !!response.token,
       schoolId: response.schoolId
@@ -80,7 +80,7 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
         error.response.data.message) ||
       error.message ||
       error.toString();
-    
+
     // Detailed error logging
     logger.error('AUTH', 'Login failed', {
       errorMessage: message,
@@ -88,7 +88,7 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
       responseData: error.response?.data,
       errorStack: error.stack
     });
-    
+
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -141,40 +141,40 @@ export const getUserData = createAsyncThunk(
 // Update current user permissions
 export const updateCurrentUserPermissions = createAsyncThunk(
   'auth/updatePermissions',
-  async ({userId, permissions}, thunkAPI) => {
+  async ({ userId, permissions }, thunkAPI) => {
     try {
       // Only proceed if this is the current logged-in user
       const currentUser = thunkAPI.getState().auth.user;
       if (currentUser && currentUser._id === userId) {
         console.log('Updating permissions for current user:', userId);
         console.log('New permissions:', permissions);
-        
+
         // Create updated user object with new permissions
         const updatedUser = {
           ...currentUser,
           ...permissions
         };
-        
+
         // Force an immediate update to both storage locations to ensure it takes effect
         if (localStorage.getItem('user')) {
           localStorage.removeItem('user');
           localStorage.setItem('user', JSON.stringify(updatedUser));
           console.log('Updated localStorage with new permissions');
         }
-        
+
         if (sessionStorage.getItem('user')) {
           sessionStorage.removeItem('user');
           sessionStorage.setItem('user', JSON.stringify(updatedUser));
           console.log('Updated sessionStorage with new permissions');
         }
-        
+
         // Force a page reload to ensure the new permissions take effect
         // This is a somewhat heavy-handed approach but ensures UI components update
         setTimeout(() => {
           console.log('Permission update complete - forcing refresh');
           window.location.reload();
         }, 1000);
-        
+
         return updatedUser;
       }
       return thunkAPI.getState().auth.user;
@@ -216,6 +216,9 @@ export const authSlice = createSlice({
     builder
       .addCase(register.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = '';
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -230,8 +233,11 @@ export const authSlice = createSlice({
       })
       .addCase(login.pending, (state) => {
         console.log('=== REDUX LOGIN PENDING ===');
-        console.log('Setting isLoading to true');
+        console.log('Setting isLoading to true and clearing previous state');
         state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = '';
       })
       .addCase(login.fulfilled, (state, action) => {
         console.log('=== REDUX LOGIN FULFILLED START ===');
@@ -240,10 +246,10 @@ export const authSlice = createSlice({
         console.log('Payload user role:', action.payload?.role);
         console.log('Payload has token:', !!action.payload?.token);
         console.log('Payload token length:', action.payload?.token?.length);
-        
+
         state.isLoading = false;
         state.isSuccess = true;
-        
+
         // Process the user's school features properly
         // Special handling for superadmin users to ensure all required fields exist
         if (action.payload?.role === 'superadmin') {
@@ -267,14 +273,14 @@ export const authSlice = createSlice({
             name: action.payload.name || 'Superadmin',
             email: action.payload.email || 'admin@system.com'
           };
-          
+
           console.log('Processed superadmin user:', {
             id: superadminUser._id,
             role: superadminUser.role,
             hasToken: !!superadminUser.token,
             email: superadminUser.email
           });
-          
+
           state.user = superadminUser;
         } else {
           console.log('Processing regular user...');
@@ -284,7 +290,7 @@ export const authSlice = createSlice({
             // Make sure school features are properly set from either location
             schoolFeatures: action.payload.schoolFeatures || action.payload.features || {}
           };
-          
+
           console.log('Processed regular user:', {
             id: processedUser._id,
             role: processedUser.role,
@@ -292,10 +298,10 @@ export const authSlice = createSlice({
             email: processedUser.email,
             name: processedUser.name
           });
-          
+
           state.user = processedUser;
         }
-        
+
         console.log('=== REDUX LOGIN FULFILLED END ===');
         console.log('Final Redux state user:', {
           hasUser: !!state.user,
@@ -306,7 +312,7 @@ export const authSlice = createSlice({
           isLoading: state.isLoading,
           isError: state.isError
         });
-        
+
         // Force storage update to ensure persistence
         if (state.user) {
           console.log('Updating localStorage with user data...');
@@ -329,12 +335,12 @@ export const authSlice = createSlice({
         console.log('=== REDUX LOGIN REJECTED ===');
         console.log('Login failed:', action.payload);
         console.log('Error details:', action.error);
-        
+
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload || 'Login failed';
         state.user = null;
-        
+
         logger.error('AUTH', 'Login rejected', {
           errorMessage: action.payload,
           meta: action.meta,
@@ -351,6 +357,9 @@ export const authSlice = createSlice({
       })
       .addCase(updateProfile.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = '';
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -370,6 +379,9 @@ export const authSlice = createSlice({
       })
       .addCase(getUserData.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = '';
       })
       .addCase(getUserData.fulfilled, (state, action) => {
         state.isLoading = false;
