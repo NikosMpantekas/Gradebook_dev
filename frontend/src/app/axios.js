@@ -81,35 +81,35 @@ axiosInstance.interceptors.request.use(
   (config) => {
     // Get the current state from Redux store
     const state = store.getState();
-    
+
     // Check if user is logged in and has a token
     if (state?.auth?.user?.token) {
       // Add token to request headers
       config.headers['Authorization'] = `Bearer ${state.auth.user.token}`;
-      
+
       // Debug log for token validation
-      console.log('Adding auth token to request: ', 
+      console.log('Adding auth token to request: ',
         state.auth.user.token ? 'Valid token' : 'Invalid token');
     } else {
       // For debugging - log when no token is available
       console.log('No authentication token available for request:', config.url);
     }
-    
+
     // Generate a unique request ID for tracing
     const requestId = generateRequestId();
     config.headers['x-request-id'] = requestId;
-    
+
     // Only deduplicate GET, POST, PUT, DELETE requests
     // Skip OPTIONS and other special requests
     const method = config.method?.toUpperCase();
     if (['GET', 'POST', 'PUT', 'DELETE'].includes(method)) {
       // Create a request signature based on method, URL and data
       const signature = `${method}:${config.url}:${JSON.stringify(config.data || {})}`;
-      
+
       // Check if an identical request is already in flight
       if (requestCache.has(signature)) {
         console.log(`[DUPLICATE REQUEST PREVENTED] ${method} ${config.url}`);
-        
+
         // Return the existing request promise to prevent duplicate
         const source = axios.CancelToken.source();
         config.cancelToken = source.token;
@@ -117,16 +117,16 @@ axiosInstance.interceptors.request.use(
       } else {
         // Add this request to the cache
         requestCache.set(signature, true);
-        
+
         // Remove from cache after timeout
         setTimeout(() => {
           requestCache.delete(signature);
         }, DEDUPE_TIMEOUT);
-        
+
         console.log(`[REQUEST ${requestId}] ${method} ${config.url} (unique)`);
       }
     }
-    
+
     return config;
   },
   (error) => {
@@ -143,15 +143,15 @@ axiosInstance.interceptors.response.use(
     const method = response.config.method?.toUpperCase();
     const url = response.config.url;
     const signature = `${method}:${url}:${JSON.stringify(response.config.data || {})}`;
-    
+
     // Clean up the request cache
-    
+
     // Clear the request from cache after completion
     if (response.config.method && ['GET', 'POST', 'PUT', 'DELETE'].includes(response.config.method.toUpperCase())) {
       const signature = `${response.config.method.toUpperCase()}:${response.config.url}:${JSON.stringify(response.config.data || {})}`;
       requestCache.delete(signature);
     }
-    
+
     return response;
   },
   (error) => {
@@ -160,43 +160,53 @@ axiosInstance.interceptors.response.use(
       console.log('Request cancelled:', error.message);
       return Promise.reject(error);
     }
-    
+
     // Enhanced error logging with detailed information
     if (error.config) {
       const method = error.config.method?.toUpperCase();
       const url = error.config.url;
       const signature = `${method}:${url}:${JSON.stringify(error.config.data || {})}`;
       requestCache.delete(signature);
-      
+
       // Extract the host for better diagnostics
       const host = getHostFromUrl(url);
       const isHttps = isHttpsUrl(url);
-      
+
       // Log error with request ID and enhanced details
       const requestId = error.config.headers['x-request-id'] || 'unknown';
       console.error(`[ERROR ${requestId}] ${method} ${url} - ${error.message}`);
-      
+
       // Add specific logging for network/HTTPS errors
       if (error.message === 'Network Error' && isHttps) {
         console.error(`[SSL ERROR] Connection to ${host} failed - this is likely due to an untrusted SSL certificate`);
         console.error('[SSL SOLUTION] Try using HTTP instead of HTTPS for IP-based backends, or install a trusted certificate');
       }
     }
-    
+
     // Handle maintenance mode (503 Service Unavailable)
     if (error.response && error.response.status === 503) {
-      console.log('[MAINTENANCE DETECTED] System is in maintenance mode, redirecting...');
-      
+      console.log('[MAINTENANCE DETECTED] System is in maintenance mode');
+
       // Check if the response indicates maintenance mode
       const responseData = error.response.data;
       if (responseData && responseData.isMaintenanceMode) {
+        // Don't redirect if user is on a public route — let them browse freely
+        const publicRoutes = ['/home', '/about', '/contact', '/login', '/register', '/maintenance', '/diagnostics', '/change-password'];
+        const currentPath = window.location.pathname;
+        const isOnPublicRoute = publicRoutes.includes(currentPath);
+
+        if (isOnPublicRoute) {
+          console.log('[MAINTENANCE] On public route, suppressing redirect:', currentPath);
+          return Promise.reject(error);
+        }
+
         console.log('[MAINTENANCE] Redirecting to maintenance page:', {
           message: responseData.maintenanceMessage,
           estimatedCompletion: responseData.estimatedCompletion
         });
-        
+
         // Redirect to maintenance page if not already there
-        if (!window.location.pathname.includes('/maintenance')) {
+        if (!currentPath.includes('/maintenance')) {
           window.location.href = '/maintenance';
           return Promise.reject(error);
         }
@@ -206,18 +216,18 @@ axiosInstance.interceptors.response.use(
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
       console.error('Authentication error:', error.response.data);
-      
+
       // Clear user data from storage if unauthorized
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
-      
+
       // Redirect to login page if not already there
       if (!window.location.pathname.includes('/login')) {
         console.log('Redirecting to login due to auth error');
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
