@@ -3,8 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { BarChart3 } from "lucide-react";
+import useReducedMotion from "./hooks/useReducedMotion";
 
 export function GradesGraph({ recentGrades }) {
+  const prefersReducedMotion = useReducedMotion();
   // Extract available subjects
   const subjects = useMemo(
     () =>
@@ -43,7 +45,7 @@ export function GradesGraph({ recentGrades }) {
     let subjectData = [];
     if (selectedSubjectGrades.length > 0) {
       const totalWidth = sortedGrades.length; // Full width based on all grades
-      
+
       if (selectedSubjectGrades.length === 1) {
         // Single point: place it in the middle and create a horizontal line
         const gradeValue = Number(selectedSubjectGrades[0].value) || 0;
@@ -55,10 +57,10 @@ export function GradesGraph({ recentGrades }) {
         // Multiple points: distribute them across the full width
         subjectData = selectedSubjectGrades.map((grade, index) => {
           // Calculate position across full width (1 to totalWidth)
-          const position = selectedSubjectGrades.length === 1 
+          const position = selectedSubjectGrades.length === 1
             ? Math.ceil(totalWidth / 2) // Center single point
             : 1 + (index * (totalWidth - 1)) / (selectedSubjectGrades.length - 1);
-          
+
           return {
             index: Math.round(position),
             selectedSubjectGrade: Number(grade.value) || 0,
@@ -132,13 +134,13 @@ export function GradesGraph({ recentGrades }) {
                 axisLine={false}
                 domain={[0, 100]}
               />
-              <Tooltip 
+              <Tooltip
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     const allGradesPayload = payload.find(p => p.dataKey === 'grade');
                     const subjectGradesPayload = payload.find(p => p.dataKey === 'selectedSubjectGrade');
-                    
+
                     return (
                       <div className="rounded-lg border bg-background p-3 shadow-lg min-w-[200px]">
                         <div className="flex flex-col space-y-2">
@@ -147,7 +149,7 @@ export function GradesGraph({ recentGrades }) {
                               Position #{data.index}
                             </span>
                           </div>
-                          
+
                           {/* All Grades Information */}
                           {allGradesPayload && (
                             <div className="space-y-1">
@@ -170,7 +172,7 @@ export function GradesGraph({ recentGrades }) {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Selected Subject Information */}
                           {subjectGradesPayload && data.selectedSubjectGrade !== null && (
                             <div className="space-y-1">
@@ -206,14 +208,14 @@ export function GradesGraph({ recentGrades }) {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Show message when only one line has data */}
                           {!subjectGradesPayload || data.selectedSubjectGrade === null ? (
                             <div className="text-xs text-muted-foreground italic text-center pt-1 border-t border-border">
                               No {selectedSubject} grade at this position
                             </div>
                           ) : null}
-                          
+
                           {!allGradesPayload ? (
                             <div className="text-xs text-muted-foreground italic text-center pt-1 border-t border-border">
                               No grade data at this position
@@ -235,6 +237,7 @@ export function GradesGraph({ recentGrades }) {
                 activeDot={{ r: 5, stroke: "#8884d8", strokeWidth: 2 }}
                 name="All Grades"
                 connectNulls={true}
+                isAnimationActive={!prefersReducedMotion}
               />
               <Line
                 type="monotone"
@@ -245,6 +248,7 @@ export function GradesGraph({ recentGrades }) {
                 activeDot={{ r: 6, stroke: "#82ca9d", strokeWidth: 2 }}
                 name={selectedSubject}
                 connectNulls={true}
+                isAnimationActive={!prefersReducedMotion}
               />
             </LineChart>
           </ResponsiveContainer>

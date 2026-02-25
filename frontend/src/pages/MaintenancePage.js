@@ -23,16 +23,16 @@ const MaintenancePage = () => {
     try {
       console.log('[MAINTENANCE PAGE] Fetching maintenance status');
       const response = await fetch(`${API_URL}/api/system/maintenance/status`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Response is not JSON');
       }
-      
+
       const data = await response.json();
       console.log('[MAINTENANCE PAGE] Maintenance status:', data);
       setMaintenanceData(data);
@@ -53,20 +53,20 @@ const MaintenancePage = () => {
 
   const formatEstimatedTime = (dateString) => {
     if (!dateString) return null;
-    
+
     try {
       const date = new Date(dateString);
       const now = new Date();
-      
+
       if (date <= now) return 'Soon';
-      
+
       const diffMs = date - now;
       const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-      
+
       if (diffHours < 1) return 'Less than 1 hour';
       if (diffHours === 1) return '1 hour';
       if (diffHours < 24) return `${diffHours} hours`;
-      
+
       const diffDays = Math.ceil(diffHours / 24);
       if (diffDays === 1) return '1 day';
       return `${diffDays} days`;
@@ -100,7 +100,7 @@ const MaintenancePage = () => {
                   <Wrench className="h-12 w-12 text-orange-600" />
                 </div>
               </div>
-              
+
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   System Under Maintenance
@@ -136,7 +136,7 @@ const MaintenancePage = () => {
 
         {/* Simple Action Button */}
         <div className="text-center">
-          <Button 
+          <Button
             onClick={handleRefresh}
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
@@ -163,16 +163,16 @@ const MaintenancePage = () => {
 export const MaintenanceStatusChecker = ({ children }) => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Get user from Redux to check if superadmin
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
     checkMaintenanceStatus();
-    
+
     // Check maintenance status every 30 seconds
     const interval = setInterval(checkMaintenanceStatus, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -180,7 +180,7 @@ export const MaintenanceStatusChecker = ({ children }) => {
     try {
       console.log('[MAINTENANCE CHECKER] Checking maintenance status');
       console.log('[MAINTENANCE CHECKER] Current user:', user?.role || 'Not logged in');
-      
+
       // POST-LOGIN CHECK: Only check maintenance for logged-in users
       if (!user) {
         console.log('[MAINTENANCE CHECKER] No user logged in - allowing access to /home and /login');
@@ -188,7 +188,7 @@ export const MaintenanceStatusChecker = ({ children }) => {
         setIsLoading(false);
         return;
       }
-      
+
       // SUPERADMIN BYPASS: Always allow superadmin users to access the system
       if (user?.role === 'superadmin') {
         console.log('[MAINTENANCE CHECKER] Superadmin detected - bypassing maintenance mode');
@@ -196,28 +196,28 @@ export const MaintenanceStatusChecker = ({ children }) => {
         setIsLoading(false);
         return;
       }
-      
+
       const response = await fetch(`${API_URL}/api/system/maintenance/status`);
-      
+
       if (!response.ok) {
         console.log('[MAINTENANCE CHECKER] HTTP error:', response.status, response.statusText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.log('[MAINTENANCE CHECKER] Response is not JSON, content-type:', contentType);
         throw new Error('Response is not JSON');
       }
-      
+
       const data = await response.json();
-      
+
       console.log('[MAINTENANCE CHECKER] Status response:', {
         isMaintenanceMode: data.isMaintenanceMode,
         canBypass: data.canBypass,
         userRole: user?.role
       });
-      
+
       // Show maintenance page if maintenance is enabled and user cannot bypass
       setIsMaintenanceMode(data.isMaintenanceMode && !data.canBypass);
     } catch (error) {
@@ -229,15 +229,7 @@ export const MaintenanceStatusChecker = ({ children }) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  if (isMaintenanceMode) {
+  if (isMaintenanceMode && !isLoading) {
     // Show the Greek maintenance page for all users (not the admin controls page)
     return <Maintenance />;
   }

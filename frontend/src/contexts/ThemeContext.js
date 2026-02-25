@@ -9,332 +9,364 @@ export const fallbackThemes = {
   default: {
     id: 'default',
     name: 'Ocean Breeze',
-    description: 'Refreshing ocean blues with modern elegance',
+    description: 'Muted ocean tones with quiet elegance',
     colors: {
-      primary: '#0EA5E9', // Bright sky blue
-      secondary: '#F0F9FF', // Very soft blue white
-      accent: '#38BDF8', // Light sky blue accent
-      background: '#FEFEFE', // Clean white
-      foreground: '#0F172A',
-      card: '#F8FAFC', // Soft card background
-      'card-foreground': '#0F172A',
-      muted: '#F1F5F9',
-      'muted-foreground': '#64748B', // Gentle text
-      border: '#E2E8F0', // Soft border
+      primary: '#8AADC0',
+      secondary: '#F2F6F9',
+      accent: '#9BBDCC',
+      background: '#FEFEFE',
+      foreground: '#2C3640',
+      card: '#FFFFFF',
+      'card-foreground': '#2C3640',
+      muted: '#EEF2F6',
+      'muted-foreground': '#6B7A88',
+      border: '#D6DEE6',
       input: '#F8FAFC',
-      ring: '#0EA5E9'
+      ring: '#8AADC0'
     },
     darkColors: {
-      primary: '#38BDF8', // Bright blue for dark
-      secondary: '#1E293B',
-      accent: '#7DD3FC', // Light blue accent
-      background: '#1A202C', // Soft dark gray-blue background
-      foreground: '#F8FAFC',
-      card: '#1E293B', // Dark card
-      'card-foreground': '#F8FAFC',
-      muted: '#334155',
-      'muted-foreground': '#94A3B8',
-      border: '#334155',
-      input: '#1E293B',
-      ring: '#38BDF8'
+      primary: '#9BBDCC',
+      secondary: '#1C2228',
+      accent: '#B0CDD8',
+      background: '#161B22',
+      foreground: '#E0E8F0',
+      card: '#1C2228',
+      'card-foreground': '#E0E8F0',
+      muted: '#2A3038',
+      'muted-foreground': '#8A9BB0',
+      border: '#3A4450',
+      input: '#1C2228',
+      ring: '#9BBDCC'
     }
   },
   warm: {
     id: 'warm',
-    name: 'Soft Warmth',
-    description: 'Gentle warm tones with subtle elegance',
+    name: 'Warm Espresso',
+    description: 'Muted warm tones with quiet comfort',
     colors: {
-      primary: '#78716C', // Muted warm brown
-      secondary: '#FAFAF9', // Soft cream
-      accent: '#6B7280', // Gentle gray accent
-      background: '#FEFEFE', // Pure white
-      foreground: '#292524',
-      card: '#F9F9F8', // Soft warm card
-      'card-foreground': '#292524',
-      muted: '#F5F5F4', // Subtle muted
-      'muted-foreground': '#57534E', // Soft brown text
-      border: '#E7E5E4', // Gentle border
+      primary: '#B89E8C',
+      secondary: '#F8F5F2',
+      accent: '#C4AE9C',
+      background: '#FEFEFE',
+      foreground: '#3A3430',
+      card: '#FFFFFF',
+      'card-foreground': '#3A3430',
+      muted: '#F2EDEA',
+      'muted-foreground': '#7A7068',
+      border: '#DDD8D4',
       input: '#FAFAF9',
-      ring: '#78716C'
+      ring: '#B89E8C'
     },
     darkColors: {
-      primary: '#A8A29E', // Soft brown for dark
-      secondary: '#1C1917',
-      accent: '#9CA3AF', // Gentle gray accent
-      background: '#0A0A0A', // Deep background
-      foreground: '#FAFAF9',
-      card: '#1C1917', // Dark brown card
-      'card-foreground': '#FAFAF9',
-      muted: '#292524',
-      'muted-foreground': '#A8A29E',
-      border: '#292524',
-      input: '#1C1917',
-      ring: '#A8A29E'
+      primary: '#C4AE9C',
+      secondary: '#242120',
+      accent: '#D0BEB0',
+      background: '#1A1918',
+      foreground: '#EDE6E0',
+      card: '#242120',
+      'card-foreground': '#EDE6E0',
+      muted: '#3A3634',
+      'muted-foreground': '#B0A498',
+      border: '#4A4644',
+      input: '#242120',
+      ring: '#C4AE9C'
     }
   },
   sunset: {
     id: 'sunset',
     name: 'Sunset Rose',
-    description: 'Warm rose tones inspired by golden sunset',
+    description: 'Muted rose tones with quiet warmth',
     colors: {
-      primary: '#DC2626', // True rose red
-      secondary: '#FEF2F2', // Soft rose white
-      accent: '#F97316', // Sunset orange accent
-      background: '#FEFEFE', // Clean white
-      foreground: '#1F2937',
-      card: '#FEF2F2', // Soft rose card
-      'card-foreground': '#1F2937',
-      muted: '#FEE2E2', // Light rose muted
-      'muted-foreground': '#991B1B', // Rose text
-      border: '#FECACA', // Soft rose border
+      primary: '#C09590',
+      secondary: '#F8F4F3',
+      accent: '#C8A8A0',
+      background: '#FEFEFE',
+      foreground: '#3D3230',
+      card: '#FFFFFF',
+      'card-foreground': '#3D3230',
+      muted: '#F5EDEB',
+      'muted-foreground': '#806862',
+      border: '#E4D4D0',
       input: '#FEF2F2',
-      ring: '#DC2626'
+      ring: '#C09590'
     },
     darkColors: {
-      primary: '#F87171', // Soft rose for dark
-      secondary: '#1F1917',
-      accent: '#FB923C', // Warm orange accent
-      background: '#0F0A0A', // Deep rose background
-      foreground: '#FEF2F2',
-      card: '#1F1917', // Dark rose card
-      'card-foreground': '#FEF2F2',
-      muted: '#2D1B1B',
-      'muted-foreground': '#F87171',
-      border: '#2D1B1B',
-      input: '#1F1917',
-      ring: '#F87171'
+      primary: '#CCA8A2',
+      secondary: '#241E1E',
+      accent: '#D4B8B0',
+      background: '#1A1616',
+      foreground: '#F0E6E4',
+      card: '#241E1E',
+      'card-foreground': '#F0E6E4',
+      muted: '#382E2E',
+      'muted-foreground': '#C0A8A2',
+      border: '#4A3E3E',
+      input: '#241E1E',
+      ring: '#CCA8A2'
     }
   },
   earth: {
     id: 'earth',
     name: 'Earth Sage',
-    description: 'Natural sage greens with earthy warmth',
+    description: 'Muted sage tones with natural calm',
     colors: {
-      primary: '#16A34A', // True sage green
-      secondary: '#F0FDF4', // Soft sage white
-      accent: '#65A30D', // Natural green accent
-      background: '#FEFEFE', // Clean white
-      foreground: '#14532D',
-      card: '#F0FDF4', // Soft sage card
-      'card-foreground': '#14532D',
-      muted: '#DCFCE7', // Light sage muted
-      'muted-foreground': '#166534', // Sage text
-      border: '#BBF7D0', // Soft sage border
+      primary: '#8CAA90',
+      secondary: '#F4F7F5',
+      accent: '#9CB4A0',
+      background: '#FEFEFE',
+      foreground: '#303D34',
+      card: '#FFFFFF',
+      'card-foreground': '#303D34',
+      muted: '#EAF0EC',
+      'muted-foreground': '#5A7060',
+      border: '#C8D8CC',
       input: '#F0FDF4',
-      ring: '#16A34A'
+      ring: '#8CAA90'
     },
     darkColors: {
-      primary: '#4ADE80', // Bright sage for dark
-      secondary: '#0F1B0F',
-      accent: '#84CC16', // Lime accent
-      background: '#0A0F0A', // Deep earth background
-      foreground: '#F0FDF4',
-      card: '#0F1B0F', // Dark earth card
-      'card-foreground': '#F0FDF4',
-      muted: '#1B2F1B',
-      'muted-foreground': '#4ADE80',
-      border: '#1B2F1B',
-      input: '#0F1B0F',
-      ring: '#4ADE80'
+      primary: '#9CB8A0',
+      secondary: '#1C221C',
+      accent: '#B0C8B0',
+      background: '#161A16',
+      foreground: '#E4F0E8',
+      card: '#1C221C',
+      'card-foreground': '#E4F0E8',
+      muted: '#2E382E',
+      'muted-foreground': '#98B8A0',
+      border: '#3E4C3E',
+      input: '#1C221C',
+      ring: '#9CB8A0'
     }
   },
   nature: {
     id: 'nature',
     name: 'Fresh Mint',
-    description: 'Refreshing mint greens with crisp freshness',
+    description: 'Muted mint tones with soft freshness',
     colors: {
-      primary: '#059669', // True mint green
-      secondary: '#ECFDF5', // Fresh mint white
-      accent: '#10B981', // Emerald accent
-      background: '#FEFEFE', // Clean white
-      foreground: '#064E3B',
-      card: '#ECFDF5', // Fresh mint card
-      'card-foreground': '#064E3B',
-      muted: '#D1FAE5', // Light mint muted
-      'muted-foreground': '#047857', // Mint text
-      border: '#A7F3D0', // Soft mint border
+      primary: '#82AEA4',
+      secondary: '#F2F7F6',
+      accent: '#94BAB0',
+      background: '#FEFEFE',
+      foreground: '#2D3D38',
+      card: '#FFFFFF',
+      'card-foreground': '#2D3D38',
+      muted: '#E8F0ED',
+      'muted-foreground': '#5A7A72',
+      border: '#C4D8D0',
       input: '#ECFDF5',
-      ring: '#059669'
+      ring: '#82AEA4'
     },
     darkColors: {
-      primary: '#34D399', // Bright mint for dark
-      secondary: '#0F1B17',
-      accent: '#6EE7B7', // Light mint accent
-      background: '#0A1512', // Deep mint background
-      foreground: '#ECFDF5',
-      card: '#0F1B17', // Dark mint card
-      'card-foreground': '#ECFDF5',
-      muted: '#1B2F23',
-      'muted-foreground': '#34D399',
-      border: '#1B2F23',
-      input: '#0F1B17',
-      ring: '#34D399'
+      primary: '#94BAB0',
+      secondary: '#1A2220',
+      accent: '#A8C8C0',
+      background: '#141A18',
+      foreground: '#E0F0EC',
+      card: '#1A2220',
+      'card-foreground': '#E0F0EC',
+      muted: '#2A3834',
+      'muted-foreground': '#90B8AC',
+      border: '#384A44',
+      input: '#1A2220',
+      ring: '#94BAB0'
     }
   },
-  // NEW ELEGANT THEMES
   lavender: {
     id: 'lavender',
     name: 'Elegant Lavender',
-    description: 'Sophisticated lavender with rich purple harmony',
+    description: 'Muted lavender with quiet sophistication',
     colors: {
-      primary: '#8B5CF6', // True lavender purple
-      secondary: '#FAF5FF', // Soft lavender white
-      accent: '#A855F7', // Rich purple accent
-      background: '#FEFEFE', // Pure white
-      foreground: '#581C87',
-      card: '#FAF5FF', // Soft lavender card
-      'card-foreground': '#581C87',
-      muted: '#F3E8FF', // Light lavender muted
-      'muted-foreground': '#7C2D92', // Lavender text
-      border: '#DDD6FE', // Soft lavender border
+      primary: '#A098B8',
+      secondary: '#F6F4F9',
+      accent: '#AEA8C4',
+      background: '#FEFEFE',
+      foreground: '#35303D',
+      card: '#FFFFFF',
+      'card-foreground': '#35303D',
+      muted: '#F0ECF5',
+      'muted-foreground': '#706888',
+      border: '#D4D0E0',
       input: '#FAF5FF',
-      ring: '#8B5CF6'
+      ring: '#A098B8'
     },
     darkColors: {
-      primary: '#C4B5FD', // Soft lavender for dark
-      secondary: '#1C1B2F',
-      accent: '#DDD6FE', // Light lavender accent
-      background: '#0F0A1B', // Deep lavender background
-      foreground: '#FAF5FF',
-      card: '#1C1B2F', // Dark lavender card
-      'card-foreground': '#FAF5FF',
-      muted: '#2D1B3D',
-      'muted-foreground': '#C4B5FD',
-      border: '#2D1B3D',
-      input: '#1C1B2F',
-      ring: '#C4B5FD'
+      primary: '#AEA8C8',
+      secondary: '#201E26',
+      accent: '#C0B8D4',
+      background: '#18161E',
+      foreground: '#ECE8F4',
+      card: '#201E26',
+      'card-foreground': '#ECE8F4',
+      muted: '#322E3C',
+      'muted-foreground': '#B0A8C4',
+      border: '#443E50',
+      input: '#201E26',
+      ring: '#AEA8C8'
     }
   },
   cream: {
     id: 'cream',
     name: 'Elegant Cream',
-    description: 'Sophisticated cream with warm undertones',
+    description: 'Muted cream with gentle warmth',
     colors: {
-      primary: '#92400E', // Warm brown
-      secondary: '#FFFBEB', // Soft cream
-      accent: '#D97706', // Amber accent
-      background: '#FEFEFE', // Pure white
-      foreground: '#1F2937',
-      card: '#FFFBEB', // Cream card
-      'card-foreground': '#1F2937',
-      muted: '#FEF3C7', // Light cream muted
-      'muted-foreground': '#78716C', // Warm text
-      border: '#FDE68A', // Soft yellow border
+      primary: '#BCA88C',
+      secondary: '#F8F6F2',
+      accent: '#C4B09C',
+      background: '#FEFEFE',
+      foreground: '#3A3430',
+      card: '#FFFFFF',
+      'card-foreground': '#3A3430',
+      muted: '#F4EEE6',
+      'muted-foreground': '#7A6E5C',
+      border: '#E0D8CC',
       input: '#FFFBEB',
-      ring: '#92400E'
+      ring: '#BCA88C'
     },
     darkColors: {
-      primary: '#F59E0B', // Warm amber for dark
-      secondary: '#1F2937',
-      accent: '#FBBF24', // Light amber accent
-      background: '#111827', // Deep background
-      foreground: '#FFFBEB',
-      card: '#1F2937', // Dark card
-      'card-foreground': '#FFFBEB',
-      muted: '#374151',
-      'muted-foreground': '#F59E0B',
-      border: '#374151',
-      input: '#1F2937',
-      ring: '#F59E0B'
+      primary: '#C4B09C',
+      secondary: '#22201C',
+      accent: '#D0C0AC',
+      background: '#1A1816',
+      foreground: '#F0E8DC',
+      card: '#22201C',
+      'card-foreground': '#F0E8DC',
+      muted: '#363230',
+      'muted-foreground': '#C0B098',
+      border: '#4A4640',
+      input: '#22201C',
+      ring: '#C4B09C'
     }
   },
   pearl: {
     id: 'pearl',
-    name: 'Pearl Elegance',
-    description: 'Sophisticated pearl gray with silver shimmer',
+    name: 'Pearl Silver',
+    description: 'Muted silver with quiet refinement',
     colors: {
-      primary: '#6B7280', // Pearl gray
-      secondary: '#F8FAFC', // Lustrous pearl white
-      accent: '#94A3B8', // Silver accent
-      background: '#FEFEFE', // Pure white
-      foreground: '#374151',
-      card: '#F8FAFC', // Pearl card
-      'card-foreground': '#374151',
-      muted: '#F1F5F9', // Light pearl muted
-      'muted-foreground': '#475569', // Pearl text
-      border: '#E2E8F0', // Soft pearl border
+      primary: '#8E94AC',
+      secondary: '#F5F6F8',
+      accent: '#9CA2B8',
+      background: '#FEFEFE',
+      foreground: '#30333D',
+      card: '#FFFFFF',
+      'card-foreground': '#30333D',
+      muted: '#EDEEF3',
+      'muted-foreground': '#666C80',
+      border: '#D0D3DC',
       input: '#F8FAFC',
-      ring: '#6B7280'
+      ring: '#8E94AC'
     },
     darkColors: {
-      primary: '#CBD5E1', // Bright pearl for dark
-      secondary: '#1E293B',
-      accent: '#F1F5F9', // Light pearl accent
-      background: '#0F172A', // Deep pearl background
-      foreground: '#F8FAFC',
-      card: '#1E293B', // Dark pearl card
-      'card-foreground': '#F8FAFC',
-      muted: '#334155',
-      'muted-foreground': '#CBD5E1',
-      border: '#334155',
-      input: '#1E293B',
-      ring: '#CBD5E1'
+      primary: '#9CA2B8',
+      secondary: '#1E2024',
+      accent: '#ACB2C4',
+      background: '#151820',
+      foreground: '#E4E6F0',
+      card: '#1E2024',
+      'card-foreground': '#E4E6F0',
+      muted: '#2E3038',
+      'muted-foreground': '#8E98B0',
+      border: '#3E4248',
+      input: '#1E2024',
+      ring: '#9CA2B8'
     }
   },
   blush: {
     id: 'blush',
     name: 'Cherry Blush',
-    description: 'Delicate cherry blossom pink with soft elegance',
+    description: 'Muted blossom pink with soft calm',
     colors: {
-      primary: '#EC4899', // Cherry blossom pink
-      secondary: '#FDF2F8', // Soft cherry white
-      accent: '#F472B6', // Bright pink accent
-      background: '#FEFEFE', // Pure white
-      foreground: '#831843',
-      card: '#FDF2F8', // Cherry card
-      'card-foreground': '#831843',
-      muted: '#FCE7F3', // Light cherry muted
-      'muted-foreground': '#9D174D', // Cherry text
-      border: '#FBCFE8', // Soft cherry border
+      primary: '#B8909C',
+      secondary: '#F8F4F6',
+      accent: '#C4A0AC',
+      background: '#FEFEFE',
+      foreground: '#3A3035',
+      card: '#FFFFFF',
+      'card-foreground': '#3A3035',
+      muted: '#F4ECF0',
+      'muted-foreground': '#7A6068',
+      border: '#E0CCD4',
       input: '#FDF2F8',
-      ring: '#EC4899'
+      ring: '#B8909C'
     },
     darkColors: {
-      primary: '#F9A8D4', // Soft cherry for dark
-      secondary: '#2F1B29',
-      accent: '#FBCFE8', // Light cherry accent
-      background: '#1A0F17', // Deep cherry background
-      foreground: '#FDF2F8',
-      card: '#2F1B29', // Dark cherry card
-      'card-foreground': '#FDF2F8',
-      muted: '#3D1B2E',
-      'muted-foreground': '#F9A8D4',
-      border: '#3D1B2E',
-      input: '#2F1B29',
-      ring: '#F9A8D4'
+      primary: '#C4A0AC',
+      secondary: '#241C20',
+      accent: '#D0B0BC',
+      background: '#1A1418',
+      foreground: '#F0E6EC',
+      card: '#241C20',
+      'card-foreground': '#F0E6EC',
+      muted: '#382E34',
+      'muted-foreground': '#C0A0B0',
+      border: '#4A3E44',
+      input: '#241C20',
+      ring: '#C4A0AC'
     }
   },
-  slate: {
-    id: 'slate',
-    name: 'Modern Slate',
-    description: 'Clean slate tones with contemporary feel',
+  flat: {
+    id: 'flat',
+    name: 'Flat Graphite',
+    description: 'Clean monochrome grays — zero color, all business',
     colors: {
-      primary: '#475569', // Modern slate
-      secondary: '#F8FAFC', // Crisp white
-      accent: '#0EA5E9', // Sky blue accent
-      background: '#FEFEFE', // Pure white
-      foreground: '#1E293B',
-      card: '#F8FAFC', // Slate card
-      'card-foreground': '#1E293B',
-      muted: '#F1F5F9', // Light slate muted
-      'muted-foreground': '#64748B', // Medium text
-      border: '#E2E8F0', // Soft border
-      input: '#F8FAFC',
-      ring: '#475569'
+      primary: '#737373',
+      secondary: '#F5F5F5',
+      accent: '#A3A3A3',
+      background: '#FEFEFE',
+      foreground: '#262626',
+      card: '#FFFFFF',
+      'card-foreground': '#262626',
+      muted: '#F5F5F5',
+      'muted-foreground': '#737373',
+      border: '#D4D4D4',
+      input: '#FAFAFA',
+      ring: '#737373'
     },
     darkColors: {
-      primary: '#94A3B8', // Soft slate for dark
-      secondary: '#1E293B',
-      accent: '#38BDF8', // Light blue accent
-      background: '#0F172A', // Deep slate background
-      foreground: '#F8FAFC',
-      card: '#1E293B', // Dark slate card
-      'card-foreground': '#F8FAFC',
-      muted: '#334155',
-      'muted-foreground': '#94A3B8',
-      border: '#334155',
-      input: '#1E293B',
-      ring: '#94A3B8'
+      primary: '#A3A3A3',
+      secondary: '#262626',
+      accent: '#D4D4D4',
+      background: '#171717',
+      foreground: '#F5F5F5',
+      card: '#262626',
+      'card-foreground': '#F5F5F5',
+      muted: '#404040',
+      'muted-foreground': '#A3A3A3',
+      border: '#525252',
+      input: '#262626',
+      ring: '#A3A3A3'
+    }
+  },
+  'high-contrast': {
+    id: 'high-contrast',
+    name: 'High Contrast',
+    description: 'Maximum readability — black, white & yellow',
+    colors: {
+      primary: '#CA8A04',
+      secondary: '#F5F5F5',
+      accent: '#EAB308',
+      background: '#FFFFFF',
+      foreground: '#000000',
+      card: '#FFFFFF',
+      'card-foreground': '#000000',
+      muted: '#F5F5F5',
+      'muted-foreground': '#171717',
+      border: '#000000',
+      input: '#FFFFFF',
+      ring: '#CA8A04'
+    },
+    darkColors: {
+      primary: '#FACC15',
+      secondary: '#171717',
+      accent: '#EAB308',
+      background: '#000000',
+      foreground: '#FFFFFF',
+      card: '#0A0A0A',
+      'card-foreground': '#FFFFFF',
+      muted: '#171717',
+      'muted-foreground': '#E5E5E5',
+      border: '#FFFFFF',
+      input: '#0A0A0A',
+      ring: '#FACC15'
     }
   }
 };
@@ -385,7 +417,7 @@ export const ThemeProvider = ({ children }) => {
         return null;
       }
     };
-    
+
     const user = getUserFromStorage();
     if (user && user.token) {
       console.log('🎨 User authenticated, fetching themes from API');
@@ -405,14 +437,14 @@ export const ThemeProvider = ({ children }) => {
       }
     }
   }, [loading, themes]);
-  
+
   // Apply theme-specific notification colors
   const applyThemeSpecificNotificationColors = (themeId, colors, isDark, root) => {
     // Define notification colors based on theme identity
     const notificationConfigs = {
       sunset: {
         success: isDark ? '142 69% 58%' : '142 69% 45%',
-        warning: isDark ? '38 92% 62%' : '38 92% 50%', 
+        warning: isDark ? '38 92% 62%' : '38 92% 50%',
         info: isDark ? '14 86% 62%' : '14 86% 42%',    // Rose-tinted info
         error: isDark ? '0 84% 70%' : '0 84% 55%'
       },
@@ -457,9 +489,15 @@ export const ThemeProvider = ({ children }) => {
         warning: isDark ? '38 95% 69%' : '38 92% 50%',
         info: isDark ? '25 60% 65%' : '25 60% 40%',      // Warm brown info
         error: isDark ? '0 84% 70%' : '0 84% 55%'
+      },
+      'high-contrast': {
+        success: isDark ? '142 80% 60%' : '142 76% 36%',
+        warning: isDark ? '48 96% 65%' : '48 96% 45%',
+        info: isDark ? '48 96% 65%' : '48 96% 40%',
+        error: isDark ? '0 90% 65%' : '0 84% 50%'
       }
     };
-    
+
     // Get theme-specific colors or fall back to defaults
     const themeNotifications = notificationConfigs[themeId] || {
       success: isDark ? '142 76% 73%' : '142 70% 49%',
@@ -467,7 +505,7 @@ export const ThemeProvider = ({ children }) => {
       info: isDark ? '217 91% 73%' : '217 91% 60%',
       error: isDark ? '0 93% 73%' : '0 84% 60%'
     };
-    
+
     // Apply the notification colors
     root.style.setProperty('--success', themeNotifications.success);
     root.style.setProperty('--success-foreground', isDark ? '142 10% 15%' : '355 20% 98%');
@@ -484,10 +522,10 @@ export const ThemeProvider = ({ children }) => {
     if (!theme) return;
 
     const root = document.documentElement;
-    
+
     // Choose light or dark colors based on dark mode
     const colors = isDark ? theme.darkColors || theme.colors : theme.colors;
-    
+
     // Apply CSS custom properties
     Object.entries(colors).forEach(([key, value]) => {
       const cssVar = `--${key.replace('_', '-')}`;
@@ -497,7 +535,7 @@ export const ThemeProvider = ({ children }) => {
     // Apply destructive colors (keep consistent)
     root.style.setProperty('--destructive', '0 84% 60%');
     root.style.setProperty('--destructive-foreground', '0 0% 98%');
-    
+
     // Apply theme-specific notification colors based on theme type
     applyThemeSpecificNotificationColors(themeId, colors, isDark, root);
 
@@ -507,13 +545,16 @@ export const ThemeProvider = ({ children }) => {
     // Apply theme to body background for full coverage
     document.body.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
     document.body.style.color = `hsl(${hexToHsl(colors.foreground)})`;
-    
+
     // Apply to html element as well for full coverage
     document.documentElement.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
     document.documentElement.style.color = `hsl(${hexToHsl(colors.foreground)})`;
 
     // Ensure dark class is properly set for shadcn components
     root.classList.toggle('dark', Boolean(isDark));
+
+    // Toggle high-contrast class for CSS overrides
+    root.classList.toggle('theme-high-contrast', themeId === 'high-contrast');
 
     // Save to localStorage  
     localStorage.setItem('selectedTheme', themeId);
@@ -527,7 +568,7 @@ export const ThemeProvider = ({ children }) => {
         const apiData = await response.json();
         console.log('🎨 Fetched themes from API:', apiData.length, 'themes');
         setApiThemes(apiData);
-        
+
         // Convert API themes to our theme format
         const convertedThemes = {};
         apiData.forEach(theme => {
@@ -540,10 +581,10 @@ export const ThemeProvider = ({ children }) => {
             isDefault: theme.isDefault
           };
         });
-        
+
         // Merge with fallback themes, prioritizing API themes
         setThemes({ ...fallbackThemes, ...convertedThemes });
-        
+
         // Set default theme if one exists in API
         const defaultTheme = apiData.find(theme => theme.isDefault);
         if (defaultTheme) {
@@ -619,7 +660,7 @@ export const ThemeProvider = ({ children }) => {
   // Apply independent dark/light mode colors for public pages
   const applyPublicPageCSS = (isDark = false) => {
     const root = document.documentElement;
-    
+
     // Define independent public page colors (not user theme colors)
     const publicColors = {
       light: {
@@ -637,7 +678,7 @@ export const ThemeProvider = ({ children }) => {
       },
       dark: {
         background: '#111827',
-        foreground: '#F9FAFB', 
+        foreground: '#F9FAFB',
         card: '#1F2937',
         'card-foreground': '#F9FAFB',
         muted: '#374151',
@@ -649,25 +690,25 @@ export const ThemeProvider = ({ children }) => {
         'secondary-foreground': '#F9FAFB'
       }
     };
-    
+
     const colors = isDark ? publicColors.dark : publicColors.light;
-    
+
     // Apply the public page colors
     Object.entries(colors).forEach(([key, value]) => {
       const cssVar = `--${key.replace('_', '-')}`;
       const hslValue = hexToHsl(value);
       root.style.setProperty(cssVar, hslValue);
     });
-    
+
     // Apply to body and html for full coverage
     document.body.style.backgroundColor = colors.background;
     document.body.style.color = colors.foreground;
     document.documentElement.style.backgroundColor = colors.background;
     document.documentElement.style.color = colors.foreground;
-    
+
     // Set dark class appropriately
     root.classList.toggle('dark', Boolean(isDark));
-    
+
     console.log(`🎨 Applied ${isDark ? 'dark' : 'light'} mode CSS for public pages`);
   };
 
@@ -684,9 +725,9 @@ export const ThemeProvider = ({ children }) => {
         return null;
       }
     };
-    
+
     const user = getUserFromStorage();
-    
+
     if (!loading && themes[currentTheme] && user && user.token) {
       console.log('🎨 Applying theme for authenticated user:', currentTheme);
       applyTheme(currentTheme, darkMode);

@@ -1,3 +1,4 @@
+@import url('https://fonts.cdnfonts.com/css/opendyslexic');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -42,12 +43,12 @@
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary) / 0.6) 0%, hsl(var(--accent) / 0.4) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary) / 0.8) 0%, hsl(var(--muted) / 0.6) 100%);
     --gradient-background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.15) 100%);
-    
+
     --shadow-sm: 0 2px 4px -1px hsl(var(--primary) / 0.1), 0 1px 2px -1px hsl(var(--primary) / 0.06);
     --shadow-md: 0 4px 6px -1px hsl(var(--primary) / 0.1), 0 2px 4px -1px hsl(var(--primary) / 0.06);
     --shadow-lg: 0 10px 15px -3px hsl(var(--primary) / 0.1), 0 4px 6px -2px hsl(var(--primary) / 0.05);
     --shadow-xl: 0 20px 25px -5px hsl(var(--primary) / 0.1), 0 10px 10px -5px hsl(var(--primary) / 0.04);
-    
+
     --glass-backdrop: backdrop-blur(12px) saturate(180%);
     --glass-background: hsla(var(--background), 0.8);
     --glass-border: 1px solid hsla(var(--border), 0.2);
@@ -61,15 +62,19 @@
     --sidebar-accent-foreground: var(--accent-foreground);
     --sidebar-border: var(--border);
     --sidebar-ring: var(--ring);
-    
+
     /* Semantic notification colors that adapt to theme */
-    --success: 142 70% 49%;        /* Default green success */
+    --success: 142 70% 49%;
+    /* Default green success */
     --success-foreground: 355 20% 98%;
-    --warning: 38 92% 50%;          /* Default amber warning */
+    --warning: 38 92% 50%;
+    /* Default amber warning */
     --warning-foreground: 0 0% 0%;
-    --info: 217 91% 60%;            /* Default blue info */
+    --info: 217 91% 60%;
+    /* Default blue info */
     --info-foreground: 0 0% 98%;
-    --error: 0 84% 60%;             /* Default red error */
+    --error: 0 84% 60%;
+    /* Default red error */
     --error-foreground: 0 0% 98%;
   }
 
@@ -101,7 +106,7 @@
     --border: 220 13% 12%;
     --input: 220 13% 18%;
     --ring: 207 56% 46%;
-    
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -110,15 +115,19 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    
+
     /* Dark mode semantic notification colors */
-    --success: 142 76% 73%;         /* Brighter green for dark */
+    --success: 142 76% 73%;
+    /* Brighter green for dark */
     --success-foreground: 142 10% 15%;
-    --warning: 38 95% 69%;          /* Brighter amber for dark */
+    --warning: 38 95% 69%;
+    /* Brighter amber for dark */
     --warning-foreground: 20 14% 4%;
-    --info: 217 91% 73%;            /* Brighter blue for dark */
+    --info: 217 91% 73%;
+    /* Brighter blue for dark */
     --info-foreground: 222 84% 5%;
-    --error: 0 93% 73%;             /* Brighter red for dark */
+    --error: 0 93% 73%;
+    /* Brighter red for dark */
     --error-foreground: 0 13% 6%;
   }
 }
@@ -151,8 +160,10 @@
   html,
   body,
   #root {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none;    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
   html::-webkit-scrollbar,
@@ -169,6 +180,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
     width: 0;
@@ -241,6 +253,7 @@
     transform: translateX(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -279,6 +292,7 @@
     transform: translateX(0);
     opacity: 1;
   }
+
   to {
     transform: translateX(-100%);
     opacity: 0;
@@ -290,6 +304,7 @@
   from {
     transform: translateX(-100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -299,6 +314,7 @@
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-100%);
   }
@@ -306,13 +322,23 @@
 
 /* Fade in/out */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 /* Dropdown slide */
@@ -321,6 +347,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -332,6 +359,7 @@
     opacity: 1;
     transform: translateY(0);
   }
+
   to {
     opacity: 0;
     transform: translateY(-10px);
@@ -344,6 +372,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -355,6 +384,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -366,6 +396,7 @@
     opacity: 0;
     transform: translateY(30px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -376,11 +407,12 @@
 @keyframes cardHover {
   0% {
     transform: translateY(0) scale(1);
-    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
+
   100% {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 10px 25px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -416,16 +448,27 @@
 }
 
 /* Premium shadows */
-.shadow-premium-sm { box-shadow: var(--shadow-sm); }
-.shadow-premium-md { box-shadow: var(--shadow-md); }
-.shadow-premium-lg { box-shadow: var(--shadow-lg); }
-.shadow-premium-xl { box-shadow: var(--shadow-xl); }
+.shadow-premium-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-premium-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-premium-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-premium-xl {
+  box-shadow: var(--shadow-xl);
+}
 
 /* Enhanced card styles */
 .premium-card {
-  background: linear-gradient(135deg, 
-    hsl(var(--card)) 0%, 
-    hsl(var(--secondary) / 0.5) 100%);
+  background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--secondary) / 0.5) 100%);
   border: 1px solid hsl(var(--border) / 0.5);
   box-shadow: var(--shadow-md);
   border-radius: var(--radius);
@@ -459,7 +502,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transition: left 0.5s;
 }
 
@@ -493,17 +536,17 @@
 .border-gradient {
   border: 1px solid transparent;
   background: linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
-              var(--gradient-primary) border-box;
+    var(--gradient-primary) border-box;
 }
 
 .divider-elegant {
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    hsl(var(--border)) 20%, 
-    hsl(var(--primary) / 0.3) 50%, 
-    hsl(var(--border)) 80%, 
-    transparent 100%);
+  background: linear-gradient(90deg,
+      transparent 0%,
+      hsl(var(--border)) 20%,
+      hsl(var(--primary) / 0.3) 50%,
+      hsl(var(--border)) 80%,
+      transparent 100%);
 }
 
 /* Premium text effects */
@@ -516,10 +559,10 @@
 }
 
 .text-shimmer {
-  background: linear-gradient(90deg, 
-    hsl(var(--foreground)) 0%, 
-    hsl(var(--primary)) 50%, 
-    hsl(var(--foreground)) 100%);
+  background: linear-gradient(90deg,
+      hsl(var(--foreground)) 0%,
+      hsl(var(--primary)) 50%,
+      hsl(var(--foreground)) 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -528,38 +571,65 @@
 }
 
 @keyframes shimmer {
-  0%, 100% { background-position: 200% 0; }
-  50% { background-position: -200% 0; }
+
+  0%,
+  100% {
+    background-position: 200% 0;
+  }
+
+  50% {
+    background-position: -200% 0;
+  }
 }
 
 /* =========================================
    Animation helper classes
    ========================================= */
-.sidebar-slide-in { animation: slideInLeft 0.3s ease-out; }
-.sidebar-slide-out { animation: slideOutLeft 0.3s ease-in; }
+.sidebar-slide-in {
+  animation: slideInLeft 0.3s ease-out;
+}
 
-.fade-in { animation: fadeIn 0.2s ease-out; }
-.fade-out { animation: fadeOut 0.2s ease-in; }
+.sidebar-slide-out {
+  animation: slideOutLeft 0.3s ease-in;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.fade-out {
+  animation: fadeOut 0.2s ease-in;
+}
 
 .dropdown-slide-in {
   animation: dropdownSlideIn 0.2s ease-out;
   transform-origin: top center;
 }
+
 .dropdown-slide-out {
   animation: dropdownSlideOut 0.2s ease-in;
   transform-origin: top center;
 }
 
 /* Unified animation classes */
-.fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
-.fade-in-up-stagger { animation: fadeInUpStagger 0.6s ease-out forwards; }
-.panel-slide-in { animation: panelSlideIn 0.5s ease-out forwards; }
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.fade-in-up-stagger {
+  animation: fadeInUpStagger 0.6s ease-out forwards;
+}
+
+.panel-slide-in {
+  animation: panelSlideIn 0.5s ease-out forwards;
+}
 
 /* Simple fade-in animation for dashboard cards */
 @keyframes simpleFadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -572,6 +642,7 @@
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .card-hover:hover {
   animation: cardHover 0.3s ease-out forwards;
 }
@@ -592,13 +663,18 @@
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.55) 100%);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0.55) 100%);
   animation: logoutOverlayFade 0.35s ease forwards;
 }
 
 @keyframes logoutOverlayFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* No animation class - completely disables animations and transitions */
@@ -645,33 +721,49 @@
 }
 
 /* Stagger helpers */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
-.stagger-6 { animation-delay: 0.6s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+
+.stagger-5 {
+  animation-delay: 0.5s;
+}
+
+.stagger-6 {
+  animation-delay: 0.6s;
+}
 
 /* Hide scrollbars globally (fallbacks) */
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 *::-webkit-scrollbar {
   display: none;
 }
 
-/* ================================
-   Subtle Dashboard Cards
-   - Blend with background, vibrant accents only
-   ================================ */
-.dark [data-card], .dark .bg-card {
+.dark [data-card],
+.dark .bg-card {
   background-color: hsl(var(--background) / 0.3) !important;
   backdrop-filter: blur(8px);
   border-color: hsl(var(--border) / 0.2) !important;
 }
 
-.light [data-card], .light .bg-card {
+:root:not(.dark) [data-card],
+:root:not(.dark) .bg-card {
   background-color: hsl(var(--background) / 0.4) !important;
   backdrop-filter: blur(8px);
   border-color: hsl(var(--border) / 0.3) !important;
@@ -693,3 +785,121 @@
   border-color: hsl(var(--border) / 0.25) !important;
 }
 
+/* ================================
+   High Contrast theme overrides
+   - Hard borders and solid card backgrounds
+   ================================ */
+.theme-high-contrast [data-card],
+.theme-high-contrast .bg-card,
+.theme-high-contrast [class*="bg-card"] {
+  background-color: hsl(var(--card)) !important;
+  backdrop-filter: none !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* ================================
+   Accessibility: Font Size Scaling
+   ================================ */
+html.font-size-sm {
+  font-size: 14px;
+}
+
+html.font-size-md {
+  font-size: 16px;
+}
+
+html.font-size-lg {
+  font-size: 18px;
+}
+
+html.font-size-xl {
+  font-size: 20px;
+}
+
+/* Pin structural layout elements to fixed pixel sizes
+   so only text content scales, not the app chrome.
+   Targets: header (h-14), sidebar (w-64), content margins (mt-14, lg:ml-64). */
+html.font-size-sm header,
+html.font-size-lg header,
+html.font-size-xl header {
+  height: 56px !important;
+  min-height: 56px !important;
+}
+
+html.font-size-sm header>div,
+html.font-size-lg header>div,
+html.font-size-xl header>div {
+  height: 56px !important;
+}
+
+/* Sidebar width stays at 256px */
+@media (min-width: 1024px) {
+
+  html.font-size-sm .w-64.fixed,
+  html.font-size-lg .w-64.fixed,
+  html.font-size-xl .w-64.fixed,
+  html.font-size-sm .w-64[class*="lg\:flex"],
+  html.font-size-lg .w-64[class*="lg\:flex"],
+  html.font-size-xl .w-64[class*="lg\:flex"] {
+    width: 256px !important;
+    min-width: 256px !important;
+  }
+
+  /* Header + main content: sidebar offset */
+  html.font-size-sm [class*="lg\:ml-64"],
+  html.font-size-lg [class*="lg\:ml-64"],
+  html.font-size-xl [class*="lg\:ml-64"] {
+    margin-left: 256px !important;
+  }
+
+  html.font-size-sm header[class*="lg\:ml-64"],
+  html.font-size-lg header[class*="lg\:ml-64"],
+  html.font-size-xl header[class*="lg\:ml-64"] {
+    width: calc(100% - 256px) !important;
+  }
+}
+
+/* Content top margin stays at 56px / 64px (header height) */
+html.font-size-sm [class*="mt-14"],
+html.font-size-lg [class*="mt-14"],
+html.font-size-xl [class*="mt-14"] {
+  margin-top: 56px !important;
+}
+
+@media (min-width: 640px) {
+
+  html.font-size-sm [class*="sm\:mt-16"],
+  html.font-size-lg [class*="sm\:mt-16"],
+  html.font-size-xl [class*="sm\:mt-16"] {
+    margin-top: 64px !important;
+  }
+}
+
+/* Prevent header items from wrapping or overflowing */
+html.font-size-sm header .flex.items-center,
+html.font-size-lg header .flex.items-center,
+html.font-size-xl header .flex.items-center {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+/* ================================
+   Accessibility: Reduce Motion
+   ================================ */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+/* ================================
+   Accessibility: Dyslexia-Friendly Font
+   ================================ */
+html.dyslexia-font,
+html.dyslexia-font * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+}
