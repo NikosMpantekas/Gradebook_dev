@@ -550,7 +550,7 @@ const Login = () => {
                 "text-xs",
                 darkMode ? "text-zinc-600" : "text-slate-400"
               )}>
-                © {new Date().getFullYear()} GradeBook — Προηγμένη Διαδικτυακή Εφαρμογή
+                © {new Date().getFullYear()} GradeBook
               </p>
             </div>
           </div>

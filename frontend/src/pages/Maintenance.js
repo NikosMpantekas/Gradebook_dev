@@ -1,826 +1,255 @@
 import React, { useEffect, useState } from "react";
 import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
+  Construction, Zap, RefreshCw, Clock, AlertTriangle, ArrowRight, GraduationCap
+} from "lucide-react";
 import { API_URL } from '../config/appConfig';
-
-import SettingsIcon from "@mui/icons-material/Settings";
-import WarningIcon from "@mui/icons-material/Warning";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import InfoIcon from "@mui/icons-material/Info";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import HistoryIcon from "@mui/icons-material/History";
-
-// Animated Cog Component
-const AnimatedCog = ({ size = 120, position = "bottom-right" }) => {
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [showSparks, setShowSparks] = useState(false);
-
-  useEffect(() => {
-    const startSpinning = () => {
-      setIsSpinning(true);
-      setShowSparks(false);
-      
-      // Stop spinning after 2 seconds
-      setTimeout(() => {
-        setIsSpinning(false);
-        setShowSparks(true);
-        
-        // Hide sparks after 1 second and restart
-        setTimeout(() => {
-          setShowSparks(false);
-          startSpinning(); // Restart the cycle
-        }, 1000);
-      }, 2000);
-    };
-
-    // Start the cycle
-    startSpinning();
-  }, []);
-
-  const getPositionStyles = () => {
-    switch (position) {
-      case "bottom-right":
-        return { bottom: -60, right: -60 };
-      default:
-        return { bottom: -60, right: -60 };
-    }
-  };
-
-  return (
-    <Box
-      sx={{
-        position: "absolute",
-        ...getPositionStyles(),
-        zIndex: 0, // Behind the mockup
-      }}
-    >
-      {/* Main Cog */}
-      <Box
-        sx={{
-          width: size,
-          height: size,
-          position: "relative",
-          animation: isSpinning ? "spin 2s linear infinite" : "none",
-          "@keyframes spin": {
-            "0%": { transform: "rotate(0deg)" },
-            "100%": { transform: "rotate(360deg)" },
-          },
-        }}
-      >
-        <SettingsIcon
-          sx={{
-            fontSize: size,
-            color: "hsl(var(--primary))",
-            filter: "drop-shadow(0 0 8px rgba(51, 122, 183, 0.6))",
-            opacity: 0.7, // Make it slightly transparent to be behind
-          }}
-        />
-      </Box>
-
-      {/* Sparks */}
-      {showSparks && (
-        <>
-          {/* Spark 1 */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: -20,
-              right: -30,
-              width: 6,
-              height: 6,
-              bgcolor: "#FFA500",
-              borderRadius: "50%",
-              animation: "spark1 0.8s ease-out forwards",
-              "@keyframes spark1": {
-                "0%": {
-                  transform: "translate(0, 0) scale(1)",
-                  opacity: 1,
-                },
-                "100%": {
-                  transform: "translate(30px, -40px) scale(0)",
-                  opacity: 0,
-                },
-              },
-            }}
-          />
-          {/* Spark 2 */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: -40,
-              width: 4,
-              height: 4,
-              bgcolor: "#FFA500",
-              borderRadius: "50%",
-              animation: "spark2 0.6s ease-out 0.1s forwards",
-              "@keyframes spark2": {
-                "0%": {
-                  transform: "translate(0, 0) scale(1)",
-                  opacity: 1,
-                },
-                "100%": {
-                  transform: "translate(-35px, -30px) scale(0)",
-                  opacity: 0,
-                },
-              },
-            }}
-          />
-          {/* Spark 3 */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: 30,
-              right: -20,
-              width: 5,
-              height: 5,
-              bgcolor: "#FFA500",
-              borderRadius: "50%",
-              animation: "spark3 0.7s ease-out 0.2s forwards",
-              "@keyframes spark3": {
-                "0%": {
-                  transform: "translate(0, 0) scale(1)",
-                  opacity: 1,
-                },
-                "100%": {
-                  transform: "translate(25px, -35px) scale(0)",
-                  opacity: 0,
-                },
-              },
-            }}
-          />
-          {/* Spark 4 */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: -10,
-              right: -50,
-              width: 3,
-              height: 3,
-              bgcolor: "#FFA500",
-              borderRadius: "50%",
-              animation: "spark4 0.9s ease-out 0.3s forwards",
-              "@keyframes spark4": {
-                "0%": {
-                  transform: "translate(0, 0) scale(1)",
-                  opacity: 1,
-                },
-                "100%": {
-                  transform: "translate(-40px, -25px) scale(0)",
-                  opacity: 0,
-                },
-              },
-            }}
-          />
-        </>
-      )}
-    </Box>
-  );
-};
-
-const DashboardMockup = () => (
-  <Box
-    sx={{
-      width: "100%",
-      maxWidth: 420,
-      height: 260,
-      mx: "auto",
-      mt: { xs: 4, md: 0 },
-      borderRadius: 4,
-      bgcolor: "#181b20",
-      boxShadow: "0 4px 24px 0 rgba(51,122,183,0.10)",
-      display: "flex",
-      alignItems: "stretch",
-      justifyContent: "center",
-      overflow: "hidden",
-      position: "relative",
-      p: 0,
-      filter: "blur(0.5px)",
-    }}
-  >
-    {/* Animated Cog */}
-    <AnimatedCog size={120} position="bottom-right" />
-
-    <Box
-      sx={{
-        width: 110,
-        height: "100%",
-        bgcolor: "#181b20",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        pt: 3,
-        px: 2,
-        gap: 2,
-        borderRight: "1px solid #23262b",
-      }}
-    >
-      <Box
-        sx={{
-          width: "100%",
-          height: 36,
-          bgcolor: "#353942",
-          borderRadius: 2,
-          mb: 2,
-        }}
-      />
-      <Box
-        sx={{
-          width: "100%",
-          height: 36,
-          bgcolor: "#353942",
-          borderRadius: 2,
-          mb: 1.5,
-        }}
-      />
-      <Box
-        sx={{
-          width: "70%",
-          height: 18,
-          bgcolor: "#23262b",
-          borderRadius: 2,
-          mb: 1,
-        }}
-      />
-      <Box
-        sx={{
-          width: "60%",
-          height: 14,
-          bgcolor: "#23262b",
-          borderRadius: 2,
-        }}
-      />
-    </Box>
-    <Box
-      sx={{
-        flex: 1,
-        height: "100%",
-        bgcolor: "#23262b",
-        p: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <Box
-          sx={{
-            width: 28,
-            height: 28,
-            bgcolor: "hsl(var(--primary))",
-            borderRadius: "50%",
-          }}
-        />
-        <Box
-          sx={{ width: 120, height: 16, bgcolor: "grey.800", borderRadius: 2 }}
-        />
-        <Box sx={{ flex: 1 }} />
-        <Box
-          sx={{
-            width: 22,
-            height: 22,
-            bgcolor: "grey.800",
-            borderRadius: "50%",
-          }}
-        />
-        <Box
-          sx={{
-            width: 22,
-            height: 22,
-            bgcolor: "grey.800",
-            borderRadius: "50%",
-          }}
-        />
-        <Box
-          sx={{
-            width: 22,
-            height: 22,
-            bgcolor: "grey.800",
-            borderRadius: "50%",
-          }}
-        />
-      </Box>
-      <Box
-        sx={{
-          width: 120,
-          height: 18,
-          bgcolor: "grey.700",
-          borderRadius: 2,
-          mb: 1,
-        }}
-      />
-      <Box
-        sx={{
-          width: 180,
-          height: 14,
-          bgcolor: "grey.800",
-          borderRadius: 2,
-          mb: 2,
-        }}
-      />
-      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-        <Box
-          sx={{ flex: 1, height: 60, bgcolor: "#181b20", borderRadius: 3 }}
-        />
-        <Box
-          sx={{ flex: 1, height: 60, bgcolor: "#181b20", borderRadius: 3 }}
-        />
-      </Box>
-      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-        <Box
-          sx={{
-            flex: 1,
-            height: 36,
-            bgcolor: "#23262b",
-            borderRadius: 2,
-            border: "1px solid hsl(var(--primary))",
-          }}
-        />
-        <Box
-          sx={{
-            flex: 1,
-            height: 36,
-            bgcolor: "#23262b",
-            borderRadius: 2,
-            border: "1px solid hsl(var(--primary))",
-          }}
-        />
-        <Box
-          sx={{
-            flex: 1,
-            height: 36,
-            bgcolor: "#23262b",
-            borderRadius: 2,
-            border: "1px solid hsl(var(--primary))",
-          }}
-        />
-        <Box
-          sx={{
-            flex: 1,
-            height: 36,
-            bgcolor: "#23262b",
-            borderRadius: 2,
-            border: "1px solid hsl(var(--primary))",
-          }}
-        />
-      </Box>
-    </Box>
-  </Box>
-);
+import { cn } from '../lib/utils';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 
 const Maintenance = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [maintenanceInfo, setMaintenanceInfo] = useState(null);
+  const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Fetch maintenance status
-  const fetchMaintenanceStatus = async () => {
+  const [darkMode] = useState(() => {
+    const saved = localStorage.getItem('publicPageTheme');
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  const fetchStatus = async () => {
     try {
       setLoading(true);
-      setError(null);
-      console.log('[MAINTENANCE PAGE] Fetching maintenance status...');
-      
-      // Use fetch instead of axios to avoid credentials being sent to public endpoint
       const response = await fetch(`${API_URL}/api/system/maintenance/status`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON');
-      }
-      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      console.log('[MAINTENANCE PAGE] Status response:', data);
-      
-      setMaintenanceInfo(data);
+      setInfo(data);
     } catch (err) {
-      console.error('[MAINTENANCE PAGE] Error fetching maintenance status:', err);
-      setError('Failed to load maintenance information');
+      console.error('[MAINTENANCE PAGE] Error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMaintenanceStatus();
-    
-    // Poll for status updates every 30 seconds
-    const interval = setInterval(fetchMaintenanceStatus, 30000);
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Redirect to app when maintenance is disabled
+  // Redirect back when maintenance is lifted
   useEffect(() => {
-    if (maintenanceInfo && !maintenanceInfo.isMaintenanceMode && !loading) {
-      console.log('[MAINTENANCE PAGE] Maintenance disabled, redirecting to app...');
-      // Use window.location.href to fully reload and clear maintenance state
+    if (info && !info.isMaintenanceMode && !loading) {
       window.location.href = '/';
     }
-  }, [maintenanceInfo, loading]);
+  }, [info, loading]);
 
-  const handleRetry = () => {
-    window.location.reload();
-  };
+  // ── Derived from config ──────────────────────────────────────────────
+  const isEmergency = info?.maintenanceType === 'emergency';
+  const message = info?.maintenanceMessage || info?.reason || '';
 
-  const formatEstimatedCompletion = (estimatedCompletion) => {
-    if (!estimatedCompletion) return 'Δεν έχει καθοριστεί';
-    
+  const formatETA = (est) => {
+    if (!est) return null;
     try {
-      const date = new Date(estimatedCompletion);
+      const date = new Date(est);
+      if (isNaN(date.getTime())) return null;
+
       const now = new Date();
-      
-      if (date <= now) {
-        return 'Σύντομα';
-      }
-      
       const diffMs = date - now;
-      const diffMins = Math.ceil(diffMs / (1000 * 60));
-      const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-      
-      if (diffMins <= 60) {
-        return `${diffMins} λεπτά`;
-      } else if (diffHours <= 24) {
-        return `${diffHours} ώρες`;
-      } else {
-        return date.toLocaleDateString('el-GR', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Δεν έχει καθοριστεί';
+
+      // Only hide if clearly past (>5 min ago)
+      if (diffMs < -5 * 60000) return null;
+
+      const diffMins = Math.ceil(diffMs / 60000);
+      const diffHrs = Math.ceil(diffMs / 3600000);
+
+      if (diffMins <= 1) return 'Σύντομα';
+      if (diffMins <= 60) return `~${diffMins} λεπτά`;
+      if (diffHrs <= 23) return `~${diffHrs} ώρες`;
+
+      // More than a day — show full date + time
+      return date.toLocaleString('el-GR', {
+        weekday: 'short', day: 'numeric', month: 'short',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return null;
     }
   };
 
-  // Color palette for dark mode (maintenance page is always dark)
-  const colors = {
-    background: "#181b20",
-    appBar: "#23262b",
-    card: "#23262b",
-    text: "#fff",
-    subText: "grey.300",
-    footer: "#23262b",
-    border: "1px solid #23262b",
-    button: "#337ab7",
-    buttonHover: "#245a8d",
-    icon: "#337ab7",
-    warning: "#ff6b35",
-  };
+  const eta = !loading ? formatETA(info?.estimatedCompletion) : '...';
+
+  // ── Theme tokens driven by maintenance type ──────────────────────────
+  const accent = isEmergency
+    ? {
+      glow: 'bg-red-500', badge: darkMode ? 'border-red-500/50 text-red-400 bg-red-500/5' : 'border-red-200 text-red-600 bg-red-50',
+      icon: darkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600',
+      bar: 'from-red-500 via-red-400 to-orange-500',
+      label: 'Έκτακτη Συντήρηση'
+    }
+    : {
+      glow: 'bg-blue-500', badge: darkMode ? 'border-amber-500/50 text-amber-400 bg-amber-500/5' : 'border-amber-200 text-amber-600 bg-amber-50',
+      icon: darkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600',
+      bar: 'from-blue-500 via-blue-400 to-indigo-500',
+      label: 'Προγραμματισμένη Συντήρηση'
+    };
 
   return (
-    <Box
-      sx={{
-        bgcolor: colors.background,
-        minHeight: "100vh",
-        fontFamily: "Roboto, Arial, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "auto",
-        overscrollBehavior: 'none',
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          backgroundColor: colors.background,
-        },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: colors.icon,
-          borderRadius: '4px',
-        },
-        '&::-webkit-scrollbar-thumb:hover': {
-          backgroundColor: colors.buttonHover,
-        },
-      }}
-    >
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-          <Grid
-            container
-            spacing={6}
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 4 }}>
-                {/* Maintenance Warning */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    mb: 3,
-                    p: 2,
-                    bgcolor: "rgba(255, 107, 53, 0.1)",
-                    borderRadius: 2,
-                    border: "1px solid rgba(255, 107, 53, 0.3)",
-                  }}
-                >
-                  <WarningIcon sx={{ color: colors.warning, fontSize: 32 }} />
-                  <Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: colors.warning,
-                        fontWeight: "bold",
-                        mb: 0.5,
-                      }}
-                    >
-                      Συντήρηση Συστήματος
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: colors.subText }}
-                    >
-                      Εκτελούμε προγραμματισμένη συντήρηση για να βελτιώσουμε την απόδοση του GradeBook.
-                    </Typography>
-                  </Box>
-                </Box>
+    <div className={cn(
+      "min-h-screen flex flex-col font-sans transition-colors duration-300 relative overflow-hidden",
+      darkMode ? "bg-zinc-950 text-zinc-100" : "bg-gray-50 text-slate-900"
+    )}>
+      {/* Background dot grid */}
+      <div className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(${darkMode ? '#27272a' : '#e2e8f0'} 1px, transparent 1px)`,
+          backgroundSize: '32px 32px'
+        }}
+      />
 
-                <Typography
-                  variant="h3"
-                  fontWeight="bold"
-                  sx={{
-                    color: colors.text,
-                    mb: 2,
-                    fontSize: { xs: 28, md: 36 },
-                    lineHeight: 1.2,
-                  }}
-                >
-                  Επιστρέφουμε σύντομα...
-                </Typography>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: colors.subText,
-                    mb: 4,
-                    fontWeight: 400,
-                    fontSize: { xs: 16, md: 18 },
-                  }}
-                >
-                  Το GradeBook βρίσκεται υπό συντήρηση για να προσθέσουμε νέες λειτουργίες 
-                  ή να επιδιορθώσουμε τεχνικά προβλήματα. Ευχαριστούμε για την υπομονή σας.
-                </Typography>
+      {/* Ambient glow — changes colour with maintenance type */}
+      <div className={cn("absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-10 blur-[120px] z-0 transition-colors duration-700", accent.glow)} />
+      <div className={cn("absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full opacity-10 blur-[120px] z-0 transition-colors duration-700", accent.glow)} />
+
+      {/* Header */}
+      <header className="relative z-10 w-full p-6 flex justify-between items-center">
+        <a href="/home" className="flex items-center gap-2 group no-underline hover:no-underline">
+          <div className={cn(
+            "w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105",
+            accent.icon
+          )}>
+            <GraduationCap className="w-6 h-6" />
+          </div>
+          <span className={cn(
+            "text-2xl font-serif font-bold tracking-tight",
+            darkMode ? "text-white" : "text-slate-900"
+          )}>
+            GradeBook
+          </span>
+        </a>
+      </header>
+
+      <main className="flex-1 flex items-center justify-center p-4 relative z-10">
+        <div className="w-full max-w-2xl space-y-4">
+
+          {/* ── Hero Card ── */}
+          <Card className={cn(
+            "border shadow-2xl overflow-hidden",
+            darkMode ? "bg-zinc-900/50 border-zinc-800 backdrop-blur-sm" : "bg-white/80 border-slate-200 backdrop-blur-sm"
+          )}>
+            {/* Colour accent bar */}
+            <div className={cn("h-1.5 bg-gradient-to-r transition-all duration-700", accent.bar)} />
+
+            <CardContent className="p-8 md:p-12 text-center space-y-6">
+              {/* Icon */}
+              <div className="flex justify-center">
+                <div className={cn(
+                  "w-20 h-20 rounded-3xl flex items-center justify-center",
+                  accent.icon,
+                  isEmergency ? "animate-pulse" : "animate-[pulse_3s_ease-in-out_infinite]"
+                )}>
+                  {isEmergency
+                    ? <Zap className="w-10 h-10" />
+                    : <Construction className="w-10 h-10" />}
+                </div>
+              </div>
+
+              {/* Badge + Title + Message */}
+              <div className="space-y-3">
+                <Badge variant="outline" className={cn(
+                  "px-3 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold",
+                  accent.badge
+                )}>
+                  {loading ? '...' : accent.label}
+                </Badge>
+
+                <h1 className={cn(
+                  "text-3xl md:text-5xl font-serif font-bold tracking-tight",
+                  darkMode ? "text-white" : "text-slate-900"
+                )}>
+                  {isEmergency ? "Επείγουσα συντήρηση" : "Επιστρέφουμε σύντομα"}
+                </h1>
+
+                {/* Unified message from config */}
+                {!loading && message ? (
+                  <p className={cn(
+                    "text-base md:text-lg max-w-lg mx-auto leading-relaxed",
+                    darkMode ? "text-zinc-300" : "text-slate-600"
+                  )}>
+                    {message}
+                  </p>
+                ) : !loading && (
+                  <p className={cn(
+                    "text-base md:text-lg max-w-lg mx-auto leading-relaxed",
+                    darkMode ? "text-zinc-400" : "text-slate-500"
+                  )}>
+                    {isEmergency
+                      ? "Αντιμετωπίζουμε έκτακτο πρόβλημα. Εργαζόμαστε για άμεση επίλυση."
+                      : "Εκτελούμε εργασίες αναβάθμισης για να σας προσφέρουμε την καλύτερη εμπειρία."}
+                  </p>
+                )}
+
+                {/* ETA inside the hero */}
+                {!loading && (
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    <Clock className={cn(
+                      "w-4 h-4",
+                      darkMode ? "text-zinc-500" : "text-slate-400"
+                    )} />
+                    <span className={cn(
+                      "text-sm font-medium",
+                      darkMode ? "text-zinc-400" : "text-slate-500"
+                    )}>
+                      Εκτιμώμενος Χρόνος Επίλυσης:&nbsp;
+                      <span className={cn(
+                        "font-semibold",
+                        darkMode ? "text-zinc-200" : "text-slate-700"
+                      )}>
+                        {eta ?? 'Σύντομα'}
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
-                  variant="contained"
-                  size="large"
-                  onClick={handleRetry}
-                  startIcon={<RefreshIcon />}
-                  sx={{
-                    bgcolor: colors.button,
-                    color: "white",
-                    borderRadius: 8,
-                    px: 5,
-                    py: 1.7,
-                    fontWeight: "bold",
-                    fontSize: 18,
-                    boxShadow: "0 2px 8px 0 rgba(51,122,183,0.10)",
-                    textTransform: "none",
-                    transition: "all 0.2s",
-                    "&:hover": {
-                      bgcolor: colors.buttonHover,
-                      transform: "translateY(-2px) scale(1.03)",
-                    },
-                  }}
+                  size="lg"
+                  onClick={() => window.location.reload()}
+                  className="rounded-full px-8 h-12 text-base font-semibold transition-all hover:scale-[1.02]"
                 >
+                  <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
                   Δοκιμάστε Ξανά
                 </Button>
-              </Box>
-            </Grid>
-            <Grid
-              item
-              xs={12}
-              md={6}
-              sx={{
-                display: { xs: "none", md: "flex" },
-                justifyContent: "center",
-              }}
-            >
-              <DashboardMockup />
-            </Grid>
-          </Grid>
-        </Container>
-
-        {/* Maintenance Information Sections */}
-        {maintenanceInfo && !loading && (
-          <Container maxWidth="md" sx={{ mt: 6 }}>
-            <Grid container spacing={4}>
-              {/* Maintenance Message */}
-              <Grid item xs={12}>
-                <Card
-                  sx={{
-                    bgcolor: colors.card,
-                    border: colors.border,
-                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.1)",
-                  }}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  asChild
+                  className="rounded-full px-8 h-12 text-base font-semibold"
                 >
-                  <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                      <InfoIcon sx={{ color: colors.icon, fontSize: 28 }} />
-                      <Typography
-                        variant="h5"
-                        sx={{
-                          color: colors.text,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Μήνυμα Συντήρησης
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: colors.subText,
-                        fontSize: 16,
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {maintenanceInfo.maintenanceMessage || "Το σύστημα βρίσκεται υπό συντήρηση για βελτιώσεις και ενημερώσεις."}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
+                  <a href="/home" className="hover:no-underline flex items-center">
+                    Αρχική Σελίδα
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Maintenance Schedule */}
-              <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    bgcolor: colors.card,
-                    border: colors.border,
-                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.1)",
-                    height: "100%",
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                      <AccessTimeIcon sx={{ color: colors.icon, fontSize: 24 }} />
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: colors.text,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Πρόγραμμα Συντήρησης
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
-                    
-                    
 
-                    {/* Estimated Completion */}
-                    {maintenanceInfo.estimatedCompletion && (
-                      <Box>
-                        <Typography variant="body2" sx={{ color: colors.subText, mb: 0.5 }}>
-                          Εκτιμώμενη ολοκλήρωση:
-                        </Typography>
-                        <Chip
-                          label={formatEstimatedCompletion(maintenanceInfo.estimatedCompletion)}
-                          sx={{
-                            bgcolor: "rgba(76, 175, 80, 0.2)",
-                            color: "#4caf50",
-                            fontWeight: "bold",
-                            fontSize: 12,
-                          }}
-                        />
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
 
-              {/* Reason for Change */}
-              <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    bgcolor: colors.card,
-                    border: colors.border,
-                    boxShadow: "0 2px 8px 0 rgba(0,0,0,0.1)",
-                    height: "100%",
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                      <HistoryIcon sx={{ color: colors.icon, fontSize: 22 }} />
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: colors.text,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Ζωντανές ενημερώσεις
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ mb: 2, borderColor: "rgba(255,255,255,0.1)" }} />
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: colors.subText,
-                        fontSize: 14,
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {maintenanceInfo.reason || "Δεν έχει καθοριστεί αιτία"}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
+        </div>
+      </main>
 
-              {/* Refresh Button */}
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: "center", mt: 2 }}>
-                  <Button
-                    variant="outlined"
-                    size="medium"
-                    onClick={fetchMaintenanceStatus}
-                    disabled={loading}
-                    startIcon={<RefreshIcon />}
-                    sx={{
-                      borderColor: colors.icon,
-                      color: colors.icon,
-                      borderRadius: 6,
-                      px: 4,
-                      py: 1.2,
-                      fontWeight: "bold",
-                      textTransform: "none",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        bgcolor: "rgba(51, 122, 183, 0.1)",
-                        borderColor: colors.buttonHover,
-                        transform: "translateY(-1px)",
-                      },
-                    }}
-                  >
-                    {loading ? "Ανανέωση..." : "Ελέγξτε Ξανά"}
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          </Container>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <Container maxWidth="md" sx={{ mt: 6, textAlign: "center" }}>
-            <Typography variant="body1" sx={{ color: colors.subText }}>
-              Φόρτωση πληροφοριών συντήρησης...
-            </Typography>
-          </Container>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <Container maxWidth="md" sx={{ mt: 6, textAlign: "center" }}>
-            <Typography variant="body1" sx={{ color: colors.warning }}>
-              {error}
-            </Typography>
-            <Button
-              variant="text"
-              onClick={fetchMaintenanceStatus}
-              sx={{ mt: 1, color: colors.icon }}
-            >
-              Δοκιμάστε ξανά
-            </Button>
-          </Container>
-        )}
-      </Box>
-      <Box
-        sx={{
-          mt: "auto",
-          py: 3,
-          bgcolor: colors.footer,
-          borderTop: colors.border,
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="body2" sx={{ color: "grey.400" }}>
-          © {new Date().getFullYear()} GradeBook Team.
-        </Typography>
-      </Box>
-    </Box>
+      {/* Footer */}
+      <footer className="relative z-10 w-full p-6 text-center">
+        <p className={cn("text-xs", darkMode ? "text-zinc-600" : "text-slate-400")}>
+          © {new Date().getFullYear()} GradeBook
+        </p>
+      </footer>
+    </div>
   );
 };
 
-export default Maintenance; 
+export default Maintenance;

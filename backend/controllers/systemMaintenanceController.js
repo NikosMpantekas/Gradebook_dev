@@ -16,21 +16,22 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
     });
     console.log('[MAINTENANCE] ==> SystemMaintenance model available:', !!SystemMaintenance);
     console.log('[MAINTENANCE] ==> SystemMaintenance.getCurrentStatus available:', typeof SystemMaintenance.getCurrentStatus);
-    
+
     // Force JSON response
     res.setHeader('Content-Type', 'application/json');
-    
+
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
     console.log('[MAINTENANCE] Retrieved maintenance document:', {
       exists: !!maintenanceDoc,
       isMaintenanceMode: maintenanceDoc?.isMaintenanceMode,
       message: maintenanceDoc?.maintenanceMessage?.substring(0, 50)
     });
-    
+
     // Public response (limited info for security)
     const publicResponse = {
       isMaintenanceMode: maintenanceDoc.isMaintenanceMode,
       maintenanceMessage: maintenanceDoc.maintenanceMessage,
+      maintenanceType: maintenanceDoc.maintenanceType || 'scheduled',
       estimatedCompletion: maintenanceDoc.estimatedCompletion,
       allowedRoles: maintenanceDoc.allowedRoles,
       reason: maintenanceDoc.reason || '',
@@ -38,7 +39,7 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
       scheduledEnd: maintenanceDoc.scheduledEnd,
       canBypass: false
     };
-    
+
     if (req.user) {
       publicResponse.canBypass = maintenanceDoc.canBypassMaintenance(req.user.role);
       publicResponse.userRole = req.user.role;
@@ -48,7 +49,7 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
         canBypass: publicResponse.canBypass
       });
     }
-    
+
     console.log('[MAINTENANCE] Status response prepared successfully');
     res.json(publicResponse);
   } catch (error) {
@@ -58,7 +59,7 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
       name: error.name,
       code: error.code
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get maintenance status',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       isMaintenanceMode: false // Fail safely
@@ -72,9 +73,9 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
 const getMaintenanceDetails = asyncHandler(async (req, res) => {
   try {
     console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} requesting full maintenance details`);
-    
+
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
-    
+
     // Safely populate references with fallback handling
     try {
       await maintenanceDoc.populate('lastModifiedBy', 'name email role');
@@ -83,7 +84,7 @@ const getMaintenanceDetails = asyncHandler(async (req, res) => {
       console.warn('[MAINTENANCE] Populate error (non-fatal):', populateError.message);
       // Continue without population if users don't exist
     }
-    
+
     console.log('[MAINTENANCE] Successfully retrieved maintenance details');
     res.json(maintenanceDoc);
   } catch (error) {
@@ -101,62 +102,68 @@ const getMaintenanceDetails = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const updateMaintenanceMode = asyncHandler(async (req, res) => {
   try {
-    const { 
-      isMaintenanceMode, 
-      maintenanceMessage, 
-      estimatedCompletion, 
+    const {
+      isMaintenanceMode,
+      maintenanceMessage,
+      estimatedCompletion,
       reason,
-      allowedRoles 
+      allowedRoles,
+      maintenanceType
     } = req.body;
-    
+
     console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} updating maintenance mode:`, {
       isMaintenanceMode,
       reason,
       allowedRoles
     });
-    
+
     // Validate inputs
     if (typeof isMaintenanceMode !== 'boolean') {
       res.status(400);
       throw new Error('isMaintenanceMode must be a boolean');
     }
-    
+
     if (maintenanceMessage && typeof maintenanceMessage !== 'string') {
       res.status(400);
       throw new Error('maintenanceMessage must be a string');
     }
-    
+
     if (maintenanceMessage && maintenanceMessage.length > 500) {
       res.status(400);
       throw new Error('maintenanceMessage cannot exceed 500 characters');
     }
-    
+
     // Prepare update data
     const updateData = {
       isMaintenanceMode,
       reason: reason || ''
     };
-    
+
+    if (maintenanceType !== undefined) {
+      const validTypes = ['scheduled', 'emergency'];
+      updateData.maintenanceType = validTypes.includes(maintenanceType) ? maintenanceType : 'scheduled';
+    }
+
     if (maintenanceMessage !== undefined) {
       updateData.maintenanceMessage = maintenanceMessage;
     }
-    
+
     if (estimatedCompletion !== undefined) {
       updateData.estimatedCompletion = estimatedCompletion ? new Date(estimatedCompletion) : null;
     }
-    
+
     if (allowedRoles !== undefined && Array.isArray(allowedRoles)) {
       const validRoles = ['admin', 'teacher', 'student', 'parent'];
       const filteredRoles = allowedRoles.filter(role => validRoles.includes(role));
       updateData.allowedRoles = filteredRoles;
     }
-    
+
     // Update maintenance status
     const updatedDoc = await SystemMaintenance.updateStatus(updateData, req.user._id);
     await updatedDoc.populate('lastModifiedBy', 'name email role');
-    
+
     console.log(`[MAINTENANCE] Maintenance mode ${isMaintenanceMode ? 'ENABLED' : 'DISABLED'} by ${req.user.name}`);
-    
+
     res.json({
       message: `Maintenance mode ${isMaintenanceMode ? 'enabled' : 'disabled'} successfully`,
       maintenance: updatedDoc
@@ -174,9 +181,9 @@ const updateMaintenanceMode = asyncHandler(async (req, res) => {
 const getMaintenanceHistory = asyncHandler(async (req, res) => {
   try {
     console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} requesting maintenance history`);
-    
+
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
-    
+
     // Safely populate history references with fallback handling
     try {
       await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
@@ -184,12 +191,12 @@ const getMaintenanceHistory = asyncHandler(async (req, res) => {
       console.warn('[MAINTENANCE] History populate error (non-fatal):', populateError.message);
       // Continue without population if users don't exist
     }
-    
+
     // Sort history by timestamp (newest first)
-    const sortedHistory = maintenanceDoc.maintenanceHistory.sort((a, b) => 
+    const sortedHistory = maintenanceDoc.maintenanceHistory.sort((a, b) =>
       new Date(b.timestamp) - new Date(a.timestamp)
     );
-    
+
     console.log('[MAINTENANCE] Successfully retrieved maintenance history');
     res.json({
       history: sortedHistory,
@@ -211,13 +218,13 @@ const getMaintenanceHistory = asyncHandler(async (req, res) => {
 const clearMaintenanceHistory = asyncHandler(async (req, res) => {
   try {
     console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} clearing maintenance history`);
-    
+
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
     maintenanceDoc.maintenanceHistory = [];
     await maintenanceDoc.save();
-    
+
     console.log('[MAINTENANCE] Maintenance history cleared');
-    
+
     res.json({
       message: 'Maintenance history cleared successfully'
     });

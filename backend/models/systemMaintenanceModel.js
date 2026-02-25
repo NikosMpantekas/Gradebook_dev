@@ -8,41 +8,48 @@ const systemMaintenanceSchema = mongoose.Schema(
       default: false,
       required: true
     },
-    
+
     // Maintenance message to display to users
     maintenanceMessage: {
       type: String,
       default: 'The system is currently under maintenance. Please be patient while we work to improve your experience.',
       maxlength: 500
     },
-    
+
+    // Type of maintenance: scheduled or emergency
+    maintenanceType: {
+      type: String,
+      enum: ['scheduled', 'emergency'],
+      default: 'scheduled'
+    },
+
     // Estimated time of completion
     estimatedCompletion: {
       type: Date,
       default: null
     },
-    
+
     // Admin who enabled/disabled maintenance mode
     lastModifiedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
     },
-    
-    // Optional reason for maintenance
+
+    // Optional reason for maintenance (also used as the live message)
     reason: {
       type: String,
-      maxlength: 200,
+      maxlength: 500,
       default: ''
     },
-    
+
     // Allow specific roles to bypass maintenance (superadmin always bypasses)
     allowedRoles: [{
       type: String,
       enum: ['superadmin', 'admin', 'teacher', 'student', 'parent'],
       default: []
     }],
-    
+
     // Track maintenance history
     maintenanceHistory: [{
       action: {
@@ -75,10 +82,10 @@ const systemMaintenanceSchema = mongoose.Schema(
 systemMaintenanceSchema.index({}, { unique: true });
 
 // Static method to get current maintenance status
-systemMaintenanceSchema.statics.getCurrentStatus = async function() {
+systemMaintenanceSchema.statics.getCurrentStatus = async function () {
   try {
     let maintenanceDoc = await this.findOne();
-    
+
     // Create default document if none exists
     if (!maintenanceDoc) {
       // Create a placeholder ObjectId for system initialization
@@ -91,7 +98,7 @@ systemMaintenanceSchema.statics.getCurrentStatus = async function() {
       });
       console.log('[MAINTENANCE] Created default maintenance document');
     }
-    
+
     return maintenanceDoc;
   } catch (error) {
     console.error('[MAINTENANCE] Error in getCurrentStatus:', error);
@@ -100,49 +107,49 @@ systemMaintenanceSchema.statics.getCurrentStatus = async function() {
 };
 
 // Static method to update maintenance status
-systemMaintenanceSchema.statics.updateStatus = async function(updateData, modifiedBy) {
+systemMaintenanceSchema.statics.updateStatus = async function (updateData, modifiedBy) {
   let maintenanceDoc = await this.getCurrentStatus();
-  
+
   // Store previous state for history
   const previousState = {
     isMaintenanceMode: maintenanceDoc.isMaintenanceMode,
     maintenanceMessage: maintenanceDoc.maintenanceMessage
   };
-  
+
   // Update fields
   Object.keys(updateData).forEach(key => {
     if (key !== 'maintenanceHistory') {
       maintenanceDoc[key] = updateData[key];
     }
   });
-  
+
   maintenanceDoc.lastModifiedBy = modifiedBy;
-  
+
   // Add to history
-  const action = updateData.isMaintenanceMode !== undefined ? 
+  const action = updateData.isMaintenanceMode !== undefined ?
     (updateData.isMaintenanceMode ? 'enabled' : 'disabled') : 'updated';
-    
+
   maintenanceDoc.maintenanceHistory.push({
     action,
     modifiedBy,
     reason: updateData.reason || '',
     previousState
   });
-  
+
   // Keep only last 20 history entries
   if (maintenanceDoc.maintenanceHistory.length > 20) {
     maintenanceDoc.maintenanceHistory = maintenanceDoc.maintenanceHistory.slice(-20);
   }
-  
+
   await maintenanceDoc.save();
   return maintenanceDoc;
 };
 
 // Method to check if a user role can bypass maintenance
-systemMaintenanceSchema.methods.canBypassMaintenance = function(userRole) {
+systemMaintenanceSchema.methods.canBypassMaintenance = function (userRole) {
   // Superadmin always bypasses
   if (userRole === 'superadmin') return true;
-  
+
   // Check if role is in allowed list
   return this.allowedRoles.includes(userRole);
 };

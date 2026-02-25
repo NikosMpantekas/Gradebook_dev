@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { AlertTriangle, Clock, Wrench, RefreshCw } from 'lucide-react';
@@ -159,8 +160,11 @@ const MaintenancePage = () => {
   );
 };
 
+
+
 // Auto-refresh component to periodically check maintenance status
 export const MaintenanceStatusChecker = ({ children }) => {
+  const location = useLocation();
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -229,8 +233,29 @@ export const MaintenanceStatusChecker = ({ children }) => {
     }
   };
 
-  if (isMaintenanceMode && !isLoading) {
-    // Show the Greek maintenance page for all users (not the admin controls page)
+  // Check if current path is a public route that should be accessible during maintenance
+  const publicRoutes = [
+    '/home',
+    '/about',
+    '/contact',
+    '/login',
+    '/register',
+    '/maintenance',
+    '/diagnostics',
+    '/change-password'
+  ];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+
+  console.log('[MAINTENANCE CHECKER] Render decision:', {
+    pathname: location.pathname,
+    isPublicRoute,
+    isMaintenanceMode,
+    isLoading,
+    willShowMaintenance: isMaintenanceMode && !isLoading && !isPublicRoute
+  });
+
+  if (isMaintenanceMode && !isLoading && !isPublicRoute) {
+    // Show the Greek maintenance page for protected routes
     return <Maintenance />;
   }
 
