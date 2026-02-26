@@ -796,12 +796,14 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 
     // Filter by level and category if specified
     let filteredLogs = logs;
+    console.log(`[getSystemLogs] Total raw parsed logs: ${logs.length}`);
     if (level !== 'all') {
       filteredLogs = filteredLogs.filter(log => log.level === level.toUpperCase());
     }
     if (category !== 'all') {
       filteredLogs = filteredLogs.filter(log => log.category === category);
     }
+    console.log(`[getSystemLogs] Total filtered logs: ${filteredLogs.length}`);
 
     res.json({
       success: true,
