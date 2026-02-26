@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { useSelector } from 'react-redux';
-import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ArrowDown } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -25,17 +25,11 @@ const SystemLogs = () => {
   const [stats, setStats] = useState({});
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [pagination, setPagination] = useState({
-    page: 0,
-    limit: 100, // Reduced from loading all logs
-    total: 0,
-    hasMore: true
-  });
-  const [displayedLogs, setDisplayedLogs] = useState([]); // Only logs currently displayed
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const logsContainerRef = useRef(null);
 
-  // Load logs (optimized with discrete pagination)
-  const loadLogs = async (page = 0) => {
+  // Load logs
+  const loadLogs = async () => {
     if (!token || token === 'null' || token === 'undefined') return;
 
     try {
@@ -48,9 +42,7 @@ const SystemLogs = () => {
           'Content-Type': 'application/json'
         },
         params: {
-          ...filters,
-          limit: pagination.limit,
-          offset: page * pagination.limit
+          ...filters
         }
       };
 
@@ -58,16 +50,7 @@ const SystemLogs = () => {
 
       if (response.data && response.data.success) {
         const newLogs = response.data.data.logs;
-
         setLogs(newLogs);
-        setDisplayedLogs(newLogs);
-
-        setPagination(prev => ({
-          ...prev,
-          page,
-          total: response.data.data.totalLines,
-          hasMore: newLogs.length === prev.limit
-        }));
 
         setAvailableLevels(response.data.data.availableLevels);
         setAvailableCategories(response.data.data.availableCategories);
@@ -88,16 +71,16 @@ const SystemLogs = () => {
     }
   };
 
-  const handleNextPage = () => {
-    if (pagination.hasMore && !loading) {
-      loadLogs(pagination.page + 1);
+  const scrollToBottom = () => {
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
   };
 
-  const handlePrevPage = () => {
-    if (pagination.page > 0 && !loading) {
-      loadLogs(pagination.page - 1);
-    }
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+    setShowJumpToLatest(!isAtBottom);
   };
 
   // Auto-refresh functionality
@@ -105,20 +88,18 @@ const SystemLogs = () => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      // Refresh current page
-      loadLogs(pagination.page);
+      loadLogs();
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, token, pagination.page, filters]);
+  }, [autoRefresh, token, filters]);
 
   // Load data when component mounts, token becomes available, or filters change
   useEffect(() => {
     if (!token || token === 'null' || token === 'undefined') return;
 
-    // Reset to page 0 on filter change
-    loadLogs(0);
+    loadLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, token]);
 
@@ -328,7 +309,7 @@ const SystemLogs = () => {
           {loading && <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />}
         </div>
 
-        {displayedLogs.length === 0 ? (
+        {logs.length === 0 ? (
           <div className="h-[600px] w-full flex flex-col items-center justify-center text-zinc-500 text-sm p-4">
             <Info className="w-8 h-8 mb-3 opacity-50" />
             {loading ? 'Loading logs...' : (
@@ -340,12 +321,13 @@ const SystemLogs = () => {
             )}
           </div>
         ) : (
-          <>
+          <div className="relative">
             <div
               ref={logsContainerRef}
+              onScroll={handleScroll}
               className="h-[600px] overflow-auto font-mono text-[13px] leading-relaxed py-2 font-medium"
             >
-              {displayedLogs.map((log, index) => {
+              {logs.map((log, index) => {
                 const logText = parseAnsiColors(log.message || log.raw || '');
                 const timestamp = formatTimestamp(log.timestamp || logText);
                 const levelStyles = getLevelStyles(log.level);
@@ -382,37 +364,22 @@ const SystemLogs = () => {
               })}
             </div>
 
-            {/* Pagination Controls */}
-            <div className="p-3 border-t border-zinc-800 flex items-center justify-between bg-[#252526]">
-              <div className="text-zinc-500 text-[11px] font-mono select-none">
-                Page {pagination.page + 1} of {Math.ceil((stats.filteredLines || 1) / pagination.limit)}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePrevPage}
-                  disabled={loading || pagination.page === 0}
-                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10 disabled:opacity-30 h-8 gap-1"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Previous
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleNextPage}
-                  disabled={loading || !pagination.hasMore}
-                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10 disabled:opacity-30 h-8 gap-1"
-                >
-                  Next <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            {/* Jump to Latest Button */}
+            {showJumpToLatest && (
+              <Button
+                size="sm"
+                onClick={scrollToBottom}
+                className="absolute bottom-6 right-6 gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-full py-5 px-4"
+              >
+                <ArrowDown className="w-4 h-4" />
+                Latest Logs
+              </Button>
+            )}
 
             <div className="py-2 text-[11px] text-zinc-600 text-center border-t border-zinc-800/50 bg-[#1e1e1e] select-none">
-              Showing {displayedLogs.length} of {stats.filteredLines || 0} logs
+              Showing {logs.length} of {stats.filteredLines || 0} logs
             </div>
-          </>
+          </div>
         )}
       </Card>
     </div>
