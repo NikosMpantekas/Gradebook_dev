@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { useSelector } from 'react-redux';
-import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ArrowUp } from 'lucide-react';
+import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ArrowUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -26,10 +26,12 @@ const SystemLogs = () => {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 100;
   const logsContainerRef = useRef(null);
 
   // Load logs
-  const loadLogs = async () => {
+  const loadLogs = async (resetPage = false) => {
     if (!token || token === 'null' || token === 'undefined') return;
 
     try {
@@ -51,6 +53,7 @@ const SystemLogs = () => {
       if (response.data && response.data.success) {
         const newLogs = response.data.data.logs;
         setLogs(newLogs);
+        if (resetPage) setCurrentPage(0);
 
         setAvailableLevels(response.data.data.availableLevels);
         setAvailableCategories(response.data.data.availableCategories);
@@ -88,7 +91,7 @@ const SystemLogs = () => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      loadLogs();
+      loadLogs(false);
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
@@ -99,7 +102,7 @@ const SystemLogs = () => {
   useEffect(() => {
     if (!token || token === 'null' || token === 'undefined') return;
 
-    loadLogs();
+    loadLogs(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, token]);
 
@@ -327,11 +330,12 @@ const SystemLogs = () => {
               onScroll={handleScroll}
               className="h-[600px] overflow-auto font-mono text-[13px] leading-relaxed py-2 font-medium"
             >
-              {logs.map((log, index) => {
+              {logs.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((log, index) => {
                 const logText = parseAnsiColors(log.message || log.raw || '');
                 const timestamp = formatTimestamp(log.timestamp || logText);
                 const levelStyles = getLevelStyles(log.level);
                 const textColor = getLogTextColor(log.level);
+                const absoluteIndex = currentPage * itemsPerPage + index + 1;
 
                 return (
                   <div
@@ -339,7 +343,7 @@ const SystemLogs = () => {
                     className="flex items-start gap-4 px-4 py-0.5 hover:bg-white/5 group"
                   >
                     <span className="text-zinc-600 min-w-[35px] text-right select-none">
-                      {index + 1}
+                      {absoluteIndex}
                     </span>
                     <span className="text-zinc-500 whitespace-nowrap select-none">
                       {timestamp}
@@ -365,19 +369,49 @@ const SystemLogs = () => {
             </div>
 
             {/* Jump to Latest Button */}
-            {showJumpToLatest && (
+            {showJumpToLatest && currentPage === 0 && (
               <Button
                 size="sm"
                 onClick={scrollToTop}
-                className="absolute bottom-6 right-6 gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-full py-5 px-4"
+                className="absolute bottom-16 right-6 gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-full py-5 px-4"
               >
                 <ArrowUp className="w-4 h-4" />
                 Latest Logs
               </Button>
             )}
 
-            <div className="py-2 text-[11px] text-zinc-600 text-center border-t border-zinc-800/50 bg-[#1e1e1e] select-none">
-              Showing {logs.length} of {stats.filteredLines || 0} logs
+            {/* Pagination Controls */}
+            <div className="p-3 border-t border-zinc-800 flex items-center justify-between bg-[#252526]">
+              <div className="text-zinc-500 text-[11px] font-mono select-none flex items-center gap-4">
+                <span>Page {currentPage + 1} of {Math.max(1, Math.ceil(logs.length / itemsPerPage))}</span>
+                <span>(Showing {logs.length} matching logs total)</span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentPage(p => Math.max(0, p - 1));
+                    scrollToTop();
+                  }}
+                  disabled={loading || currentPage === 0}
+                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10 disabled:opacity-30 h-8 gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Newer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentPage(p => p + 1);
+                    scrollToTop();
+                  }}
+                  disabled={loading || (currentPage + 1) * itemsPerPage >= logs.length}
+                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10 disabled:opacity-30 h-8 gap-1"
+                >
+                  Older <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
