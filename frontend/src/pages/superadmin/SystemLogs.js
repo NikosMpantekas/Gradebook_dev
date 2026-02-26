@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { useSelector } from 'react-redux';
-import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ArrowDown } from 'lucide-react';
+import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ArrowUp } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -71,16 +71,16 @@ const SystemLogs = () => {
     }
   };
 
-  const scrollToBottom = () => {
+  const scrollToTop = () => {
     if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+      logsContainerRef.current.scrollTop = 0;
     }
   };
 
   const handleScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-    setShowJumpToLatest(!isAtBottom);
+    const { scrollTop } = e.currentTarget;
+    // Show button when scrolled down more than 100px from the top
+    setShowJumpToLatest(scrollTop > 100);
   };
 
   // Auto-refresh functionality
@@ -368,10 +368,10 @@ const SystemLogs = () => {
             {showJumpToLatest && (
               <Button
                 size="sm"
-                onClick={scrollToBottom}
+                onClick={scrollToTop}
                 className="absolute bottom-6 right-6 gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-full py-5 px-4"
               >
-                <ArrowDown className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4" />
                 Latest Logs
               </Button>
             )}
