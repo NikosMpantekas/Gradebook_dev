@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { useSelector } from 'react-redux';
-import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2 } from 'lucide-react';
+import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -34,16 +34,13 @@ const SystemLogs = () => {
   const [displayedLogs, setDisplayedLogs] = useState([]); // Only logs currently displayed
   const logsContainerRef = useRef(null);
 
-  // Load logs (optimized with pagination)
-  const loadLogs = async (reset = false) => {
+  // Load logs (optimized with discrete pagination)
+  const loadLogs = async (page = 0) => {
     if (!token || token === 'null' || token === 'undefined') return;
 
     try {
       setLoading(true);
       setError(null);
-
-      const currentFilters = filters; // Capture current filters for this call
-      const currentPagination = pagination; // Capture current pagination for this call
 
       const config = {
         headers: {
@@ -51,30 +48,26 @@ const SystemLogs = () => {
           'Content-Type': 'application/json'
         },
         params: {
-          ...currentFilters,
-          limit: currentPagination.limit,
-          offset: reset ? 0 : currentPagination.page * currentPagination.limit
+          ...filters,
+          limit: pagination.limit,
+          offset: page * pagination.limit
         }
       };
 
       const response = await axios.get(`${API_URL}/api/superadmin/logs`, config);
 
       if (response.data && response.data.success) {
-        // Assume backend returns newest first or we handle sorting here if needed
         const newLogs = response.data.data.logs;
 
-        if (reset) {
-          // Reset pagination and logs
-          setLogs(newLogs);
-          setDisplayedLogs(newLogs.slice(0, 50));
-          setPagination(prev => ({ ...prev, page: 0, total: response.data.data.totalLines }));
-        } else {
-          // Append new logs to the END as they are older chunks in a "Load More" scenario
-          const updatedLogs = [...logs, ...newLogs];
-          setLogs(updatedLogs);
-          setDisplayedLogs(updatedLogs.slice(0, Math.min(updatedLogs.length, (pagination.page + 2) * 50)));
-          setPagination(prev => ({ ...prev, page: prev.page + 1 }));
-        }
+        setLogs(newLogs);
+        setDisplayedLogs(newLogs);
+
+        setPagination(prev => ({
+          ...prev,
+          page,
+          total: response.data.data.totalLines,
+          hasMore: newLogs.length === prev.limit
+        }));
 
         setAvailableLevels(response.data.data.availableLevels);
         setAvailableCategories(response.data.data.availableCategories);
@@ -83,11 +76,6 @@ const SystemLogs = () => {
           totalLines: response.data.data.totalLines,
           filteredLines: response.data.data.filteredLines
         });
-
-        setPagination(prev => ({
-          ...prev,
-          hasMore: newLogs.length === currentPagination.limit
-        }));
       } else {
         setError('Failed to load logs');
       }
@@ -100,10 +88,15 @@ const SystemLogs = () => {
     }
   };
 
-  // Load more logs
-  const loadMoreLogs = () => {
-    if (!loading && pagination.hasMore) {
-      loadLogs(false);
+  const handleNextPage = () => {
+    if (pagination.hasMore && !loading) {
+      loadLogs(pagination.page + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (pagination.page > 0 && !loading) {
+      loadLogs(pagination.page - 1);
     }
   };
 
@@ -112,20 +105,20 @@ const SystemLogs = () => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      // Pass true to reset logs so it doesn't endlessly append duplicates
-      loadLogs(true);
+      // Refresh current page
+      loadLogs(pagination.page);
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, token]);
+  }, [autoRefresh, token, pagination.page, filters]);
 
   // Load data when component mounts, token becomes available, or filters change
   useEffect(() => {
     if (!token || token === 'null' || token === 'undefined') return;
 
-    setPagination(prev => ({ ...prev, page: 0, hasMore: true }));
-    loadLogs(true); // Reset logs
+    // Reset to page 0 on filter change
+    loadLogs(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, token]);
 
@@ -230,7 +223,7 @@ const SystemLogs = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="w-full p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">System Logs</h1>
@@ -240,7 +233,7 @@ const SystemLogs = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-lg">Filters</CardTitle>
           <CardDescription>Filter logs by level and category</CardDescription>
@@ -326,7 +319,7 @@ const SystemLogs = () => {
       )}
 
       {/* Console Display */}
-      <Card className="overflow-hidden border-zinc-800 bg-[#1e1e1e]">
+      <Card className="w-full overflow-hidden border-zinc-800 bg-[#1e1e1e]">
         <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-[#252526] text-zinc-300">
           <div className="flex items-center gap-2 font-mono text-sm">
             <Server className="w-4 h-4" />
@@ -336,19 +329,21 @@ const SystemLogs = () => {
         </div>
 
         {displayedLogs.length === 0 ? (
-          <div className="p-8 text-center text-zinc-500 text-sm">
-            <Info className="w-8 h-8 mx-auto mb-3 opacity-50" />
+          <div className="h-[600px] w-full flex flex-col items-center justify-center text-zinc-500 text-sm p-4">
+            <Info className="w-8 h-8 mb-3 opacity-50" />
             {loading ? 'Loading logs...' : (
-              filters.level !== 'all' || filters.category !== 'all'
-                ? 'No logs match your current filters. Try adjusting your filters and refresh.'
-                : 'No logs found. Make sure log files exist in the backend logs directory.'
+              <p className="max-w-[400px] text-center px-4">
+                {filters.level !== 'all' || filters.category !== 'all'
+                  ? 'No logs match your current filters. Try adjusting your filters and refresh.'
+                  : 'No logs found. Make sure log files exist in the backend logs directory.'}
+              </p>
             )}
           </div>
         ) : (
           <>
             <div
               ref={logsContainerRef}
-              className="max-h-[600px] overflow-auto font-mono text-[13px] leading-relaxed py-2 font-medium"
+              className="h-[600px] overflow-auto font-mono text-[13px] leading-relaxed py-2 font-medium"
             >
               {displayedLogs.map((log, index) => {
                 const logText = parseAnsiColors(log.message || log.raw || '');
@@ -387,29 +382,35 @@ const SystemLogs = () => {
               })}
             </div>
 
-            {/* Load More Option */}
-            {pagination.hasMore && (
-              <div className="p-3 border-t border-zinc-800 text-center bg-[#252526]">
+            {/* Pagination Controls */}
+            <div className="p-3 border-t border-zinc-800 flex items-center justify-between bg-[#252526]">
+              <div className="text-zinc-500 text-[11px] font-mono select-none">
+                Page {pagination.page + 1} of {Math.ceil((stats.filteredLines || 1) / pagination.limit)}
+              </div>
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={loadMoreLogs}
-                  disabled={loading}
-                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10"
+                  onClick={handlePrevPage}
+                  disabled={loading || pagination.page === 0}
+                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10 disabled:opacity-30 h-8 gap-1"
                 >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Loading...
-                    </span>
-                  ) : (
-                    `Load More (${logs.length - displayedLogs.length} remaining)`
-                  )}
+                  <ChevronLeft className="w-4 h-4" /> Previous
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={loading || !pagination.hasMore}
+                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10 disabled:opacity-30 h-8 gap-1"
+                >
+                  Next <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
-            )}
+            </div>
 
             <div className="py-2 text-[11px] text-zinc-600 text-center border-t border-zinc-800/50 bg-[#1e1e1e] select-none">
-              Showing {displayedLogs.length} of {stats.filteredLines || 0} logs (Memory optimized)
+              Showing {displayedLogs.length} of {stats.filteredLines || 0} logs
             </div>
           </>
         )}
