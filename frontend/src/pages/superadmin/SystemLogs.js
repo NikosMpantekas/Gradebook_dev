@@ -60,17 +60,19 @@ const SystemLogs = () => {
       const response = await axios.get(`${API_URL}/api/superadmin/logs`, config);
 
       if (response.data && response.data.success) {
-        const newLogs = response.data.data.logs.reverse();
+        // Assume backend returns newest first or we handle sorting here if needed
+        const newLogs = response.data.data.logs;
 
         if (reset) {
           // Reset pagination and logs
           setLogs(newLogs);
-          setDisplayedLogs(newLogs.slice(0, 50)); // Only show first 50 logs initially
+          setDisplayedLogs(newLogs.slice(0, 50));
           setPagination(prev => ({ ...prev, page: 0, total: response.data.data.totalLines }));
         } else {
-          // Append new logs
-          setLogs(prev => [...prev, ...newLogs]);
-          setDisplayedLogs(prev => [...prev, ...newLogs].slice(0, Math.min(100, prev.length + newLogs.length)));
+          // Append new logs to the END as they are older chunks in a "Load More" scenario
+          const updatedLogs = [...logs, ...newLogs];
+          setLogs(updatedLogs);
+          setDisplayedLogs(updatedLogs.slice(0, Math.min(updatedLogs.length, (pagination.page + 2) * 50)));
           setPagination(prev => ({ ...prev, page: prev.page + 1 }));
         }
 
@@ -82,7 +84,6 @@ const SystemLogs = () => {
           filteredLines: response.data.data.filteredLines
         });
 
-        // Check if there are more logs
         setPagination(prev => ({
           ...prev,
           hasMore: newLogs.length === currentPagination.limit
