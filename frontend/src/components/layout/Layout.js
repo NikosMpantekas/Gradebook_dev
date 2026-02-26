@@ -19,7 +19,6 @@ const Layout = () => {
 
   // Retrieve previous mobileOpen state from localStorage to prevent it from resetting on navigation
   const [mobileOpen, setMobileOpen] = useState(() => {
-    const savedState = localStorage.getItem('sidebarOpen');
     // Always default to false for mobile, false for desktop (mobile sidebar should never be open on desktop)
     return false;
   });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PersonStanding, Type, ZapOff, Eye } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import {
@@ -7,6 +8,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '../ui/popover';
+import {
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuPortal,
+    DropdownMenuSubContent,
+} from '../ui/dropdown-menu';
 import {
     Tooltip,
     TooltipContent,
@@ -22,7 +29,8 @@ const FONT_SIZES = [
     { key: 'xl', label: 'XL' },
 ];
 
-const AccessibilityMenu = () => {
+const AccessibilityMenu = ({ variant = 'popover' }) => {
+    const { t } = useTranslation();
     const { currentTheme, switchTheme } = useTheme();
 
     // State
@@ -59,7 +67,6 @@ const AccessibilityMenu = () => {
         applyDyslexiaFont(dyslexiaFont);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Sync HC state when theme changes externally (e.g. profile page)
     useEffect(() => {
         setHighContrast(currentTheme === 'high-contrast');
     }, [currentTheme]);
@@ -97,10 +104,105 @@ const AccessibilityMenu = () => {
     // Check if any a11y setting is active (for indicator dot)
     const isAnyActive = fontSize !== 'md' || reduceMotion || dyslexiaFont || highContrast;
 
+    const menuContent = (
+        <div className="p-4 space-y-4">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <PersonStanding className="h-4 w-4" />
+                {t('settings.accessibility', 'Accessibility')}
+            </h4>
+
+            {/* Font Size */}
+            <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Type className="h-3.5 w-3.5" />
+                    {t('settings.fontSize', 'Font Size')}
+                </label>
+                <div className="flex gap-1">
+                    {FONT_SIZES.map(({ key, label }) => (
+                        <Button
+                            key={key}
+                            variant={fontSize === key ? 'default' : 'outline'}
+                            size="sm"
+                            className={cn(
+                                'flex-1 text-xs h-8',
+                                fontSize === key && 'pointer-events-none'
+                            )}
+                            onClick={() => handleFontSize(key)}
+                        >
+                            {label}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Reduce Motion */}
+            <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <ZapOff className="h-3.5 w-3.5" />
+                    {t('settings.reduceMotion', 'Reduce Motion')}
+                </label>
+                <Switch
+                    checked={reduceMotion}
+                    onCheckedChange={handleReduceMotion}
+                />
+            </div>
+
+            {/* Dyslexia Font */}
+            <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Type className="h-3.5 w-3.5" />
+                    {t('settings.dyslexiaFont', 'Dyslexia Font')}
+                </label>
+                <Switch
+                    checked={dyslexiaFont}
+                    onCheckedChange={handleDyslexiaFont}
+                />
+            </div>
+
+            {/* High Contrast */}
+            <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Eye className="h-3.5 w-3.5" />
+                    {t('settings.highContrast', 'High Contrast')}
+                </label>
+                <Switch
+                    checked={highContrast}
+                    onCheckedChange={handleHighContrast}
+                />
+            </div>
+        </div>
+    );
+
+    if (variant === 'sub') {
+        return (
+            <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                    <PersonStanding className="h-4 w-4" />
+                    <span>{t('settings.accessibility', 'Accessibility')}</span>
+                    {isAnyActive && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                    )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent
+                        className="dropdown-slide-in p-0 w-[260px] max-w-[calc(100vw-30px)]"
+                        sideOffset={8}
+                    >
+                        {menuContent}
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+            </DropdownMenuSub>
+        );
+    }
+
+    if (variant === 'expanded') {
+        return <div className="border-t">{menuContent}</div>;
+    }
+
     return (
         <Popover>
             <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger asChild side="bottom">
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="relative">
                             <PersonStanding className="h-5 w-5" />
@@ -111,77 +213,12 @@ const AccessibilityMenu = () => {
                     </PopoverTrigger>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Accessibility</p>
+                    <p>{t('settings.accessibility', 'Accessibility')}</p>
                 </TooltipContent>
             </Tooltip>
 
             <PopoverContent align="end" sideOffset={8} className="w-72 p-0">
-                <div className="p-4 space-y-4">
-                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <PersonStanding className="h-4 w-4" />
-                        Accessibility
-                    </h4>
-
-                    {/* Font Size */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                            <Type className="h-3.5 w-3.5" />
-                            Font Size
-                        </label>
-                        <div className="flex gap-1">
-                            {FONT_SIZES.map(({ key, label }) => (
-                                <Button
-                                    key={key}
-                                    variant={fontSize === key ? 'default' : 'outline'}
-                                    size="sm"
-                                    className={cn(
-                                        'flex-1 text-xs h-8',
-                                        fontSize === key && 'pointer-events-none'
-                                    )}
-                                    onClick={() => handleFontSize(key)}
-                                >
-                                    {label}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Reduce Motion */}
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                            <ZapOff className="h-3.5 w-3.5" />
-                            Reduce Motion
-                        </label>
-                        <Switch
-                            checked={reduceMotion}
-                            onCheckedChange={handleReduceMotion}
-                        />
-                    </div>
-
-                    {/* Dyslexia Font */}
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                            <Type className="h-3.5 w-3.5" />
-                            Dyslexia Font
-                        </label>
-                        <Switch
-                            checked={dyslexiaFont}
-                            onCheckedChange={handleDyslexiaFont}
-                        />
-                    </div>
-
-                    {/* High Contrast */}
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                            <Eye className="h-3.5 w-3.5" />
-                            High Contrast
-                        </label>
-                        <Switch
-                            checked={highContrast}
-                            onCheckedChange={handleHighContrast}
-                        />
-                    </div>
-                </div>
+                {menuContent}
             </PopoverContent>
         </Popover>
     );
