@@ -25,7 +25,7 @@ import { useSelector } from 'react-redux';
 const SystemLogs = () => {
   const { user, token } = useSelector((state) => state.auth);
   const theme = useTheme();
-  
+
   // State management (optimized for memory)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -70,7 +70,7 @@ const SystemLogs = () => {
 
       if (response.data && response.data.success) {
         const newLogs = response.data.data.logs.reverse();
-        
+
         if (reset) {
           // Reset pagination and logs
           setLogs(newLogs);
@@ -82,7 +82,7 @@ const SystemLogs = () => {
           setDisplayedLogs(prev => [...prev, ...newLogs].slice(0, Math.min(100, prev.length + newLogs.length)));
           setPagination(prev => ({ ...prev, page: prev.page + 1 }));
         }
-        
+
         setAvailableLevels(response.data.data.availableLevels);
         setAvailableCategories(response.data.data.availableCategories);
         setStats({
@@ -90,7 +90,7 @@ const SystemLogs = () => {
           totalLines: response.data.data.totalLines,
           filteredLines: response.data.data.filteredLines
         });
-        
+
         // Check if there are more logs
         setPagination(prev => ({
           ...prev,
@@ -107,7 +107,7 @@ const SystemLogs = () => {
       setLoading(false);
     }
   };
-  
+
   // Load more logs
   const loadMoreLogs = () => {
     if (!loading && pagination.hasMore) {
@@ -120,13 +120,14 @@ const SystemLogs = () => {
   // Auto-refresh functionality
   useEffect(() => {
     if (!autoRefresh) return;
-    
+
     const interval = setInterval(() => {
-      loadLogs();
+      // Pass true to reset logs so it doesn't endlessly append duplicates
+      loadLogs(true);
     }, 5000); // Refresh every 5 seconds
-    
+
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, loadLogs]); // Added loadLogs to dependency array
 
   // Load data on component mount
   useEffect(() => {
@@ -144,13 +145,13 @@ const SystemLogs = () => {
     switch (level?.toUpperCase()) {
       case 'ERROR':
       case 'CRITICAL':
-        return '#ff6b6b';
+        return '#f44336'; // Red
       case 'WARN':
-        return '#ffa726';
+        return '#ff9800'; // Orange
       case 'INFO':
-        return '#42a5f5';
+        return '#2196f3'; // Blue
       case 'DEBUG':
-        return '#9e9e9e';
+        return '#9e9e9e'; // Grey
       default:
         return '#9e9e9e';
     }
@@ -159,97 +160,81 @@ const SystemLogs = () => {
   // Parse ANSI color codes and convert to React styles
   const parseAnsiColors = (text) => {
     if (!text) return text;
-    
+
     // Simple ANSI color parsing (can be enhanced with a library like ansi-to-react)
     const ansiRegex = /\x1b\[(\d+(?:;\d+)*)?m/g;
     let result = text;
-    
+
     // Remove ANSI codes for now (can be enhanced later)
     result = result.replace(ansiRegex, '');
-    
+
     return result;
   };
 
-  // Format timestamp for console display (Netlify style)
+  // Format timestamp for console display (Netlify style but with date)
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
-    
+
+    const options = {
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+
     try {
       // If it's already a Date object or valid timestamp
       const date = new Date(timestamp);
       if (!isNaN(date.getTime())) {
-        return date.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        });
+        return date.toLocaleString('en-US', options);
       }
     } catch (err) {
       // Continue to other parsing methods
     }
-    
+
     // Try to extract timestamp from raw log line
     const timestampMatch = timestamp.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/);
     if (timestampMatch) {
       try {
         const date = new Date(timestampMatch[1]);
         if (!isNaN(date.getTime())) {
-          return date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-          });
+          return date.toLocaleString('en-US', options);
         }
       } catch (err2) {
         // Continue to fallback
       }
     }
-    
+
     // Try to extract ISO timestamp without milliseconds
     const isoMatch = timestamp.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/);
     if (isoMatch) {
       try {
         const date = new Date(isoMatch[1]);
         if (!isNaN(date.getTime())) {
-          return date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-          });
+          return date.toLocaleString('en-US', options);
         }
       } catch (err2) {
         // Continue to fallback
       }
     }
-    
+
     // Try to extract date from various formats
     const dateMatch = timestamp.match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
     if (dateMatch) {
       try {
         const date = new Date(dateMatch[1].replace(' ', 'T'));
         if (!isNaN(date.getTime())) {
-          return date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-          });
+          return date.toLocaleString('en-US', options);
         }
       } catch (err2) {
         // Continue to fallback
       }
     }
-    
-    // If all else fails, return current time
-    return new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
+
+    // If all else fails, return current time with date
+    return new Date().toLocaleString('en-US', options);
   };
 
 
@@ -323,7 +308,7 @@ const SystemLogs = () => {
           >
             Refresh
           </Button>
-          
+
           <Button
             variant={autoRefresh ? "contained" : "outlined"}
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -332,7 +317,7 @@ const SystemLogs = () => {
           >
             {autoRefresh ? 'Stop Auto' : 'Auto Refresh'}
           </Button>
-          
+
 
         </Box>
 
@@ -357,10 +342,10 @@ const SystemLogs = () => {
 
       {/* Netlify-style Console Logs Display */}
       <Paper sx={{ p: 0, overflow: 'hidden' }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           p: 2,
           borderBottom: '1px solid',
           borderColor: 'divider',
@@ -375,147 +360,174 @@ const SystemLogs = () => {
           </Box>
         </Box>
 
-      {displayedLogs.length === 0 ? (
-        <Box sx={{ p: 3 }}>
-          <Alert severity="info">
-            {loading ? 'Loading logs...' : (
-              filters.level !== 'all' || filters.category !== 'all' 
-                ? 'No logs match your current filters. Try adjusting your filters and refresh.'
-                : 'No logs found. Make sure log files exist in the backend logs directory.'
-            )}
-          </Alert>
-        </Box>
-      ) : (
-        <>
-          <Box 
-            ref={logsContainerRef}
-            sx={{ 
-              maxHeight: 500, 
-              overflow: 'auto',
-              bgcolor: '#23272e',
-              fontFamily: 'monospace',
-              fontSize: '13px',
-              lineHeight: 1.5,
-              color: '#e6e6e6',
-              p: 0
-            }}
-          >
-            {displayedLogs.map((log, index) => {
-              const logText = parseAnsiColors(log.message || log.raw || '');
-              const timestamp = formatTimestamp(log.timestamp || logText);
-              const levelColor = getLevelColor(log.level);
-              
-              // Determine text color based on log level
-              let textColor = '#e6e6e6'; // default
-              if (log.level && log.level.toLowerCase().includes('warn')) {
-                textColor = '#ffeb3b'; // yellow for warnings
-              } else if (log.level && log.level.toLowerCase().includes('error')) {
-                textColor = '#ff6b6b'; // red for errors
-              }
-              
-              return (
-                <Box
-                  key={index}
-                  sx={{
-                    p: '2px 12px',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 1,
-                    minHeight: '18px',
-                    fontFamily: 'monospace',
-                    fontSize: '13px',
-                    lineHeight: 1.4,
-                    color: textColor
-                  }}
-                >
-                  {/* Line number */}
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: '#666',
-                      fontSize: '13px',
-                      minWidth: '35px',
-                      flexShrink: 0,
-                      textAlign: 'right'
-                    }}
-                  >
-                    {index + 1}
-                  </Typography>
-                  
-                  {/* Timestamp */}
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: '#888',
-                      fontSize: '13px',
-                      minWidth: '90px',
-                      flexShrink: 0
-                    }}
-                  >
-                    {timestamp}:
-                  </Typography>
-                  
-                  {/* Message */}
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: textColor,
-                      flex: 1,
-                      wordBreak: 'break-word',
-                      whiteSpace: 'pre-wrap'
-                    }}
-                  >
-                    {logText}
-                  </Typography>
-                  
-                  {/* Copy button */}
-                  <IconButton
-                    size="small"
-                    onClick={() => copyToClipboard(`${timestamp}: ${logText}`, index)}
-                    sx={{ 
-                      opacity: 0.4,
-                      '&:hover': { opacity: 0.8 },
-                      color: copiedIndex === index ? '#4caf50' : '#e6e6e6',
-                      p: 0.5
-                    }}
-                  >
-                    <CopyIcon sx={{ fontSize: '14px' }} />
-                  </IconButton>
-                </Box>
-              );
-            })}
+        {displayedLogs.length === 0 ? (
+          <Box sx={{ p: 3 }}>
+            <Alert severity="info">
+              {loading ? 'Loading logs...' : (
+                filters.level !== 'all' || filters.category !== 'all'
+                  ? 'No logs match your current filters. Try adjusting your filters and refresh.'
+                  : 'No logs found. Make sure log files exist in the backend logs directory.'
+              )}
+            </Alert>
           </Box>
-          
-          {/* Load More Button */}
-          {pagination.hasMore && (
-            <Box sx={{ p: 2, textAlign: 'center', borderTop: '1px solid #333' }}>
-              <Button
-                variant="outlined"
-                onClick={loadMoreLogs}
-                disabled={loading}
-                sx={{ color: '#e6e6e6', borderColor: '#555' }}
-              >
-                {loading ? (
-                  <>
-                    <CircularProgress size={16} sx={{ mr: 1, color: '#e6e6e6' }} />
-                    Loading...
-                  </>
-                ) : (
-                  `Load More (${logs.length - displayedLogs.length} remaining)`
-                )}
-              </Button>
+        ) : (
+          <>
+            <Box
+              ref={logsContainerRef}
+              sx={{
+                maxHeight: 500,
+                overflow: 'auto',
+                bgcolor: '#23272e',
+                fontFamily: 'monospace',
+                fontSize: '13px',
+                lineHeight: 1.5,
+                color: '#e6e6e6',
+                p: 0
+              }}
+            >
+              {displayedLogs.map((log, index) => {
+                const logText = parseAnsiColors(log.message || log.raw || '');
+                const timestamp = formatTimestamp(log.timestamp || logText);
+                const levelColor = getLevelColor(log.level);
+
+                // Determine text color based on log level
+                let textColor = '#e6e6e6'; // default
+                if (log.level) {
+                  const levelUpper = log.level.toUpperCase();
+                  if (levelUpper === 'WARN') {
+                    textColor = '#ffeb3b'; // yellow for warnings
+                  } else if (levelUpper === 'ERROR' || levelUpper === 'CRITICAL') {
+                    textColor = '#ff6b6b'; // red for errors
+                  }
+                }
+
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      p: '2px 12px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 1,
+                      minHeight: '18px',
+                      fontFamily: 'monospace',
+                      fontSize: '13px',
+                      lineHeight: 1.4,
+                      color: textColor
+                    }}
+                  >
+                    {/* Line number */}
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: '#666',
+                        fontSize: '13px',
+                        minWidth: '35px',
+                        flexShrink: 0,
+                        textAlign: 'right'
+                      }}
+                    >
+                      {index + 1}
+                    </Typography>
+
+                    {/* Timestamp */}
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: '#888',
+                        fontSize: '13px',
+                        minWidth: '120px',
+                        flexShrink: 0
+                      }}
+                    >
+                      {timestamp}
+                    </Typography>
+
+                    {/* Log Level Badge */}
+                    {log.level && (
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-block',
+                          bgcolor: `${levelColor}22`, // 22 is hex alpha for ~13% opacity
+                          color: levelColor,
+                          border: `1px solid ${levelColor}55`,
+                          borderRadius: '4px',
+                          px: 0.75,
+                          py: 0.25,
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          minWidth: '45px',
+                          textAlign: 'center',
+                          flexShrink: 0,
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        {log.level}
+                      </Box>
+                    )}
+
+                    {/* Message */}
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: textColor,
+                        flex: 1,
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap'
+                      }}
+                    >
+                      {log.category ? `[${log.category}] ` : ''}{logText}
+                    </Typography>
+
+                    {/* Copy button */}
+                    <IconButton
+                      size="small"
+                      onClick={() => copyToClipboard(`${timestamp}: ${logText}`, index)}
+                      sx={{
+                        opacity: 0.4,
+                        '&:hover': { opacity: 0.8 },
+                        color: copiedIndex === index ? '#4caf50' : '#e6e6e6',
+                        p: 0.5
+                      }}
+                    >
+                      <CopyIcon sx={{ fontSize: '14px' }} />
+                    </IconButton>
+                  </Box>
+                );
+              })}
             </Box>
-          )}
-          
-          {/* Memory Usage Info */}
-          <Box sx={{ p: 1, fontSize: '12px', color: '#666', textAlign: 'center' }}>
-            Showing {displayedLogs.length} of {stats.filteredLines || 0} logs (Memory optimized)
-          </Box>
-        </>
-      )}
-    </Paper>
-  </Box>
-);
+
+            {/* Load More Button */}
+            {pagination.hasMore && (
+              <Box sx={{ p: 2, textAlign: 'center', borderTop: '1px solid #333' }}>
+                <Button
+                  variant="outlined"
+                  onClick={loadMoreLogs}
+                  disabled={loading}
+                  sx={{ color: '#e6e6e6', borderColor: '#555' }}
+                >
+                  {loading ? (
+                    <>
+                      <CircularProgress size={16} sx={{ mr: 1, color: '#e6e6e6' }} />
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (${logs.length - displayedLogs.length} remaining)`
+                  )}
+                </Button>
+              </Box>
+            )}
+
+            {/* Memory Usage Info */}
+            <Box sx={{ p: 1, fontSize: '12px', color: '#666', textAlign: 'center' }}>
+              Showing {displayedLogs.length} of {stats.filteredLines || 0} logs (Memory optimized)
+            </Box>
+          </>
+        )}
+      </Paper>
+    </Box>
+  );
 };
 
 export default SystemLogs; 

@@ -46,15 +46,15 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
     // This ensures users with @schoolclustername.com emails connect to the correct database
     const domainParts = emailDomain.split('.');
     const dbName = domainParts[0].toLowerCase().replace(/[^a-z0-9]/g, '_');
-    
+
     console.log(`Creating database with name derived from domain: ${emailDomain} -> ${dbName}`);
-    
+
     // Create database configuration using the domain name as the database name
     const dbConfig = {
       // Use the domain prefix as the database name
       dbName: dbName
     };
-    
+
     // Create school first
     const school = await School.create({
       name: schoolName,
@@ -86,7 +86,7 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
       // Just log that the school and user were created successfully
       console.log(`Created school ${schoolName} with ID ${school._id}`);
       console.log(`Created school admin user with email ${email} and schoolId ${school._id}`);
-      
+
       // Note about the migration
       console.log(`IMPORTANT: No additional database setup required with new single-database architecture`)
 
@@ -128,10 +128,10 @@ const getSchoolOwners = asyncHandler(async (req, res) => {
   // Get user counts for each school
   const ownersWithUserCounts = await Promise.all(
     schoolOwners.map(async (owner) => {
-      const userCount = await User.countDocuments({ 
-        schoolId: owner.schoolId || owner.school?._id 
+      const userCount = await User.countDocuments({
+        schoolId: owner.schoolId || owner.school?._id
       });
-      
+
       return {
         ...owner.toObject(),
         userCount,
@@ -314,12 +314,12 @@ const deleteSchoolOwner = asyncHandler(async (req, res) => {
 
     // Find the associated school
     const school = await School.findById(schoolOwner.school);
-    
+
     if (!school) {
       console.log('Warning: School not found for this owner, proceeding with deletion anyway');
     } else {
       console.log(`Found associated school: ${school.name}`);
-      
+
       // We could optionally disable the school here but we'll keep it 
       // in case there are other admins or it needs to be reassigned
       console.log(`School ${school.name} will remain in the system`);
@@ -328,7 +328,7 @@ const deleteSchoolOwner = asyncHandler(async (req, res) => {
     // Delete the school owner
     await User.findByIdAndDelete(req.params.id);
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'School owner deleted successfully',
       id: req.params.id
     });
@@ -388,7 +388,7 @@ const updateSchoolOwnerPermissions = asyncHandler(async (req, res) => {
   // Update all other admin users with the same school to have matching permissions
   if (user.schoolId || user.school) {
     const schoolId = user.schoolId || user.school;
-    
+
     try {
       // Find other admin users with the same school
       const otherAdmins = await User.find({
@@ -399,20 +399,20 @@ const updateSchoolOwnerPermissions = asyncHandler(async (req, res) => {
           { school: schoolId }
         ]
       });
-      
+
       if (otherAdmins.length > 0) {
         console.log(`PERMISSIONS: Found ${otherAdmins.length} other admins to sync permissions with`);
-        
+
         // Update each admin's permissions
         for (const admin of otherAdmins) {
           // Initialize adminPermissions if it doesn't exist
           admin.adminPermissions = admin.adminPermissions || {};
-          
+
           // Update only the permissions that were changed
           for (const [key, value] of Object.entries(permissions)) {
             admin.adminPermissions[key] = value;
           }
-          
+
           await admin.save();
           console.log(`PERMISSIONS: Synced permissions for admin ${admin.name} (${admin._id})`);
         }
@@ -445,7 +445,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
 
   try {
     let recipients = [];
-    
+
     // Get superadmin user details for notification metadata
     const superAdminUser = await User.findById(req.user._id).select('name email');
     if (!superAdminUser) {
@@ -476,9 +476,9 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
           res.status(400);
           throw new Error('Please provide schoolId for specific school notifications');
         }
-        recipients = await User.find({ 
+        recipients = await User.find({
           $or: [{ schoolId: schoolId }, { school: schoolId }],
-          active: true 
+          active: true
         })
           .select('_id name email role schoolId school')
           .populate('schoolId', '_id name')
@@ -518,12 +518,12 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
     for (const recipient of recipients) {
       // Determine the schoolId for this notification
       const recipientSchoolId = recipient.schoolId?._id || recipient.school?._id;
-      
+
       if (!recipientSchoolId) {
         console.warn(`⚠️ Warning: Recipient ${recipient.name} has no associated school, skipping notification`);
         continue;
       }
-      
+
       // Create notification data with all required fields
       const notificationData = {
         title,
@@ -542,10 +542,10 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
           read: 0
         }
       };
-      
+
       console.log(`📢 Creating notification for ${recipient.name} in school ${recipientSchoolId}`);
       console.log(`📢 Notification data being sent to database:`, JSON.stringify(notificationData, null, 2));
-      
+
       const notification = await Notification.create(notificationData);
       notifications.push(notification);
     }
@@ -573,7 +573,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
 const getSchoolsForNotifications = asyncHandler(async (req, res) => {
   try {
     // Only fetch main schools (not branches) - parentCluster should be null
-    const schools = await School.find({ 
+    const schools = await School.find({
       active: true,
       $or: [
         { parentCluster: null },
@@ -584,7 +584,7 @@ const getSchoolsForNotifications = asyncHandler(async (req, res) => {
       .sort({ name: 1 });
 
     console.log(`📚 SUPERADMIN: Found ${schools.length} main schools (excluding branches) for notifications`);
-    
+
     // Log which schools are being returned for debugging
     schools.forEach(school => {
       console.log(`  - ${school.name} (${school.emailDomain}) - isCluster: ${school.isClusterSchool || false}`);
@@ -604,12 +604,12 @@ const getSchoolsForNotifications = asyncHandler(async (req, res) => {
 const searchUsersForNotifications = asyncHandler(async (req, res) => {
   try {
     const { query, role, schoolId } = req.query;
-    
+
     console.log(`🔍 SUPERADMIN USER SEARCH: Starting search with params:`, { query, role, schoolId });
-    
+
     let searchFilter = { active: true };
     let andConditions = [];
-    
+
     // Add text search if query provided
     if (query && query.trim()) {
       andConditions.push({
@@ -620,13 +620,13 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
       });
       console.log(`  - Added text search for: "${query.trim()}"`);
     }
-    
+
     // Filter by role if provided
     if (role && role !== 'all') {
       searchFilter.role = role;
       console.log(`  - Added role filter: ${role}`);
     }
-    
+
     // Filter by school if provided (fixed - no longer overwrites $or)
     if (schoolId && schoolId.trim()) {
       andConditions.push({
@@ -637,14 +637,14 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
       });
       console.log(`  - Added school filter: ${schoolId}`);
     }
-    
+
     // Combine all conditions properly
     if (andConditions.length > 0) {
       searchFilter.$and = andConditions;
     }
-    
+
     console.log(`  - Final search filter:`, JSON.stringify(searchFilter, null, 2));
-    
+
     const users = await User.find(searchFilter)
       .select('_id name email role schoolId school')
       .populate('schoolId', 'name emailDomain')
@@ -653,7 +653,7 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
       .limit(50); // Limit results for performance
 
     console.log(`🔍 SUPERADMIN USER SEARCH: Found ${users.length} users matching criteria`);
-    
+
     // Log sample results for debugging
     if (users.length > 0) {
       console.log(`  - Sample results:`);
@@ -685,11 +685,11 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
 // @access  Private (SuperAdmin only)
 const getSystemLogs = asyncHandler(async (req, res) => {
   const { level = 'all', category = 'all' } = req.query;
-  
+
   try {
     const logDir = path.resolve(process.cwd(), 'logs');
     const logFiles = [];
-    
+
     // Get available log files
     if (fs.existsSync(logDir)) {
       const files = fs.readdirSync(logDir);
@@ -703,73 +703,97 @@ const getSystemLogs = asyncHandler(async (req, res) => {
         }
       });
     }
-    
+
     // Read log content from files
     const logs = [];
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-    
+
     for (const file of logFiles) {
       try {
         const content = fs.readFileSync(file.path, 'utf8');
         const lines = content.split('\n').filter(line => line.trim());
-        
+
         // Parse and format log entries
-        const parsedLines = lines.map(line => {
+        const parsedLines = [];
+        let currentLog = null;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
           try {
             // Parse log format: [LEVEL] timestamp [CATEGORY]: message
             const match = line.match(/^\[(\w+)\]\s+([^\s]+)\s+\[([^\]]+)\]:\s+(.+)$/);
+
             if (match) {
-              const timestamp = new Date(match[2]);
-              
-              // Filter logs older than 1 day
-              if (timestamp < oneDayAgo) {
-                return null;
+              // We found a new log entry header. Push the previous one if it exists.
+              if (currentLog) {
+                if (!currentLog.parsedTimestamp || currentLog.parsedTimestamp >= oneDayAgo) {
+                  parsedLines.push(currentLog);
+                }
               }
-              
-              return {
+
+              const timestamp = new Date(match[2]);
+
+              currentLog = {
                 level: match[1],
                 timestamp: match[2],
-                category: match[3],
+                category: match[3].trim(),
                 message: match[4],
                 source: file.name,
                 parsedTimestamp: timestamp
               };
-            }
-            
-            // For raw lines, try to extract timestamp if possible
-            const rawLine = { raw: line, source: file.name };
-            
-            // Try to find ISO timestamp in the line
-            const timestampMatch = line.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/);
-            if (timestampMatch) {
-              const timestamp = new Date(timestampMatch[1]);
-              if (timestamp < oneDayAgo) {
-                return null;
+            } else {
+              // This line doesn't match the header format, it's likely part of a multiline log.
+              if (currentLog) {
+                // Append to the existing log's message
+                currentLog.message += '\n' + line;
+              } else {
+                // If there's no current log (e.g., at the very start of the file), try to parse it as raw
+                const rawLine = { raw: line, source: file.name, message: line };
+
+                // Try to find ISO timestamp in the line
+                const timestampMatch = line.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/);
+                if (timestampMatch) {
+                  const timestamp = new Date(timestampMatch[1]);
+                  rawLine.timestamp = timestampMatch[1];
+                  rawLine.parsedTimestamp = timestamp;
+                }
+
+                if (!rawLine.parsedTimestamp || rawLine.parsedTimestamp >= oneDayAgo) {
+                  parsedLines.push(rawLine);
+                }
               }
-              rawLine.timestamp = timestampMatch[1];
-              rawLine.parsedTimestamp = timestamp;
             }
-            
-            return rawLine;
           } catch (err) {
-            return { raw: line, source: file.name };
+            // Fallback for line error
+            if (currentLog) {
+              currentLog.message += '\n' + line;
+            } else {
+              parsedLines.push({ raw: line, source: file.name, message: line });
+            }
           }
-        }).filter(Boolean); // Remove null entries (filtered out by date)
-        
+        }
+
+        // Push the last log if it exists after the loop finishes
+        if (currentLog) {
+          if (!currentLog.parsedTimestamp || currentLog.parsedTimestamp >= oneDayAgo) {
+            parsedLines.push(currentLog);
+          }
+        }
+
         logs.push(...parsedLines);
       } catch (err) {
         logger.error('SUPERADMIN', `Failed to read log file: ${file.name}`, err);
       }
     }
-    
+
     // Sort logs by timestamp (newest first)
     logs.sort((a, b) => {
       const timeA = a.parsedTimestamp || new Date(a.timestamp || 0);
       const timeB = b.parsedTimestamp || new Date(b.timestamp || 0);
       return timeB - timeA; // Newest first
     });
-    
+
     // Filter by level and category if specified
     let filteredLogs = logs;
     if (level !== 'all') {
@@ -778,7 +802,7 @@ const getSystemLogs = asyncHandler(async (req, res) => {
     if (category !== 'all') {
       filteredLogs = filteredLogs.filter(log => log.category === category);
     }
-    
+
     res.json({
       success: true,
       data: {
@@ -787,10 +811,10 @@ const getSystemLogs = asyncHandler(async (req, res) => {
         totalLines: logs.length,
         filteredLines: filteredLogs.length,
         availableLevels: ['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
-        availableCategories: [...new Set(logs.map(log => log.category).filter(Boolean))]
+        availableCategories: [...new Set(logs.map(log => log.category?.trim()).filter(Boolean))]
       }
     });
-    
+
   } catch (error) {
     logger.error('SUPERADMIN', 'Failed to retrieve system logs', error);
     res.status(500);
@@ -805,12 +829,12 @@ const getPM2Status = asyncHandler(async (req, res) => {
   const { exec } = require('child_process');
   const util = require('util');
   const execAsync = util.promisify(exec);
-  
+
   try {
     // Get PM2 process list
     const { stdout: pm2List } = await execAsync('pm2 list --json');
     const processes = JSON.parse(pm2List);
-    
+
     // Get PM2 logs for each process
     const processesWithLogs = [];
     for (const process of processes) {
@@ -827,7 +851,7 @@ const getPM2Status = asyncHandler(async (req, res) => {
         });
       }
     }
-    
+
     res.json({
       success: true,
       data: {
@@ -835,7 +859,7 @@ const getPM2Status = asyncHandler(async (req, res) => {
         timestamp: new Date().toISOString()
       }
     });
-    
+
   } catch (error) {
     logger.error('SUPERADMIN', 'Failed to retrieve PM2 status', error);
     res.status(500);
