@@ -50,9 +50,6 @@ const SystemLogs = () => {
 
   // Load logs (optimized with pagination)
   const loadLogs = async (reset = false) => {
-    // Prevent fetching if no token is available yet (avoids 401 on initial load)
-    if (!token) return;
-
     try {
       setLoading(true);
       setError(null);
@@ -72,8 +69,7 @@ const SystemLogs = () => {
       const response = await axios.get(`${API_URL}/api/superadmin/logs`, config);
 
       if (response.data && response.data.success) {
-        // Keep logs descending (latest first) as returned by backend
-        const newLogs = response.data.data.logs;
+        const newLogs = response.data.data.logs.reverse();
 
         if (reset) {
           // Reset pagination and logs
@@ -133,20 +129,16 @@ const SystemLogs = () => {
     return () => clearInterval(interval);
   }, [autoRefresh, loadLogs]); // Added loadLogs to dependency array
 
-  // Load data on component mount or token change
+  // Load data on component mount
   useEffect(() => {
-    if (token) {
-      loadLogs();
-    }
-  }, [token]);
+    loadLogs();
+  }, []);
 
   // Reload when filters change (reset pagination)
   useEffect(() => {
-    if (token) {
-      setPagination(prev => ({ ...prev, page: 0, hasMore: true }));
-      loadLogs(true); // Reset logs when filters change
-    }
-  }, [filters, token]);
+    setPagination(prev => ({ ...prev, page: 0, hasMore: true }));
+    loadLogs(true); // Reset logs when filters change
+  }, [filters]);
 
   // Get color for log level
   const getLevelColor = (level) => {
