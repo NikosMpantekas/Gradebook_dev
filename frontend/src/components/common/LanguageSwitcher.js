@@ -1,14 +1,18 @@
 import React from 'react';
-import { 
+import {
   Globe
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from '../ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
 
@@ -16,15 +20,15 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
   const { i18n, t } = useTranslation();
 
   const languages = [
-    { 
-      code: 'en', 
-      name: 'English', 
+    {
+      code: 'en',
+      name: 'English',
       nativeName: 'English',
       flag: '🇺🇸'
     },
-    { 
-      code: 'gr', 
-      name: 'Greek', 
+    {
+      code: 'gr',
+      name: 'Greek',
       nativeName: 'Ελληνικά',
       flag: '🇬🇷'
     }
@@ -46,8 +50,8 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
             <Globe className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end" 
+        <DropdownMenuContent
+          align="end"
           className="dropdown-slide-in"
           sideOffset={8}
         >
@@ -72,6 +76,66 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
     );
   }
 
+  if (variant === 'sub') {
+    return (
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger className="gap-2">
+          <Globe className="h-4 w-4" />
+          <span>{t('settings.language', 'Language')}</span>
+          <span className="ml-auto text-xs text-muted-foreground mr-1">{currentLanguage.nativeName}</span>
+        </DropdownMenuSubTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuSubContent
+            className="dropdown-slide-in"
+            sideOffset={8}
+          >
+            {languages.map((language) => (
+              <DropdownMenuItem
+                key={language.code}
+                onClick={() => handleLanguageChange(language.code)}
+                className="gap-3"
+              >
+                <span className="text-lg">{language.flag}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{language.nativeName}</span>
+                  <span className="text-xs text-muted-foreground">{language.name}</span>
+                </div>
+                {i18n.language === language.code && (
+                  <span className="ml-auto text-primary">✓</span>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuPortal>
+      </DropdownMenuSub>
+    );
+  }
+
+  if (variant === 'expanded') {
+    return (
+      <div className="p-4 space-y-4 border-t">
+        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Globe className="h-4 w-4" />
+          {t('settings.language', 'Language')}
+        </h4>
+        <div className="grid grid-cols-2 gap-2">
+          {languages.map((language) => (
+            <Button
+              key={language.code}
+              variant={i18n.language === language.code ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center justify-start gap-2 h-10 px-3 overflow-hidden"
+              onClick={() => handleLanguageChange(language.code)}
+            >
+              <span className="text-base flex-shrink-0">{language.flag}</span>
+              <span className="text-xs font-medium truncate">{language.nativeName}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Default icon variant
   return (
     <TooltipProvider>
@@ -88,8 +152,8 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
             <p>{t('settings.language', 'Language')}</p>
           </TooltipContent>
         </Tooltip>
-        <DropdownMenuContent 
-          align="end" 
+        <DropdownMenuContent
+          align="end"
           className="dropdown-slide-in"
           sideOffset={8}
         >

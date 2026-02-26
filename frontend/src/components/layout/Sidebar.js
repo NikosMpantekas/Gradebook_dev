@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -6,40 +6,30 @@ import {
   BookOpen,
   Bell,
   User,
-  UserCog,
   Users,
   Building,
-  FolderOpen,
-  FileText,
   BarChart3,
-  Shield,
-  Calendar,
   Clock,
   Star,
   Megaphone,
   Users2,
-  Settings,
   LogOut,
   MessageSquare,
   CreditCard,
-  Home,
-  GraduationCap,
-  School,
   Mail,
   BadgeAlert,
   Wrench,
   UserCheck,
-  Palette,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet';
-import { Badge } from '../ui/badge';
+
 import { cn } from '../../lib/utils';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
-import { API_URL } from '../../config/appConfig';
+
 import { ScrollArea } from '../ui/scroll-area';
 import { useFeatureToggles } from '../../context/FeatureToggleContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -55,8 +45,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { getCurrentThemeData } = useTheme();
 
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-  const [logoutAnimating, setLogoutAnimating] = useState(false);
-  const pageRef = useRef(null);
+  const [, setLogoutAnimating] = useState(false);
 
   const handleLogoutClick = () => setLogoutDialogOpen(true);
 
@@ -108,7 +97,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     if (isSuperAdmin) {
       return [
         { icon: Building, label: t('navigation.schoolManagement'), path: '/superadmin/school-permissions' },
-        { icon: Palette, label: t('navigation.themeEditor', 'Theme Editor'), path: '/superadmin/theme-editor' },
         { icon: Bell, label: t('navigation.notifications', 'Notifications'), path: '/superadmin/notifications' },
         { icon: Mail, label: t('navigation.contactMessages'), path: '/superadmin/contact' },
         { icon: BarChart3, label: t('navigation.systemLogs'), path: '/superadmin/system-logs' },

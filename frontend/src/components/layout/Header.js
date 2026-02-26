@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bell,
   Moon,
   Sun,
   Mail,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Settings as SettingsIcon,
+  Palette
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -64,6 +67,7 @@ const useLatestVersion = () => {
 };
 
 const Header = ({ drawerWidth, handleDrawerToggle }) => {
+  const { t } = useTranslation();
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
   const [contactUnreadCount, setContactUnreadCount] = useState(0);
   const [contactUnreadPreview, setContactUnreadPreview] = useState([]);
@@ -281,24 +285,60 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
           {/* User actions */}
           {user && (
             <div className="flex items-center space-x-3">
-              <LanguageSwitcher variant="icon" />
+              {isMobile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Palette className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[280px] p-0 overflow-hidden dropdown-slide-in" sideOffset={8}>
+                    <div className="px-4 py-2 border-b">
+                      <p className="text-sm font-semibold">{t('settings.appearance', 'Appearance')}</p>
+                    </div>
 
-              <AccessibilityMenu />
+                    <div className="py-1">
+                      {/* Dark Mode Toggle as an Item */}
+                      <DropdownMenuItem
+                        onClick={handleDarkModeToggle}
+                        className="flex items-center justify-between gap-2 px-4 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                          <span className="text-sm">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    </div>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleDarkModeToggle}
-                  >
-                    {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Toggle dark mode</p>
-                </TooltipContent>
-              </Tooltip>
+                    {/* Expanded Language Controls */}
+                    <LanguageSwitcher variant="expanded" />
+
+                    {/* Expanded Accessibility Controls */}
+                    <AccessibilityMenu variant="expanded" />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <LanguageSwitcher variant="icon" />
+
+                  <AccessibilityMenu />
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleDarkModeToggle}
+                      >
+                        {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Toggle dark mode</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -58,7 +58,6 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import StudentGrades from './pages/student/StudentGrades';
 import GradeDetail from './pages/student/GradeDetail';
 import RatingSubmission from './pages/student/RatingSubmission';
-import StudentAttendance from './pages/student/StudentAttendance';
 
 // Parent Pages
 import ParentDashboard from './pages/ParentDashboard';
@@ -100,7 +99,6 @@ import SuperAdminNotifications from './pages/superadmin/SuperAdminNotifications'
 import MaintenanceAnnouncements from './pages/superadmin/MaintenanceAnnouncements';
 import SchoolPermissionsManager from './components/superadmin/SchoolPermissionsManager';
 import SystemLogs from './pages/superadmin/SystemLogs';
-import ThemeEditor from './pages/superadmin/ThemeEditor';
 
 // Modern Push notification service
 import PushNotificationManager from './services/PushNotificationManager';
@@ -812,11 +810,6 @@ function App() {
                     <Route path="/superadmin/system-maintenance" element={
                       <SuperAdminRoute>
                         <SystemMaintenance />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/theme-editor" element={
-                      <SuperAdminRoute>
-                        <ThemeEditor />
                       </SuperAdminRoute>
                     } />
                   </Route>

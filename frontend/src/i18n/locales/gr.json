@@ -143,9 +143,6 @@
     "sessionCreated": "Η συνεδρία δημιουργήθηκε επιτυχώς",
     "failedToCreateSession": "Αποτυχία δημιουργίας συνεδρίας",
     "sessionDetails": "Στοιχεία Συνεδρίας",
-    "sessionTitle": "Τίτλος Συνεδρίας",
-    "sessionTitlePlaceholder": "Εισάγετε τίτλο συνεδρίας",
-    "createSessionDescription": "Δημιουργήστε μια νέα συνεδρία παρουσιολογίου για την τάξη σας",
     "sessionDescriptionPlaceholder": "Προαιρετική περιγραφή για αυτή τη συνεδρία",
     "duration": "Διάρκεια",
     "fillRequiredFields": "Παρακαλώ συμπληρώστε όλα τα απαιτούμενα πεδία",
@@ -168,7 +165,6 @@
     "temporary": "Προσωρινό",
     "note": "Σημείωση",
     "additionalNotes": "Επιπλέον σημειώσεις για αυτή την συνεδρία",
-    "saveAttendance": "Αποθήκευση Παρουσίας",
     "attendanceSaved": "Η παρουσία αποθηκεύτηκε επιτυχώς",
     "failedToSaveAttendance": "Αποτυχία αποθήκευσης παρουσίας",
     "export": "Εξαγωγή",
@@ -206,7 +202,6 @@
     "markAttendance": "Σημείωση Παρουσίας",
     "markAllPresent": "Σημείωση Όλων Παρόντων",
     "markAllAbsent": "Σημείωση Όλων Απόντων",
-    "saveAttendance": "Αποθήκευση Παρουσιών",
     "attendanceMarked": "Οι παρουσίες σημειώθηκαν επιτυχώς",
     "failedToMarkAttendance": "Αποτυχία σημείωσης παρουσιών",
     "noActiveSession": "Καμία Ενεργή Συνεδρία",
@@ -409,6 +404,7 @@
   "settings": {
     "title": "Ρυθμίσεις",
     "generalSettings": "Γενικές Ρυθμίσεις",
+    "appearance": "Εμφάνιση",
     "accountSettings": "Ρυθμίσεις Λογαριασμού",
     "systemSettings": "Ρυθμίσεις Συστήματος",
     "language": "Γλώσσα",
@@ -423,7 +419,12 @@
     "currentPassword": "Τρέχων Κωδικός Πρόσβασης",
     "newPassword": "Νέος Κωδικός Πρόσβασης",
     "confirmPassword": "Επιβεβαίωση Κωδικού Πρόσβασης",
-    "passwordChanged": "Ο κωδικός πρόσβασης άλλαξε επιτυχώς"
+    "passwordChanged": "Ο κωδικός πρόσβασης άλλαξε επιτυχώς",
+    "accessibility": "Προσβασιμότητα",
+    "fontSize": "Μέγεθος Γραμματοσειράς",
+    "reduceMotion": "Μείωση Κίνησης",
+    "dyslexiaFont": "Γραμματοσειρά Δυσλεξίας",
+    "highContrast": "Υψηλή Αντίθεση"
   },
   "reports": {
     "title": "Αναφορές",
@@ -636,7 +637,7 @@
     "selectDateRange": "Επιλέξτε εύρος ημερομηνιών για προβολή λεπτομερειών μαθητή",
     "noStudentSelected": "Δεν έχει επιλεγεί μαθητής",
     "backToAnalysis": "Πίσω στην Ανάλυση",
-    "print": "Εκτύπωση", 
+    "print": "Εκτύπωση",
     "saveAsPDF": "Αποθήκευση ως PDF",
     "systemReportFooter": "Σύστημα GradeBook - Αναφορά Ανάλυσης Βαθμών Μαθητή",
     "period": "Περίοδος",
@@ -713,8 +714,7 @@
     "logoutConfirmTitle": "Επιβεβαίωση Αποσύνδεσης",
     "logoutConfirmDescription": "Είστε σίγουροι ότι θέλετε να αποσυνδεθείτε; ",
     "logoutConfirmText": "Θα ανακατευθυνθείτε στη σελίδα σύνδεσης."
-  }
-,
+  },
   "teacher": {
     "accessDenied": "Άρνηση πρόσβασης. Απαιτούνται δικαιώματα καθηγητή.",
     "welcomeBackName": "Καλώς ήρθατε, {{name}}!",
@@ -733,8 +733,7 @@
     "recentNotifications": "Πρόσφατες Ειδοποιήσεις",
     "viewAll": "Προβολή Όλων",
     "noRecentNotifications": "Δεν υπάρχουν πρόσφατες ειδοποιήσεις"
-  }
-,
+  },
   "admin": {
     "accessDenied": "Άρνηση πρόσβασης. Απαιτούνται δικαιώματα διαχειριστή.",
     "failedToLoad": "Αποτυχία φόρτωσης δεδομένων πίνακα. Παρακαλώ ανανεώστε τη σελίδα.",
@@ -839,11 +838,7 @@
       "cannotDeleteAdminAccounts": "Δεν μπορείτε να διαγράψετε λογαριασμούς διαχειριστών",
       "cannotCreateSecretaryAccounts": "Δεν μπορείτε να δημιουργήσετε λογαριασμούς γραμματέων",
       "createdAt": "Δημιουργήθηκε",
-      "unknown": "Άγνωστο",
-      "name": "Όνομα",
-      "email": "Email",
-      "role": "Ρόλος",
-      "actions": "Ενέργειες"
+      "unknown": "Άγνωστο"
     },
     "manageClassesPage": {
       "title": "Διαχείριση Τάξεων",
@@ -1102,8 +1097,7 @@
         }
       }
     }
-  }
-,
+  },
   "teacherGrades": {
     "authRequired": "Απαιτείται σύνδεση. Παρακαλώ συνδεθείτε ξανά.",
     "backendWarning": "Προειδοποίηση: Ο διακομιστής μπορεί να μην είναι προσβάσιμος",
@@ -1192,8 +1186,7 @@
       "previewDate": "Ημερομηνία:",
       "creating": "Δημιουργία..."
     }
-  }
-,
+  },
   "teacherNotifications": {
     "loadFailed": "Αποτυχία φόρτωσης ειδοποιήσεων",
     "markedAsRead": "Η ειδοποίηση σημειώθηκε ως αναγνωσμένη",
@@ -1263,8 +1256,7 @@
       "subjectPlaceholder": "Επιλέξτε μάθημα",
       "creating": "Δημιουργία..."
     }
-  }
-,
+  },
   "contactMessages": {
     "loadUserFailed": "Αποτυχία φόρτωσης των μηνυμάτων σας",
     "loadAllFailed": "Αποτυχία φόρτωσης μηνυμάτων",

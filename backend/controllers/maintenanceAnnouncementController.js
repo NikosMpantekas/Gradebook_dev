@@ -7,9 +7,9 @@ const MaintenanceAnnouncement = require('../models/maintenanceAnnouncementModel'
 const getActiveAnnouncements = asyncHandler(async (req, res) => {
   try {
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Getting active announcements for user role: ${req.user.role}`);
-    
+
     const announcements = await MaintenanceAnnouncement.getActiveAnnouncements(req.user.role);
-    
+
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Found ${announcements.length} active announcements`);
     res.json(announcements);
   } catch (error) {
@@ -25,9 +25,9 @@ const getActiveAnnouncements = asyncHandler(async (req, res) => {
 const getAllAnnouncements = asyncHandler(async (req, res) => {
   try {
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] SuperAdmin ${req.user._id} requesting all announcements`);
-    
+
     const announcements = await MaintenanceAnnouncement.getAllAnnouncements();
-    
+
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Retrieved ${announcements.length} total announcements`);
     res.json(announcements);
   } catch (error) {
@@ -97,7 +97,7 @@ const createAnnouncement = asyncHandler(async (req, res) => {
     await announcement.populate('lastModifiedBy', 'name role email');
 
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Announcement created successfully with ID: ${announcement._id}`);
-    
+
     res.status(201).json({
       message: 'Maintenance announcement created successfully',
       announcement
@@ -137,22 +137,22 @@ const updateAnnouncement = asyncHandler(async (req, res) => {
 
     // Store changes for history
     const changes = [];
-    
+
     if (title !== undefined && title !== announcement.title) {
       announcement.title = title.trim();
       changes.push('title');
     }
-    
+
     if (message !== undefined && message !== announcement.message) {
       announcement.message = message.trim();
       changes.push('message');
     }
-    
+
     if (type !== undefined && type !== announcement.type) {
       announcement.type = type;
       changes.push('type');
     }
-    
+
     if (scheduledStart !== undefined) {
       const startDate = new Date(scheduledStart);
       if (startDate.getTime() !== announcement.scheduledStart.getTime()) {
@@ -160,7 +160,7 @@ const updateAnnouncement = asyncHandler(async (req, res) => {
         changes.push('scheduledStart');
       }
     }
-    
+
     if (scheduledEnd !== undefined) {
       const endDate = new Date(scheduledEnd);
       if (endDate.getTime() !== announcement.scheduledEnd.getTime()) {
@@ -168,22 +168,22 @@ const updateAnnouncement = asyncHandler(async (req, res) => {
         changes.push('scheduledEnd');
       }
     }
-    
+
     if (targetRoles !== undefined) {
       announcement.targetRoles = targetRoles;
       changes.push('targetRoles');
     }
-    
+
     if (affectedServices !== undefined) {
       announcement.affectedServices = affectedServices;
       changes.push('affectedServices');
     }
-    
+
     if (showOnDashboard !== undefined && showOnDashboard !== announcement.showOnDashboard) {
       announcement.showOnDashboard = showOnDashboard;
       changes.push('showOnDashboard');
     }
-    
+
     if (isActive !== undefined && isActive !== announcement.isActive) {
       announcement.isActive = isActive;
       changes.push('isActive');
@@ -198,7 +198,7 @@ const updateAnnouncement = asyncHandler(async (req, res) => {
     announcement.lastModifiedBy = req.user._id;
 
     // Add update to history
-    const action = changes.includes('isActive') ? 
+    const action = changes.includes('isActive') ?
       (announcement.isActive ? 'activated' : 'deactivated') : 'updated';
     announcement.addHistory(action, req.user._id, `Updated: ${changes.join(', ')}`);
 
@@ -209,7 +209,7 @@ const updateAnnouncement = asyncHandler(async (req, res) => {
     await announcement.populate('lastModifiedBy', 'name role email');
 
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Announcement updated successfully`);
-    
+
     res.json({
       message: 'Maintenance announcement updated successfully',
       announcement
@@ -239,7 +239,7 @@ const deleteAnnouncement = asyncHandler(async (req, res) => {
     await MaintenanceAnnouncement.findByIdAndDelete(announcementId);
 
     console.log(`[MAINTENANCE_ANNOUNCEMENTS] Announcement deleted successfully`);
-    
+
     res.json({
       message: 'Maintenance announcement deleted successfully'
     });
