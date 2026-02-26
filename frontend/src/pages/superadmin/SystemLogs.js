@@ -1,30 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Alert,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  useTheme,
-  Chip
-} from '@mui/material';
-import {
-  Refresh as RefreshIcon,
-  ContentCopy as CopyIcon
-} from '@mui/icons-material';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { useSelector } from 'react-redux';
+import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2 } from 'lucide-react';
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../components/ui/select';
 
 const SystemLogs = () => {
-  const { user, token } = useSelector((state) => state.auth);
-  const theme = useTheme();
+  const { user } = useSelector((state) => state.auth);
+  const token = user?.token;
 
   // State management (optimized for memory)
   const [loading, setLoading] = useState(false);
@@ -50,9 +36,14 @@ const SystemLogs = () => {
 
   // Load logs (optimized with pagination)
   const loadLogs = async (reset = false) => {
+    if (!token || token === 'null' || token === 'undefined') return;
+
     try {
       setLoading(true);
       setError(null);
+
+      const currentFilters = filters; // Capture current filters for this call
+      const currentPagination = pagination; // Capture current pagination for this call
 
       const config = {
         headers: {
@@ -60,9 +51,9 @@ const SystemLogs = () => {
           'Content-Type': 'application/json'
         },
         params: {
-          ...filters,
-          limit: pagination.limit,
-          offset: reset ? 0 : pagination.page * pagination.limit
+          ...currentFilters,
+          limit: currentPagination.limit,
+          offset: reset ? 0 : currentPagination.page * currentPagination.limit
         }
       };
 
@@ -94,7 +85,7 @@ const SystemLogs = () => {
         // Check if there are more logs
         setPagination(prev => ({
           ...prev,
-          hasMore: newLogs.length === pagination.limit
+          hasMore: newLogs.length === currentPagination.limit
         }));
       } else {
         setError('Failed to load logs');
@@ -115,8 +106,6 @@ const SystemLogs = () => {
     }
   };
 
-
-
   // Auto-refresh functionality
   useEffect(() => {
     if (!autoRefresh) return;
@@ -127,48 +116,24 @@ const SystemLogs = () => {
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
-  }, [autoRefresh, loadLogs]); // Added loadLogs to dependency array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, token]);
 
-  // Load data on component mount
+  // Load data when component mounts, token becomes available, or filters change
   useEffect(() => {
-    loadLogs();
-  }, []);
+    if (!token || token === 'null' || token === 'undefined') return;
 
-  // Reload when filters change (reset pagination)
-  useEffect(() => {
     setPagination(prev => ({ ...prev, page: 0, hasMore: true }));
-    loadLogs(true); // Reset logs when filters change
-  }, [filters]);
-
-  // Get color for log level
-  const getLevelColor = (level) => {
-    switch (level?.toUpperCase()) {
-      case 'ERROR':
-      case 'CRITICAL':
-        return '#f44336'; // Red
-      case 'WARN':
-        return '#ff9800'; // Orange
-      case 'INFO':
-        return '#2196f3'; // Blue
-      case 'DEBUG':
-        return '#9e9e9e'; // Grey
-      default:
-        return '#9e9e9e';
-    }
-  };
+    loadLogs(true); // Reset logs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, token]);
 
   // Parse ANSI color codes and convert to React styles
   const parseAnsiColors = (text) => {
     if (!text) return text;
-
     // Simple ANSI color parsing (can be enhanced with a library like ansi-to-react)
     const ansiRegex = /\x1b\[(\d+(?:;\d+)*)?m/g;
-    let result = text;
-
-    // Remove ANSI codes for now (can be enhanced later)
-    result = result.replace(ansiRegex, '');
-
-    return result;
+    return text.replace(ansiRegex, '');
   };
 
   // Format timestamp for console display (Netlify style but with date)
@@ -185,16 +150,12 @@ const SystemLogs = () => {
     };
 
     try {
-      // If it's already a Date object or valid timestamp
       const date = new Date(timestamp);
       if (!isNaN(date.getTime())) {
         return date.toLocaleString('en-US', options);
       }
-    } catch (err) {
-      // Continue to other parsing methods
-    }
+    } catch (err) { }
 
-    // Try to extract timestamp from raw log line
     const timestampMatch = timestamp.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/);
     if (timestampMatch) {
       try {
@@ -202,12 +163,9 @@ const SystemLogs = () => {
         if (!isNaN(date.getTime())) {
           return date.toLocaleString('en-US', options);
         }
-      } catch (err2) {
-        // Continue to fallback
-      }
+      } catch (err2) { }
     }
 
-    // Try to extract ISO timestamp without milliseconds
     const isoMatch = timestamp.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/);
     if (isoMatch) {
       try {
@@ -215,12 +173,9 @@ const SystemLogs = () => {
         if (!isNaN(date.getTime())) {
           return date.toLocaleString('en-US', options);
         }
-      } catch (err2) {
-        // Continue to fallback
-      }
+      } catch (err2) { }
     }
 
-    // Try to extract date from various formats
     const dateMatch = timestamp.match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
     if (dateMatch) {
       try {
@@ -228,16 +183,11 @@ const SystemLogs = () => {
         if (!isNaN(date.getTime())) {
           return date.toLocaleString('en-US', options);
         }
-      } catch (err2) {
-        // Continue to fallback
-      }
+      } catch (err2) { }
     }
 
-    // If all else fails, return current time with date
     return new Date().toLocaleString('en-US', options);
   };
-
-
 
   // Copy log line to clipboard
   const copyToClipboard = async (text, index) => {
@@ -250,283 +200,220 @@ const SystemLogs = () => {
     }
   };
 
+  const getLevelStyles = (level) => {
+    switch (level?.toUpperCase()) {
+      case 'ERROR':
+      case 'CRITICAL':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'WARN':
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+      case 'INFO':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'DEBUG':
+        return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+      default:
+        return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+    }
+  };
+
+  const getLogTextColor = (level) => {
+    switch (level?.toUpperCase()) {
+      case 'ERROR':
+      case 'CRITICAL':
+        return 'text-red-400';
+      case 'WARN':
+        return 'text-amber-400';
+      default:
+        return 'text-zinc-300';
+    }
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          System Logs
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">System Logs</h1>
+        <p className="text-muted-foreground mt-2">
           Monitor system performance and error logs
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Filters
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Log Level</InputLabel>
-            <Select
-              value={filters.level}
-              label="Log Level"
-              onChange={(e) => setFilters({ ...filters, level: e.target.value })}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filters</CardTitle>
+          <CardDescription>Filter logs by level and category</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="w-full sm:w-48">
+              <Select
+                value={filters.level}
+                onValueChange={(value) => setFilters({ ...filters, level: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Log Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  {availableLevels.map((level) => (
+                    <SelectItem key={level} value={level.toLowerCase()}>
+                      {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-full sm:w-48">
+              <Select
+                value={filters.category}
+                onValueChange={(value) => setFilters({ ...filters, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => loadLogs()}
+              disabled={loading}
+              className="gap-2"
             >
-              <MenuItem value="all">All Levels</MenuItem>
-              {availableLevels.map(level => (
-                <MenuItem key={level} value={level.toLowerCase()}>
-                  {level}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
 
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={filters.category}
-              label="Category"
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            <Button
+              variant={autoRefresh ? "default" : "outline"}
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className="gap-2"
             >
-              <MenuItem value="all">All Categories</MenuItem>
-              {availableCategories.map(category => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              {autoRefresh ? 'Stop Auto' : 'Auto Refresh'}
+            </Button>
+          </div>
 
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={loadLogs}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-
-          <Button
-            variant={autoRefresh ? "contained" : "outlined"}
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            size="small"
-            sx={{ ml: 1 }}
-          >
-            {autoRefresh ? 'Stop Auto' : 'Auto Refresh'}
-          </Button>
-
-
-        </Box>
-
-        {/* Stats */}
-        {stats.totalFiles > 0 && (
-          <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <Typography variant="body2" color="text.secondary">
-              {stats.totalFiles} Log Files • {stats.totalLines} Total Lines • {stats.filteredLines} Filtered Lines
-            </Typography>
-          </Box>
-        )}
-      </Paper>
+          {/* Stats */}
+          {stats.totalFiles > 0 && (
+            <div className="mt-4 flex gap-2 text-sm text-muted-foreground">
+              <span>{stats.totalFiles} Log Files</span>
+              <span>&bull;</span>
+              <span>{stats.totalLines} Total Lines</span>
+              <span>&bull;</span>
+              <span>{stats.filteredLines} Filtered Lines</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Alerts */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          <strong>Error:</strong> {error}
-        </Alert>
+        <div className="rounded-md bg-destructive/15 p-4 flex items-center gap-3 text-destructive border border-destructive/20">
+          <AlertCircle className="w-5 h-5" />
+          <div className="text-sm font-medium">{error}</div>
+        </div>
       )}
 
-
-
-      {/* Netlify-style Console Logs Display */}
-      <Paper sx={{ p: 0, overflow: 'hidden' }}>
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          p: 2,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: '#23272e',
-          color: '#e6e6e6'
-        }}>
-          <Typography variant="h6" sx={{ fontFamily: 'monospace', color: '#e6e6e6' }}>
+      {/* Console Display */}
+      <Card className="overflow-hidden border-zinc-800 bg-[#1e1e1e]">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-[#252526] text-zinc-300">
+          <div className="flex items-center gap-2 font-mono text-sm">
+            <Server className="w-4 h-4" />
             System Logs (Last 24 hours)
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {loading && <CircularProgress size={20} sx={{ color: '#e6e6e6' }} />}
-          </Box>
-        </Box>
+          </div>
+          {loading && <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />}
+        </div>
 
         {displayedLogs.length === 0 ? (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="info">
-              {loading ? 'Loading logs...' : (
-                filters.level !== 'all' || filters.category !== 'all'
-                  ? 'No logs match your current filters. Try adjusting your filters and refresh.'
-                  : 'No logs found. Make sure log files exist in the backend logs directory.'
-              )}
-            </Alert>
-          </Box>
+          <div className="p-8 text-center text-zinc-500 text-sm">
+            <Info className="w-8 h-8 mx-auto mb-3 opacity-50" />
+            {loading ? 'Loading logs...' : (
+              filters.level !== 'all' || filters.category !== 'all'
+                ? 'No logs match your current filters. Try adjusting your filters and refresh.'
+                : 'No logs found. Make sure log files exist in the backend logs directory.'
+            )}
+          </div>
         ) : (
           <>
-            <Box
+            <div
               ref={logsContainerRef}
-              sx={{
-                maxHeight: 500,
-                overflow: 'auto',
-                bgcolor: '#23272e',
-                fontFamily: 'monospace',
-                fontSize: '13px',
-                lineHeight: 1.5,
-                color: '#e6e6e6',
-                p: 0
-              }}
+              className="max-h-[600px] overflow-auto font-mono text-[13px] leading-relaxed py-2 font-medium"
             >
               {displayedLogs.map((log, index) => {
                 const logText = parseAnsiColors(log.message || log.raw || '');
                 const timestamp = formatTimestamp(log.timestamp || logText);
-                const levelColor = getLevelColor(log.level);
-
-                // Determine text color based on log level
-                let textColor = '#e6e6e6'; // default
-                if (log.level) {
-                  const levelUpper = log.level.toUpperCase();
-                  if (levelUpper === 'WARN') {
-                    textColor = '#ffeb3b'; // yellow for warnings
-                  } else if (levelUpper === 'ERROR' || levelUpper === 'CRITICAL') {
-                    textColor = '#ff6b6b'; // red for errors
-                  }
-                }
+                const levelStyles = getLevelStyles(log.level);
+                const textColor = getLogTextColor(log.level);
 
                 return (
-                  <Box
+                  <div
                     key={index}
-                    sx={{
-                      p: '2px 12px',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 1,
-                      minHeight: '18px',
-                      fontFamily: 'monospace',
-                      fontSize: '13px',
-                      lineHeight: 1.4,
-                      color: textColor
-                    }}
+                    className="flex items-start gap-4 px-4 py-0.5 hover:bg-white/5 group"
                   >
-                    {/* Line number */}
-                    <Typography
-                      component="span"
-                      sx={{
-                        color: '#666',
-                        fontSize: '13px',
-                        minWidth: '35px',
-                        flexShrink: 0,
-                        textAlign: 'right'
-                      }}
-                    >
+                    <span className="text-zinc-600 min-w-[35px] text-right select-none">
                       {index + 1}
-                    </Typography>
-
-                    {/* Timestamp */}
-                    <Typography
-                      component="span"
-                      sx={{
-                        color: '#888',
-                        fontSize: '13px',
-                        minWidth: '120px',
-                        flexShrink: 0
-                      }}
-                    >
+                    </span>
+                    <span className="text-zinc-500 whitespace-nowrap select-none">
                       {timestamp}
-                    </Typography>
-
-                    {/* Log Level Badge */}
+                    </span>
                     {log.level && (
-                      <Box
-                        component="span"
-                        sx={{
-                          display: 'inline-block',
-                          bgcolor: `${levelColor}22`, // 22 is hex alpha for ~13% opacity
-                          color: levelColor,
-                          border: `1px solid ${levelColor}55`,
-                          borderRadius: '4px',
-                          px: 0.75,
-                          py: 0.25,
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          minWidth: '45px',
-                          textAlign: 'center',
-                          flexShrink: 0,
-                          textTransform: 'uppercase'
-                        }}
-                      >
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border min-w-[60px] text-center select-none ${levelStyles}`}>
                         {log.level}
-                      </Box>
+                      </span>
                     )}
-
-                    {/* Message */}
-                    <Typography
-                      component="span"
-                      sx={{
-                        color: textColor,
-                        flex: 1,
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap'
-                      }}
-                    >
+                    <span className={`flex-1 break-words whitespace-pre-wrap ${textColor}`}>
                       {log.category ? `[${log.category}] ` : ''}{logText}
-                    </Typography>
-
-                    {/* Copy button */}
-                    <IconButton
-                      size="small"
+                    </span>
+                    <button
                       onClick={() => copyToClipboard(`${timestamp}: ${logText}`, index)}
-                      sx={{
-                        opacity: 0.4,
-                        '&:hover': { opacity: 0.8 },
-                        color: copiedIndex === index ? '#4caf50' : '#e6e6e6',
-                        p: 0.5
-                      }}
+                      className={`p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100 ${copiedIndex === index ? 'text-green-400 bg-green-400/10' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/10'
+                        }`}
                     >
-                      <CopyIcon sx={{ fontSize: '14px' }} />
-                    </IconButton>
-                  </Box>
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 );
               })}
-            </Box>
+            </div>
 
-            {/* Load More Button */}
+            {/* Load More Option */}
             {pagination.hasMore && (
-              <Box sx={{ p: 2, textAlign: 'center', borderTop: '1px solid #333' }}>
+              <div className="p-3 border-t border-zinc-800 text-center bg-[#252526]">
                 <Button
-                  variant="outlined"
+                  variant="ghost"
+                  size="sm"
                   onClick={loadMoreLogs}
                   disabled={loading}
-                  sx={{ color: '#e6e6e6', borderColor: '#555' }}
+                  className="text-zinc-400 hover:text-zinc-200 hover:bg-white/10"
                 >
                   {loading ? (
-                    <>
-                      <CircularProgress size={16} sx={{ mr: 1, color: '#e6e6e6' }} />
-                      Loading...
-                    </>
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Loading...
+                    </span>
                   ) : (
                     `Load More (${logs.length - displayedLogs.length} remaining)`
                   )}
                 </Button>
-              </Box>
+              </div>
             )}
 
-            {/* Memory Usage Info */}
-            <Box sx={{ p: 1, fontSize: '12px', color: '#666', textAlign: 'center' }}>
+            <div className="py-2 text-[11px] text-zinc-600 text-center border-t border-zinc-800/50 bg-[#1e1e1e] select-none">
               Showing {displayedLogs.length} of {stats.filteredLines || 0} logs (Memory optimized)
-            </Box>
+            </div>
           </>
         )}
-      </Paper>
-    </Box>
+      </Card>
+    </div>
   );
 };
 
