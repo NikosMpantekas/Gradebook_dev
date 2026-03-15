@@ -76,7 +76,7 @@ const sendContactReplyEmail = async ({ name, email, subject, replyBody, original
 // @access  Private (requires authentication)
 const sendContactMessage = asyncHandler(async (req, res) => {
   const { subject, message, isBugReport = false } = req.body;
-  
+
   // Validate input
   if (!subject || !message) {
     res.status(400);
@@ -86,7 +86,7 @@ const sendContactMessage = asyncHandler(async (req, res) => {
   try {
     // Get the user's info to include with the message
     const user = req.user;
-    
+
     // Create a new contact message in the database
     const contactMessage = await Contact.create({
       user: user._id,
@@ -103,12 +103,12 @@ const sendContactMessage = asyncHandler(async (req, res) => {
       adminReplyDate: null,
       replyRead: false
     });
-    
+
     if (!contactMessage) {
       res.status(400);
       throw new Error('Failed to save contact message');
     }
-    
+
     // Log for server-side debugging
     console.log(`${isBugReport ? 'Bug report' : 'Contact message'} saved to database:`, {
       id: contactMessage._id,
@@ -123,11 +123,11 @@ const sendContactMessage = asyncHandler(async (req, res) => {
       isBugReport,
       timestamp: contactMessage.createdAt
     });
-    
-    res.status(201).json({ 
-      success: true, 
-      message: isBugReport 
-        ? 'Your bug report has been saved. We will investigate the issue as soon as possible.' 
+
+    res.status(201).json({
+      success: true,
+      message: isBugReport
+        ? 'Your bug report has been saved. We will investigate the issue as soon as possible.'
         : 'Your message has been saved. We will review it as soon as possible.'
     });
   } catch (error) {
@@ -156,19 +156,19 @@ const getContactMessages = asyncHandler(async (req, res) => {
 
     // Superadmins can see all messages including public ones
     // Regular admins see only their own messages within their school
-    const filter = req.user.role === 'superadmin' 
-      ? {} 
+    const filter = req.user.role === 'superadmin'
+      ? {}
       : { user: req.user._id, schoolId: req.user.schoolId };
 
     console.log('[CONTACT] Using filter', filter);
-        
+
     // Get messages for this user/superadmin, newest first
     const messages = await Contact.find(filter)
       .sort({ createdAt: -1 })
       .lean();
 
     console.log('[CONTACT] Retrieved messages count', messages.length);
-    
+
     // For superadmins, add a "Public" flag to public contact messages
     if (req.user.role === 'superadmin') {
       messages.forEach(message => {
@@ -177,7 +177,7 @@ const getContactMessages = asyncHandler(async (req, res) => {
         }
       });
     }
-    
+
     res.status(200).json(messages);
   } catch (error) {
     console.error('Error retrieving contact messages:', error);
@@ -199,7 +199,7 @@ const updateContactMessage = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const { status, read, adminReply } = req.body;
-    
+
     console.log('[CONTACT] updateContactMessage', { id, status, read, hasReply: !!adminReply });
 
     // ENHANCED FIX: First verify the message exists before attempting updates
@@ -216,10 +216,10 @@ const updateContactMessage = asyncHandler(async (req, res) => {
       read: read !== undefined ? read : true,
       replyRead: false
     };
-    
+
     // Always update the status if provided
     if (status !== undefined) updateData.status = status;
-    
+
     // CRITICAL FIX: If admin is replying OR setting status to replied, ensure proper reply data
     if ((adminReply !== undefined && adminReply.trim() !== '') || status === 'replied') {
       // Make sure we have a valid reply text - use existing reply if present or default message
@@ -228,11 +228,11 @@ const updateContactMessage = asyncHandler(async (req, res) => {
       updateData.status = 'replied'; // Always set status to replied
       updateData.read = true;
       updateData.replyRead = false; // Reset replyRead for new reply
-      
-      console.log('[CONTACT] updateContactMessage - adding reply data', { 
+
+      console.log('[CONTACT] updateContactMessage - adding reply data', {
         replyPreview: (updateData.adminReply || '').substring(0, 30)
       });
-      
+
       // Send email for public contact messages
       if (existingMessage.isPublicContact && adminReply && adminReply.trim() !== '') {
         try {
@@ -285,18 +285,18 @@ const getUserMessages = asyncHandler(async (req, res) => {
       user: req.user._id,
       schoolId: req.user.schoolId
     }).lean();
-    
+
     console.log(`Found ${allUserMessages.length} messages for user ${req.user._id}`);
-    
+
     // EMERGENCY FIX: Check for messages that need repair (status='replied' but no reply text)
-    const messagesToFix = allUserMessages.filter(msg => 
+    const messagesToFix = allUserMessages.filter(msg =>
       msg.status === 'replied' && (!msg.adminReply || msg.adminReply.trim() === '')
     );
-    
+
     // Fix any broken messages before returning them
     if (messagesToFix.length > 0) {
       console.log(`⚠️ CRITICAL: Found ${messagesToFix.length} broken replies - fixing now...`);
-      
+
       // Fix all broken messages
       await Promise.all(messagesToFix.map(async (msg) => {
         // Add default reply text and date if missing
@@ -308,7 +308,7 @@ const getUserMessages = asyncHandler(async (req, res) => {
         console.log(`Fixed broken reply for message: ${msg._id}`);
       }));
     }
-    
+
     // Now get the freshly updated messages
     const messages = await Contact.find({
       user: req.user._id,
@@ -316,26 +316,26 @@ const getUserMessages = asyncHandler(async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .lean();
-    
+
     // Detailed logging to help debug
     console.log(`Returning ${messages.length} messages with ${messages.filter(m => m.status === 'replied').length} replies`);
     messages.forEach((msg, idx) => {
       if (msg.status === 'replied') {
-        console.log(`Message ${idx+1}: ${msg._id} - Replied: ${!!msg.adminReply}, Text length: ${msg.adminReply?.length || 0}`);
+        console.log(`Message ${idx + 1}: ${msg._id} - Replied: ${!!msg.adminReply}, Text length: ${msg.adminReply?.length || 0}`);
       }
     });
-    
+
     // Mark replies as read
-    const unreadReplies = messages.filter(msg => 
+    const unreadReplies = messages.filter(msg =>
       msg.status === 'replied' && !msg.replyRead
     );
-    
+
     if (unreadReplies.length > 0) {
-      await Promise.all(unreadReplies.map(msg => 
+      await Promise.all(unreadReplies.map(msg =>
         Contact.findByIdAndUpdate(msg._id, { replyRead: true })
       ));
     }
-    
+
     // Send to frontend
     res.status(200).json(messages);
   } catch (error) {
@@ -351,7 +351,7 @@ const getUserMessages = asyncHandler(async (req, res) => {
 const markReplyAsRead = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Find the message and ensure it belongs to this user and school
     // Include schoolId in the filter for multi-tenancy
     const message = await Contact.findOne({
@@ -359,16 +359,16 @@ const markReplyAsRead = asyncHandler(async (req, res) => {
       user: req.user._id,
       schoolId: req.user.schoolId
     });
-    
+
     if (!message) {
       res.status(404);
       throw new Error('Message not found or you do not have permission to access it');
     }
-    
+
     // Mark the reply as read
     message.replyRead = true;
     await message.save();
-    
+
     res.status(200).json({ success: true, message: 'Reply marked as read' });
   } catch (error) {
     console.error('Error marking reply as read:', error);
@@ -380,36 +380,36 @@ const markReplyAsRead = asyncHandler(async (req, res) => {
 // MongoDB injection protection utilities
 const sanitizeForMongoDB = (input) => {
   if (typeof input !== 'string') return '';
-  
+
   // Remove MongoDB operators that could be used for injection
   const mongoOperators = [
-    '$where', '$ne', '$gt', '$lt', '$gte', '$lte', '$in', '$nin', '$exists', 
-    '$regex', '$text', '$search', '$or', '$and', '$not', '$nor', '$all', 
+    '$where', '$ne', '$gt', '$lt', '$gte', '$lte', '$in', '$nin', '$exists',
+    '$regex', '$text', '$search', '$or', '$and', '$not', '$nor', '$all',
     '$elemMatch', '$size', '$type', '$mod', '$expr', '$jsonSchema', '$geoWithin',
     '$geoIntersects', '$near', '$nearSphere', '$maxDistance', '$minDistance'
   ];
-  
+
   let sanitized = input;
-  
+
   // Remove MongoDB operators
   mongoOperators.forEach(operator => {
     const regex = new RegExp(operator.replace('$', '\\$'), 'gi');
     sanitized = sanitized.replace(regex, '');
   });
-  
+
   // Remove null bytes and control characters
   sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
-  
+
   // Remove HTML tags
   sanitized = sanitized.replace(/<[^>]*>/g, '');
-  
+
   // Remove script tags and javascript: URLs
   sanitized = sanitized.replace(/javascript:/gi, '');
   sanitized = sanitized.replace(/on\w+\s*=/gi, '');
-  
+
   // Trim whitespace
   sanitized = sanitized.trim();
-  
+
   return sanitized;
 };
 
@@ -417,7 +417,7 @@ const sanitizeForMongoDB = (input) => {
 const validateAndSanitizeInput = (data) => {
   const errors = [];
   const sanitized = {};
-  
+
   // Validate and sanitize name
   if (!data.name || typeof data.name !== 'string') {
     errors.push('Name is required and must be a string');
@@ -431,7 +431,7 @@ const validateAndSanitizeInput = (data) => {
       sanitized.name = name;
     }
   }
-  
+
   // Validate and sanitize email
   if (!data.email || typeof data.email !== 'string') {
     errors.push('Email is required and must be a string');
@@ -444,7 +444,7 @@ const validateAndSanitizeInput = (data) => {
       sanitized.email = email;
     }
   }
-  
+
   // Validate and sanitize subject
   if (!data.subject || typeof data.subject !== 'string') {
     errors.push('Subject is required and must be a string');
@@ -456,7 +456,7 @@ const validateAndSanitizeInput = (data) => {
       sanitized.subject = subject;
     }
   }
-  
+
   // Validate and sanitize message
   if (!data.message || typeof data.message !== 'string') {
     errors.push('Message is required and must be a string');
@@ -468,7 +468,7 @@ const validateAndSanitizeInput = (data) => {
       sanitized.message = message;
     }
   }
-  
+
   return { errors, sanitized };
 };
 
@@ -480,21 +480,21 @@ const checkRateLimit = (ip, email) => {
   const now = Date.now();
   const windowMs = 60000; // 1 minute
   const maxAttempts = 3;
-  
+
   if (!rateLimitMap.has(key)) {
     rateLimitMap.set(key, []);
   }
-  
+
   const attempts = rateLimitMap.get(key);
-  
+
   // Remove old attempts
   const validAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
   rateLimitMap.set(key, validAttempts);
-  
+
   if (validAttempts.length >= maxAttempts) {
     return false;
   }
-  
+
   validAttempts.push(now);
   return true;
 };
@@ -507,20 +507,20 @@ const sendPublicContactMessage = asyncHandler(async (req, res) => {
     // Rate limiting check
     const clientIP = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'];
     const email = req.body.email;
-    
+
     if (!checkRateLimit(clientIP, email)) {
       res.status(429);
       throw new Error('Too many attempts. Please wait before trying again.');
     }
-    
+
     // Validate and sanitize input
     const { errors, sanitized } = validateAndSanitizeInput(req.body);
-    
+
     if (errors.length > 0) {
       res.status(400);
       throw new Error(errors.join(', '));
     }
-    
+
     // Create a new contact message with sanitized data
     const contactMessage = await Contact.create({
       userName: sanitized.name,
@@ -540,12 +540,12 @@ const sendPublicContactMessage = asyncHandler(async (req, res) => {
       referrer: req.headers.referer || '',
       timestamp: new Date(),
     });
-    
+
     if (!contactMessage) {
       res.status(400);
       throw new Error('Failed to save contact message');
     }
-    
+
     // Log for server-side debugging (sanitized)
     console.log('Public contact message saved to database:', {
       id: contactMessage._id,
@@ -558,9 +558,9 @@ const sendPublicContactMessage = asyncHandler(async (req, res) => {
       timestamp: contactMessage.createdAt,
       clientIP: clientIP
     });
-    
-    res.status(201).json({ 
-      success: true, 
+
+    res.status(201).json({
+      success: true,
       message: 'Your message has been sent successfully. We will get back to you soon.'
     });
   } catch (error) {
@@ -575,16 +575,16 @@ const sendPublicContactMessage = asyncHandler(async (req, res) => {
 // @access  Private (admin/superadmin only)
 const deleteContactMessage = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     // Find the message to check if it exists and get schoolId for filtering
     const message = await Contact.findById(id);
-    
+
     if (!message) {
       res.status(404);
       throw new Error('Contact message not found');
     }
-    
+
     // Apply school filtering if user is not superadmin
     if (req.user.role !== 'superadmin' && req.user.schoolId) {
       if (message.schoolId && message.schoolId.toString() !== req.user.schoolId.toString()) {
@@ -592,17 +592,17 @@ const deleteContactMessage = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to delete this message');
       }
     }
-    
+
     // Delete the message
     await Contact.findByIdAndDelete(id);
-    
-    res.json({ 
-      success: true, 
-      message: 'Contact message deleted successfully' 
+
+    res.json({
+      success: true,
+      message: 'Contact message deleted successfully'
     });
-    
+
     console.log(`Contact message ${id} deleted by user ${req.user._id} (${req.user.role})`);
-    
+
   } catch (error) {
     console.error('Error deleting contact message:', error);
     res.status(500);
