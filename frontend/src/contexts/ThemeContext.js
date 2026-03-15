@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../config/appConfig';
 
@@ -404,6 +404,9 @@ export const ThemeProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [apiThemes, setApiThemes] = useState([]);
   const darkMode = useSelector((state) => state.ui?.darkMode || false);
+  // Subscribe to Redux auth state so we can react to login/logout
+  const authUser = useSelector((state) => state.auth?.user);
+  const prevAuthUserRef = useRef(authUser);
 
   useEffect(() => {
     // Only fetch themes if user is authenticated
@@ -428,6 +431,29 @@ export const ThemeProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+  // React to login: when user transitions from null → authenticated,
+  // fetch themes from API and immediately apply the saved theme.
+  useEffect(() => {
+    const wasAuthenticated = prevAuthUserRef.current?.token;
+    const isAuthenticated = authUser?.token;
+    prevAuthUserRef.current = authUser;
+
+    if (!wasAuthenticated && isAuthenticated) {
+      console.log('🎨 User just logged in, fetching themes and applying saved theme');
+      fetchThemesFromAPI();
+
+      // Immediately apply the saved theme using fallback themes
+      // so the user sees the correct colors right away (API fetch will
+      // update later if there are custom API themes).
+      const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+      const themeToApply = themes[savedTheme] ? savedTheme : 'default';
+      setCurrentTheme(themeToApply);
+      if (themes[themeToApply]) {
+        applyTheme(themeToApply, darkMode);
+      }
+    }
+  }, [authUser]);
 
   useEffect(() => {
     if (!loading) {
@@ -712,30 +738,16 @@ export const ThemeProvider = ({ children }) => {
     console.log(`🎨 Applied ${isDark ? 'dark' : 'light'} mode CSS for public pages`);
   };
 
-  // Apply theme whenever current theme or dark mode changes
+  // Apply theme whenever current theme, dark mode, or auth state changes
   useEffect(() => {
-    // Only apply themes if user is authenticated
-    const getUserFromStorage = () => {
-      try {
-        const sessionUser = sessionStorage.getItem('user');
-        const localUser = localStorage.getItem('user');
-        const userStr = sessionUser || localUser;
-        return userStr ? JSON.parse(userStr) : null;
-      } catch {
-        return null;
-      }
-    };
-
-    const user = getUserFromStorage();
-
-    if (!loading && themes[currentTheme] && user && user.token) {
+    if (!loading && themes[currentTheme] && authUser?.token) {
       console.log('🎨 Applying theme for authenticated user:', currentTheme);
       applyTheme(currentTheme, darkMode);
-    } else if (!user || !user.token) {
+    } else if (!authUser?.token) {
       console.log('🎨 No authenticated user, applying public page CSS with dark mode:', darkMode);
       applyPublicPageCSS(darkMode);
     }
-  }, [currentTheme, darkMode, loading, themes]);
+  }, [currentTheme, darkMode, loading, themes, authUser]);
 
   const value = {
     currentTheme,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_URL } from '../config/appConfig';
-import { 
+import {
   Mail as EmailIcon,
   Bug as BugIcon,
   Megaphone as AnnouncementIcon,
@@ -32,18 +32,18 @@ const ContactMessages = () => {
   const location = useLocation();
   const { darkMode } = useTheme();
   const { t } = useTranslation();
-  
-  
-  
+
+
+
   // Check if this is the superadmin patch notes route
   const isSuperadminPatchNotesRoute = location.pathname === '/superadmin/patch-notes';
-  
+
   const [tabValue, setTabValue] = useState('my');
   const [loading, setLoading] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [userMessages, setUserMessages] = useState([]);
   const [patchNotes, setPatchNotes] = useState([]);
-  
+
   // For admins/superadmins only
   const [allMessages, setAllMessages] = useState([]);
 
@@ -67,13 +67,13 @@ const ContactMessages = () => {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    
+
     // If this is the superadmin patch notes route, only fetch patch notes
     if (isSuperadminPatchNotesRoute) {
       fetchPatchNotes();
       return;
     }
-    
+
     // Initial fetches for full contact messages page
     (async () => {
       await Promise.all([
@@ -165,11 +165,11 @@ const ContactMessages = () => {
                 {user?.role === 'superadmin' && (
                   <PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />
                 )}
-                <PatchNotesList 
-                  patchNotes={patchNotes} 
-                  user={user} 
-                  onEdit={handleEditPatchNote} 
-                  onDelete={handleDeletePatchNote} 
+                <PatchNotesList
+                  patchNotes={patchNotes}
+                  user={user}
+                  onEdit={handleEditPatchNote}
+                  onDelete={handleDeletePatchNote}
                 />
               </>
             )}
@@ -181,13 +181,13 @@ const ContactMessages = () => {
 
   const tabDefs = isAdminRole
     ? [
-        { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
-        { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
-      ]
+      { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+      { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+    ]
     : [
-        { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
-        { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
-      ];
+      { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
+      { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
+    ];
 
   return (
     <div className="w-full mx-auto p-4 sm:p-6">
@@ -235,7 +235,7 @@ const ContactMessages = () => {
                 ))}
               </TabsList>
               <Separator className="mt-4 mb-6" />
-              
+
               {/* Content Panels */}
               {tabDefs.map((tab) => (
                 <TabsContent key={tab.key} value={tab.key}>
@@ -244,7 +244,7 @@ const ContactMessages = () => {
               ))}
             </Tabs>
           </div>
-          
+
           {/* Mobile Content Panels */}
           <div className="md:hidden">
             {tabDefs.map((tab) => (
@@ -253,12 +253,12 @@ const ContactMessages = () => {
               </div>
             ))}
           </div>
-          
+
           {/* Contact Support Button - Only visible on "My Messages" tab */}
           {tabValue === 'my' && (
             <div className="flex justify-end mt-6 pt-4 border-t border-border">
-              <Button 
-                onClick={handleOpenContact} 
+              <Button
+                onClick={handleOpenContact}
                 className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-primary/30 hover:bg-primary/20 hover:border-primary/60 group bg-background border-2 border-border shadow-lg text-foreground"
                 size="lg"
               >
@@ -269,7 +269,7 @@ const ContactMessages = () => {
           )}
         </CardContent>
       </Card>
-      
+
       <ContactDeveloper open={contactOpen} onClose={handleCloseContact} />
     </div>
   );

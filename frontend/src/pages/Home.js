@@ -130,12 +130,12 @@ const DashboardMockup = ({ darkMode }) => (
           <svg viewBox="0 0 400 150" className="w-full h-[calc(100%-24px)]" preserveAspectRatio="none">
             <defs>
               <linearGradient id="mockupGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={darkMode ? "#3b82f6" : "#3b82f6"} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={darkMode ? "#3b82f6" : "#3b82f6"} stopOpacity="0.02" />
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
               </linearGradient>
             </defs>
             <path d="M0,120 C40,100 60,80 100,70 C140,60 160,90 200,50 C240,10 280,30 320,25 C360,20 380,40 400,15 L400,150 L0,150 Z" fill="url(#mockupGrad)" />
-            <path d="M0,120 C40,100 60,80 100,70 C140,60 160,90 200,50 C240,10 280,30 320,25 C360,20 380,40 400,15" fill="none" stroke={darkMode ? "#3b82f6" : "#2563eb"} strokeWidth="2.5" />
+            <path d="M0,120 C40,100 60,80 100,70 C140,60 160,90 200,50 C240,10 280,30 320,25 C360,20 380,40 400,15" fill="none" stroke={darkMode ? "#3b82f6" : "#2563eb"} strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </div>
       </div>
@@ -416,46 +416,24 @@ export default function Home() {
                     </p>
                   </div>
                   <div className={cn(
-                    "mt-12 h-72 rounded-xl border overflow-hidden relative",
+                    "mt-12 h-72 rounded-xl border overflow-hidden",
                     darkMode ? "bg-zinc-950 border-zinc-800" : "bg-slate-50/50 border-slate-100"
                   )}>
-                    <svg viewBox="0 0 500 250" className="absolute inset-0 w-full h-full p-4" preserveAspectRatio="xMidYMid meet">
-                      <defs>
-                        <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={darkMode ? "#60a5fa" : "#3b82f6"} stopOpacity="0.35" />
-                          <stop offset="100%" stopColor={darkMode ? "#60a5fa" : "#3b82f6"} stopOpacity="0.03" />
-                        </linearGradient>
-                      </defs>
-                      {/* Grid lines */}
-                      {[50, 100, 150, 200].map(y => (
-                        <line key={y} x1="0" y1={y} x2="500" y2={y} stroke={darkMode ? "#27272a" : "#e2e8f0"} strokeWidth="1" />
-                      ))}
-                      {/* Line */}
-                      <motion.path
-                        d="M0,200 C30,180 50,140 90,130 C130,120 160,170 200,110 C240,50 270,70 310,55 C350,40 380,80 420,35 C450,10 480,30 500,20"
+                    <svg viewBox="0 0 400 150" className="w-full h-full" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                      <style>{`@keyframes drawFeatLine { to { stroke-dashoffset: 0; } }`}</style>
+                      <path
+                        d="M0,138 C60,122 100,108 150,92 C195,78 215,90 255,68 C300,44 340,26 390,10 L400,7"
                         fill="none"
                         stroke={darkMode ? "#60a5fa" : "#2563eb"}
-                        strokeWidth="3"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
-                        initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        strokeLinejoin="round"
+                        style={{
+                          strokeDasharray: 600,
+                          strokeDashoffset: 600,
+                          animation: 'drawFeatLine 1.5s ease-out forwards'
+                        }}
                       />
-                      {/* Dots at key points */}
-                      {[[90, 130], [200, 110], [310, 55], [420, 35]].map(([cx, cy], i) => (
-                        <motion.circle
-                          key={i}
-                          cx={cx} cy={cy} r="5"
-                          fill={darkMode ? "#60a5fa" : "#2563eb"}
-                          stroke={darkMode ? "#18181b" : "#f8fafc"}
-                          strokeWidth="2"
-                          initial={{ scale: 0 }}
-                          whileInView={{ scale: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.3, delay: 0.8 + i * 0.15 }}
-                        />
-                      ))}
                     </svg>
                   </div>
                 </Card>
