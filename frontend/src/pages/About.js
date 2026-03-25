@@ -141,7 +141,7 @@ export default function About() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
+            <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r pb-[env(safe-area-inset-bottom)]", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
               <SheetHeader className="px-6 pt-[max(env(safe-area-inset-top),1.5rem)] pb-6 border-b border-zinc-100/10">
                 <Logo darkMode={darkMode} currentPath={currentPath} />
               </SheetHeader>

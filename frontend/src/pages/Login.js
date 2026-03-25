@@ -340,10 +340,10 @@ const Login = () => {
       </div>
 
       {/* ===== Right Form Panel ===== */}
-      <div className="flex-1 flex flex-col min-h-screen relative">
+      <div className="flex-1 flex flex-col min-h-screen relative pb-[env(safe-area-inset-bottom)]">
 
         {/* Mobile: Compact branded header (shown only on mobile) */}
-        <div className="lg:hidden relative z-10 pt-8 pb-4 px-6 text-center">
+        <div className="lg:hidden relative z-10 pt-[max(env(safe-area-inset-top),2rem)] pb-4 px-6 text-center">
           <RouterLink to="/home" className={cn(
             "text-xl font-bold font-serif py-1 no-underline",
             darkMode ? "text-white" : "text-slate-900"
