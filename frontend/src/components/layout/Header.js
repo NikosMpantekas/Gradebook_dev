@@ -313,6 +313,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         className={cn(
           "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100", // Enhanced frosted glass
           "lg:ml-64 lg:w-[calc(100%-256px)]", // Fixed: 256px = 64 * 4 (lg:w-64 from sidebar)
+          "pt-[env(safe-area-inset-top)]", // iOS notch safe area
           "shadow-sm", // Subtle shadow
           darkMode
             ? "border-[#2a3441]/30"
