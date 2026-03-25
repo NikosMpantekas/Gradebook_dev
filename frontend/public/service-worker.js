@@ -1,10 +1,11 @@
-/* eslint-disable no-restricted-globals */
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 
 // This is the GradeBook service worker
 // It handles caching and offline functionality
 
-// Simple service worker without Workbox manifest dependencies
-// Using only native Cache API
+// Inject Vite build manifest
+precacheAndRoute(self.__WB_MANIFEST || []);
+cleanupOutdatedCaches();
 
 // App version is updated from the main app
 let APP_VERSION = '1.0.0';
@@ -16,14 +17,11 @@ const DYNAMIC_CACHE_NAME = `gradebook-dynamic-${APP_VERSION}`;
 const DATA_CACHE_NAME = `gradebook-api-${APP_VERSION}`;
 const ICON_CACHE_NAME = 'gradebook-icons'; // Separate cache for icons to control updates
 // Assets to cache immediately on install
+// Assets to cache immediately on install (Vite handles this via __WB_MANIFEST)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/static/js/main.chunk.js',
-  '/static/js/bundle.js',
-  '/static/js/vendors~main.chunk.js',
   '/manifest.json',
-  // Add other static assets your app needs
 ];
 
 // Icon files that should be handled separately to allow for automatic updates

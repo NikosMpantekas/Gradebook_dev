@@ -1,0 +1,906 @@
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { API_URL } from '../../config/appConfig';
+import { useTranslation } from 'react-i18next';
+
+// Components
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { Checkbox } from '../../components/ui/checkbox';
+import { DatePicker } from '../../components/ui/date-picker';
+import { EditGradeDialog } from '../../components/grades/GradeDialogs';
+import { Spinner } from '../../components/ui/spinner';
+
+// Icons
+import { BookOpen, Plus, Trash2, Search, Filter, ChevronDown, ChevronUp, Edit as EditIcon } from 'lucide-react';
+
+// Import mobile detection and utilities
+import { useIsMobile } from '../../components/hooks/use-mobile';
+import { cn } from '../../lib/utils';
+
+const ManageGrades = () => {
+  const [grades, setGrades] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    student: 'all',
+    subject: 'all',
+    dateFrom: '',
+    dateTo: ''
+  });
+  const [sortConfig, setSortConfig] = useState({
+    field: 'createdAt',
+    direction: 'desc'
+  });
+  const [expandedFilters, setExpandedFilters] = useState(false);
+  const [selectedGrades, setSelectedGrades] = useState([]);
+  
+  // Edit grade dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editGradeData, setEditGradeData] = useState({
+    id: '',
+    value: 0,
+    description: '',
+    student: '',
+    subject: '',
+    date: new Date(),
+    studentName: '',
+    subjectName: ''
+  });
+
+  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
+
+  // Get token from user object or localStorage as fallback
+  const authToken = user?.token || localStorage.getItem('token');
+
+  useEffect(() => {
+    if (user && authToken) {
+      fetchGrades();
+      fetchStudents();
+      fetchSubjects();
+    } else {
+      toast.error(t('teacherGrades.authRequired'));
+    }
+  }, [user, authToken]);
+
+  const testBackendConnection = async () => {
+    try {
+      console.log('Testing backend connectivity...');
+      const response = await fetch(`${API_URL}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Backend health check response:', response.status);
+    } catch (error) {
+      console.error('Backend connectivity test failed:', error);
+      toast.error(t('teacherGrades.backendWarning'));
+    }
+  };
+
+  const fetchGrades = async () => {
+    try {
+      if (!authToken) {
+        console.error('No authentication token available');
+        return;
+      }
+
+      // Use different endpoints based on user role
+      const endpoint = user.role === 'admin' 
+        ? `${API_URL}/api/grades`  // Admin gets all grades
+        : `${API_URL}/api/grades/teacher/${user._id}`; // Teacher gets their grades
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        console.error('Authentication failed for grades fetch');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setGrades(data.grades || data || []);
+      } else {
+        console.error('Failed to fetch grades:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching grades:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      if (!authToken) {
+        console.error('No authentication token available');
+        return;
+      }
+
+      // Use different endpoints based on user role
+      const endpoint = user.role === 'admin' 
+        ? `${API_URL}/api/users/students`  // Admin gets all students
+        : `${API_URL}/api/users/teacher-students`; // Teacher gets their students
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        console.error('Authentication failed for students fetch');
+        toast.error(t('teacherGrades.authRequired'));
+        return;
+      }
+
+      if (response.status === 403) {
+        const errorMessage = user.role === 'admin' 
+          ? t('teacherGrades.accessDeniedAdmin')
+          : t('teacherGrades.accessDeniedTeacher');
+        console.error(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(data || []);
+        
+        if (!data || data.length === 0) {
+          const message = user.role === 'admin' 
+            ? t('teacherGrades.noStudentsSystem')
+            : t('teacherGrades.noStudentsAssigned');
+          toast.info(message);
+        }
+      } else {
+        console.error('Failed to fetch students:', response.status, response.statusText);
+        toast.error(t('teacherGrades.fetchStudentsFailed'));
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast.error(t('teacherGrades.fetchStudentsError'));
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      if (!authToken) {
+        console.error('No authentication token available');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/subjects`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 401) {
+        console.error('Authentication failed for subjects fetch');
+        return;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setSubjects(data.subjects || data || []);
+      } else {
+        console.error('Failed to fetch subjects:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+    }
+  };
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleGradeSelection = (gradeId) => {
+    setSelectedGrades(prev => {
+      if (prev.includes(gradeId)) {
+        return prev.filter(id => id !== gradeId);
+      } else {
+        return [...prev, gradeId];
+      }
+    });
+  };
+
+  const handleEditGrade = (grade) => {
+    setEditGradeData({
+      id: grade._id,
+      value: grade.value || 0,
+      description: grade.description || '',
+      student: grade.student?._id || '',
+      subject: grade.subject?._id || '',
+      date: grade.date ? new Date(grade.date) : new Date(grade.createdAt),
+      studentName: grade.student?.name || 'Unknown Student',
+      subjectName: grade.subject?.name || 'Unknown Subject'
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditDialogOpen(false);
+    setEditGradeData({
+      id: '',
+      value: 0,
+      description: '',
+      student: '',
+      subject: '',
+      date: new Date(),
+      studentName: '',
+      subjectName: ''
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    
+    let processedValue = value;
+    if (name === 'value') {
+      const numValue = value === '' ? '' : Math.min(Math.max(parseInt(value, 10) || 0, 0), 100);
+      processedValue = numValue;
+    } else if (name === 'date') {
+      processedValue = value ? new Date(value) : new Date();
+    }
+    
+    setEditGradeData({
+      ...editGradeData,
+      [name]: processedValue,
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editGradeData.id) {
+      toast.error(t('teacherGrades.noGradeId'));
+      return;
+    }
+
+    if (editGradeData.value === '' || editGradeData.value === null) {
+      toast.error(t('teacherGrades.emptyGradeValue'));
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/grades/${editGradeData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          value: editGradeData.value,
+          description: editGradeData.description,
+          date: editGradeData.date
+        })
+      });
+
+      if (response.ok) {
+        toast.success(t('teacherGrades.updateSuccess'));
+        handleEditClose();
+        fetchGrades(); // Refresh the grades list
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error updating grade:', error);
+      toast.error(error.message || t('teacherGrades.updateFailed'));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(t('teacherGrades.confirmDeleteMany', { count: selectedGrades.length }))) {
+      return;
+    }
+
+    try {
+      const promises = selectedGrades.map(gradeId =>
+        fetch(`${API_URL}/api/grades/${gradeId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      await Promise.all(promises);
+      toast.success(t('teacherGrades.deleteManySuccess', { count: selectedGrades.length }));
+      setSelectedGrades([]);
+      fetchGrades();
+    } catch (error) {
+      console.error('Error deleting grades:', error);
+      toast.error(t('teacherGrades.deleteManyFailed'));
+    }
+  };
+
+  const handleDeleteGrade = async (gradeId) => {
+    if (!window.confirm(t('teacherGrades.confirmDeleteOne'))) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/grades/${gradeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success(t('teacherGrades.deleteSuccess'));
+        fetchGrades(); // Refresh the list
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error deleting grade:', error);
+      toast.error(error.message || t('teacherGrades.deleteFailed'));
+    }
+  };
+
+  const getFilteredAndSortedGrades = () => {
+    let filtered = [...grades];
+
+    // Apply filters
+    if (filters.student !== 'all') {
+      filtered = filtered.filter(grade => grade.student._id === filters.student);
+    }
+    if (filters.subject !== 'all') {
+      filtered = filtered.filter(grade => grade.subject._id === filters.subject);
+    }
+    if (filters.dateFrom) {
+      filtered = filtered.filter(grade => new Date(grade.createdAt) >= new Date(filters.dateFrom));
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(grade => new Date(grade.createdAt) <= new Date(filters.dateTo));
+    }
+
+    // Apply search
+    if (searchTerm) {
+      filtered = filtered.filter(grade =>
+        grade.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grade.subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grade.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortConfig.field) {
+        case 'student':
+          aValue = a.student.name;
+          bValue = b.student.name;
+          break;
+        case 'subject':
+          aValue = a.subject.name;
+          bValue = b.subject.name;
+          break;
+        case 'value':
+          aValue = parseFloat(a.value);
+          bValue = parseFloat(b.value);
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        default:
+          aValue = a[sortConfig.field];
+          bValue = b[sortConfig.field];
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    return filtered;
+  };
+
+  const handleSort = (field) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      student: 'all',
+      subject: 'all',
+      dateFrom: '',
+      dateTo: ''
+    });
+    setSearchTerm('');
+  };
+
+  const filteredGrades = getFilteredAndSortedGrades();
+
+  // Mobile card layout for grades
+  const renderMobileContent = () => {
+    if (filteredGrades.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t('teacherGrades.noGrades')}</h3>
+          <p className="text-muted-foreground">
+            {grades.length === 0 ? t('teacherGrades.noGradesYet') : t('teacherGrades.noGradesMatch')}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-1 sm:px-2">
+        {filteredGrades.map((grade) => (
+          <Card
+            key={grade._id}
+            className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-600 dark:hover:shadow-gray-800/50"
+          >
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center">
+                  <Checkbox 
+                    checked={selectedGrades.includes(grade._id)}
+                    onCheckedChange={() => handleGradeSelection(grade._id)}
+                  />
+                </div>
+                
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
+                      {grade.student?.name || t('teacherGrades.unknownStudent')}
+                    </h3>
+                    <Badge variant={grade.value >= 5 ? 'default' : 'destructive'} className="text-sm">
+                      {grade.value}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {grade.subject?.name || t('teacherGrades.unknownSubject')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(grade.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  {grade.description && (
+                    <div className="mb-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {grade.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Action buttons */}
+              <div className="flex justify-end mt-4 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditGrade(grade)}
+                  title={t('teacherGrades.edit')}
+                  className="hover:bg-muted dark:hover:bg-gray-700"
+                >
+                  <EditIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteGrade(grade._id)}
+                  title={t('common.delete')}
+                  className="hover:bg-red-700 dark:hover:bg-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  // Desktop table layout
+  const renderDesktopContent = () => {
+    return (
+      <div className="rounded-lg border bg-card dark:border-gray-600">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="text-left p-4 text-foreground font-medium">
+                  <Checkbox 
+                    checked={selectedGrades.length === filteredGrades.length && filteredGrades.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedGrades(filteredGrades.map(grade => grade._id));
+                      } else {
+                        setSelectedGrades([]);
+                      }
+                    }}
+                  />
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('student')}
+                >
+                  {t('teacherGrades.tableStudent')}
+                  {sortConfig.field === 'student' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('subject')}
+                >
+                  {t('teacherGrades.tableSubject')}
+                  {sortConfig.field === 'subject' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('value')}
+                >
+                  {t('teacherGrades.tableGrade')}
+                  {sortConfig.field === 'value' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th 
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  onClick={() => handleSort('createdAt')}
+                >
+                  {t('teacherGrades.tableDate')}
+                  {sortConfig.field === 'createdAt' && (
+                    <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+                <th className="text-left p-4 text-foreground font-medium">{t('teacherGrades.tableDescription')}</th>
+                <th className="text-left p-4 text-foreground font-medium">{t('teacherGrades.tableActions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredGrades.length > 0 ? (
+                filteredGrades.map((grade) => (
+                  <tr key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                    <td className="p-4">
+                      <Checkbox 
+                        checked={selectedGrades.includes(grade._id)}
+                        onCheckedChange={() => handleGradeSelection(grade._id)}
+                      />
+                    </td>
+                    <td className="p-4 font-medium text-foreground text-base">{grade.student?.name || t('teacherGrades.unknownStudent')}</td>
+                    <td className="p-4 text-foreground text-base">{grade.subject?.name || t('teacherGrades.unknownSubject')}</td>
+                    <td className="p-4">
+                      <Badge variant={grade.value >= 5 ? 'default' : 'destructive'} className="text-sm">
+                        {grade.value}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-foreground text-base">
+                      {new Date(grade.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 text-foreground text-base max-w-xs truncate">
+                      {grade.description || '-'}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditGrade(grade)}
+                          title={t('teacherGrades.edit')}
+                          className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                        >
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteGrade(grade._id)}
+                          title={t('common.delete')}
+                          className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <div className="text-center">
+                      <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">{t('teacherGrades.noGrades')}</h3>
+                      <p className="text-muted-foreground">
+                        {grades.length === 0 ? t('teacherGrades.noGradesYet') : t('teacherGrades.noGradesMatch')}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Spinner className="text-primary" />
+          <p className="text-muted-foreground">{t('teacherGrades.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {user.role === 'admin' ? t('teacherGrades.adminTitle') : t('teacherGrades.teacherTitle')}
+            </h1>
+            <p className="text-muted-foreground">
+              {user.role === 'admin' 
+                ? t('teacherGrades.adminSubtitle')
+                : t('teacherGrades.teacherSubtitle')
+              }
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate(user.role === 'admin' ? '/app/admin/grades/create' : '/app/teacher/grades/create')}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            {t('teacherGrades.createGrade')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Filter Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              {t('teacherGrades.filtersTitle')}
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpandedFilters(!expandedFilters)}
+            >
+              {expandedFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {expandedFilters ? t('teacherGrades.hideFilters') : t('teacherGrades.showFilters')}
+            </Button>
+          </div>
+        </CardHeader>
+        
+        <Collapsible open={expandedFilters}>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* Search */}
+                <div className="space-y-2">
+                  <Label>{t('teacherGrades.search')}</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={t('teacherGrades.searchPlaceholder')}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Student Filter */}
+                <div className="space-y-2">
+                  <Label>{t('teacherGrades.student')}</Label>
+                  <Select
+                    value={filters.student}
+                    onValueChange={(value) => handleFilterChange('student', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('teacherGrades.allStudents')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('teacherGrades.allStudents')}</SelectItem>
+                      {students.map((student) => (
+                        <SelectItem key={student._id} value={student._id}>
+                          {student.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Subject Filter */}
+                <div className="space-y-2">
+                  <Label>{t('teacherGrades.subject')}</Label>
+                  <Select
+                    value={filters.subject}
+                    onValueChange={(value) => handleFilterChange('subject', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('teacherGrades.allSubjects')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('teacherGrades.allSubjects')}</SelectItem>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject._id} value={subject._id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Date From */}
+                <div className="space-y-2">
+                  <Label>{t('teacherGrades.dateFrom')}</Label>
+                  {/* Mobile: Native date input */}
+                  <div className="block sm:hidden">
+                    <Input
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                      max={filters.dateTo || new Date().toISOString().split('T')[0]}
+                      className="w-full min-w-0"
+                      style={{ WebkitAppearance: 'none' }}
+                      inputMode="none"
+                    />
+                  </div>
+                  {/* Desktop: Beautiful DatePicker */}
+                  <div className="hidden sm:block">
+                    <DatePicker
+                      placeholder={t('teacherGrades.dateFrom')}
+                      value={filters.dateFrom}
+                      onChange={(value) => handleFilterChange('dateFrom', value)}
+                      max={filters.dateTo || new Date().toISOString().split('T')[0]}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Date To */}
+                <div className="space-y-2">
+                  <Label>{t('teacherGrades.dateTo')}</Label>
+                  {/* Mobile: Native date input */}
+                  <div className="block sm:hidden">
+                    <Input
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                      disabled={!filters.dateFrom}
+                      min={filters.dateFrom}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full min-w-0"
+                      style={{ WebkitAppearance: 'none' }}
+                      inputMode="none"
+                    />
+                  </div>
+                  {/* Desktop: Beautiful DatePicker */}
+                  <div className="hidden sm:block">
+                    <DatePicker
+                      placeholder={t('teacherGrades.dateTo')}
+                      value={filters.dateTo}
+                      onChange={(value) => handleFilterChange('dateTo', value)}
+                      disabled={!filters.dateFrom}
+                      min={filters.dateFrom}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-4">
+                <Button variant="outline" onClick={clearFilters}>
+                  {t('teacherGrades.clearAllFilters')}
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {t('teacherGrades.countSummary', { count: filteredGrades.length, total: grades.length })}
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Bulk Actions */}
+      {selectedGrades.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {t('teacherGrades.bulkSelected', { count: selectedGrades.length })}
+              </span>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setSelectedGrades([])}>
+                  {t('teacherGrades.deselectAll')}
+                </Button>
+                <Button variant="destructive" onClick={handleBulkDelete}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('teacherGrades.deleteSelected')}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Grades List */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
+          {t('teacherGrades.gradesHeading', { count: filteredGrades.length })}
+        </h2>
+        
+        {/* Responsive layout */}
+        {isMobile ? renderMobileContent() : renderDesktopContent()}
+      </div>
+
+      {/* Edit Grade Dialog */}
+      <EditGradeDialog
+        open={editDialogOpen}
+        handleClose={handleEditClose}
+        editGradeData={editGradeData}
+        handleEditChange={handleEditChange}
+        handleEditSave={handleEditSave}
+        subjects={subjects}
+        user={user}
+      />
+    </div>
+  );
+};
+
+export default ManageGrades; 
