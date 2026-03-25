@@ -128,6 +128,7 @@ export default function About() {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300",
+          "pt-[env(safe-area-inset-top)]",
           scrolled
             ? (darkMode ? "bg-zinc-900/80 border-b border-zinc-800/50 backdrop-blur-md" : "bg-gray-50/80 border-b border-slate-200/50 backdrop-blur-md")
             : "bg-transparent border-transparent"
@@ -141,7 +142,7 @@ export default function About() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
-              <SheetHeader className="p-6 border-b border-zinc-100/10">
+              <SheetHeader className="px-6 pt-[max(env(safe-area-inset-top),1.5rem)] pb-6 border-b border-zinc-100/10">
                 <Logo darkMode={darkMode} currentPath={currentPath} />
               </SheetHeader>
               <div className="p-4">
