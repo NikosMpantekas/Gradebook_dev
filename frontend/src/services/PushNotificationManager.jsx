@@ -580,32 +580,7 @@ class PushNotificationManager {
     }
   }
 
-  /**
-   * Disable push notifications (unsubscribe)
-   */
-  async disablePushNotifications() {
-    try {
-      console.log('[PushManager] Disabling push notifications...');
-      
-      const registration = await navigator.serviceWorker.getRegistration('/');
-      if (!registration || !registration.pushManager) {
-        console.log('[PushManager] No service worker registration found');
-        return { success: true, message: 'No subscription to remove' };
-      }
 
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        console.log('[PushManager] Unsubscribing from push notifications');
-        await subscription.unsubscribe();
-        console.log('[PushManager] Successfully unsubscribed from push notifications');
-      }
-
-      return { success: true, message: 'Push notifications disabled' };
-    } catch (error) {
-      console.error('[PushManager] Error disabling push notifications:', error);
-      return { success: false, error: error.message };
-    }
-  }
 
   /**
    * Clear existing subscription to force fresh permission prompt
