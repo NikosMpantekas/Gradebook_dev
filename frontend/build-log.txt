@@ -1,40 +1,45 @@
-[36mvite v8.0.2 [32mbuilding client environment for production...[36m[39m
-[2K
-transforming...✓ 15413 modules transformed.
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+[plugin vite:esbuild] src/services/PushNotificationManager.jsx: Duplicate member "disablePushNotifications" in class body
+584|     * Disable push notifications (unsubscribe)
+585|     */
+586|    async disablePushNotifications() {
+   |          ^
+587|      try {
+588|        console.log('[PushManager] Disabling push notifications...');
+
+[32m✓[39m 15495 modules transformed.
 rendering chunks...
+[plugin vite:reporter] 
+(!) D:/Desktop/Productivity/Gradebook_dev/frontend/src/services/PushNotificationManager.jsx is dynamically imported by D:/Desktop/Productivity/Gradebook_dev/frontend/src/components/layout/Header.jsx, D:/Desktop/Productivity/Gradebook_dev/frontend/src/components/layout/Header.jsx but also statically imported by D:/Desktop/Productivity/Gradebook_dev/frontend/src/App.jsx, dynamic import will not move module into another chunk.
+
 computing gzip size...
-build/registerSW.js                            0.14 kB
-build/index.html                               2.57 kB │ gzip:   1.03 kB
-build/assets/index-Be-12tcq.css              123.70 kB │ gzip:  20.56 kB
-build/assets/chunk-BEqpzyXh.js                 0.81 kB │ gzip:   0.46 kB
-build/assets/browser-ponyfill-BZx0h5HZ.js      9.77 kB │ gzip:   3.27 kB │ map:     29.79 kB
-build/assets/index-Doziv683.js             3,721.91 kB │ gzip: 936.14 kB │ map: 12,807.86 kB
+[2mbuild/[22m[32mregisterSW.js                        [39m[1m[2m    0.15 kB[22m[1m[22m
+[2mbuild/[22m[32mindex.html                           [39m[1m[2m    2.50 kB[22m[1m[22m[2m │ gzip:   1.01 kB[22m
+[2mbuild/[22m[35massets/index-DyWHMGG7.css            [39m[1m[2m  127.11 kB[22m[1m[22m[2m │ gzip:  20.64 kB[22m
+[2mbuild/[22m[36massets/browser-ponyfill-Cah-cm_A.js  [39m[1m[2m   10.35 kB[22m[1m[22m[2m │ gzip:   3.56 kB[22m[2m │ map:     31.90 kB[22m
+[2mbuild/[22m[36massets/index-CBaLA1X8.js             [39m[1m[33m4,309.67 kB[39m[22m[2m │ gzip: 984.07 kB[22m[2m │ map: 13,880.54 kB[22m
 
-[INEFFECTIVE_DYNAMIC_IMPORT] Warning: src/services/PushNotificationManager.jsx is dynamically imported by src/components/layout/Header.jsx but also statically imported by src/App.jsx, dynamic import will not move module into another chunk.
-
-[plugin builtin:vite-reporter] 
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
-- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
-[32m✓ built in 10.77s[39m
+[32m✓ built in 35.97s[39m
+
 PWA v1.2.0
 Building public/service-worker.js service worker ("es" format)...
-[36mvite v8.0.2 [32mbuilding client environment for production...[36m[39m
-
- WARN  inlineDynamicImports option is deprecated, please use codeSplitting: false instead.
-
-[2K
-transforming...✓ 54 modules transformed.
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 53 modules transformed.
 rendering chunks...
 computing gzip size...
-build/service-worker.mjs  33.52 kB │ gzip: 10.66 kB │ map: 173.05 kB
+[2mbuild/[22m[36mservice-worker.mjs  [39m[1m[2m34.07 kB[22m[1m[22m[2m │ gzip: 10.88 kB[22m[2m │ map: 181.80 kB[22m
+[32m✓ built in 1.83s[39m
 
-[32m✓ built in 56ms[39m
 PWA v1.2.0
 mode      injectManifest
 format:   es
-precache  21 entries (4043.43 KiB)
+precache  20 entries (4620.43 KiB)
 files generated
   build/service-worker.js
   build/service-worker.js.map
