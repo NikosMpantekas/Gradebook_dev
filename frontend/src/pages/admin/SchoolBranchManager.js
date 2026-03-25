@@ -14,11 +14,9 @@ import {
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Spinner } from '../../components/ui/spinner';
 
 // Lucide React icons
@@ -46,17 +44,17 @@ const SchoolBranchManager = () => {
     (state) => state.schools
   );
   const { darkMode } = useSelector((state) => state.ui);
-  
+
   // Filter states
   const [filteredSchools, setFilteredSchools] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showClusterSchools, setShowClusterSchools] = useState(false);
-  
+
   // Dialog states
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  
+
   // School branch being edited or added
   const [schoolBranch, setSchoolBranch] = useState({
     name: '',
@@ -66,36 +64,36 @@ const SchoolBranchManager = () => {
     parentCluster: null,
     branchDescription: '',
   });
-  
+
   // Get current user
   const { user } = useSelector((state) => state.auth);
-  
+
   // ID of school to delete
   const [schoolIdToDelete, setSchoolIdToDelete] = useState(null);
-  
+
   // Form validation
   const [formErrors, setFormErrors] = useState({});
-  
+
   // Load schools on component mount
   useEffect(() => {
     dispatch(getSchools());
-    
+
     return () => {
       dispatch(reset());
     };
   }, [dispatch]);
-  
+
   // Update filtered schools when schools or search term changes
   useEffect(() => {
     if (isError) {
       toast.error(message);
     }
-    
+
     if (schools) {
       applyFilters();
     }
   }, [schools, searchTerm, showClusterSchools, isError, message]);
-  
+
   // Apply filters to schools data
   const applyFilters = useCallback(() => {
     try {
@@ -106,38 +104,38 @@ const SchoolBranchManager = () => {
       }
 
       let filtered = schools;
-      
-      
+
+
       // Apply search filter
       if (searchTerm.trim() !== '') {
         filtered = filtered.filter(school => {
-          const nameMatch = school.name && typeof school.name === 'string' ? 
+          const nameMatch = school.name && typeof school.name === 'string' ?
             school.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-            
-          const addressMatch = school.address && typeof school.address === 'string' ? 
+
+          const addressMatch = school.address && typeof school.address === 'string' ?
             school.address.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-            
-          const phoneMatch = school.phone && typeof school.phone === 'string' ? 
+
+          const phoneMatch = school.phone && typeof school.phone === 'string' ?
             school.phone.includes(searchTerm) : false;
-            
-          const emailMatch = school.email && typeof school.email === 'string' ? 
+
+          const emailMatch = school.email && typeof school.email === 'string' ?
             school.email.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-            
+
           return nameMatch || addressMatch || phoneMatch || emailMatch;
         });
       }
-      
+
       setFilteredSchools(filtered);
     } catch (error) {
       console.error('Error in applyFilters:', error);
       setFilteredSchools([]);
     }
   }, [schools, searchTerm, showClusterSchools]);
-  
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
-  
+
   // Dialog handlers
   const handleOpenAddDialog = () => {
     setSchoolBranch({
@@ -151,7 +149,7 @@ const SchoolBranchManager = () => {
     setFormErrors({});
     setOpenAddDialog(true);
   };
-  
+
   const handleCloseAddDialog = () => {
     setOpenAddDialog(false);
     setSchoolBranch({
@@ -164,7 +162,7 @@ const SchoolBranchManager = () => {
     });
     setFormErrors({});
   };
-  
+
   const handleOpenEditDialog = (school) => {
     setSchoolBranch({
       ...school,
@@ -173,7 +171,7 @@ const SchoolBranchManager = () => {
     setFormErrors({});
     setOpenEditDialog(true);
   };
-  
+
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
     setSchoolBranch({
@@ -186,21 +184,21 @@ const SchoolBranchManager = () => {
     });
     setFormErrors({});
   };
-  
+
   const handleOpenDeleteDialog = (id) => {
     setSchoolIdToDelete(id);
     setOpenDeleteDialog(true);
   };
-  
+
   const handleCloseDeleteDialog = () => {
     setOpenDeleteDialog(false);
     setSchoolIdToDelete(null);
   };
-  
+
   // Form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Clear error when field is modified
     if (formErrors[name]) {
       setFormErrors({
@@ -208,43 +206,43 @@ const SchoolBranchManager = () => {
         [name]: '',
       });
     }
-    
+
     setSchoolBranch({
       ...schoolBranch,
       [name]: value,
     });
   };
-  
+
   const handleCheckboxChange = (name, checked) => {
     setSchoolBranch({
       ...schoolBranch,
       [name]: checked,
     });
   };
-  
+
   const validateForm = () => {
     const errors = {};
-    
+
     if (!schoolBranch.name.trim()) {
       errors.name = t('admin.manageSchoolsPage.form.errors.schoolNameRequired');
     }
-    
+
     if (!schoolBranch.address.trim()) {
       errors.address = t('admin.manageSchoolsPage.form.errors.addressRequired');
     }
-    
+
     if (!schoolBranch.phone.trim()) {
       errors.phone = t('admin.manageSchoolsPage.form.errors.phoneRequired');
     }
-    
+
     if (schoolBranch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(schoolBranch.email)) {
       errors.email = t('admin.manageSchoolsPage.form.errors.validEmail');
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  
+
   // CRUD operations
   const handleAddSchool = () => {
     if (validateForm()) {
@@ -259,14 +257,14 @@ const SchoolBranchManager = () => {
         });
     }
   };
-  
+
   const handleEditSchool = () => {
     if (validateForm()) {
       if (!schoolBranch._id) {
         toast.error(t('admin.manageSchoolsPage.messages.missingSchoolId'));
         return;
       }
-      
+
       const schoolId = schoolBranch._id;
       const schoolData = {
         name: schoolBranch.name,
@@ -276,7 +274,7 @@ const SchoolBranchManager = () => {
         parentCluster: schoolBranch.parentCluster,
         branchDescription: schoolBranch.branchDescription,
       };
-      
+
       dispatch(updateSchool({ id: schoolId, schoolData }))
         .unwrap()
         .then((result) => {
@@ -293,7 +291,7 @@ const SchoolBranchManager = () => {
         });
     }
   };
-  
+
   const handleDeleteSchool = () => {
     dispatch(deleteSchool(schoolIdToDelete))
       .unwrap()
@@ -346,14 +344,14 @@ const SchoolBranchManager = () => {
                     <SchoolIcon className="h-6 w-6" />
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg text-foreground">
                       {school.name}
                     </h3>
                   </div>
-                  
+
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <LocationIcon className="h-4 w-4" />
@@ -372,7 +370,7 @@ const SchoolBranchManager = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Action buttons */}
               <div className="flex justify-end mt-4 gap-2">
                 <Button
@@ -521,7 +519,7 @@ const SchoolBranchManager = () => {
       </div>
     );
   };
-  
+
   // Show loading state if data is being loaded
   if (isLoading) {
     return (
@@ -533,7 +531,7 @@ const SchoolBranchManager = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="mb-6">
@@ -544,7 +542,7 @@ const SchoolBranchManager = () => {
           {t('admin.manageSchoolsPage.subtitle')}
         </p>
       </div>
-      
+
       {/* Search and add controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div className="flex items-center gap-4 flex-1">
@@ -557,9 +555,9 @@ const SchoolBranchManager = () => {
               className="pl-10"
             />
           </div>
-          
+
         </div>
-        
+
         <Button
           onClick={handleOpenAddDialog}
           className="w-full sm:w-auto gap-2"
@@ -568,16 +566,16 @@ const SchoolBranchManager = () => {
           {t('admin.manageSchoolsPage.addSchoolBranch')}
         </Button>
       </div>
-      
+
       {/* Schools table */}
       {isMobile ? renderMobileContent() : renderDesktopContent()}
-      
+
       {/* Add School Branch Dialog */}
       <Dialog open={openAddDialog} onOpenChange={handleCloseAddDialog}>
         <DialogContent className={cn(
           "w-[90vw] max-w-2xl transition-colors duration-100",
-          darkMode 
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          darkMode
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
             : "bg-background text-foreground border-border"
         )}>
           <DialogHeader>
@@ -586,7 +584,7 @@ const SchoolBranchManager = () => {
               {t('admin.manageSchoolsPage.dialogs.addSchool.subtitle')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={(e) => { e.preventDefault(); handleAddSchool(); }} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -606,7 +604,7 @@ const SchoolBranchManager = () => {
                   <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
                 )}
               </div>
-              
+
               <div>
                 <Label htmlFor="phone" className="text-sm font-medium">
                   {t('admin.manageSchoolsPage.form.phone')} *
@@ -624,7 +622,7 @@ const SchoolBranchManager = () => {
                 )}
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="address" className="text-sm font-medium">
                 {t('admin.manageSchoolsPage.form.address')} *
@@ -641,7 +639,7 @@ const SchoolBranchManager = () => {
                 <p className="text-sm text-red-600 mt-1">{formErrors.address}</p>
               )}
             </div>
-            
+
             <div>
               <Label htmlFor="email" className="text-sm font-medium">
                 {t('admin.manageSchoolsPage.form.email')}
@@ -658,7 +656,7 @@ const SchoolBranchManager = () => {
                 <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
               )}
             </div>
-            
+
             <div>
               <Label htmlFor="branchDescription" className="text-sm font-medium">
                 {t('admin.manageSchoolsPage.form.description')}
@@ -671,8 +669,8 @@ const SchoolBranchManager = () => {
                 className="mt-1"
               />
             </div>
-            
-            
+
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseAddDialog}>
                 {t('common.cancel')}
@@ -684,13 +682,13 @@ const SchoolBranchManager = () => {
           </form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit School Branch Dialog */}
       <Dialog open={openEditDialog} onOpenChange={handleCloseEditDialog}>
         <DialogContent className={cn(
           "w-[90vw] max-w-2xl transition-colors duration-100",
-          darkMode 
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          darkMode
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
             : "bg-background text-foreground border-border"
         )}>
           <DialogHeader>
@@ -699,7 +697,7 @@ const SchoolBranchManager = () => {
               {t('admin.manageSchoolsPage.dialogs.editSchool.subtitle')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={(e) => { e.preventDefault(); handleEditSchool(); }} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -719,7 +717,7 @@ const SchoolBranchManager = () => {
                   <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
                 )}
               </div>
-              
+
               <div>
                 <Label htmlFor="edit-phone" className="text-sm font-medium">
                   {t('admin.manageSchoolsPage.form.phone')} *
@@ -737,7 +735,7 @@ const SchoolBranchManager = () => {
                 )}
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="edit-address" className="text-sm font-medium">
                 {t('admin.manageSchoolsPage.form.address')} *
@@ -754,7 +752,7 @@ const SchoolBranchManager = () => {
                 <p className="text-sm text-red-600 mt-1">{formErrors.address}</p>
               )}
             </div>
-            
+
             <div>
               <Label htmlFor="edit-email" className="text-sm font-medium">
                 {t('admin.manageSchoolsPage.form.email')}
@@ -771,7 +769,7 @@ const SchoolBranchManager = () => {
                 <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
               )}
             </div>
-            
+
             <div>
               <Label htmlFor="edit-branchDescription" className="text-sm font-medium">
                 {t('admin.manageSchoolsPage.form.description')}
@@ -784,8 +782,8 @@ const SchoolBranchManager = () => {
                 className="mt-1"
               />
             </div>
-            
-            
+
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseEditDialog}>
                 {t('common.cancel')}
@@ -797,13 +795,13 @@ const SchoolBranchManager = () => {
           </form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete School Branch Dialog */}
       <Dialog open={openDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
         <DialogContent className={cn(
           "w-[90vw] max-w-md transition-colors duration-100",
-          darkMode 
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          darkMode
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
             : "bg-background text-foreground border-border"
         )}>
           <DialogHeader>

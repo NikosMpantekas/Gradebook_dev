@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   ChevronDown,
   Bug,
   Mail,
@@ -28,15 +28,15 @@ const UserMessagesList = ({ messages }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'new':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary text-primary-foreground';
       case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning text-warning-foreground';
       case 'replied':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success text-success-foreground';
       case 'closed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-info text-info-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -65,7 +65,7 @@ const UserMessagesList = ({ messages }) => {
         <Card key={message._id} className="overflow-hidden border-2 border-gray-600 dark:border-gray-400">
           <Collapsible open={expandedMessage === message._id}>
             <CollapsibleTrigger asChild>
-              <CardHeader 
+              <CardHeader
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => toggleMessage(message._id)}
               >
@@ -85,19 +85,18 @@ const UserMessagesList = ({ messages }) => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Badge className={getStatusColor(message.status)}>
                       {getStatusLabel(message.status)}
                     </Badge>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${
-                      expandedMessage === message._id ? 'rotate-180' : ''
-                    }`} />
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedMessage === message._id ? 'rotate-180' : ''
+                      }`} />
                   </div>
                 </div>
               </CardHeader>
             </CollapsibleTrigger>
-            
+
             <CollapsibleContent>
               <CardContent className="pt-0">
                 <div className="space-y-4">
@@ -107,7 +106,7 @@ const UserMessagesList = ({ messages }) => {
                       {message.message}
                     </p>
                   </div>
-                  
+
                   {message.adminReply && (
                     <div>
                       <h4 className="font-medium text-foreground mb-2">{t('contactMessages.adminReply')}</h4>
@@ -118,7 +117,7 @@ const UserMessagesList = ({ messages }) => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="text-xs text-muted-foreground">
                     {t('contactMessages.sent')}: {new Date(message.createdAt).toLocaleDateString()}
                   </div>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { BarChart3 } from "lucide-react";

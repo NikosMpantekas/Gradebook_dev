@@ -105,39 +105,6 @@ export const fallbackThemes = {
       ring: '#CCA8A2'
     }
   },
-  earth: {
-    id: 'earth',
-    name: 'Earth Sage',
-    description: 'Muted sage tones with natural calm',
-    colors: {
-      primary: '#8CAA90',
-      secondary: '#F4F7F5',
-      accent: '#9CB4A0',
-      background: '#FEFEFE',
-      foreground: '#303D34',
-      card: '#FFFFFF',
-      'card-foreground': '#303D34',
-      muted: '#EAF0EC',
-      'muted-foreground': '#5A7060',
-      border: '#C8D8CC',
-      input: '#F0FDF4',
-      ring: '#8CAA90'
-    },
-    darkColors: {
-      primary: '#9CB8A0',
-      secondary: '#1C221C',
-      accent: '#B0C8B0',
-      background: '#161A16',
-      foreground: '#E4F0E8',
-      card: '#1C221C',
-      'card-foreground': '#E4F0E8',
-      muted: '#2E382E',
-      'muted-foreground': '#98B8A0',
-      border: '#3E4C3E',
-      input: '#1C221C',
-      ring: '#9CB8A0'
-    }
-  },
   nature: {
     id: 'nature',
     name: 'Fresh Mint',
@@ -202,39 +169,6 @@ export const fallbackThemes = {
       border: '#443E50',
       input: '#201E26',
       ring: '#AEA8C8'
-    }
-  },
-  cream: {
-    id: 'cream',
-    name: 'Elegant Cream',
-    description: 'Muted cream with gentle warmth',
-    colors: {
-      primary: '#BCA88C',
-      secondary: '#F8F6F2',
-      accent: '#C4B09C',
-      background: '#FEFEFE',
-      foreground: '#3A3430',
-      card: '#FFFFFF',
-      'card-foreground': '#3A3430',
-      muted: '#F4EEE6',
-      'muted-foreground': '#7A6E5C',
-      border: '#E0D8CC',
-      input: '#FFFBEB',
-      ring: '#BCA88C'
-    },
-    darkColors: {
-      primary: '#C4B09C',
-      secondary: '#22201C',
-      accent: '#D0C0AC',
-      background: '#1A1816',
-      foreground: '#F0E8DC',
-      card: '#22201C',
-      'card-foreground': '#F0E8DC',
-      muted: '#363230',
-      'muted-foreground': '#C0B098',
-      border: '#4A4640',
-      input: '#22201C',
-      ring: '#C4B09C'
     }
   },
   pearl: {
@@ -558,6 +492,10 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty(cssVar, hexToHsl(value));
     });
 
+    // Ensure popovers dynamically match the theme's card styles
+    if (colors.card) root.style.setProperty('--popover', hexToHsl(colors.card));
+    if (colors['card-foreground']) root.style.setProperty('--popover-foreground', hexToHsl(colors['card-foreground']));
+
     // Apply destructive colors (keep consistent)
     root.style.setProperty('--destructive', '0 84% 60%');
     root.style.setProperty('--destructive-foreground', '0 0% 98%');
@@ -725,6 +663,10 @@ export const ThemeProvider = ({ children }) => {
       const hslValue = hexToHsl(value);
       root.style.setProperty(cssVar, hslValue);
     });
+
+    // Ensure popovers dynamically match the card styles in public pages
+    if (colors.card) root.style.setProperty('--popover', hexToHsl(colors.card));
+    if (colors['card-foreground']) root.style.setProperty('--popover-foreground', hexToHsl(colors['card-foreground']));
 
     // Apply to body and html for full coverage
     document.body.style.backgroundColor = colors.background;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Bug, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
 import { Button } from './ui/button';
@@ -24,9 +24,9 @@ const ContactDeveloper = ({ open, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.subject || !formData.message) {
-      setStatus({ 
-        type: 'error', 
-        message: 'Please fill out all fields' 
+      setStatus({
+        type: 'error',
+        message: 'Please fill out all fields'
       });
       return;
     }
@@ -34,25 +34,25 @@ const ContactDeveloper = ({ open, onClose }) => {
     try {
       setSending(true);
       setStatus(null);
-      
+
       // Get token from storage for authentication
       const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
-      
+
       if (!user || !user.token) {
         throw new Error('You must be logged in to send a message');
       }
-      
+
       // Create the request configuration with the auth token
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
       };
-      
+
       // Send the message to the backend API with secure HTTPS in production
       console.log('[ContactDeveloper] Using API_URL for secure contact API call:', API_URL);
       const response = await axios.post(`${API_URL}/api/contact`, formData, config);
-      
+
       console.log('Contact form submission response:', response.data);
 
       setStatus({
@@ -62,12 +62,12 @@ const ContactDeveloper = ({ open, onClose }) => {
 
       // Reset form after successful submission
       setFormData({ subject: '', message: '', isBugReport: false });
-      
+
       // Close the dialog after 3 seconds on success
       setTimeout(() => {
         if (onClose) onClose();
       }, 3000);
-      
+
     } catch (error) {
       console.error('Error sending message:', error);
       setStatus({
@@ -91,8 +91,8 @@ const ContactDeveloper = ({ open, onClose }) => {
     <Dialog open={open} onOpenChange={!sending ? onClose : undefined}>
       <DialogContent className={cn(
         "max-w-md transition-colors duration-100",
-        darkMode 
-          ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+        darkMode
+          ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
           : "bg-background text-foreground border-border"
       )}>
         <DialogHeader>
@@ -104,7 +104,7 @@ const ContactDeveloper = ({ open, onClose }) => {
             Send us a message, report a bug, or request a feature
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="subject">Subject</Label>
@@ -118,7 +118,7 @@ const ContactDeveloper = ({ open, onClose }) => {
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="message">Message</Label>
             <Textarea
@@ -132,7 +132,7 @@ const ContactDeveloper = ({ open, onClose }) => {
               required
             />
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Checkbox
               id="isBugReport"
@@ -148,17 +148,16 @@ const ContactDeveloper = ({ open, onClose }) => {
           <p className="text-xs text-muted-foreground -mt-2 ml-7">
             Enable this if you’re reporting a defect so we can triage faster.
           </p>
-          
+
           {status && (
-            <div className={`p-3 rounded-lg ${
-              status.type === 'success' 
-                ? 'bg-green-100 border border-green-200 text-green-800' 
+            <div className={`p-3 rounded-lg ${status.type === 'success'
+                ? 'bg-green-100 border border-green-200 text-green-800'
                 : 'bg-red-100 border border-red-200 text-red-800'
-            }`}>
+              }`}>
               <p className="text-sm">{status.message}</p>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button
               type="submit"

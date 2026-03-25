@@ -13,7 +13,6 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Spinner } from '../../components/ui/spinner';
 
 // Lucide React icons
@@ -42,7 +41,7 @@ const ManageUsers = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { user: currentUser } = useSelector((state) => state.auth);
-  
+
   const { users, isLoading, isSuccess, isError, message } = useSelector(state => state.users);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -58,14 +57,14 @@ const ManageUsers = () => {
 
   // Create a ref to track if users have been loaded
   const dataLoaded = React.useRef(false);
-  
+
   // Get schools data from Redux store
   const { schools, isLoading: schoolsLoading } = useSelector((state) => state.schools);
-  
+
   // Define applyFilters function using useCallback
   const applyFilters = useCallback(() => {
     let filtered = [...users];
-    
+
     // Filter by search term (name or email)
     if (searchTerm) {
       filtered = filtered.filter(user =>
@@ -85,7 +84,7 @@ const ManageUsers = () => {
         // Direct school assignment check (for admin/secretaries and teachers)
         if (user.school) {
           if (Array.isArray(user.school)) {
-            const directMatch = user.school.some(school => 
+            const directMatch = user.school.some(school =>
               (typeof school === 'object' ? school._id : school) === schoolFilter
             );
             if (directMatch) return true;
@@ -94,40 +93,40 @@ const ManageUsers = () => {
             if (directMatch) return true;
           }
         }
-        
+
         // Also check user.schools array for direct assignments
         if (user.schools && Array.isArray(user.schools)) {
-          const directMatch = user.schools.some(school => 
+          const directMatch = user.schools.some(school =>
             (typeof school === 'object' ? school._id : school) === schoolFilter
           );
           if (directMatch) return true;
         }
-        
+
         // For students and teachers: check if they belong to classes within this school branch
-        const userClassesInBranch = classes.filter(cls => 
+        const userClassesInBranch = classes.filter(cls =>
           cls.schoolBranch === schoolFilter || cls.schoolId === schoolFilter
         );
-        
+
         if (userClassesInBranch.length === 0) return false;
-        
+
         // Check if user is a student in any class within this school branch
         if (user.role === 'student') {
-          return userClassesInBranch.some(cls => 
-            cls.students && cls.students.some(student => 
+          return userClassesInBranch.some(cls =>
+            cls.students && cls.students.some(student =>
               (typeof student === 'object' ? student._id : student) === user._id
             )
           );
         }
-        
+
         // Check if user is a teacher in any class within this school branch
         if (user.role === 'teacher') {
-          return userClassesInBranch.some(cls => 
-            cls.teachers && cls.teachers.some(teacher => 
+          return userClassesInBranch.some(cls =>
+            cls.teachers && cls.teachers.some(teacher =>
               (typeof teacher === 'object' ? teacher._id : teacher) === user._id
             )
           );
         }
-        
+
         return false;
       });
     }
@@ -137,21 +136,21 @@ const ManageUsers = () => {
       filtered = filtered.filter(user => {
         const selectedClass = classes.find(cls => cls._id === classFilter);
         if (!selectedClass) return false;
-        
+
         // For students: check if they are enrolled in this class
         if (user.role === 'student' && selectedClass.students && Array.isArray(selectedClass.students)) {
-          return selectedClass.students.some(student => 
+          return selectedClass.students.some(student =>
             (typeof student === 'object' ? student._id : student) === user._id
           );
         }
-        
+
         // For teachers: check if they teach in this class
         if (user.role === 'teacher' && selectedClass.teachers && Array.isArray(selectedClass.teachers)) {
-          return selectedClass.teachers.some(teacher => 
+          return selectedClass.teachers.some(teacher =>
             (typeof teacher === 'object' ? teacher._id : teacher) === user._id
           );
         }
-        
+
         // For admins and others, no class association
         return false;
       });
@@ -161,7 +160,7 @@ const ManageUsers = () => {
     setFilteredUsers(filtered);
     setPage(0);
   }, [users, searchTerm, roleFilter, schoolFilter, classFilter, classes]);
-  
+
   // Fetch classes data
   useEffect(() => {
     const fetchClasses = async () => {
@@ -173,7 +172,7 @@ const ManageUsers = () => {
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setClasses(Array.isArray(data) ? data : []);
@@ -186,7 +185,7 @@ const ManageUsers = () => {
         setClassesLoading(false);
       }
     };
-    
+
     if (currentUser?.token) {
       fetchClasses();
     }
@@ -199,7 +198,7 @@ const ManageUsers = () => {
       usersCount: Array.isArray(users) ? users.length : 'not array',
       schoolsCount: Array.isArray(schools) ? schools.length : 'not array'
     });
-    
+
     // If we just finished loading and have data, apply filters
     if (!isLoading && Array.isArray(users) && users.length > 0) {
       applyFilters();
@@ -207,10 +206,10 @@ const ManageUsers = () => {
   }, [isLoading, users, schools, classes, applyFilters]);
 
   // Debug logs
-  console.log('ManageUsers rendering:', { 
-    userState: currentUser?.name, 
-    usersInStore: Array.isArray(users) ? users.length : 'not an array', 
-    isLoadingState: isLoading, 
+  console.log('ManageUsers rendering:', {
+    userState: currentUser?.name,
+    usersInStore: Array.isArray(users) ? users.length : 'not an array',
+    isLoadingState: isLoading,
     isErrorState: isError,
     dataLoaded: dataLoaded.current
   });
@@ -218,24 +217,24 @@ const ManageUsers = () => {
   // IMPORTANT: Fix for the infinite loading state issue
   useEffect(() => {
     console.log('ManageUsers mounting and fetching data');
-    
+
     // Reset the state first to clear any previous data
     dispatch(reset());
-    
+
     // Load data
     dispatch(getUsers());
     dispatch(getSchools());
-    
+
     // Mark as loaded when component mounts
     dataLoaded.current = true;
-    
+
     // Clean up on unmount
     return () => {
       console.log('ManageUsers unmounting');
       dataLoaded.current = false;
     };
   }, [dispatch]);
-  
+
   // Add visibility change handler to reload data when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -245,9 +244,9 @@ const ManageUsers = () => {
         dispatch(getSchools());
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -286,11 +285,11 @@ const ManageUsers = () => {
     setRoleFilter(value);
     setPage(0);
   };
-  
+
   const handleSchoolFilterChange = (value) => {
     setSchoolFilter(value);
   };
-  
+
   const handleClassFilterChange = (value) => {
     setClassFilter(value);
   };
@@ -316,7 +315,7 @@ const ManageUsers = () => {
 
   const handleDeleteConfirm = () => {
     if (!userToDelete) return;
-    
+
     // Prevent deleting yourself
     if (userToDelete._id === currentUser?._id) {
       toast.error('You cannot delete your own account');
@@ -324,7 +323,7 @@ const ManageUsers = () => {
       setUserToDelete(null);
       return;
     }
-    
+
     dispatch(deleteUser(userToDelete._id))
       .unwrap()
       .then(() => {
@@ -339,7 +338,7 @@ const ManageUsers = () => {
         setUserToDelete(null);
       });
   };
-  
+
   // Handle success/error after delete operation
   useEffect(() => {
     if (isSuccess && message === 'user_deleted') {
@@ -376,42 +375,42 @@ const ManageUsers = () => {
 
   // Mobile card layout for users
   const renderMobileContent = () => {
-  if (isLoading || !dataLoaded.current) {
-    return (
+    if (isLoading || !dataLoaded.current) {
+      return (
         <div className="flex justify-center items-center min-h-[60vh]">
           <Spinner size="lg" />
           <span className="ml-2 text-sm">{t('admin.manageUsersPage.messages.loadingUsers')}</span>
         </div>
-    );
-  }
+      );
+    }
 
-  if (isError) {
-    return (
+    if (isError) {
+      return (
         <div className="py-4 text-center">
           <h3 className="text-lg font-medium text-red-600 mb-1">{t('admin.manageUsersPage.errorLoadingUsers')}</h3>
           <p className="text-sm text-muted-foreground mb-3">
             {message || t('admin.manageUsersPage.unknownError')}
           </p>
-            <Button 
-              onClick={() => dispatch(getUsers())}
+          <Button
+            onClick={() => dispatch(getUsers())}
             className="gap-2"
-            >
+          >
             <RefreshIcon className="h-4 w-4" />
-              {t('admin.manageUsersPage.messages.tryAgain')}
-            </Button>
+            {t('admin.manageUsersPage.messages.tryAgain')}
+          </Button>
         </div>
-    );
-  }
+      );
+    }
 
-  if (!users || !Array.isArray(users) || users.length === 0) {
-    return (
+    if (!users || !Array.isArray(users) || users.length === 0) {
+      return (
         <div className="py-4 text-center">
           <p className="text-muted-foreground">{t('admin.manageUsersPage.messages.noUsersFound')}</p>
         </div>
-    );
-  }
+      );
+    }
 
-  return (
+    return (
       <div className="px-1 sm:px-2">
         {filteredUsers
           .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -425,7 +424,7 @@ const ManageUsers = () => {
                   <Avatar className={`w-12 h-12 flex-shrink-0 ${getRoleColor(user.role)}`}>
                     <AvatarFallback className="text-black dark:text-white font-medium">{getAvatarLetter(user.name)}</AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="flex-grow min-w-0">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap">
@@ -466,7 +465,7 @@ const ManageUsers = () => {
                         </span>
                       </div>
                     )}
-                    
+
                     {/* Subjects information */}
                     {user.subjects && user.subjects.length > 0 && (
                       <div className="flex items-center gap-2 mb-2">
@@ -494,7 +493,7 @@ const ManageUsers = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Action buttons */}
                 <div className="flex justify-end mt-4 gap-2">
                   <Button
@@ -502,9 +501,9 @@ const ManageUsers = () => {
                     size="sm"
                     onClick={() => handleEditUser(user._id)}
                     disabled={currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin')}
-                    title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotEditOwnAccount') : 
-                           currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotEditSecretaryAccounts') : 
-                           currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotEditAdminAccounts') : ''}
+                    title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotEditOwnAccount') :
+                      currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotEditSecretaryAccounts') :
+                        currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotEditAdminAccounts') : ''}
                   >
                     <EditIcon className="h-4 w-4" />
                   </Button>
@@ -512,12 +511,12 @@ const ManageUsers = () => {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDeleteClick(user)}
-                    disabled={user.role === 'admin' || 
-                              (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
-                    title={user.role === 'admin' ? t('admin.manageUsersPage.adminAccountsCannotBeDeleted') : 
-                           currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotDeleteOwnAccount') : 
-                           currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotDeleteSecretaryAccounts') : 
-                           currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotDeleteAdminAccounts') : ''}
+                    disabled={user.role === 'admin' ||
+                      (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
+                    title={user.role === 'admin' ? t('admin.manageUsersPage.adminAccountsCannotBeDeleted') :
+                      currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotDeleteOwnAccount') :
+                        currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotDeleteSecretaryAccounts') :
+                          currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotDeleteAdminAccounts') : ''}
                   >
                     <DeleteIcon className="h-4 w-4" />
                   </Button>
@@ -586,9 +585,9 @@ const ManageUsers = () => {
                             size="sm"
                             onClick={() => handleEditUser(user._id)}
                             disabled={currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin')}
-                            title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotEditOwnAccount') : 
-                                   currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotEditSecretaryAccounts') : 
-                                   currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotEditAdminAccounts') : ''}
+                            title={currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotEditOwnAccount') :
+                              currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotEditSecretaryAccounts') :
+                                currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotEditAdminAccounts') : ''}
                             className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
                           >
                             <EditIcon className="h-4 w-4" />
@@ -597,12 +596,12 @@ const ManageUsers = () => {
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteClick(user)}
-                            disabled={user.role === 'admin' || 
-                                      (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
-                            title={user.role === 'admin' ? t('admin.manageUsersPage.adminAccountsCannotBeDeleted') : 
-                                   currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotDeleteOwnAccount') : 
-                                   currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotDeleteSecretaryAccounts') : 
-                                   currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotDeleteAdminAccounts') : ''}
+                            disabled={user.role === 'admin' ||
+                              (currentUser?.role === 'secretary' && (user._id === currentUser?._id || user.role === 'secretary' || user.role === 'admin'))}
+                            title={user.role === 'admin' ? t('admin.manageUsersPage.adminAccountsCannotBeDeleted') :
+                              currentUser?.role === 'secretary' && user._id === currentUser?._id ? t('admin.manageUsersPage.cannotDeleteOwnAccount') :
+                                currentUser?.role === 'secretary' && user.role === 'secretary' ? t('admin.manageUsersPage.cannotDeleteSecretaryAccounts') :
+                                  currentUser?.role === 'secretary' && user.role === 'admin' ? t('admin.manageUsersPage.cannotDeleteAdminAccounts') : ''}
                             className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
                           >
                             <DeleteIcon className="h-4 w-4" />
@@ -682,7 +681,7 @@ const ManageUsers = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
-          <Button 
+          <Button
             disabled
             className="gap-2"
           >
@@ -706,7 +705,7 @@ const ManageUsers = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
-          <Button 
+          <Button
             onClick={handleAddUser}
             className="gap-2"
           >
@@ -718,7 +717,7 @@ const ManageUsers = () => {
           <h2 className="text-xl font-semibold text-red-600 dark:text-red-400 text-center mb-3">{t('admin.manageUsersPage.messages.errorLoadingUsers')}</h2>
           <p className="text-center mb-6 text-foreground">{t('admin.manageUsersPage.messages.errorMessage')}</p>
           <div className="flex justify-center">
-            <Button 
+            <Button
               onClick={() => dispatch(getUsers())}
               className="gap-2"
             >
@@ -737,7 +736,7 @@ const ManageUsers = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
-          <Button 
+          <Button
             onClick={handleAddUser}
             className="gap-2"
           >
@@ -756,7 +755,7 @@ const ManageUsers = () => {
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
-        <Button 
+        <Button
           onClick={() => handleAddUser(currentUser?.role === 'secretary')}
           title={currentUser?.role === 'secretary' ? t('admin.manageUsersPage.cannotCreateSecretaryAccounts') : ''}
           className="w-full sm:w-auto gap-2"
@@ -852,7 +851,7 @@ const ManageUsers = () => {
           <DialogHeader>
             <DialogTitle>{t('admin.manageUsersPage.dialogs.deleteUser.title')}</DialogTitle>
             <DialogDescription>
-            {t('admin.manageUsersPage.dialogs.deleteUser.message', { name: userToDelete?.name })}
+              {t('admin.manageUsersPage.dialogs.deleteUser.message', { name: userToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -860,8 +859,8 @@ const ManageUsers = () => {
               {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm}>
-            {t('common.delete')}
-          </Button>
+              {t('common.delete')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
