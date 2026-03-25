@@ -4,11 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '../ui/popover';
-import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
     DropdownMenuSub,
     DropdownMenuSubTrigger,
     DropdownMenuPortal,
@@ -18,6 +16,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
+    TooltipProvider,
 } from '../ui/tooltip';
 import { useTheme } from '../../contexts/ThemeContext';
 import { cn } from '../../lib/utils';
@@ -200,27 +199,29 @@ const AccessibilityMenu = ({ variant = 'popover' }) => {
     }
 
     return (
-        <Popover>
-            <Tooltip>
-                <TooltipTrigger asChild side="bottom">
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
-                            <PersonStanding className="h-5 w-5" />
-                            {isAnyActive && (
-                                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
-                            )}
-                        </Button>
-                    </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{t('settings.accessibility', 'Accessibility')}</p>
-                </TooltipContent>
-            </Tooltip>
+        <TooltipProvider>
+            <DropdownMenu>
+                <Tooltip>
+                    <TooltipTrigger asChild side="bottom">
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="relative">
+                                <PersonStanding className="h-5 w-5" />
+                                {isAnyActive && (
+                                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{t('settings.accessibility', 'Accessibility')}</p>
+                    </TooltipContent>
+                </Tooltip>
 
-            <PopoverContent align="end" sideOffset={8} className="w-72 p-0">
-                {menuContent}
-            </PopoverContent>
-        </Popover>
+                <DropdownMenuContent align="end" sideOffset={8} className="dropdown-slide-in w-72 p-0">
+                    {menuContent}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </TooltipProvider>
     );
 };
 

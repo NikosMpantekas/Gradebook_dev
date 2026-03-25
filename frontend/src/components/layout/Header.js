@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Bell,
@@ -8,8 +8,9 @@ import {
   Sun,
   Mail,
   Menu as MenuIcon,
-  Settings as SettingsIcon,
-  Palette
+  Palette,
+  Loader2,
+  XCircle
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -27,7 +28,6 @@ import { Switch } from '../ui/switch';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleDarkMode } from '../../features/ui/uiSlice';
 import LanguageSwitcher from '../common/LanguageSwitcher';
-import PushNotificationManager from '../../services/PushNotificationManager';
 import authService from '../../features/auth/authService';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
@@ -77,7 +77,6 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const [contactUnreadPreview, setContactUnreadPreview] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
@@ -90,6 +89,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   // Push notification state
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [pushError, setPushError] = useState(false);
   const pushManagerRef = useRef(null);
 
   // Load push notification state
@@ -114,6 +114,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const handlePushToggle = async () => {
     if (!user || pushLoading) return;
     setPushLoading(true);
+    setPushError(false);
     try {
       if (!pushManagerRef.current) {
         const { default: PM } = await import('../../services/PushNotificationManager');
@@ -129,6 +130,8 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         } else {
           await authService.updatePushNotificationPreference(true);
           await pm.updatePushNotificationPreference(true);
+          setPushError(true);
+          setTimeout(() => setPushError(false), 3000);
         }
       } else {
         await pm.clearExistingSubscription();
@@ -140,10 +143,14 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         } else {
           await authService.updatePushNotificationPreference(false);
           await pm.updatePushNotificationPreference(false);
+          setPushError(true);
+          setTimeout(() => setPushError(false), 3000);
         }
       }
     } catch (e) {
       console.error('[Header] Push toggle error:', e);
+      setPushError(true);
+      setTimeout(() => setPushError(false), 3000);
     } finally {
       setPushLoading(false);
     }
@@ -480,10 +487,16 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
                   {/* Push Notification Toggle */}
                   <div className="flex items-center justify-between px-2 py-1.5">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {pushEnabled
-                        ? <Bell className="h-4 w-4 text-primary" />
-                        : <BellOff className="h-4 w-4" />}
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      {pushLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      ) : pushError ? (
+                        <XCircle className="h-4 w-4 text-destructive animate-pulse" />
+                      ) : pushEnabled ? (
+                        <Bell className="h-4 w-4 text-primary" />
+                      ) : (
+                        <BellOff className="h-4 w-4" />
+                      )}
                       <span>Push Notifications</span>
                     </div>
                     <Switch

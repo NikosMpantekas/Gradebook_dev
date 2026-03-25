@@ -448,27 +448,25 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     if (!themeData) return darkMode ? "rgba(24, 27, 32, 0.6)" : "rgba(248, 250, 250, 0.7)";
 
     try {
-      const primaryColor = darkMode
-        ? themeData.darkColors?.primary || themeData.colors.primary
-        : themeData.colors.primary;
+      const colors = darkMode ? themeData.darkColors || themeData.colors : themeData.colors;
+      const bgHex = colors.background.replace('#', '');
+      const bgR = parseInt(bgHex.substr(0, 2), 16);
+      const bgG = parseInt(bgHex.substr(2, 2), 16);
+      const bgB = parseInt(bgHex.substr(4, 2), 16);
 
-      const hex = primaryColor.replace('#', '');
-      const r = parseInt(hex.substr(0, 2), 16);
-      const g = parseInt(hex.substr(2, 2), 16);
-      const b = parseInt(hex.substr(4, 2), 16);
+      const primaryHex = colors.primary.replace('#', '');
+      const pR = parseInt(primaryHex.substr(0, 2), 16);
+      const pG = parseInt(primaryHex.substr(2, 2), 16);
+      const pB = parseInt(primaryHex.substr(4, 2), 16);
 
-      if (darkMode) {
-        // Frosted glass effect for mobile - lower opacity
-        const tintedR = Math.max(19, Math.min(31, 19 + Math.round(r * 0.04)));
-        const tintedG = Math.max(22, Math.min(34, 22 + Math.round(g * 0.04)));
-        const tintedB = Math.max(27, Math.min(39, 27 + Math.round(b * 0.04)));
-        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.6)`;
-      } else {
-        const tintedR = Math.max(245, Math.min(255, 248 + Math.round(r * 0.02)));
-        const tintedG = Math.max(245, Math.min(255, 250 + Math.round(g * 0.02)));
-        const tintedB = Math.max(245, Math.min(255, 250 + Math.round(b * 0.02)));
-        return `rgba(${tintedR}, ${tintedG}, ${tintedB}, 0.7)`;
-      }
+      // Blend a subtle primary tint onto the theme's background color
+      const blend = darkMode ? 0.04 : 0.02;
+      const r = Math.round(bgR + (pR - bgR) * blend);
+      const g = Math.round(bgG + (pG - bgG) * blend);
+      const b = Math.round(bgB + (pB - bgB) * blend);
+      const opacity = darkMode ? 0.6 : 0.7;
+
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     } catch {
       return darkMode ? "rgba(24, 27, 32, 0.6)" : "rgba(248, 250, 250, 0.7)";
     }
