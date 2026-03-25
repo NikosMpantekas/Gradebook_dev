@@ -18,12 +18,7 @@ import {
   DialogActions,
   CircularProgress,
   Divider,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,91 +42,91 @@ const ManageDirections = () => {
   const { directions, isLoading, isError, isSuccess, message } = useSelector(
     (state) => state.directions
   );
-  
+
   const [filteredDirections, setFilteredDirections] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Dialog states
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [currentDirection, setCurrentDirection] = useState({ name: '', description: '' });
   const [directionIdToDelete, setDirectionIdToDelete] = useState(null);
-  
+
   // Form validation
   const [formErrors, setFormErrors] = useState({});
-  
+
   // Load directions on component mount
   useEffect(() => {
     dispatch(getDirections());
-    
+
     return () => {
       dispatch(reset());
     };
   }, [dispatch]);
-  
+
   // Update filtered directions when directions or search term changes
   useEffect(() => {
     if (isError) {
       toast.error(message);
     }
-    
+
     if (directions) {
       applyFilters();
     }
   }, [directions, searchTerm, isError, message]);
-  
+
   const applyFilters = () => {
     if (searchTerm.trim() === '') {
       setFilteredDirections(directions);
     } else {
-      const filtered = directions.filter(direction => 
+      const filtered = directions.filter(direction =>
         direction.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         direction.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredDirections(filtered);
     }
   };
-  
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
-  
+
   // Dialog handlers
   const handleOpenAddDialog = () => {
     setCurrentDirection({ name: '', description: '' });
     setFormErrors({});
     setOpenAddDialog(true);
   };
-  
+
   const handleCloseAddDialog = () => {
     setOpenAddDialog(false);
   };
-  
+
   const handleOpenEditDialog = (direction) => {
     setCurrentDirection(direction);
     setFormErrors({});
     setOpenEditDialog(true);
   };
-  
+
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
   };
-  
+
   const handleOpenDeleteDialog = (id) => {
     setDirectionIdToDelete(id);
     setOpenDeleteDialog(true);
   };
-  
+
   const handleCloseDeleteDialog = () => {
     setOpenDeleteDialog(false);
     setDirectionIdToDelete(null);
   };
-  
+
   // Form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Clear error when field is modified
     if (formErrors[name]) {
       setFormErrors({
@@ -139,24 +134,24 @@ const ManageDirections = () => {
         [name]: '',
       });
     }
-    
+
     setCurrentDirection({
       ...currentDirection,
       [name]: value,
     });
   };
-  
+
   const validateForm = () => {
     const errors = {};
-    
+
     if (!currentDirection.name.trim()) {
       errors.name = 'Direction name is required';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  
+
   // CRUD operations
   const handleAddDirection = () => {
     if (validateForm()) {
@@ -171,7 +166,7 @@ const ManageDirections = () => {
         });
     }
   };
-  
+
   const handleEditDirection = () => {
     if (validateForm()) {
       // Structure the update data correctly with id and directionData separately
@@ -181,7 +176,7 @@ const ManageDirections = () => {
         description: currentDirection.description,
         // Include any other fields that are part of the direction model
       };
-      
+
       dispatch(updateDirection({ id: directionId, directionData }))
         .unwrap()
         .then(() => {
@@ -195,7 +190,7 @@ const ManageDirections = () => {
         });
     }
   };
-  
+
   const handleDeleteDirection = () => {
     dispatch(deleteDirection(directionIdToDelete))
       .unwrap()
@@ -207,7 +202,7 @@ const ManageDirections = () => {
         toast.error(error);
       });
   };
-  
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -215,13 +210,13 @@ const ManageDirections = () => {
       </Box>
     );
   }
-  
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
         Manage Directions
       </Typography>
-      
+
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
@@ -253,7 +248,7 @@ const ManageDirections = () => {
               </Grid>
             </Grid>
           </Paper>
-          
+
           <Paper elevation={3} sx={{ borderRadius: 2 }}>
             <List>
               {filteredDirections.length > 0 ? (
@@ -272,16 +267,16 @@ const ManageDirections = () => {
                         secondary={direction.description || 'No description provided'}
                       />
                       <ListItemSecondaryAction>
-                        <IconButton 
-                          edge="end" 
+                        <IconButton
+                          edge="end"
                           aria-label="edit"
                           onClick={() => handleOpenEditDialog(direction)}
                           sx={{ mr: 1 }}
                         >
                           <EditIcon />
                         </IconButton>
-                        <IconButton 
-                          edge="end" 
+                        <IconButton
+                          edge="end"
                           aria-label="delete"
                           onClick={() => handleOpenDeleteDialog(direction._id)}
                         >
@@ -294,8 +289,8 @@ const ManageDirections = () => {
                 ))
               ) : (
                 <ListItem>
-                  <ListItemText 
-                    primary="No directions found" 
+                  <ListItemText
+                    primary="No directions found"
                     secondary={searchTerm ? "Try a different search term" : "Add a direction to get started"}
                   />
                 </ListItem>
@@ -304,7 +299,7 @@ const ManageDirections = () => {
           </Paper>
         </Grid>
       </Grid>
-      
+
       {/* Add Direction Dialog */}
       <Dialog open={openAddDialog} onClose={handleCloseAddDialog}>
         <DialogTitle>Add New Direction</DialogTitle>
@@ -340,7 +335,7 @@ const ManageDirections = () => {
           <Button onClick={handleAddDirection} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Edit Direction Dialog */}
       <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
         <DialogTitle>Edit Direction</DialogTitle>
@@ -376,7 +371,7 @@ const ManageDirections = () => {
           <Button onClick={handleEditDirection} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Delete Direction Dialog */}
       <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Confirm Delete</DialogTitle>

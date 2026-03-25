@@ -23,14 +23,12 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
     {
       code: 'en',
       name: 'English',
-      nativeName: 'English',
-      flag: '🇺🇸'
+      nativeName: 'English'
     },
     {
       code: 'gr',
       name: 'Greek',
-      nativeName: 'Ελληνικά',
-      flag: '🇬🇷'
+      nativeName: 'Ελληνικά'
     }
   ];
 

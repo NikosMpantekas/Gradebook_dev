@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns';
 import { getClasses, deleteClass, createClass, updateClass } from '../../features/classes/classSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
 import { getUsers } from '../../features/users/userSlice';
@@ -55,7 +54,7 @@ const ManageClasses = () => {
   const { users } = useSelector((state) => state.users);
   const { darkMode } = useSelector((state) => state.ui);
   const { t } = useTranslation();
-  
+
   // State for dialog operations
   const [open, setOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -65,15 +64,15 @@ const ManageClasses = () => {
   const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
   const [localLoading, setLocalLoading] = useState(true);
   const [forceRefreshTrigger, setForceRefreshTrigger] = useState(0);
-  
+
   // State for form tabs
   const [tabValue, setTabValue] = useState('basic');
-  
+
   // Form state
   const [formOpen, setFormOpen] = useState(false);
   // Force the branch school for new classes
   const branchSchoolId = '6834cef6ae7eb00ba4d0820d'; // Φροντιστήριο Βαθύ
-  
+
   const [classData, setClassData] = useState({
     subjectName: '',
     directionName: '',
@@ -90,31 +89,31 @@ const ManageClasses = () => {
       { day: 'Sunday', startTime: '', endTime: '', active: false },
     ],
   });
-  
+
   // States for filtering teachers and students
   const [teacherFilter, setTeacherFilter] = useState('');
   const [studentFilter, setStudentFilter] = useState('');
-  
+
   // States for collapsible sections
   const [studentsExpanded, setStudentsExpanded] = useState(false);
   const [teachersExpanded, setTeachersExpanded] = useState(false);
-  
+
   // Filtered lists
   const filteredTeachers = useMemo(() => {
     return users
       .filter(user => user.role === 'teacher')
-      .filter(teacher => 
-        teacher.firstName?.toLowerCase().includes(teacherFilter.toLowerCase()) || 
+      .filter(teacher =>
+        teacher.firstName?.toLowerCase().includes(teacherFilter.toLowerCase()) ||
         teacher.lastName?.toLowerCase().includes(teacherFilter.toLowerCase()) ||
         teacher.email?.toLowerCase().includes(teacherFilter.toLowerCase())
       );
   }, [users, teacherFilter]);
-  
+
   const filteredStudents = useMemo(() => {
     return users
       .filter(user => user.role === 'student')
-      .filter(student => 
-        student.firstName?.toLowerCase().includes(studentFilter.toLowerCase()) || 
+      .filter(student =>
+        student.firstName?.toLowerCase().includes(studentFilter.toLowerCase()) ||
         student.lastName?.toLowerCase().includes(studentFilter.toLowerCase()) ||
         student.email?.toLowerCase().includes(studentFilter.toLowerCase())
       );
@@ -127,7 +126,7 @@ const ManageClasses = () => {
       setFilteredClasses([]);
       return;
     }
-    
+
     // If no search term, use all classes
     if (!searchTerm.trim()) {
       setFilteredClasses(reduxClasses);
@@ -135,7 +134,7 @@ const ManageClasses = () => {
     }
 
     console.log(`Filtering ${reduxClasses.length} classes with term: ${searchTerm}`);
-    
+
     const filtered = reduxClasses.filter((cls) => {
       // Search in all text fields
       return (
@@ -181,7 +180,7 @@ const ManageClasses = () => {
 
   useEffect(() => {
     loadData();
-    
+
     // This will run when component unmounts
     return () => {
       console.log('ManageClasses component unmounting');
@@ -226,11 +225,11 @@ const ManageClasses = () => {
 
   const handleAdd = () => {
     setFormMode('add');
-    
+
     // Reset the filters too
     setTeacherFilter('');
     setStudentFilter('');
-    
+
     setClassData({
       subjectName: '',
       directionName: '',
@@ -253,14 +252,14 @@ const ManageClasses = () => {
   // CRITICAL FIX: Enhanced handleFormClose function to properly reset all states
   const handleFormClose = () => {
     console.log('Closing form and resetting all states');
-    
+
     // Reset submission state immediately to fix "updating forever" issue
     setIsSubmitting(false);
-    
+
     // Close the dialog
     setFormOpen(false);
     setOpen(false);
-    
+
     // Reset form when dialog closes
     setClassData({
       subjectName: '',
@@ -278,11 +277,11 @@ const ManageClasses = () => {
         { day: 'Sunday', active: false, startTime: '', endTime: '' },
       ],
     });
-    
+
     // Reset the form mode and tabs
     setFormMode('add');
     setTabValue('basic');
-    
+
     // Force refresh classes with a short delay to ensure backend is updated
     setTimeout(() => {
       forceRefreshClasses().catch(err => {
@@ -291,11 +290,11 @@ const ManageClasses = () => {
       });
     }, 500);
   };
-  
+
   const handleEdit = (classItem) => {
     console.log('Editing class:', classItem);
     setFormMode('edit');
-    
+
     // Create complete schedule template with all days of the week
     const fullWeekTemplate = [
       { day: 'Monday', startTime: '', endTime: '', active: false },
@@ -306,7 +305,7 @@ const ManageClasses = () => {
       { day: 'Saturday', startTime: '', endTime: '', active: false },
       { day: 'Sunday', startTime: '', endTime: '', active: false },
     ];
-    
+
     // Map existing schedule to the template
     let processedSchedule = [...fullWeekTemplate];
     if (classItem.schedule && Array.isArray(classItem.schedule)) {
@@ -325,19 +324,19 @@ const ManageClasses = () => {
         }
       });
     }
-    
+
     // Get the IDs of teachers and students
-    const teacherIds = (classItem.teachers || []).map(teacher => 
+    const teacherIds = (classItem.teachers || []).map(teacher =>
       typeof teacher === 'string' ? teacher : teacher._id
     );
-    
-    const studentIds = (classItem.students || []).map(student => 
+
+    const studentIds = (classItem.students || []).map(student =>
       typeof student === 'string' ? student : student._id
     );
-    
+
     // Store the class ID for update operation
     const classId = classItem._id;
-    
+
     setClassData({
       _id: classId, // Store the ID in the state
       subjectName: classItem.subject || classItem.subjectName || '',
@@ -347,7 +346,7 @@ const ManageClasses = () => {
       teachers: teacherIds,
       schedule: processedSchedule,
     });
-    
+
     console.log('Setting form data:', {
       _id: classId,
       subjectName: classItem.subject || classItem.subjectName || '',
@@ -357,7 +356,7 @@ const ManageClasses = () => {
       teachers: teacherIds.length,
       schedule: processedSchedule
     });
-    
+
     setFormOpen(true);
   };
 
@@ -375,53 +374,53 @@ const ManageClasses = () => {
       ...updatedSchedule[index],
       [field]: value,
     };
-    
+
     // If setting times on an inactive day, auto-activate it
     if ((field === 'startTime' || field === 'endTime') && value && !updatedSchedule[index].active) {
       updatedSchedule[index].active = true;
     }
-    
+
     setClassData((prevData) => ({
       ...prevData,
       schedule: updatedSchedule,
     }));
   };
-  
+
   // Toggle teacher selection with checkbox
   const handleTeacherToggle = (teacherId) => {
     setClassData(prevData => {
       const isSelected = prevData.teachers.includes(teacherId);
-      const updatedTeachers = isSelected 
+      const updatedTeachers = isSelected
         ? prevData.teachers.filter(id => id !== teacherId)
         : [...prevData.teachers, teacherId];
-        
+
       return {
         ...prevData,
         teachers: updatedTeachers
       };
     });
   };
-  
+
   // Toggle student selection with checkbox
   const handleStudentToggle = (studentId) => {
     setClassData(prevData => {
       const isSelected = prevData.students.includes(studentId);
-      const updatedStudents = isSelected 
+      const updatedStudents = isSelected
         ? prevData.students.filter(id => id !== studentId)
         : [...prevData.students, studentId];
-        
+
       return {
         ...prevData,
         students: updatedStudents
       };
     });
   };
-  
+
   // Toggle day activation in schedule
   const handleDayToggle = (index) => {
     const updatedSchedule = [...classData.schedule];
     const newActiveState = !updatedSchedule[index].active;
-    
+
     updatedSchedule[index] = {
       ...updatedSchedule[index],
       active: newActiveState,
@@ -429,15 +428,15 @@ const ManageClasses = () => {
       startTime: newActiveState ? updatedSchedule[index].startTime : '',
       endTime: newActiveState ? updatedSchedule[index].endTime : '',
     };
-    
+
     console.log(`Toggling day ${updatedSchedule[index].day} to ${newActiveState ? 'active' : 'inactive'}`);
-    
+
     setClassData(prevData => ({
       ...prevData,
       schedule: updatedSchedule
     }));
   };
-  
+
   // Enhanced form submission handler to fix "updating forever" issue
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -478,7 +477,7 @@ const ManageClasses = () => {
       schoolBranch: classData.schoolId,
       schedule: activeScheduleDays,
     };
-    
+
     try {
       if (formMode === 'add') {
         // Create a new class
@@ -487,7 +486,7 @@ const ManageClasses = () => {
           const addResult = await dispatch(createClass(submissionData)).unwrap();
           console.log('Class creation result:', addResult);
           toast.success('Class created successfully');
-          
+
           // Close dialog first then refresh data to avoid UI jank
           handleFormClose(); // This already resets isSubmitting
         } catch (createError) {
@@ -503,7 +502,7 @@ const ManageClasses = () => {
           setIsSubmitting(false);
           return;
         }
-        
+
         // CRITICAL FIX: Ensure the ID is properly set with priority
         const classIdToUse = classData._id;
         const enhancedData = {
@@ -511,25 +510,25 @@ const ManageClasses = () => {
           _id: classIdToUse,  // Primary ID format
           id: classIdToUse    // Alternative ID format for robustness
         };
-        
+
         console.log('Updating class with ID:', classIdToUse);
         console.log('Full update payload:', enhancedData);
-        
+
         try {
           console.log('Dispatching updateClass action...');
           const updateResult = await dispatch(updateClass(enhancedData)).unwrap();
           console.log('Class update API success:', updateResult);
-          
+
           // CRITICAL FIX: Always close dialog on success to prevent "updating forever"
           toast.success('Class updated successfully');
           handleFormClose(); // This function now resets isSubmitting and refreshes data
-          
+
           console.log('Update workflow complete, dialog closed and refresh triggered');
         } catch (updateError) {
           // Handle errors properly
           console.error('Class update operation failed:', updateError);
           toast.error(`Update failed: ${updateError?.message || 'Unknown error'}`);
-          
+
           // IMPORTANT: Always close dialog and reset states even on error
           handleFormClose();
         }
@@ -540,11 +539,11 @@ const ManageClasses = () => {
       toast.error(generalError?.message || 'An unexpected error occurred');
       setIsSubmitting(false);
     }
-  };  
+  };
 
   const confirmDelete = async () => {
     if (!deleteId) return;
-    
+
     try {
       await dispatch(deleteClass(deleteId)).unwrap();
       toast.success('Class deleted successfully');
@@ -589,7 +588,7 @@ const ManageClasses = () => {
                     <BookIcon className="h-6 w-6" />
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
@@ -599,28 +598,28 @@ const ManageClasses = () => {
                       {classItem.direction || classItem.directionName}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 mb-2">
                     <SchoolIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {schools?.find((s) => s._id === classItem.schoolBranch || s._id === classItem.schoolId)?.name || 'N/A'}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 mb-2">
                     <GroupIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {classItem.students?.length || 0} students
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 mb-2">
                     <PersonIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {classItem.teachers?.length || 0} teachers
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <ScheduleIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
@@ -629,7 +628,7 @@ const ManageClasses = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Action buttons */}
               <div className="flex justify-end mt-4 gap-2">
                 {classItem.schedule && classItem.schedule.length > 0 && (
@@ -801,7 +800,7 @@ const ManageClasses = () => {
       </div>
     );
   };
-  
+
   // Show loading state if data is being loaded
   if (localLoading || isLoading) {
     return (
@@ -813,7 +812,7 @@ const ManageClasses = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="mb-6">
@@ -824,7 +823,7 @@ const ManageClasses = () => {
           {t('admin.manageClassesPage.subtitle')}
         </p>
       </div>
-      
+
       {/* Search and add controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div className="relative w-full sm:w-80">
@@ -844,16 +843,16 @@ const ManageClasses = () => {
           {t('admin.manageClassesPage.addClass')}
         </Button>
       </div>
-      
+
       {/* Classes table */}
       {isMobile ? renderMobileContent() : renderDesktopContent()}
-      
+
       {/* Delete confirmation dialog */}
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className={cn(
           "w-[90vw] max-w-md transition-colors duration-100",
-          darkMode 
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          darkMode
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
             : "bg-background text-foreground border-border"
         )}>
           <DialogHeader>
@@ -872,328 +871,328 @@ const ManageClasses = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Add/Edit form dialog */}
       <Dialog open={formOpen} onOpenChange={handleFormClose}>
         <DialogContent className={cn(
           "w-[90vw] max-w-4xl max-h-[90vh] transition-colors duration-100 overflow-hidden",
-          darkMode 
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50" 
+          darkMode
+            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
             : "bg-background text-foreground border-border"
         )}>
           <DialogHeader>
             <DialogTitle>{formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.title') : t('admin.manageClassesPage.dialogs.editClass.title')}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
             <form onSubmit={handleFormSubmit} className="space-y-6">
-            <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">{t('admin.manageClassesPage.tabs.basicInfo')}</TabsTrigger>
-                <TabsTrigger value="people">{t('admin.manageClassesPage.tabs.people')}</TabsTrigger>
-                <TabsTrigger value="schedule">{t('admin.manageClassesPage.tabs.schedule')}</TabsTrigger>
-              </TabsList>
-              
-              {/* Basic Info Tab */}
-              <TabsContent value="basic" className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="subjectName" className="text-sm font-medium">
-                      {t('admin.manageClassesPage.form.subjectName')} *
-                    </Label>
-                    <Input
-                      id="subjectName"
-                      name="subjectName"
-                      value={classData.subjectName}
-                      onChange={handleFormChange}
-                      required
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="directionName" className="text-sm font-medium">
-                      {t('admin.manageClassesPage.form.directionName')} *
-                    </Label>
-                    <Input
-                      id="directionName"
-                      name="directionName"
-                      value={classData.directionName}
-                      onChange={handleFormChange}
-                      required
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="schoolId" className="text-sm font-medium">
-                      {t('admin.manageClassesPage.form.school')} *
-                    </Label>
-                    <Select
-                      name="schoolId"
-                      value={classData.schoolId}
-                      onValueChange={(value) => handleFormChange({ target: { name: 'schoolId', value } })}
-                      required
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder={t('admin.manageClassesPage.form.school')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {schools && schools.length > 0 ? (
-                          schools.map((school) => (
-                            <SelectItem key={school._id} value={school._id}>
-                              {school.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem disabled>{t('admin.manageClassesPage.form.noSchoolsAvailable')}</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              {/* Students & Teachers Tab */}
-              <TabsContent value="people" className="space-y-6">
-                {/* Students Selection */}
-                <div>
-                  <Collapsible open={studentsExpanded} onOpenChange={setStudentsExpanded}>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex w-full justify-between p-0 font-medium text-sm hover:bg-transparent"
-                        type="button"
-                      >
-                        <div className="flex items-center gap-2">
-                          <GroupIcon className="h-4 w-4" />
-                          {t('admin.manageClassesPage.form.selectStudents')}
-                          {classData.students.length > 0 && (
-                            <Badge variant="secondary" className="ml-2">
-                              {classData.students.length} selected
-                            </Badge>
-                          )}
-                        </div>
-                        {studentsExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-3 mt-3">
-                      {/* Search Box */}
-                      <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search students..."
-                          value={studentFilter}
-                          onChange={(e) => setStudentFilter(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      
-                      {/* Students List */}
-                      <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4 bg-muted/20">
-                        {filteredStudents.length > 0 ? (
-                          filteredStudents.map((student) => (
-                            <div key={student._id} className="flex items-center space-x-2 p-2 hover:bg-muted/30 rounded">
-                              <Checkbox
-                                id={`student-${student._id}`}
-                                checked={classData.students.includes(student._id)}
-                                onCheckedChange={() => handleStudentToggle(student._id)}
-                              />
-                              <Label htmlFor={`student-${student._id}`} className="text-sm cursor-pointer flex-1">
-                                {student.firstName} {student.lastName}
-                                <span className="text-muted-foreground ml-2">• {student.email}</span>
-                              </Label>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-4 text-muted-foreground text-sm">
-                            {studentFilter ? 'No students found matching search' : 'No students available'}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">
-                          {classData.students.length} students selected
-                        </span>
-                        {classData.students.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setClassData({...classData, students: []})}
-                            className="gap-2"
-                          >
-                            <ClearIcon className="h-4 w-4" />
-                            Clear All
-                          </Button>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
+              <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">{t('admin.manageClassesPage.tabs.basicInfo')}</TabsTrigger>
+                  <TabsTrigger value="people">{t('admin.manageClassesPage.tabs.people')}</TabsTrigger>
+                  <TabsTrigger value="schedule">{t('admin.manageClassesPage.tabs.schedule')}</TabsTrigger>
+                </TabsList>
 
-                {/* Teachers Selection */}
-                <div>
-                  <Collapsible open={teachersExpanded} onOpenChange={setTeachersExpanded}>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex w-full justify-between p-0 font-medium text-sm hover:bg-transparent"
-                        type="button"
+                {/* Basic Info Tab */}
+                <TabsContent value="basic" className="space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="subjectName" className="text-sm font-medium">
+                        {t('admin.manageClassesPage.form.subjectName')} *
+                      </Label>
+                      <Input
+                        id="subjectName"
+                        name="subjectName"
+                        value={classData.subjectName}
+                        onChange={handleFormChange}
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="directionName" className="text-sm font-medium">
+                        {t('admin.manageClassesPage.form.directionName')} *
+                      </Label>
+                      <Input
+                        id="directionName"
+                        name="directionName"
+                        value={classData.directionName}
+                        onChange={handleFormChange}
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="schoolId" className="text-sm font-medium">
+                        {t('admin.manageClassesPage.form.school')} *
+                      </Label>
+                      <Select
+                        name="schoolId"
+                        value={classData.schoolId}
+                        onValueChange={(value) => handleFormChange({ target: { name: 'schoolId', value } })}
+                        required
                       >
-                        <div className="flex items-center gap-2">
-                          <PersonIcon className="h-4 w-4" />
-                          {t('admin.manageClassesPage.form.selectTeachers')}
-                          {classData.teachers.length > 0 && (
-                            <Badge variant="secondary" className="ml-2">
-                              {classData.teachers.length} selected
-                            </Badge>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder={t('admin.manageClassesPage.form.school')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {schools && schools.length > 0 ? (
+                            schools.map((school) => (
+                              <SelectItem key={school._id} value={school._id}>
+                                {school.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem disabled>{t('admin.manageClassesPage.form.noSchoolsAvailable')}</SelectItem>
                           )}
-                        </div>
-                        {teachersExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-3 mt-3">
-                      {/* Search Box */}
-                      <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search teachers..."
-                          value={teacherFilter}
-                          onChange={(e) => setTeacherFilter(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      
-                      {/* Teachers List */}
-                      <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4 bg-muted/20">
-                        {filteredTeachers.length > 0 ? (
-                          filteredTeachers.map((teacher) => (
-                            <div key={teacher._id} className="flex items-center space-x-2 p-2 hover:bg-muted/30 rounded">
-                              <Checkbox
-                                id={`teacher-${teacher._id}`}
-                                checked={classData.teachers.includes(teacher._id)}
-                                onCheckedChange={() => handleTeacherToggle(teacher._id)}
-                              />
-                              <Label htmlFor={`teacher-${teacher._id}`} className="text-sm cursor-pointer flex-1">
-                                {teacher.firstName} {teacher.lastName}
-                                <span className="text-muted-foreground ml-2">• {teacher.email}</span>
-                              </Label>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-4 text-muted-foreground text-sm">
-                            {teacherFilter ? 'No teachers found matching search' : 'No teachers available'}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Students & Teachers Tab */}
+                <TabsContent value="people" className="space-y-6">
+                  {/* Students Selection */}
+                  <div>
+                    <Collapsible open={studentsExpanded} onOpenChange={setStudentsExpanded}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="flex w-full justify-between p-0 font-medium text-sm hover:bg-transparent"
+                          type="button"
+                        >
+                          <div className="flex items-center gap-2">
+                            <GroupIcon className="h-4 w-4" />
+                            {t('admin.manageClassesPage.form.selectStudents')}
+                            {classData.students.length > 0 && (
+                              <Badge variant="secondary" className="ml-2">
+                                {classData.students.length} selected
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">
-                          {classData.teachers.length} teachers selected
-                        </span>
-                        {classData.teachers.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setClassData({...classData, teachers: []})}
-                            className="gap-2"
-                          >
-                            <ClearIcon className="h-4 w-4" />
-                            Clear All
-                          </Button>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              </TabsContent>
-              
-              {/* Schedule Tab */}
-              <TabsContent value="schedule" className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium block mb-2">
-                    {t('admin.manageClassesPage.form.schedule')}
-                  </Label>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {t('admin.manageClassesPage.form.scheduleDescription')}
-                  </p>
-                  
-                  <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-2 bg-muted/10">
-                    {classData.schedule.map((daySchedule, index) => (
-                      <Card key={daySchedule.day} className={`p-4 ${daySchedule.active ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''}`}>
-                        <div className="flex items-center space-x-4">
-                          <Checkbox
-                            id={`day-${index}`}
-                            checked={daySchedule.active}
-                            onCheckedChange={() => handleDayToggle(index)}
+                          {studentsExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-3 mt-3">
+                        {/* Search Box */}
+                        <div className="relative">
+                          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search students..."
+                            value={studentFilter}
+                            onChange={(e) => setStudentFilter(e.target.value)}
+                            className="pl-10"
                           />
-                          <Label htmlFor={`day-${index}`} className={`text-sm font-medium ${daySchedule.active ? 'text-blue-900 dark:text-blue-100' : ''}`}>
-                            {daySchedule.day}
-                          </Label>
-                          
-                          {daySchedule.active && (
-                            <div className="flex items-center space-x-2 ml-auto">
-                              <div>
-                                <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
-                                  {t('admin.manageClassesPage.form.startTime')}
-                                </Label>
-                                <TimePickerWheel
-                                  value={daySchedule.startTime || ''}
-                                  onChange={(value) => handleScheduleChange(index, 'startTime', value)}
-                                  placeholder="Start time"
-                                  className="w-32"
+                        </div>
+
+                        {/* Students List */}
+                        <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4 bg-muted/20">
+                          {filteredStudents.length > 0 ? (
+                            filteredStudents.map((student) => (
+                              <div key={student._id} className="flex items-center space-x-2 p-2 hover:bg-muted/30 rounded">
+                                <Checkbox
+                                  id={`student-${student._id}`}
+                                  checked={classData.students.includes(student._id)}
+                                  onCheckedChange={() => handleStudentToggle(student._id)}
                                 />
-                              </div>
-                              <div>
-                                <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
-                                  {t('admin.manageClassesPage.form.endTime')}
+                                <Label htmlFor={`student-${student._id}`} className="text-sm cursor-pointer flex-1">
+                                  {student.firstName} {student.lastName}
+                                  <span className="text-muted-foreground ml-2">• {student.email}</span>
                                 </Label>
-                                <TimePickerWheel
-                                  value={daySchedule.endTime || ''}
-                                  onChange={(value) => handleScheduleChange(index, 'endTime', value)}
-                                  placeholder="End time"
-                                  className="w-32"
-                                />
                               </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-4 text-muted-foreground text-sm">
+                              {studentFilter ? 'No students found matching search' : 'No students available'}
                             </div>
                           )}
                         </div>
-                      </Card>
-                    ))}
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">
+                            {classData.students.length} students selected
+                          </span>
+                          {classData.students.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setClassData({ ...classData, students: [] })}
+                              className="gap-2"
+                            >
+                              <ClearIcon className="h-4 w-4" />
+                              Clear All
+                            </Button>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleFormClose} disabled={isSubmitting}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <Spinner size="sm" />
-                    {formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.creating') : t('admin.manageClassesPage.dialogs.editClass.updating')}
+
+                  {/* Teachers Selection */}
+                  <div>
+                    <Collapsible open={teachersExpanded} onOpenChange={setTeachersExpanded}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="flex w-full justify-between p-0 font-medium text-sm hover:bg-transparent"
+                          type="button"
+                        >
+                          <div className="flex items-center gap-2">
+                            <PersonIcon className="h-4 w-4" />
+                            {t('admin.manageClassesPage.form.selectTeachers')}
+                            {classData.teachers.length > 0 && (
+                              <Badge variant="secondary" className="ml-2">
+                                {classData.teachers.length} selected
+                              </Badge>
+                            )}
+                          </div>
+                          {teachersExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-3 mt-3">
+                        {/* Search Box */}
+                        <div className="relative">
+                          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search teachers..."
+                            value={teacherFilter}
+                            onChange={(e) => setTeacherFilter(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+
+                        {/* Teachers List */}
+                        <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4 bg-muted/20">
+                          {filteredTeachers.length > 0 ? (
+                            filteredTeachers.map((teacher) => (
+                              <div key={teacher._id} className="flex items-center space-x-2 p-2 hover:bg-muted/30 rounded">
+                                <Checkbox
+                                  id={`teacher-${teacher._id}`}
+                                  checked={classData.teachers.includes(teacher._id)}
+                                  onCheckedChange={() => handleTeacherToggle(teacher._id)}
+                                />
+                                <Label htmlFor={`teacher-${teacher._id}`} className="text-sm cursor-pointer flex-1">
+                                  {teacher.firstName} {teacher.lastName}
+                                  <span className="text-muted-foreground ml-2">• {teacher.email}</span>
+                                </Label>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-4 text-muted-foreground text-sm">
+                              {teacherFilter ? 'No teachers found matching search' : 'No teachers available'}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">
+                            {classData.teachers.length} teachers selected
+                          </span>
+                          {classData.teachers.length > 0 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setClassData({ ...classData, teachers: [] })}
+                              className="gap-2"
+                            >
+                              <ClearIcon className="h-4 w-4" />
+                              Clear All
+                            </Button>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
-                ) : (
-                  formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.create') : t('admin.manageClassesPage.dialogs.editClass.update')
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
+                </TabsContent>
+
+                {/* Schedule Tab */}
+                <TabsContent value="schedule" className="space-y-4">
+                  <div>
+                    <Label className="text-base font-medium block mb-2">
+                      {t('admin.manageClassesPage.form.schedule')}
+                    </Label>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {t('admin.manageClassesPage.form.scheduleDescription')}
+                    </p>
+
+                    <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-2 bg-muted/10">
+                      {classData.schedule.map((daySchedule, index) => (
+                        <Card key={daySchedule.day} className={`p-4 ${daySchedule.active ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''}`}>
+                          <div className="flex items-center space-x-4">
+                            <Checkbox
+                              id={`day-${index}`}
+                              checked={daySchedule.active}
+                              onCheckedChange={() => handleDayToggle(index)}
+                            />
+                            <Label htmlFor={`day-${index}`} className={`text-sm font-medium ${daySchedule.active ? 'text-blue-900 dark:text-blue-100' : ''}`}>
+                              {daySchedule.day}
+                            </Label>
+
+                            {daySchedule.active && (
+                              <div className="flex items-center space-x-2 ml-auto">
+                                <div>
+                                  <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
+                                    {t('admin.manageClassesPage.form.startTime')}
+                                  </Label>
+                                  <TimePickerWheel
+                                    value={daySchedule.startTime || ''}
+                                    onChange={(value) => handleScheduleChange(index, 'startTime', value)}
+                                    placeholder="Start time"
+                                    className="w-32"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
+                                    {t('admin.manageClassesPage.form.endTime')}
+                                  </Label>
+                                  <TimePickerWheel
+                                    value={daySchedule.endTime || ''}
+                                    onChange={(value) => handleScheduleChange(index, 'endTime', value)}
+                                    placeholder="End time"
+                                    className="w-32"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleFormClose} disabled={isSubmitting}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <Spinner size="sm" />
+                      {formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.creating') : t('admin.manageClassesPage.dialogs.editClass.updating')}
+                    </div>
+                  ) : (
+                    formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.create') : t('admin.manageClassesPage.dialogs.editClass.update')
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
           </div>
         </DialogContent>
       </Dialog>

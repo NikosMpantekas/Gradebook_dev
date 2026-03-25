@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Bell,
+  BellOff,
   Moon,
   Sun,
   Mail,
@@ -22,9 +23,12 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { cn } from '../../lib/utils';
+import { Switch } from '../ui/switch';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleDarkMode } from '../../features/ui/uiSlice';
 import LanguageSwitcher from '../common/LanguageSwitcher';
+import PushNotificationManager from '../../services/PushNotificationManager';
+import authService from '../../features/auth/authService';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { getMyNotifications, markNotificationAsRead } from '../../features/notifications/notificationSlice';
@@ -82,6 +86,68 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
   // Use the mobile detection hook instead of Tailwind breakpoints
   const isMobile = useIsMobile();
+
+  // Push notification state
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const pushManagerRef = useRef(null);
+
+  // Load push notification state
+  useEffect(() => {
+    if (!user) return;
+    let mounted = true;
+    const load = async () => {
+      try {
+        if (!pushManagerRef.current) {
+          const { default: PM } = await import('../../services/PushNotificationManager');
+          pushManagerRef.current = new PM();
+        }
+        const userPref = user.pushNotificationEnabled !== false;
+        const hasSub = await pushManagerRef.current.hasActiveSubscription();
+        if (mounted) setPushEnabled(userPref && hasSub);
+      } catch { /* ignore */ }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [user]);
+
+  const handlePushToggle = async () => {
+    if (!user || pushLoading) return;
+    setPushLoading(true);
+    try {
+      if (!pushManagerRef.current) {
+        const { default: PM } = await import('../../services/PushNotificationManager');
+        pushManagerRef.current = new PM();
+      }
+      const pm = pushManagerRef.current;
+      if (pushEnabled) {
+        await authService.updatePushNotificationPreference(false);
+        await pm.updatePushNotificationPreference(false);
+        const res = await pm.disablePushNotifications();
+        if (res.success) {
+          setPushEnabled(false);
+        } else {
+          await authService.updatePushNotificationPreference(true);
+          await pm.updatePushNotificationPreference(true);
+        }
+      } else {
+        await pm.clearExistingSubscription();
+        const res = await pm.enablePushNotifications();
+        if (res.success) {
+          await authService.updatePushNotificationPreference(true);
+          await pm.updatePushNotificationPreference(true);
+          setPushEnabled(true);
+        } else {
+          await authService.updatePushNotificationPreference(false);
+          await pm.updatePushNotificationPreference(false);
+        }
+      }
+    } catch (e) {
+      console.error('[Header] Push toggle error:', e);
+    } finally {
+      setPushLoading(false);
+    }
+  };
 
   // Get latest version from patch notes
   const { version: latestVersion } = useLatestVersion();
@@ -409,6 +475,23 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                       </DropdownMenuItem>
                     ))
                   )}
+
+                  <DropdownMenuSeparator />
+
+                  {/* Push Notification Toggle */}
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {pushEnabled
+                        ? <Bell className="h-4 w-4 text-primary" />
+                        : <BellOff className="h-4 w-4" />}
+                      <span>Push Notifications</span>
+                    </div>
+                    <Switch
+                      checked={pushEnabled}
+                      onCheckedChange={handlePushToggle}
+                      disabled={pushLoading}
+                    />
+                  </div>
 
                   <DropdownMenuSeparator />
 

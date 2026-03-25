@@ -112,7 +112,6 @@ import { FeatureToggleProvider } from './context/FeatureToggleContext';
 
 // Custom components
 import HomeScreenPrompt from './components/HomeScreenPrompt';
-import FloatingPushToggle from './components/FloatingPushToggle';
 
 function App() {
   const dispatch = useDispatch();
@@ -826,9 +825,6 @@ function App() {
                 </Routes>
               </MaintenanceStatusChecker>
             </Router>
-
-            {/* Floating Push Notification Toggle */}
-            {user && <FloatingPushToggle />}
 
           </FeatureToggleProvider>
           <Toaster />

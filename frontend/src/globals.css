@@ -755,34 +755,17 @@
   display: none;
 }
 
-.dark [data-card],
-.dark .bg-card {
-  background-color: hsl(var(--background) / 0.3) !important;
-  backdrop-filter: blur(8px);
-  border-color: hsl(var(--border) / 0.2) !important;
-}
-
-:root:not(.dark) [data-card],
-:root:not(.dark) .bg-card {
-  background-color: hsl(var(--background) / 0.4) !important;
-  backdrop-filter: blur(8px);
-  border-color: hsl(var(--border) / 0.3) !important;
-}
-
-/* Make cards even more subtle - override Card component default */
+/* ================================
+   Global card background — solid, no hue bleed
+   Cards use the --card token directly so they sit cleanly
+   on top of any background without colour shifting.
+   ================================ */
+[data-card],
+.bg-card,
 [class*="bg-card"] {
-  background-color: transparent !important;
-  backdrop-filter: blur(12px);
-}
-
-.dark [class*="bg-card"] {
-  background-color: hsl(217 32% 12% / 0.2) !important;
-  border-color: hsl(217 32% 17% / 0.3) !important;
-}
-
-:root:not(.dark) [class*="bg-card"] {
-  background-color: hsl(var(--background) / 0.3) !important;
-  border-color: hsl(var(--border) / 0.25) !important;
+  background-color: hsl(var(--card)) !important;
+  backdrop-filter: none !important;
+  border-color: hsl(var(--border)) !important;
 }
 
 /* ================================
