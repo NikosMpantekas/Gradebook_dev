@@ -490,7 +490,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
             <SheetTitle>Navigation Menu</SheetTitle>
             <SheetDescription>Main navigation menu for the application</SheetDescription>
           </SheetHeader>
-          <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50">
+          <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 pt-[env(safe-area-inset-top)]">
             {sidebarContent}
           </div>
         </SheetContent>
@@ -498,7 +498,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Desktop Sidebar - No animations */}
       <aside
-        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30"
+        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
         style={{
           backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
         }}
