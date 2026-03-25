@@ -35,6 +35,7 @@ import { getMyNotifications, markNotificationAsRead } from '../../features/notif
 import { useIsMobile } from '../hooks/use-mobile';
 import { useTheme } from '../../contexts/ThemeContext';
 import AccessibilityMenu from '../common/AccessibilityMenu';
+import PushNotificationManager from '../../services/PushNotificationManager';
 
 // Custom hook to fetch latest version from patch notes
 const useLatestVersion = () => {
@@ -99,8 +100,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     const load = async () => {
       try {
         if (!pushManagerRef.current) {
-          const { default: PM } = await import('../../services/PushNotificationManager');
-          pushManagerRef.current = new PM();
+          pushManagerRef.current = new PushNotificationManager();
         }
         const userPref = user.pushNotificationEnabled !== false;
         const hasSub = await pushManagerRef.current.hasActiveSubscription();
@@ -117,8 +117,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     setPushError(false);
     try {
       if (!pushManagerRef.current) {
-        const { default: PM } = await import('../../services/PushNotificationManager');
-        pushManagerRef.current = new PM();
+        pushManagerRef.current = new PushNotificationManager();
       }
       const pm = pushManagerRef.current;
       if (pushEnabled) {
