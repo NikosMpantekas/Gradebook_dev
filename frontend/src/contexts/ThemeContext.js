@@ -514,6 +514,12 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
     document.documentElement.style.color = `hsl(${hexToHsl(colors.foreground)})`;
 
+    // Update <meta name="theme-color"> so iOS status bar / notch area matches the theme
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', colors.background);
+    }
+
     // Ensure dark class is properly set for shadcn components
     root.classList.toggle('dark', Boolean(isDark));
 

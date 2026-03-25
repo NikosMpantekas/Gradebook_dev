@@ -147,11 +147,13 @@ const Layout = () => {
         "lg:ml-64" // Fixed: Account for sidebar width on desktop (64 * 4 = 256px)
       )}>
         {/* Main content area */}
-        <div className={cn(
-          "flex-1 flex flex-col w-full",
-          "mt-14 sm:mt-16", // Account for header height
-          "p-1 sm:p-2 md:p-3"
-        )}>
+        <div
+          className={cn(
+            "flex-1 flex flex-col w-full",
+            "p-1 sm:p-2 md:p-3"
+          )}
+          style={{ marginTop: `calc(3.5rem + env(safe-area-inset-top, 0px))` }}
+        >
           <OfflineDetector>
             <Outlet />
           </OfflineDetector>
