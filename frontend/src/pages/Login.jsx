@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import { Lock, ArrowLeft, Check, Eye, EyeOff, GraduationCap, XCircle } from 'lucide-react';
+import { ArrowLeft, Check, Eye, EyeOff, GraduationCap, XCircle, School } from 'lucide-react';
 import { Spinner } from '../components/ui/spinner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -322,13 +322,8 @@ const Login = () => {
           "relative z-10 flex flex-row items-center gap-6 no-underline group transition-all duration-700",
           !isLoaded ? "opacity-0 -translate-x-4" : "opacity-100 translate-x-0"
         )}>
-          <div className={cn(
-            "w-20 h-20 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105",
-            darkMode
-              ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 text-blue-400"
-              : "bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600"
-          )}>
-            <GraduationCap className="w-10 h-10" />
+          <div className="w-24 h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+            <img src="/logo-transparent.png" alt="GradeBook Logo" className="w-24 h-24 object-contain" />
           </div>
           <span className={cn(
             "text-6xl font-serif font-bold tracking-tight",
@@ -356,7 +351,7 @@ const Login = () => {
         <div
           className={cn(
             "flex-1 flex items-center justify-center p-4 sm:p-8 relative z-10 transition-all duration-700",
-            !isLoaded ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+            "opacity-100"
           )}
         >
           <div className="w-full max-w-sm">
@@ -384,7 +379,11 @@ const Login = () => {
                   {animationStep === 'error' ? (
                     <XCircle className="h-7 w-7 animate-in zoom-in-50 duration-300" />
                   ) : (
-                    <Lock className={cn("h-7 w-7", animationStep === 'transitioning' && "animate-pulse")} />
+                    <img 
+                      src="/logo-transparent.png" 
+                      alt="Logo" 
+                      className={cn("h-12 w-12 object-contain", animationStep === 'transitioning' && "animate-pulse")} 
+                    />
                   )}
                 </div>
                 <div className="text-center">

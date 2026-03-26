@@ -6,19 +6,19 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader } from "../components/ui
 import { cn } from "../lib/utils";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
-  Menu,
+  List,
   Sun,
   Moon,
-  CheckCircle2,
-  Star,
-  MessageSquare,
-  BarChart3,
-  BookText,
   ArrowRight,
   GraduationCap,
-  Settings,
-  Users
-} from "lucide-react";
+  ChalkboardTeacher,
+  Buildings,
+  Users,
+  Notebook,
+  CalendarCheck,
+  ChatCircleDots,
+  CircleWavyCheck
+} from "phosphor-react";
 
 const Logo = ({ darkMode, currentPath }) => {
   const isHome = currentPath === "/home" || currentPath === "/";
@@ -26,13 +26,14 @@ const Logo = ({ darkMode, currentPath }) => {
     <Link
       to="/home"
       className={cn(
-        "relative text-xl font-bold tracking-tight font-serif py-1 group",
+        "relative flex items-center gap-3 text-xl font-bold tracking-tight font-serif py-1 group",
         "no-underline transition-all duration-300",
         isHome
           ? (darkMode ? "text-white" : "text-slate-900")
           : (darkMode ? "text-zinc-300 hover:text-white" : "text-slate-700 hover:text-slate-900")
       )}
     >
+      <img src="/logo-transparent.png" alt="Logo" className="w-9 h-9 object-contain" />
       GradeBook
       <span
         className={cn(
@@ -147,10 +148,9 @@ export default function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Parallax
+  // Parallax - Synchronized for both to move together
   const { scrollY } = useScroll();
-  const heroTextY = useTransform(scrollY, [0, 500], [0, -150]);
-  const mockupY = useTransform(scrollY, [0, 500], [0, -70]);
+  const parallaxY = useTransform(scrollY, [0, 500], [0, -100]);
   const heroOpacity = useTransform(scrollY, [0, 350], [1, 0]);
   // Persistent theme state
   const location = useLocation();
@@ -218,7 +218,7 @@ export default function Home() {
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="flex md:hidden mr-2">
-                <Menu className="h-5 w-5" />
+                <List size={20} weight="bold" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r pb-[env(safe-area-inset-bottom)]", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
@@ -278,7 +278,7 @@ export default function Home() {
           <div className="w-px h-4 mx-6 bg-slate-200/20 hidden md:block" />
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleToggleDarkMode} className={cn("rounded-full transition-colors w-8 h-8", darkMode ? "text-zinc-400 hover:text-white hover:bg-zinc-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100")}>
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {darkMode ? <Sun size={20} weight="bold" /> : <Moon size={20} weight="bold" />}
             </Button>
           </div>
         </div>
@@ -286,15 +286,12 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero Section - Standard Layout */}
-        <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-          <div className="max-w-7xl mx-auto flex flex-col items-center">
+        <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-[90vh] flex items-center">
+          <div className="max-w-7xl mx-auto flex flex-col items-center w-full relative">
             {/* Text Content */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              style={{ y: heroTextY, opacity: heroOpacity }}
-              className="text-center space-y-8 max-w-4xl mb-16 relative z-10"
+              style={{ y: parallaxY, opacity: heroOpacity }}
+              className="text-center space-y-8 max-w-4xl mb-16 relative z-20"
             >
               <style>{`
                 @keyframes highlighter {
@@ -341,20 +338,20 @@ export default function Home() {
                       whileHover={{ scale: 1.2, x: loggedInUser ? 4 : 0, rotate: loggedInUser ? 0 : 10 }}
                       transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
-                      {loggedInUser ? <ArrowRight className="w-4 h-4" /> : <BookText className="w-4 h-4" />}
+                      {loggedInUser ? <ArrowRight size={20} weight="bold" /> : <GraduationCap size={20} weight="bold" />}
                     </motion.div>
                   </Link>
                 </Button>
               </div>
             </motion.div>
 
-            {/* Mockup - Static Entry */}
             <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              style={{ y: mockupY }}
-              className="w-full max-w-6xl px-4 md:px-8"
+              style={{ y: parallaxY }}
+              className={cn(
+                "w-full max-w-6xl px-4 md:px-8",
+                "absolute top-60 left-0 opacity-40 scale-110 pointer-events-none z-10", // Mobile: perfectly behind text
+                "md:relative md:top-0 md:opacity-100 md:scale-100 md:pointer-events-auto md:z-20" // Desktop: below
+              )}
             >
               <DashboardMockup darkMode={darkMode} />
             </motion.div>
@@ -367,13 +364,7 @@ export default function Home() {
           darkMode ? "bg-zinc-900 border-zinc-800" : "bg-gray-50 border-slate-200"
         )} id="features">
           <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16 max-w-3xl mx-auto"
-            >
+            <div className="text-center mb-16 max-w-3xl mx-auto">
               <h2 className={cn(
                 "text-3xl md:text-5xl font-serif font-bold mb-6 tracking-tight",
                 darkMode ? "text-white" : "text-slate-900"
@@ -386,144 +377,35 @@ export default function Home() {
               )}>
                 Αντικαταστήστε τα πολύπλοκα excel και τα τετράδια με ένα ολοκληρωμένο σύστημα.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Large Card - Analytics */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: 0 }}
-                className="md:col-span-2 md:row-span-2"
-              >
+              <div className="md:col-span-2 md:row-span-2">
                 <Card className={cn(
                   "h-full p-8 flex flex-col justify-between border transition-all duration-300 hover:shadow-xl group",
                   darkMode ? "bg-zinc-900 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
                 )}>
-                  <div>
-                    <div className={cn(
-                      "w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
-                      darkMode ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 text-blue-400" : "bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600"
-                    )}>
-                      <BarChart3 className="w-7 h-7" />
-                    </div>
-                    <h3 className={cn("text-2xl font-serif font-bold mb-3", darkMode ? "text-white" : "text-slate-900")}>
-                      Αναλυτικά Στατιστικά
-                    </h3>
-                    <p className={cn("text-lg leading-relaxed max-w-md", darkMode ? "text-zinc-400" : "text-slate-600")}>
-                      Παρακολουθήστε την πρόοδο των μαθητών με αυτόματα διαγράμματα και αναφορές.
-                      Δείτε μέσους όρους, τάσεις και συγκριτικά στοιχεία με μια ματιά.
-                    </p>
-                  </div>
-                  <div className={cn(
-                    "mt-12 h-72 rounded-xl border overflow-hidden",
-                    darkMode ? "bg-zinc-950 border-zinc-800" : "bg-slate-50/50 border-slate-100"
-                  )}>
-                    <svg viewBox="0 0 400 150" className="w-full h-full" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                      <style>{`@keyframes drawFeatLine { to { stroke-dashoffset: 0; } }`}</style>
-                      <path
-                        d="M0,138 C60,122 100,108 150,92 C195,78 215,90 255,68 C300,44 340,26 390,10 L400,7"
-                        fill="none"
-                        stroke={darkMode ? "#60a5fa" : "#2563eb"}
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{
-                          strokeDasharray: 600,
-                          strokeDashoffset: 600,
-                          animation: 'drawFeatLine 1.5s ease-out forwards'
-                        }}
-                      />
-                    </svg>
-                  </div>
-                </Card>
-              </motion.div>
-
-              {/* Small Card 1 - Attendance */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <Card className={cn(
-                  "h-full p-8 border transition-all duration-300 hover:shadow-xl group",
-                  darkMode ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
-                )}>
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
-                    darkMode ? "bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 text-emerald-400" : "bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600"
-                  )}>
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <h3 className={cn("text-xl font-serif font-bold mb-3", darkMode ? "text-white" : "text-slate-900")}>
-                    Παρουσίες
-                  </h3>
-                  <p className={cn("text-base leading-relaxed", darkMode ? "text-zinc-400" : "text-slate-600")}>
-                    Καταγραφή απουσιών με ένα κλικ και αυτόματη ενημέρωση γονέων μέσω ειδοποιήσεων.
-                  </p>
-                </Card>
-              </motion.div>
-
-              {/* Small Card 2 - Communication */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <Card className={cn(
-                  "h-full p-8 border transition-all duration-300 hover:shadow-xl group",
-                  darkMode ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
-                )}>
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
-                    darkMode ? "bg-gradient-to-br from-purple-500/20 to-purple-600/10 text-purple-400" : "bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600"
-                  )}>
-                    <MessageSquare className="w-6 h-6" />
-                  </div>
-                  <h3 className={cn("text-xl font-serif font-bold mb-3", darkMode ? "text-white" : "text-slate-900")}>
-                    Επικοινωνία
-                  </h3>
-                  <p className={cn("text-base leading-relaxed", darkMode ? "text-zinc-400" : "text-slate-600")}>
-                    Στείλτε μαζικά μηνύματα και ανακοινώσεις σε μαθητές και γονείς.
-                  </p>
-                </Card>
-              </motion.div>
-
-              {/* Full Width Card - Grades */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="md:col-span-3"
-              >
-                <Card className={cn(
-                  "p-8 flex flex-col md:flex-row items-center gap-12 border transition-all duration-300 hover:shadow-xl group",
-                  darkMode ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
-                )}>
                   <div className="flex-1">
                     <div className={cn(
-                      "w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
-                      darkMode ? "bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-400" : "bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600"
+                      "w-14 h-14 flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
+                      darkMode ? "text-blue-400" : "text-blue-600"
                     )}>
-                      <Star className="w-7 h-7" />
+                      <Notebook size={48} weight="bold" />
                     </div>
                     <h3 className={cn("text-2xl font-serif font-bold mb-3", darkMode ? "text-white" : "text-slate-900")}>
                       Βαθμολόγιο & Αξιολογήσεις
                     </h3>
-                    <p className={cn("text-lg leading-relaxed max-w-xl", darkMode ? "text-zinc-400" : "text-slate-600")}>
+                    <p className={cn("text-lg leading-relaxed max-w-md", darkMode ? "text-zinc-400" : "text-slate-600")}>
                       Διατηρήστε πλήρες ιστορικό βαθμολογιών για διαγωνίσματα και εξετάσεις.
                       Εξάγετε αυτόματα δελτία προόδου για κάθε τρίμηνο.
                     </p>
                   </div>
-                  <div className="flex gap-6">
+                  <div className="flex gap-6 mt-12 justify-center">
                     <motion.div
                       whileHover={{ y: -4 }}
                       className={cn(
-                        "w-32 h-40 rounded-xl border flex flex-col items-center justify-center gap-3 transition-colors",
+                        "w-full h-40 rounded-xl border flex flex-col items-center justify-center gap-3 transition-colors",
                         darkMode ? "bg-zinc-900 border-zinc-800" : "bg-slate-50 border-slate-100"
                       )}
                     >
@@ -533,7 +415,7 @@ export default function Home() {
                     <motion.div
                       whileHover={{ y: -4 }}
                       className={cn(
-                        "w-32 h-40 rounded-xl border flex flex-col items-center justify-center gap-3 transition-colors",
+                        "w-full h-40 rounded-xl border flex flex-col items-center justify-center gap-3 transition-colors",
                         darkMode ? "bg-zinc-900 border-zinc-800" : "bg-slate-50 border-slate-100"
                       )}
                     >
@@ -542,7 +424,49 @@ export default function Home() {
                     </motion.div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
+
+              {/* Small Card 1 - Attendance */}
+              <div>
+                <Card className={cn(
+                  "h-full p-8 border transition-all duration-300 hover:shadow-xl group",
+                  darkMode ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
+                )}>
+                  <div className={cn(
+                    "w-12 h-12 flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
+                    darkMode ? "text-emerald-400" : "text-emerald-600"
+                  )}>
+                    <CalendarCheck size={40} weight="bold" />
+                  </div>
+                  <h3 className={cn("text-xl font-serif font-bold mb-3", darkMode ? "text-white" : "text-slate-900")}>
+                    Παρουσίες
+                  </h3>
+                  <p className={cn("text-base leading-relaxed", darkMode ? "text-zinc-400" : "text-slate-600")}>
+                    Καταγραφή απουσιών με ένα κλικ και αυτόματη ενημέρωση γονέων μέσω ειδοποιήσεων.
+                  </p>
+                </Card>
+              </div>
+
+              {/* Small Card 2 - Communication */}
+              <div>
+                <Card className={cn(
+                  "h-full p-8 border transition-all duration-300 hover:shadow-xl group",
+                  darkMode ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
+                )}>
+                  <div className={cn(
+                    "w-12 h-12 flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
+                    darkMode ? "text-purple-400" : "text-purple-600"
+                  )}>
+                    <ChatCircleDots size={40} weight="bold" />
+                  </div>
+                  <h3 className={cn("text-xl font-serif font-bold mb-3", darkMode ? "text-white" : "text-slate-900")}>
+                    Επικοινωνία
+                  </h3>
+                  <p className={cn("text-base leading-relaxed", darkMode ? "text-zinc-400" : "text-slate-600")}>
+                    Στείλτε μαζικά μηνύματα και ανακοινώσεις σε μαθητές και γονείς.
+                  </p>
+                </Card>
+              </div>
             </div>
           </div>
         </section>
@@ -553,13 +477,7 @@ export default function Home() {
           darkMode ? "border-zinc-800" : "border-slate-200"
         )}>
           <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16 max-w-3xl mx-auto"
-            >
+            <div className="text-center mb-16 max-w-3xl mx-auto">
               <h2 className={cn(
                 "text-3xl md:text-5xl font-serif font-bold mb-6 tracking-tight",
                 darkMode ? "text-white" : "text-slate-900"
@@ -572,14 +490,13 @@ export default function Home() {
               )}>
                 Κάθε χρήστης έχει εξατομικευμένη εμπειρία προσαρμοσμένη στις ανάγκες του.
               </p>
-            </motion.div>
-
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[
                 {
-                  icon: <GraduationCap className="w-8 h-8" />,
+                  icon: <GraduationCap size={48} weight="bold" />,
                   title: "Μαθητές",
-                  color: darkMode ? "from-blue-500/20 to-cyan-500/10 text-blue-400" : "from-blue-50 to-cyan-50 text-blue-600",
+                  color: darkMode ? "text-blue-400" : "text-blue-600",
                   borderHover: darkMode ? "hover:border-blue-500/30" : "hover:border-blue-300",
                   features: [
                     "Προβολή βαθμολογιών σε πραγματικό χρόνο",
@@ -589,9 +506,9 @@ export default function Home() {
                   ],
                 },
                 {
-                  icon: <BookText className="w-8 h-8" />,
+                  icon: <ChalkboardTeacher size={48} weight="bold" />,
                   title: "Καθηγητές",
-                  color: darkMode ? "from-emerald-500/20 to-green-500/10 text-emerald-400" : "from-emerald-50 to-green-50 text-emerald-600",
+                  color: darkMode ? "text-emerald-400" : "text-emerald-600",
                   borderHover: darkMode ? "hover:border-emerald-500/30" : "hover:border-emerald-300",
                   features: [
                     "Γρήγορη καταχώρηση βαθμών",
@@ -601,9 +518,9 @@ export default function Home() {
                   ],
                 },
                 {
-                  icon: <Settings className="w-8 h-8" />,
+                  icon: <Buildings size={48} weight="bold" />,
                   title: "Διαχειριστές",
-                  color: darkMode ? "from-purple-500/20 to-violet-500/10 text-purple-400" : "from-purple-50 to-violet-50 text-purple-600",
+                  color: darkMode ? "text-purple-400" : "text-purple-600",
                   borderHover: darkMode ? "hover:border-purple-500/30" : "hover:border-purple-300",
                   features: [
                     "Πλήρης έλεγχος φροντιστηρίου",
@@ -613,9 +530,9 @@ export default function Home() {
                   ],
                 },
                 {
-                  icon: <Users className="w-8 h-8" />,
+                  icon: <Users size={48} weight="bold" />,
                   title: "Γονείς",
-                  color: darkMode ? "from-rose-500/20 to-pink-500/10 text-rose-400" : "from-rose-50 to-pink-50 text-rose-600",
+                  color: darkMode ? "text-rose-400" : "text-rose-600",
                   borderHover: darkMode ? "hover:border-rose-500/30" : "hover:border-rose-300",
                   features: [
                     "Ενημέρωση για βαθμολογίες σε πραγματικό χρόνο",
@@ -624,21 +541,15 @@ export default function Home() {
                     "Πρόσβαση σε δελτία προόδου",
                   ],
                 },
-              ].map((role, i) => (
-                <motion.div
-                  key={role.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                >
+              ].map((role) => (
+                <div key={role.title}>
                   <Card className={cn(
                     "h-full p-8 border transition-all duration-300 hover:shadow-xl group",
                     role.borderHover,
                     darkMode ? "bg-zinc-900/50 border-zinc-800" : "bg-white border-slate-200"
                   )}>
                     <div className={cn(
-                      "w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br transition-transform duration-300 group-hover:scale-110",
+                      "w-16 h-16 flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
                       role.color
                     )}>
                       {role.icon}
@@ -649,13 +560,13 @@ export default function Home() {
                     <ul className="space-y-3">
                       {role.features.map((feature, j) => (
                         <li key={j} className="flex items-start gap-3">
-                          <CheckCircle2 className={cn("w-5 h-5 mt-0.5 flex-shrink-0", darkMode ? "text-emerald-400" : "text-emerald-500")} />
+                          <CircleWavyCheck size={24} weight="bold" className={cn("mt-0.5 flex-shrink-0", darkMode ? "text-emerald-400" : "text-emerald-500")} />
                           <span className={cn("text-base", darkMode ? "text-zinc-300" : "text-slate-700")}>{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -664,8 +575,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="py-8 px-6">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <Logo darkMode={darkMode} currentPath={currentPath} />
+          <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-4">
             <p className={cn("text-sm", darkMode ? "text-zinc-600" : "text-slate-400")}>
               © {new Date().getFullYear()} The GradeBook Team
             </p>

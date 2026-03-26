@@ -6,14 +6,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader } from "../components/ui
 import { cn } from "../lib/utils";
 import { motion } from "framer-motion";
 import {
-  Menu,
+  List,
   Sun,
   Moon,
-  GraduationCap,
-  Shield,
-  Zap,
-  HeadphonesIcon,
-} from "lucide-react";
+  Compass,
+  ShieldCheck,
+  Megaphone,
+  Lifebuoy
+} from "phosphor-react";
 
 const Logo = ({ darkMode, currentPath }) => {
   const isHome = currentPath === "/home" || currentPath === "/";
@@ -21,13 +21,14 @@ const Logo = ({ darkMode, currentPath }) => {
     <Link
       to="/home"
       className={cn(
-        "relative text-xl font-bold tracking-tight font-serif py-1 group",
+        "relative flex items-center gap-2.5 text-xl font-bold tracking-tight font-serif py-1 group",
         "no-underline transition-all duration-300",
         isHome
           ? (darkMode ? "text-white" : "text-slate-900")
           : (darkMode ? "text-zinc-300 hover:text-white" : "text-slate-700 hover:text-slate-900")
       )}
     >
+      <img src="/logo-transparent.png" alt="Logo" className="w-9 h-9 object-contain" />
       GradeBook
       <span
         className={cn(
@@ -92,22 +93,22 @@ export default function About() {
 
   const features = [
     {
-      icon: <GraduationCap className="w-12 h-12" />,
+      icon: <Compass size={48} weight="bold" />,
       title: "Διαχείριση Φροντιστηρίων",
       description: "Πλήρης έλεγχος των τάξεων, μαθητών και βαθμολογιών με εύκολη και διαισθητική διασύνδεση.",
     },
     {
-      icon: <Shield className="w-12 h-12" />,
+      icon: <ShieldCheck size={48} weight="bold" />,
       title: "Ασφάλεια Δεδομένων",
       description: "Προστασία των ευαίσθητων πληροφοριών των μαθητών με σύγχρονες τεχνολογίες κρυπτογράφησης.",
     },
     {
-      icon: <Zap className="w-12 h-12" />,
+      icon: <Megaphone size={48} weight="bold" />,
       title: "Γρήγορη Ενημέρωση",
       description: "Άμεση επικοινωνία με γονείς και μαθητές μέσω push notifications και email ειδοποιήσεων.",
     },
     {
-      icon: <HeadphonesIcon className="w-12 h-12" />,
+      icon: <Lifebuoy size={48} weight="bold" />,
       title: "24/7 Υποστήριξη",
       description: "Συνεχής τεχνική υποστήριξη για όλες τις ανάγκες του φροντιστηρίου σας.",
     },
@@ -138,7 +139,7 @@ export default function About() {
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="flex md:hidden mr-2">
-                <Menu className="h-5 w-5" />
+                <List size={20} weight="bold" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r pb-[env(safe-area-inset-bottom)]", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
@@ -198,7 +199,7 @@ export default function About() {
           <div className="w-px h-4 mx-6 bg-slate-200/20 hidden md:block" />
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleToggleDarkMode} className={cn("rounded-full transition-colors w-8 h-8", darkMode ? "text-zinc-400 hover:text-white hover:bg-zinc-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100")}>
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {darkMode ? <Sun size={20} weight="bold" /> : <Moon size={20} weight="bold" />}
             </Button>
           </div>
         </div>
@@ -208,12 +209,7 @@ export default function About() {
         {/* Hero Section */}
         <section className="relative pt-32 pb-16 px-6">
           <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
+            <div className="text-center mb-16">
               <h1 className={cn(
                 "font-serif font-bold text-4xl sm:text-5xl md:text-6xl tracking-tight leading-tight mb-6",
                 darkMode ? "text-white" : "text-slate-900"
@@ -227,24 +223,18 @@ export default function About() {
                 Το GradeBook είναι μια σύγχρονη πλατφόρμα διαχείρισης φροντιστηρίων που αναπτύχθηκε
                 για να απλοποιήσει και να βελτιώσει την εκπαιδευτική διαδικασία.
               </p>
-            </motion.div>
+            </div>
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
               {features.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
+                <div key={index}>
                   <Card className={cn(
                     "h-full p-6 border transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
                     darkMode ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700" : "bg-white border-slate-200 hover:border-slate-300"
                   )}>
                     <div className={cn(
-                      "mb-4",
-                      darkMode ? "text-blue-400" : "text-blue-600"
+                      "mb-4 text-[#94a3b8]"
                     )}>
                       {feature.icon}
                     </div>
@@ -261,17 +251,12 @@ export default function About() {
                       {feature.description}
                     </p>
                   </Card>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Story Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center mb-20"
-            >
+            <div className="text-center mb-20">
               <h2 className={cn(
                 "font-serif font-bold text-3xl md:text-4xl mb-6 tracking-tight",
                 darkMode ? "text-white" : "text-slate-900"
@@ -287,15 +272,10 @@ export default function About() {
                 αυξανόμενες απαιτήσεις για ψηφιακές λύσεις, αναπτύξαμε μια πλατφόρμα που συνδυάζει
                 ευκολία χρήσης με ισχυρές λειτουργίες.
               </p>
-            </motion.div>
+            </div>
 
             {/* Mission Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-center"
-            >
+            <div className="text-center">
               <h2 className={cn(
                 "font-serif font-bold text-3xl md:text-4xl mb-6 tracking-tight",
                 darkMode ? "text-white" : "text-slate-900"
@@ -310,14 +290,13 @@ export default function About() {
                 χρειάζονται για να εστιάσουν σε αυτό που κάνουν καλύτερα: την εκπαίδευση των μαθητών.
                 Με το GradeBook, η διαχείριση γίνεται απλή και αποδοτική.
               </p>
-            </motion.div>
+            </div>
           </div>
         </section>
       </main>
 
       <footer className="py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo darkMode={darkMode} />
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-4">
           <p className={cn("text-sm", darkMode ? "text-zinc-600" : "text-slate-400")}>
             © {new Date().getFullYear()} The GradeBook Team
           </p>
