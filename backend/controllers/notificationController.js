@@ -950,7 +950,7 @@ const deleteNotification = asyncHandler(async (req, res) => {
     }
 
     // Verify the notification belongs to the user's school (multi-tenancy security)
-    if (notification.schoolId && notification.schoolId.toString() !== req.user.schoolId.toString()) {
+    if (req.user.role !== 'superadmin' && notification.schoolId && notification.schoolId.toString() !== req.user.schoolId.toString()) {
       console.log(`School mismatch: notification school ${notification.schoolId}, user school ${req.user.schoolId}`);
       res.status(404); // Use 404 instead of 403 to prevent school ID enumeration
       throw new Error('Notification not found');
@@ -959,8 +959,9 @@ const deleteNotification = asyncHandler(async (req, res) => {
     // Check if user is allowed to delete this notification
     const isOwner = notification.sender.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
+    const isSuperAdmin = req.user.role === 'superadmin';
 
-    if (!isOwner && !isAdmin) {
+    if (!isOwner && !isAdmin && !isSuperAdmin) {
       console.log(`Not authorized: user ${req.user._id} attempted to delete notification ${notification._id} created by ${notification.sender}`);
       res.status(403);
       throw new Error('Not authorized to delete this notification');

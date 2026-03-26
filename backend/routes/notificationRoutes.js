@@ -48,6 +48,16 @@ router.put('/:id', protect, canSendNotifications, async (req, res) => {
       res.status(404);
       throw new Error('Notification not found');
     }
+
+    // Role-based security check
+    const isOwner = notification.sender.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin' && notification.schoolId?.toString() === req.user.schoolId?.toString();
+    const isSuperAdmin = req.user.role === 'superadmin';
+
+    if (!isOwner && !isAdmin && !isSuperAdmin) {
+      res.status(403);
+      throw new Error('Not authorized to update this notification');
+    }
     
     // Update the notification
     notification.title = title || notification.title;
@@ -59,7 +69,7 @@ router.put('/:id', protect, canSendNotifications, async (req, res) => {
     res.status(200).json(updatedNotification);
   } catch (error) {
     console.error('Error updating notification:', error);
-    res.status(error.statusCode || 500);
+    res.status(res.statusCode || 500);
     throw new Error(error.message || 'Error updating notification');
   }
 });
