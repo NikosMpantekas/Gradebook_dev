@@ -45,10 +45,11 @@ export const getMyNotifications = createAsyncThunk(
       console.log(`Successfully received ${response.length} notifications in action creator`);
       return response;
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       console.error('Error in getMyNotifications action creator:', error);
-      // Return an empty array instead of rejecting
-      // This ensures our UI will always have something to render
-      return [];
+      return thunkAPI.rejectWithValue(error.message || 'Failed to fetch notifications');
     }
   }
 );
@@ -66,10 +67,11 @@ export const getSentNotifications = createAsyncThunk(
       console.log(`Successfully received ${response.length} notifications in action creator`);
       return response; 
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       console.error('Error in getSentNotifications action creator:', error);
-      // Return an empty array instead of rejecting
-      // This ensures our UI will always have something to render
-      return []; 
+      return thunkAPI.rejectWithValue(error.message || 'Failed to fetch sent notifications');
     }
   }
 );
@@ -106,6 +108,9 @@ export const updateNotification = createAsyncThunk(
       const token = thunkAPI.getState().auth.user.token;
       return await notificationService.updateNotification(id, notificationData, token);
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -125,6 +130,9 @@ export const deleteNotification = createAsyncThunk(
       const token = thunkAPI.getState().auth.user.token;
       return await notificationService.deleteNotification(id, token);
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -150,6 +158,9 @@ export const markNotificationAsRead = createAsyncThunk(
         id: id
       };
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -174,6 +185,9 @@ export const markNotificationAsSeen = createAsyncThunk(
         id: id
       };
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -193,6 +207,9 @@ export const subscribeToPushNotifications = createAsyncThunk(
       const token = thunkAPI.getState().auth.user.token;
       return await notificationService.subscribeToPushNotifications(subscription, token);
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -211,6 +228,9 @@ export const getVapidPublicKey = createAsyncThunk(
     try {
       return await notificationService.getVapidPublicKey();
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
       const message =
         (error.response &&
           error.response.data &&
@@ -261,10 +281,14 @@ export const notificationSlice = createSlice({
       })
       // We don't use rejected case for getMyNotifications anymore since we always return an array
       // This ensures the UI never crashes even on network errors
-      .addCase(getMyNotifications.rejected, (state) => {
+      .addCase(getMyNotifications.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = false; // Don't set error state since we're handling errors gracefully
-        state.notifications = []; // Ensure we have an empty array to render
+        // Only clear notifications if it's a real error, not a cancellation
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+          state.notifications = []; 
+        }
       })
       .addCase(getSentNotifications.pending, (state) => {
         state.isLoading = true;
@@ -275,10 +299,13 @@ export const notificationSlice = createSlice({
         state.notifications = action.payload;
       })
       .addCase(getSentNotifications.rejected, (state, action) => {
-        console.error('getSentNotifications rejected:', action.payload);
         state.isLoading = false;
-        state.isError = false; // Don't set error state since we're handling errors gracefully
-        state.notifications = []; // Ensure we have an empty array to render
+        // Only clear notifications if it's a real error, not a cancellation
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+          state.notifications = [];
+        }
         state.message = ''; // Clear any error messages
       })
       .addCase(getNotification.pending, (state) => {
@@ -312,8 +339,10 @@ export const notificationSlice = createSlice({
       })
       .addCase(updateNotification.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       })
       .addCase(deleteNotification.pending, (state) => {
         state.isLoading = true;
@@ -327,8 +356,10 @@ export const notificationSlice = createSlice({
       })
       .addCase(deleteNotification.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       })
       .addCase(markNotificationAsRead.pending, (state) => {
         state.isLoading = true;
@@ -350,8 +381,10 @@ export const notificationSlice = createSlice({
       })
       .addCase(markNotificationAsRead.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       })
       .addCase(markNotificationAsSeen.pending, (state) => {
         state.isLoading = true;
@@ -380,8 +413,10 @@ export const notificationSlice = createSlice({
       })
       .addCase(markNotificationAsSeen.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       })
       .addCase(subscribeToPushNotifications.pending, (state) => {
         state.isLoading = true;
@@ -392,16 +427,20 @@ export const notificationSlice = createSlice({
       })
       .addCase(subscribeToPushNotifications.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       })
       .addCase(getVapidPublicKey.fulfilled, (state) => {
         state.isLoading = false;
       })
       .addCase(getVapidPublicKey.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       });
   },
 });

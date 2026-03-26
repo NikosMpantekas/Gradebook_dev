@@ -274,7 +274,6 @@ const Notifications = () => {
                 tabValue="received"
                 user={user}
                 onMarkAsRead={handleMarkAsRead}
-                onMarkAsSeen={handleMarkAsSeen}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onNavigate={handleNavigate}
@@ -288,7 +287,6 @@ const Notifications = () => {
                   tabValue="sent"
                   user={user}
                   onMarkAsRead={handleMarkAsRead}
-                  onMarkAsSeen={handleMarkAsSeen}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onNavigate={handleNavigate}
