@@ -1105,8 +1105,8 @@ const deletePushSubscription = asyncHandler(async (req, res) => {
     });
     
     if (result.deletedCount === 0) {
-      res.status(404);
-      throw new Error('Subscription not found');
+      console.log(`[SUBSCRIPTIONS] Subscription not found or already deleted - treating as success`);
+      return res.status(200).json({ success: true, message: 'Subscription already removed' });
     }
     
     console.log(`[SUBSCRIPTIONS] Successfully deleted subscription`);
