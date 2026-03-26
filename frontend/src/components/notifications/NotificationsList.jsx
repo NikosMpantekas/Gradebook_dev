@@ -168,8 +168,9 @@ const NotificationsList = ({
             _id: notification._id || 'unknown',
             title: notification.title || t('notifications.untitled'),
             message: notification.message || t('notifications.noMessage'),
-            isRead: Boolean(notification.isRead || notification.read),
-            isSeen: Boolean(notification.isSeen || notification.seen),
+            // Force isRead to true for superadmins to prevent distracting "New" badges
+            isRead: user?.role === 'superadmin' ? true : Boolean(notification.isRead || notification.read),
+            isSeen: user?.role === 'superadmin' ? true : Boolean(notification.isSeen || notification.seen),
             isImportant: Boolean(notification.isImportant || notification.urgent),
             sender: notification.sender || { name: t('notifications.unknownSender') },
             createdAt: notification.createdAt || new Date().toISOString()

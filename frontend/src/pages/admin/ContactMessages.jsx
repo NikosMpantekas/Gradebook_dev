@@ -317,7 +317,7 @@ const ContactMessages = () => {
                       variant="outline"
                       size="sm"
                       className="w-full sm:w-auto text-red-600 border-red-600 hover:bg-red-50"
-                      onClick={() => { /* no-op for now */ }}
+                      onClick={() => handleOpenDeleteConfirm(message)}
                     >
                       <AlertCircle className="mr-2 h-4 w-4" />
                       Deny
