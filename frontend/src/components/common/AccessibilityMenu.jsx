@@ -3,6 +3,7 @@ import { PersonStanding, Type, ZapOff, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,6 +12,8 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuPortal,
     DropdownMenuSubContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
 } from '../ui/dropdown-menu';
 import {
     Tooltip,
@@ -27,6 +30,39 @@ const FONT_SIZES = [
     { key: 'lg', label: 'L' },
     { key: 'xl', label: 'XL' },
 ];
+
+const AccessibilityToggle = ({ variant, icon: Icon, label, id, checked, onCheckedChange }) => {
+    const content = (
+        <div className="flex items-center justify-between w-full py-1">
+            <Label
+                htmlFor={id}
+                className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 cursor-pointer flex-1 py-1"
+            >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+            </Label>
+            <Switch
+                id={id}
+                checked={checked}
+                onCheckedChange={onCheckedChange}
+                className="ml-2"
+            />
+        </div>
+    );
+
+    if (variant === 'popover' || variant === 'sub') {
+        return (
+            <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="focus:bg-accent/50 px-2"
+            >
+                {content}
+            </DropdownMenuItem>
+        );
+    }
+
+    return <div className="px-1">{content}</div>;
+};
 
 const AccessibilityMenu = ({ variant = 'popover' }) => {
     const { t } = useTranslation();
@@ -104,14 +140,16 @@ const AccessibilityMenu = ({ variant = 'popover' }) => {
     const isAnyActive = fontSize !== 'md' || reduceMotion || dyslexiaFont || highContrast;
 
     const menuContent = (
-        <div className="p-4 space-y-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <PersonStanding className="h-4 w-4" />
-                {t('settings.accessibility', 'Accessibility')}
-            </h4>
+        <div className={cn("p-1", variant === 'expanded' ? "p-4 space-y-4" : "space-y-1")}>
+            <div className={cn("px-3 py-2 border-b mb-1", variant === 'expanded' ? "px-0 border-b-0 mb-0" : "")}>
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <PersonStanding className="h-4 w-4" />
+                    {t('settings.accessibility', 'Accessibility')}
+                </h4>
+            </div>
 
             {/* Font Size */}
-            <div className="space-y-2">
+            <div className={cn("px-3 py-2 space-y-2", variant === 'expanded' ? "px-0" : "")}>
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <Type className="h-3.5 w-3.5" />
                     {t('settings.fontSize', 'Font Size')}
@@ -126,7 +164,9 @@ const AccessibilityMenu = ({ variant = 'popover' }) => {
                                 'flex-1 text-xs h-8',
                                 fontSize === key && 'pointer-events-none'
                             )}
-                            onClick={() => handleFontSize(key)}
+                            onClick={(e) => {
+                                handleFontSize(key);
+                            }}
                         >
                             {label}
                         </Button>
@@ -134,37 +174,31 @@ const AccessibilityMenu = ({ variant = 'popover' }) => {
                 </div>
             </div>
 
-            {/* Reduce Motion */}
-            <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <ZapOff className="h-3.5 w-3.5" />
-                    {t('settings.reduceMotion', 'Reduce Motion')}
-                </label>
-                <Switch
+            {/* Toggles */}
+            <div className={cn("space-y-0.5", variant === 'expanded' ? "space-y-4" : "")}>
+                <AccessibilityToggle
+                    variant={variant}
+                    id="a11y-reduce-motion"
+                    icon={ZapOff}
+                    label={t('settings.reduceMotion', 'Reduce Motion')}
                     checked={reduceMotion}
                     onCheckedChange={handleReduceMotion}
                 />
-            </div>
 
-            {/* Dyslexia Font */}
-            <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <Type className="h-3.5 w-3.5" />
-                    {t('settings.dyslexiaFont', 'Dyslexia Font')}
-                </label>
-                <Switch
+                <AccessibilityToggle
+                    variant={variant}
+                    id="a11y-dyslexia-font"
+                    icon={Type}
+                    label={t('settings.dyslexiaFont', 'Dyslexia Font')}
                     checked={dyslexiaFont}
                     onCheckedChange={handleDyslexiaFont}
                 />
-            </div>
 
-            {/* High Contrast */}
-            <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <Eye className="h-3.5 w-3.5" />
-                    {t('settings.highContrast', 'High Contrast')}
-                </label>
-                <Switch
+                <AccessibilityToggle
+                    variant={variant}
+                    id="a11y-high-contrast"
+                    icon={Eye}
+                    label={t('settings.highContrast', 'High Contrast')}
                     checked={highContrast}
                     onCheckedChange={handleHighContrast}
                 />

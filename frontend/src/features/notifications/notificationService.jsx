@@ -39,6 +39,9 @@ const createNotification = async (notificationData, token) => {
     
     return response.data;
   } catch (error) {
+    if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+      throw error; // Re-throw without logging for cancellations
+    }
     const errorDetails = {
       timestamp: new Date().toISOString(),
       endpoint,
@@ -104,6 +107,9 @@ const getMyNotifications = async (token) => {
       return [];
     }
   } catch (error) {
+    if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+      return [];
+    }
     console.error('Error fetching my notifications:', error);
     return [];
   }
@@ -130,6 +136,9 @@ const getSentNotifications = async (token) => {
     
     return response.data;
   } catch (error) {
+    if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+      return [];
+    }
     console.error('Error fetching sent notifications:', error);
     // Instead of throwing, return an empty array with error logging
     // This prevents the UI from crashing

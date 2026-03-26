@@ -34,7 +34,7 @@ import { Separator } from '../../components/ui/separator';
 import { Spinner } from '../../components/ui/spinner';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
-import axios from 'axios';
+import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
 
@@ -167,11 +167,11 @@ const AdminDashboard = () => {
       console.log('AdminDashboard: Fetching stats...');
       
       // Fetch users to count by role
-      const usersResponse = await axios.get(`${API_URL}/api/users`, getAuthConfig());
+      const usersResponse = await axiosInstance.get(`${API_URL}/api/users`, getAuthConfig());
       const users = usersResponse.data || [];
       
       // Fetch classes to count total classes
-      const classesResponse = await axios.get(`${API_URL}/api/classes`, getAuthConfig());
+      const classesResponse = await axiosInstance.get(`${API_URL}/api/classes`, getAuthConfig());
       const classes = classesResponse.data || [];
       
       // Calculate stats
@@ -187,6 +187,15 @@ const AdminDashboard = () => {
       return stats;
       
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return {
+          totalUsers: 0,
+          totalStudents: 0,
+          totalTeachers: 0,
+          totalClasses: 0,
+          recentActivity: 0
+        };
+      }
       console.error('AdminDashboard: Error fetching stats:', error);
       // Return default stats on error
       return {
@@ -201,9 +210,12 @@ const AdminDashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
+      const response = await axiosInstance.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
       return response.data || [];
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return [];
+      }
       console.error('AdminDashboard: Error fetching notifications:', error);
       return [];
     }

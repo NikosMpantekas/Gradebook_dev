@@ -24,7 +24,7 @@ import { Spinner } from '../../components/ui/spinner';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { GradesGraph } from "../../components/GradesGraph";
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
@@ -157,6 +157,9 @@ const StudentDashboard = () => {
       console.log('StudentDashboard: Dashboard data loaded successfully');
       
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return;
+      }
       console.error('StudentDashboard: Error fetching dashboard data:', error);
       setError(t('student.failedToLoad'));
     } finally {
@@ -167,9 +170,12 @@ const StudentDashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
+      const response = await axiosInstance.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
       return response.data || [];
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return [];
+      }
       console.error('StudentDashboard: Error fetching notifications:', error);
       return [];
     }
@@ -178,7 +184,7 @@ const StudentDashboard = () => {
   const fetchAllGrades = async () => {
     try {
       // For student, get all their grades using the student-specific endpoint
-      const response = await axios.get(`${API_URL}/api/grades/student`, getAuthConfig());
+      const response = await axiosInstance.get(`${API_URL}/api/grades/student`, getAuthConfig());
       
       console.log('StudentDashboard: Grades response:', response.data);
       
@@ -189,6 +195,9 @@ const StudentDashboard = () => {
       console.log('StudentDashboard: All grades for graph:', allGrades.length);
       return allGrades;
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return [];
+      }
       console.error('StudentDashboard: Error fetching grades:', error);
       return [];
     }
@@ -197,7 +206,7 @@ const StudentDashboard = () => {
   const fetchUpcomingClasses = async () => {
     try {
       // For student, get their schedule
-      const response = await axios.get(`${API_URL}/api/schedule`, getAuthConfig());
+      const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
       
       console.log('StudentDashboard: Schedule response:', response.data);
       
@@ -234,6 +243,9 @@ const StudentDashboard = () => {
       
       return [];
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return [];
+      }
       console.error('StudentDashboard: Error fetching upcoming classes:', error);
       return [];
     }
@@ -242,7 +254,7 @@ const StudentDashboard = () => {
   const fetchScheduleData = async () => {
     try {
       // Fetch complete schedule data for the calendar
-      const response = await axios.get(`${API_URL}/api/schedule`, getAuthConfig());
+      const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
       
       console.log('StudentDashboard: Full schedule response for calendar:', response.data);
       
@@ -259,6 +271,9 @@ const StudentDashboard = () => {
       
       return {};
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return {};
+      }
       console.error('StudentDashboard: Error fetching schedule data:', error);
       return {};
     }

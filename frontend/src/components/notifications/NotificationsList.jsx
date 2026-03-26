@@ -235,7 +235,7 @@ const NotificationsList = ({
                   <div className="flex items-center justify-end gap-1 flex-shrink-0">
                     {/* Desktop: Individual action buttons */}
                     <div className="hidden sm:flex items-center gap-1">
-                      {!isSender && !safeNotification.isRead && onMarkAsRead && (
+                      {!isSender && !safeNotification.isRead && onMarkAsRead && user?.role !== 'student' && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -313,7 +313,7 @@ const NotificationsList = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          {!isSender && !safeNotification.isRead && onMarkAsRead && (
+                          {!isSender && !safeNotification.isRead && onMarkAsRead && user?.role !== 'student' && (
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();

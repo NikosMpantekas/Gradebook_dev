@@ -25,11 +25,12 @@ import {
 } from '../ui/dropdown-menu';
 import { cn } from '../../lib/utils';
 import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleDarkMode } from '../../features/ui/uiSlice';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import authService from '../../features/auth/authService';
-import axios from 'axios';
+import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { getMyNotifications, markNotificationAsRead } from '../../features/notifications/notificationSlice';
 import { useIsMobile } from '../hooks/use-mobile';
@@ -45,7 +46,7 @@ const useLatestVersion = () => {
   useEffect(() => {
     const fetchLatestVersion = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/patch-notes/public`, {
+        const response = await axiosInstance.get(`${API_URL}/api/patch-notes/public`, {
           timeout: 10000
         });
 
@@ -59,6 +60,9 @@ const useLatestVersion = () => {
           }
         }
       } catch (error) {
+        if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+          return;
+        }
         console.error('Failed to fetch latest version:', error);
       } finally {
         setIsLoading(false);
@@ -177,18 +181,21 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
       if (user.role === 'admin' || user.role === 'superadmin') {
         // Admins: unread are messages with read === false in school scope
-        const res = await axios.get(`${API_URL}/api/contact`, config);
+        const res = await axiosInstance.get(`${API_URL}/api/contact`, config);
         const unread = (res.data || []).filter(m => m && m.read === false);
         setContactUnreadCount(unread.length);
         setContactUnreadPreview(unread.slice(0, 5));
       } else {
         // Regular users: unread are admin replies they haven't read
-        const res = await axios.get(`${API_URL}/api/contact/user`, config);
+        const res = await axiosInstance.get(`${API_URL}/api/contact/user`, config);
         const unread = (res.data || []).filter(m => m && m.status === 'replied' && m.adminReply && !m.replyRead);
         setContactUnreadCount(unread.length);
         setContactUnreadPreview(unread.slice(0, 5));
       }
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return;
+      }
       console.error('Failed to fetch contact unread:', error);
     }
   }, [user]);
@@ -371,15 +378,22 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                     </div>
 
                     <div className="py-1">
-                      {/* Dark Mode Toggle as an Item */}
+                      {/* Dark Mode Toggle as a Switch Item */}
                       <DropdownMenuItem
-                        onClick={handleDarkModeToggle}
-                        className="flex items-center justify-between gap-2 px-4 py-2"
+                        onSelect={(e) => e.preventDefault()}
+                        className="flex items-center justify-between gap-2 px-4 py-2 focus:bg-accent/50"
                       >
                         <div className="flex items-center gap-2">
-                          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                          <span className="text-sm">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                          {darkMode ? <Sun className="h-4 w-4 text-primary" /> : <Moon className="h-4 w-4 text-primary" />}
+                          <Label htmlFor="mobile-dark-mode" className="text-sm cursor-pointer">
+                            {darkMode ? t('settings.lightMode', 'Light Mode') : t('settings.darkMode', 'Dark Mode')}
+                          </Label>
                         </div>
+                        <Switch
+                          id="mobile-dark-mode"
+                          checked={darkMode}
+                          onCheckedChange={handleDarkModeToggle}
+                        />
                       </DropdownMenuItem>
                     </div>
 
@@ -486,7 +500,10 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                   <DropdownMenuSeparator />
 
                   {/* Push Notification Toggle */}
-                  <div className="flex items-center justify-between px-2 py-1.5">
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex items-center justify-between px-4 py-2 focus:bg-accent/50"
+                  >
                     <div className="flex items-center gap-2 text-sm text-foreground">
                       {pushLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -495,16 +512,19 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                       ) : pushEnabled ? (
                         <Bell className="h-4 w-4 text-primary" />
                       ) : (
-                        <BellOff className="h-4 w-4" />
+                        <BellOff className="h-4 w-4 text-muted-foreground" />
                       )}
-                      <span>Push Notifications</span>
+                      <Label htmlFor="push-notif-toggle" className="cursor-pointer">
+                        {t('settings.pushNotifications', 'Push Notifications')}
+                      </Label>
                     </div>
                     <Switch
+                      id="push-notif-toggle"
                       checked={pushEnabled}
                       onCheckedChange={handlePushToggle}
                       disabled={pushLoading}
                     />
-                  </div>
+                  </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
 

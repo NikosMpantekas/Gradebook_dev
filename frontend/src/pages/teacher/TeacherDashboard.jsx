@@ -32,7 +32,7 @@ import { Badge } from '../../components/ui/badge';
 import { Spinner } from '../../components/ui/spinner';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
-import axios from 'axios';
+import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
 
@@ -146,6 +146,9 @@ const TeacherDashboard = () => {
       console.log('TeacherDashboard: Dashboard data loaded successfully');
       
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return;
+      }
       console.error('TeacherDashboard: Error fetching dashboard data:', error);
       setError('Failed to load dashboard data. Please refresh the page.');
     } finally {
@@ -159,11 +162,11 @@ const TeacherDashboard = () => {
       console.log('TeacherDashboard: Fetching teacher stats...');
       
       // Fetch teacher's students from their classes
-      const studentsResponse = await axios.get(`${API_URL}/api/students/teacher/classes`, getAuthConfig());
+      const studentsResponse = await axiosInstance.get(`${API_URL}/api/students/teacher/classes`, getAuthConfig());
       const students = studentsResponse.data || [];
       
       // Fetch teacher's classes
-      const classesResponse = await axios.get(`${API_URL}/api/classes`, getAuthConfig());
+      const classesResponse = await axiosInstance.get(`${API_URL}/api/classes`, getAuthConfig());
       const classes = classesResponse.data || [];
       
       // For now, set gradesSubmitted and pendingGrades to 0
@@ -177,6 +180,12 @@ const TeacherDashboard = () => {
       return stats;
       
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return {
+          totalStudents: 0,
+          totalClasses: 0,
+        };
+      }
       console.error('TeacherDashboard: Error fetching stats:', error);
       // Return default stats on error
       return {
@@ -188,9 +197,12 @@ const TeacherDashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
+      const response = await axiosInstance.get(`${API_URL}/api/notifications?limit=10`, getAuthConfig());
       return response.data || [];
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return [];
+      }
       console.error('TeacherDashboard: Error fetching notifications:', error);
       return [];
     }
