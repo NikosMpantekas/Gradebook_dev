@@ -12,15 +12,15 @@ export default defineConfig({
       injectRegister: 'auto',
       registerType: 'prompt',
       strategies: 'injectManifest',
-      srcDir: 'public',
-      filename: 'service-worker.js',
+      srcDir: 'src',
+      filename: 'sw.js',
       manifest: false, // Use existing manifest.json in public/
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,jpg,svg,json}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {
-        enabled: false,
+        enabled: true,
         type: 'module',
       },
     }),

@@ -8,9 +8,6 @@ import './index.css';
 // Import axios configuration to fix double slash API URLs globally
 import './config/axiosConfig';
 
-// DISABLE ALL SERVICE WORKERS
-// This will prevent CRA from generating service workers during build
-
 const container = document.getElementById('root');
 const root = createRoot(container);
 
@@ -21,23 +18,6 @@ root.render(
     </Provider>
   </React.StrictMode>
 );
-
-// COMPLETELY DISABLE ALL SERVICE WORKERS
-console.log('⚠️ All service workers disabled to prevent Netlify build issues');
-
-// Unregister any existing service workers
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations()
-    .then(registrations => {
-      for (const registration of registrations) {
-        registration.unregister();
-        console.log('Service worker unregistered:', registration);
-      }
-    })
-    .catch(error => {
-      console.error('Error unregistering service workers:', error);
-    });
-}
 
 // EMERGENCY FIX: Remove any existing update notifications
 setTimeout(() => {
