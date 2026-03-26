@@ -84,11 +84,8 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build && npm run copy:sw",
-    "preview": "vite preview",
-    "copy:sw": "cp -f public/service-worker.js build/",
-    "build:win": "vite build && npm run copy:sw:win",
-    "copy:sw:win": "copy /Y public\\service-worker.js build\\"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "eslintConfig": {
     "extends": [
