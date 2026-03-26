@@ -105,7 +105,7 @@ const createNotification = asyncHandler(async (req, res) => {
       console.log(`[SECURITY] Processing sendToAll notification with role restrictions`);
       // SECURITY: Only admins can send to all users - teachers limited to students only
       let allowedRoles;
-      if (req.user.role === 'admin') {
+      if (req.user.role === 'admin' || req.user.role === 'superadmin') {
         allowedRoles = ['student', 'teacher', 'admin'];
       } else if (req.user.role === 'teacher') {
         allowedRoles = ['student']; // STRICT: Teachers can ONLY notify students
@@ -204,7 +204,7 @@ const createNotification = asyncHandler(async (req, res) => {
         
         // SECURITY: Determine allowed roles based on sender permissions
         let allowedRoles = [];
-        if (req.user.role === 'admin') {
+        if (req.user.role === 'admin' || req.user.role === 'superadmin') {
           if (targetRole === 'all') {
             allowedRoles = ['student', 'teacher', 'admin'];
           } else {
@@ -235,7 +235,7 @@ const createNotification = asyncHandler(async (req, res) => {
       }
 
       // Get recipients based on target role only with STRICT validation
-      if (targetRole && targetRole !== 'all' && (!classes || classes.length === 0) && (!schoolBranches || schoolBranches.length === 0)) {
+      if (targetRole && (!classes || classes.length === 0) && (!schoolBranches || schoolBranches.length === 0)) {
         console.log(`[SECURITY] Finding recipients with target role: ${targetRole} for sender: ${req.user.role}`);
         
         // SECURITY: Validate sender can target this role
@@ -250,9 +250,20 @@ const createNotification = asyncHandler(async (req, res) => {
           throw new Error('Students cannot create notifications');
         }
         
+        let roleQuery;
+        if (targetRole === 'all') {
+          if (req.user.role === 'teacher') {
+            roleQuery = { $in: ['student', 'teacher'] };
+          } else {
+            roleQuery = { $in: ['student', 'teacher', 'admin'] };
+          }
+        } else {
+          roleQuery = targetRole;
+        }
+        
         const usersWithRole = await User.find({
           schoolId: req.user.schoolId,
-          role: targetRole
+          role: roleQuery
         }).select('_id role');
         
         potentialRecipients = [...potentialRecipients, ...usersWithRole.map(u => u._id)];

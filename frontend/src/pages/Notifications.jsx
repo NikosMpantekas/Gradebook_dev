@@ -137,13 +137,8 @@ const Notifications = () => {
       .unwrap()
       .then(() => {
         toast.success(t('notifications.markedAsSeen'));
-        // Force refresh notifications to get updated state
-        if (tabValue === 'received') {
-          dispatch(getMyNotifications());
-        } else {
-          dispatch(getSentNotifications());
-        }
-        // Dispatch custom event to refresh header counts
+        // CRITICAL FIX: Removed full refetch to prevent race condition with stale cache
+        // dispatch custom event to refresh header counts
         window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
       })
       .catch((error) => {

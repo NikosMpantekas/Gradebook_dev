@@ -256,27 +256,6 @@ const NotificationsList = ({
                         </Tooltip>
                       )}
                       
-                      {!isSender && !safeNotification.isSeen && onMarkAsSeen && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarkAsSeen(safeNotification._id);
-                              }}
-                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                            >
-                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Mark as seen</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      
                       {canEdit(safeNotification) && onEdit && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -344,19 +323,6 @@ const NotificationsList = ({
                             >
                               <MailOpen className="mr-2 h-4 w-4" />
                               Mark as read
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {!isSender && !safeNotification.isSeen && onMarkAsSeen && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onMarkAsSeen(safeNotification._id);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              Mark as seen
                             </DropdownMenuItem>
                           )}
                           
