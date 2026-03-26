@@ -9,17 +9,16 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader } from "../components/ui
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Menu,
+  List,
   Sun,
   Moon,
-  Mail,
-  Send,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  ArrowRight,
-  MessageSquare,
-} from "lucide-react";
+  EnvelopeSimple,
+  ChatText,
+  PaperPlaneTilt,
+  CircleNotch,
+  WarningCircle,
+  ArrowRight
+} from "phosphor-react";
 import axios from "axios";
 import { API_URL } from "../config/appConfig";
 
@@ -89,13 +88,14 @@ const Logo = ({ darkMode, currentPath }) => {
     <Link
       to="/home"
       className={cn(
-        "relative text-xl font-bold tracking-tight font-serif py-1 group",
+        "relative flex items-center gap-2.5 text-xl font-bold tracking-tight font-serif py-1 group",
         "no-underline transition-all duration-300",
         isHome
           ? (darkMode ? "text-white" : "text-slate-900")
           : (darkMode ? "text-zinc-300 hover:text-white" : "text-slate-700 hover:text-slate-900")
       )}
     >
+      <img src="/logo-transparent.png" alt="Logo" className="w-9 h-9 object-contain" />
       GradeBook
       <span
         className={cn(
@@ -345,23 +345,22 @@ const Contact = () => {
   const handleCloseSnackbar = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
-
   const contactInfo = [
     {
-      icon: <Mail className="w-6 h-6" />,
+      icon: <EnvelopeSimple size={32} weight="bold" />,
       title: "Email",
       value: "info@gradebook.pro",
       href: "mailto:info@gradebook.pro",
       description: "Η ομάδα μας είναι εδώ για να σας βοηθήσει.",
-      colorClass: "bg-blue-500/10 text-blue-400"
+      colorClass: "text-blue-400"
     },
     {
-      icon: <MessageSquare className="w-6 h-6" />,
+      icon: <ChatText size={32} weight="bold" />,
       title: "Discord",
       value: "Coming soon...",
       href: "#",
       description: "Γίνετε μέλος της κοινότητάς μας.",
-      colorClass: "bg-purple-500/10 text-purple-400"
+      colorClass: "text-[#5865F2]"
     },
   ];
 
@@ -390,7 +389,7 @@ const Contact = () => {
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="flex md:hidden mr-2">
-                <Menu className="h-5 w-5" />
+                <List size={20} weight="bold" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className={cn("w-[280px] p-0 backdrop-blur-xl border-r pb-[env(safe-area-inset-bottom)]", darkMode ? "bg-[#09090b]/90 border-zinc-800" : "bg-white/90 border-slate-200")}>
@@ -450,7 +449,7 @@ const Contact = () => {
           <div className="w-px h-4 mx-6 bg-slate-200/20 hidden md:block" />
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={handleToggleDarkMode} className={cn("rounded-full transition-colors w-8 h-8", darkMode ? "text-zinc-400 hover:text-white hover:bg-zinc-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100")}>
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {darkMode ? <Sun size={20} weight="bold" /> : <Moon size={20} weight="bold" />}
             </Button>
           </div>
         </div>
@@ -461,12 +460,7 @@ const Contact = () => {
           <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
 
             {/* Left Column: Info */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="space-y-10"
-            >
+            <div className="space-y-10">
               <div className="space-y-6">
                 <h1 className={cn(
                   "font-serif font-bold text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1]",
@@ -474,7 +468,6 @@ const Contact = () => {
                 )}>
                   Επικοινωνήστε μαζί μας
                 </h1>
-
                 <p className={cn(
                   "text-lg md:text-xl leading-relaxed max-w-lg",
                   darkMode ? "text-zinc-400" : "text-slate-600"
@@ -485,12 +478,9 @@ const Contact = () => {
 
               <div className="grid gap-6">
                 {contactInfo.map((info, index) => (
-                  <motion.a
+                  <a
                     key={info.title}
                     href={info.href}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
                     className={cn(
                       "group flex items-center gap-6 p-4 rounded-xl transition-all duration-300 border",
                       darkMode
@@ -499,10 +489,8 @@ const Contact = () => {
                     )}
                   >
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                      darkMode
-                        ? "bg-blue-500/10 text-blue-400"
-                        : "bg-blue-50 text-blue-600"
+                      "w-12 h-12 flex items-center justify-center transition-colors",
+                      info.colorClass
                     )}>
                       {info.icon}
                     </div>
@@ -530,17 +518,13 @@ const Contact = () => {
                       "ml-auto w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1",
                       darkMode ? "text-zinc-600 group-hover:text-blue-400" : "text-slate-400 group-hover:text-blue-600"
                     )} />
-                  </motion.a>
+                  </a>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* Right Column: Form */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
+            <div>
               <Card className={cn(
                 "border transition-all duration-300 shadow-2xl",
                 darkMode
@@ -568,7 +552,7 @@ const Contact = () => {
                         />
                         {formErrors.name && (
                           <p className="text-xs text-red-500 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> {formErrors.name}
+                            <WarningCircle className="h-4 w-4" weight="bold" /> {formErrors.name}
                           </p>
                         )}
                       </div>
@@ -592,7 +576,7 @@ const Contact = () => {
                         />
                         {formErrors.email && (
                           <p className="text-xs text-red-500 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> {formErrors.email}
+                            <WarningCircle className="h-4 w-4" weight="bold" /> {formErrors.email}
                           </p>
                         )}
                       </div>
@@ -616,7 +600,7 @@ const Contact = () => {
                       />
                       {formErrors.subject && (
                         <p className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" /> {formErrors.subject}
+                          <WarningCircle className="h-4 w-4" weight="bold" /> {formErrors.subject}
                         </p>
                       )}
                     </div>
@@ -640,7 +624,7 @@ const Contact = () => {
                       />
                       {formErrors.message && (
                         <p className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" /> {formErrors.message}
+                          <WarningCircle className="h-4 w-4" weight="bold" /> {formErrors.message}
                         </p>
                       )}
                     </div>
@@ -657,27 +641,26 @@ const Contact = () => {
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                          <CircleNotch size={20} weight="bold" className="animate-spin mr-2" />
                           Αποστολή...
                         </>
                       ) : (
                         <>
                           Αποστολή Μηνύματος
-                          <Send className="h-5 w-5 ml-2" />
+                          <PaperPlaneTilt size={20} weight="bold" className="ml-2" />
                         </>
                       )}
                     </Button>
                   </form>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </div>
         </div>
       </main>
 
       <footer className="py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo darkMode={darkMode} currentPath={currentPath} />
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-4">
           <p className={cn("text-sm", darkMode ? "text-zinc-600" : "text-slate-400")}>
             © {new Date().getFullYear()} The GradeBook Team
           </p>
