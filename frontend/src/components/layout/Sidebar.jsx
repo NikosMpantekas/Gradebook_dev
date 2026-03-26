@@ -31,7 +31,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
 
 import { ScrollArea } from '../ui/scroll-area';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
@@ -536,3 +536,4 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 };
 
 export default Sidebar; 
+

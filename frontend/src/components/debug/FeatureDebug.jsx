@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 
@@ -35,3 +35,4 @@ const FeatureDebug = () => {
 };
 
 export default FeatureDebug;
+

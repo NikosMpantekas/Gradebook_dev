@@ -21,7 +21,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Spinner } from '../components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { useFeatureToggles } from '../context/FeatureToggleContext';
+import { useFeatureToggles } from '../contexts/FeatureToggleContext';
 import MaintenanceNotifications from '../components/MaintenanceNotifications';
 import { API_URL } from '../config/appConfig';
 
@@ -406,3 +406,4 @@ const ParentDashboard = () => {
 };
 
 export default ParentDashboard;
+

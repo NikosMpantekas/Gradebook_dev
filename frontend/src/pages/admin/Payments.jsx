@@ -27,7 +27,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { useToast } from '../../components/ui/use-toast';
 import { Plus, Search, Filter, Calendar, CheckCircle, XCircle, Clock, Download, Users, Lock } from 'lucide-react';
 import api from '../../app/axios';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import { useSelector } from 'react-redux';
 import { cn } from '../../lib/utils';
 
@@ -797,3 +797,4 @@ const Payments = () => {
 };
 
 export default Payments;
+

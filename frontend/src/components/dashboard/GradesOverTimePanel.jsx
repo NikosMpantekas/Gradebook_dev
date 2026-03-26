@@ -14,7 +14,7 @@ import {
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { subDays } from 'date-fns';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import useReducedMotion from '../hooks/useReducedMotion';
 
 /**
@@ -340,3 +340,4 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
 };
 
 export default GradesOverTimePanel;
+

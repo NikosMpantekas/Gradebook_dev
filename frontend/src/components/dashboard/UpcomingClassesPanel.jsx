@@ -21,7 +21,7 @@ import {
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { format, isValid, parseISO } from 'date-fns';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
@@ -207,3 +207,4 @@ export const UpcomingClassesPanel = ({ classes = [], loading = false, onViewAll,
 };
 
 export default UpcomingClassesPanel;
+

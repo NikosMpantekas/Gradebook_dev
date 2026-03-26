@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useFeatureToggles } from '../context/FeatureToggleContext';
+import { useFeatureToggles } from '../contexts/FeatureToggleContext';
 import { Box, CircularProgress, Typography, Alert } from '@mui/material';
 import LoadingState from './common/LoadingState';
 
@@ -122,3 +122,4 @@ const StudentProgressRoute = ({ children }) => {
 };
 
 export default StudentProgressRoute;
+

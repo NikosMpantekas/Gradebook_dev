@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useFeatureToggles } from '../context/FeatureToggleContext';
+import { useFeatureToggles } from '../contexts/FeatureToggleContext';
 import LoadingState from './common/LoadingState';
 
 // TeacherRoute component that checks if user is a teacher, admin, or secretary with appropriate permissions
@@ -84,3 +84,4 @@ const TeacherRoute = ({ children }) => {
 };
 
 export default TeacherRoute;
+
