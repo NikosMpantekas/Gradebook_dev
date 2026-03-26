@@ -44,65 +44,6 @@ const NotificationDetail = () => {
     };
   }, [id, dispatch]);
 
-  useEffect(() => {
-    if (isError) {
-      toast.error(message || 'Failed to load notification');
-      // Navigate to role-specific notifications page on error
-      if (user?.role === 'admin') {
-        navigate('/app/admin/notifications/manage');
-      } else if (user?.role === 'teacher') {
-        navigate('/app/teacher/notifications');
-      } else if (user?.role === 'student') {
-        navigate('/app/student/notifications');
-      } else if (user?.role === 'superadmin') {
-        navigate('/superadmin/notifications');
-      } else {
-        navigate('/app/notifications');
-      }
-    }
-    
-    // If notification is not read, mark it as read
-    if (notification && !notification.isRead) {
-      dispatch(markNotificationAsRead(id))
-        .then(() => {
-          // Dispatch custom event to refresh header counts
-          window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
-        });
-    }
-  }, [notification, isError, isSuccess, message, id, dispatch, navigate, user?.role]);
-
-  const handleDelete = () => {
-    if (!window.confirm('Are you sure you want to delete this notification?')) {
-      return;
-    }
-
-    dispatch(deleteNotification(id)).then(() => {
-      // Navigate to role-specific notifications page after delete
-      if (user?.role === 'admin') {
-        navigate('/app/admin/notifications/manage');
-      } else if (user?.role === 'teacher') {
-        navigate('/app/teacher/notifications');
-      } else if (user?.role === 'student') {
-        navigate('/app/student/notifications');
-      } else if (user?.role === 'superadmin') {
-        navigate('/superadmin/notifications');
-      } else {
-        navigate('/app/notifications');
-      }
-      toast.success('Notification deleted');
-    });
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return format(date, 'PPpp'); // Example: 'Apr 29, 2021, 5:34 PM'
-    } catch (error) {
-      return 'Invalid date';
-    }
-  };
-
   const goBack = () => {
     // Navigate to role-specific notifications page
     if (user?.role === 'admin') {
@@ -118,13 +59,52 @@ const NotificationDetail = () => {
     }
   };
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isError) {
+      toast.error(message || 'Failed to load notification');
+      goBack();
+    }
+    
+    // If notification is not read, mark it as read
+    if (notification && !notification.isRead) {
+      dispatch(markNotificationAsRead(id))
+        .then(() => {
+          // Dispatch custom event to refresh header counts
+          window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+        });
+    }
+  }, [notification, isError, message, id, dispatch, navigate, user?.role]);
+
+  const handleDelete = () => {
+    if (!window.confirm('Are you sure you want to delete this notification?')) {
+      return;
+    }
+
+    dispatch(deleteNotification(id)).then(() => {
+      toast.success('Notification deleted');
+      goBack();
+    });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return format(date, 'PPpp'); // Example: 'Apr 29, 2021, 5:34 PM'
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  // Show spinner during loading OR if we don't have a notification yet but also don't have an error
+  // This prevents the "Not Found" flicker during initial mount
+  if (isLoading || (!notification && !isError)) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <Spinner className="text-primary" />
-            <p className="text-muted-foreground">Loading notification...</p>
+            <Spinner className="text-primary mb-2" />
+            <p className="text-muted-foreground text-sm animate-pulse">Loading notification...</p>
           </div>
         </div>
       </div>
@@ -138,13 +118,13 @@ const NotificationDetail = () => {
           <div className="text-center">
             <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-destructive mb-2">
-              Failed to load notification
+              Notification Not Found
             </h3>
             <p className="text-muted-foreground mb-4">
-              {message || 'The notification could not be loaded.'}
+              {message || 'The notification you are looking for does not exist or has been removed.'}
             </p>
             <Button onClick={goBack} variant="outline">
-              Go Back
+              Return to list
             </Button>
           </div>
         </div>

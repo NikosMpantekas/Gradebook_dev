@@ -82,6 +82,11 @@ export const getNotification = createAsyncThunk(
       const token = thunkAPI.getState().auth.user.token;
       return await notificationService.getNotification(id, token);
     } catch (error) {
+      // Suppress rejection for cancelled/duplicate requests to prevent UI redirect loops
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return thunkAPI.rejectWithValue('CANCELLED');
+      }
+
       const message =
         (error.response &&
           error.response.data &&
@@ -278,16 +283,22 @@ export const notificationSlice = createSlice({
       })
       .addCase(getNotification.pending, (state) => {
         state.isLoading = true;
+        state.isError = false;
+        state.message = '';
       })
       .addCase(getNotification.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
+        state.isError = false;
         state.notification = action.payload;
       })
       .addCase(getNotification.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
+        // Only set isError if it wasn't a suppression/cancellation
+        if (action.payload !== 'CANCELLED') {
+          state.isError = true;
+          state.message = action.payload;
+        }
       })
       .addCase(updateNotification.pending, (state) => {
         state.isLoading = true;
