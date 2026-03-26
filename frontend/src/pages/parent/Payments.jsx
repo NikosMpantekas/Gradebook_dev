@@ -27,7 +27,7 @@ import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../components/ui/use-toast';
 import { CheckCircle, XCircle, Clock, Calendar, User, AlertTriangle, Download, Lock } from 'lucide-react';
 import api from '../../app/axios';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 
 const ParentPayments = () => {
   const { toast } = useToast();
@@ -540,3 +540,4 @@ const ParentPayments = () => {
 };
 
 export default ParentPayments;
+

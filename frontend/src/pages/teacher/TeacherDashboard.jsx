@@ -30,7 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Spinner } from '../../components/ui/spinner';
-import { useFeatureToggles } from '../../context/FeatureToggleContext';
+import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
@@ -431,3 +431,4 @@ const TeacherDashboard = () => {
 };
 
 export default TeacherDashboard;
+

@@ -108,7 +108,7 @@ import logger from './services/loggerService';
 import { appConfig, initAppConfig } from './config/appConfig';
 
 // Feature toggles context provider
-import { FeatureToggleProvider } from './context/FeatureToggleContext';
+import { FeatureToggleProvider } from './contexts/FeatureToggleContext';
 
 // Custom components
 import HomeScreenPrompt from './components/HomeScreenPrompt';

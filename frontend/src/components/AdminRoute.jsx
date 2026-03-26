@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useFeatureToggles } from '../context/FeatureToggleContext';
+import { useFeatureToggles } from '../contexts/FeatureToggleContext';
 import LoadingState from './common/LoadingState';
 
 // AdminRoute component that checks if user is an admin or a secretary with appropriate permissions
@@ -311,3 +311,4 @@ const AdminRoute = ({ children }) => {
 };
 
 export default AdminRoute;
+

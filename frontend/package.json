@@ -66,7 +66,6 @@
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-svgr": "^4.5.0",
-    "web-vitals": "^2.1.4",
     "workbox-background-sync": "^7.3.0",
     "workbox-broadcast-update": "^7.3.0",
     "workbox-cacheable-response": "^7.3.0",
@@ -89,9 +88,7 @@
     "preview": "vite preview",
     "copy:sw": "cp -f public/service-worker.js build/",
     "build:win": "vite build && npm run copy:sw:win",
-    "copy:sw:win": "copy /Y public\\service-worker.js build\\",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "copy:sw:win": "copy /Y public\\service-worker.js build\\"
   },
   "eslintConfig": {
     "extends": [
