@@ -327,8 +327,8 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       {/* User Profile Section */}
       <div className="p-4">
         <div className="flex flex-col items-center space-y-3">
-          <Avatar className="h-16 w-16 hover:scale-105 transition-transform duration-200 border-2 border-primary/20 shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10">
-            <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/20 to-secondary/20 text-primary">
+          <Avatar className="h-16 w-16 hover:scale-105 transition-transform duration-200 bg-primary/10">
+            <AvatarFallback className="text-lg font-semibold bg-primary/20 text-primary">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
@@ -346,7 +346,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Enhanced Divider */}
       <div className="px-4 py-2">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+        <div className="h-px bg-border/50"></div>
       </div>
 
       {/* Navigation Menu */}
@@ -356,11 +356,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           <Button
             variant={isPathSelected(getDashboardPath()) ? "secondary" : "ghost"}
             className={cn(
-              "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden border border-transparent",
-              "transition-[background-color,color,box-shadow,border-color] duration-150 ease-out",
+              "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden",
+              "transition-colors duration-150 ease-out",
               isPathSelected(getDashboardPath())
-                ? "bg-primary/15 text-primary shadow-lg border-primary/20"
-                : "hover:bg-primary/5 hover:shadow-sm hover:border-primary/10 hover:text-foreground"
+                ? "bg-primary/15 text-primary"
+                : "hover:bg-primary/5 hover:text-foreground"
             )}
             onClick={() => handleNavigation(getDashboardPath())}
           >
@@ -382,11 +382,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
                 key={item.path}
                 variant={isSelected ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden border border-transparent",
-                  "transition-[background-color,color,box-shadow,border-color] duration-150 ease-out",
+                  "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden",
+                  "transition-colors duration-150 ease-out",
                   isSelected
-                    ? "bg-primary/15 text-primary shadow-lg border-primary/20"
-                    : "hover:bg-primary/5 hover:shadow-sm hover:border-primary/10 hover:text-foreground"
+                    ? "bg-primary/15 text-primary"
+                    : "hover:bg-primary/5 hover:text-foreground"
                 )}
                 onClick={() => handleNavigation(item.path)}
               >
@@ -404,7 +404,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Enhanced Divider */}
       <div className="px-4 py-2">
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+        <div className="h-px bg-border/50"></div>
       </div>
 
       {/* Profile and Logout Section */}
@@ -413,11 +413,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         <Button
           variant={isPathSelected('/app/profile') ? "secondary" : "ghost"}
           className={cn(
-            "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden border border-transparent",
-            "transition-[background-color,color,box-shadow,border-color] duration-150 ease-out",
+            "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden",
+            "transition-colors duration-150 ease-out",
             isPathSelected('/app/profile')
-              ? "bg-primary/15 text-primary shadow-lg border-primary/20"
-              : "hover:bg-primary/5 hover:shadow-sm hover:border-primary/10 hover:text-foreground"
+              ? "bg-primary/15 text-primary"
+              : "hover:bg-primary/5 hover:text-foreground"
           )}
           onClick={() => handleNavigation('/app/profile')}
         >
@@ -432,7 +432,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         {/* Logout Button */}
         <Button
           variant="ghost"
-          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 hover:shadow-sm border border-transparent hover:border-destructive/20 transition-[background-color,color,box-shadow,border-color] duration-150 ease-out group overflow-hidden"
+          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150 ease-out group overflow-hidden"
           onClick={handleLogoutClick}
         >
           <LogOut className="mr-3 h-5 w-5 flex-shrink-0 transition-colors group-hover:text-destructive" />
