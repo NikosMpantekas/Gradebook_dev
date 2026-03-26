@@ -147,8 +147,9 @@ const deleteSubscriptionByEndpoint = asyncHandler(async (req, res) => {
   });
 
   if (!subscription) {
-    res.status(404);
-    throw new Error('Subscription not found');
+    // If it's already gone, consider the deletion successful (idempotent)
+    logger.info('SUBSCRIPTION', 'Attempted to delete non-existent subscription', { userId: req.user.id });
+    return res.json({ message: 'Subscription already removed or not found' });
   }
 
   await subscription.deleteOne();

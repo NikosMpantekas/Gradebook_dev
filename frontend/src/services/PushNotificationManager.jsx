@@ -230,7 +230,7 @@ export const unsubscribeFromPushNotifications = async () => {
         const endpoint = subscription.endpoint;
         console.log('Unsubscribing from push notifications');
         console.log('Using API_URL for secure push notification unsubscribe:', API_URL);
-        await axiosInstance.post(`${API_URL}/api/subscriptions/delete`, { endpoint });
+        await axiosInstance.delete(`${API_URL}/api/notifications/subscription`, { data: { endpoint } });
         
         console.log('Successfully unsubscribed from push notifications');
         return true;
