@@ -165,8 +165,8 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   // Check if version contains "beta"
   const isBetaVersion = latestVersion && latestVersion.toLowerCase().includes('beta');
 
-  // Count unread notifications
-  const notifUnreadCount = notifications?.filter(n => !n.isRead).length || 0;
+  // Count unread notifications - forced to 0 for superadmins to prevent distracting badges
+  const notifUnreadCount = user?.role === 'superadmin' ? 0 : (notifications?.filter(n => !n.isRead).length || 0);
   const combinedUnreadCount = (notifUnreadCount || 0) + (contactUnreadCount || 0);
 
   // Function to fetch contact unread count - using useCallback to prevent recreation

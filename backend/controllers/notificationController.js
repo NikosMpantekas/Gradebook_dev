@@ -658,8 +658,10 @@ const getAllNotifications = asyncHandler(async (req, res) => {
         isSeen: recipient.isSeen
       } : 'NO RECIPIENT FOUND');
       
-      notificationObj.isRead = recipient ? recipient.isRead : false;
-      notificationObj.isSeen = recipient ? recipient.isSeen : false;
+      // Force read/seen status for superadmins to prevent unread clutter
+      const isSuperAdmin = req.user.role === 'superadmin';
+      notificationObj.isRead = isSuperAdmin ? true : (recipient ? recipient.isRead : false);
+      notificationObj.isSeen = isSuperAdmin ? true : (recipient ? recipient.isSeen : false);
       
       // Additional logging to confirm extraction
       console.log(`NOTIFICATION_STATUS - Final status: isRead=${notificationObj.isRead}, isSeen=${notificationObj.isSeen}`);
@@ -732,11 +734,9 @@ const markNotificationRead = asyncHandler(async (req, res) => {
   try {
     console.log('NOTIFICATION_READ', `Marking notification ${req.params.id} as read by user ${req.user._id} (${req.user.role})`);
     
-    // Find the notification with schoolId filtering
-    const notification = await Notification.findOne({
-      _id: req.params.id,
-      schoolId: req.user.schoolId
-    }).populate('classes', 'students teachers')
+    // Find the notification - use findById instead of findOne with schoolId filter to allow superadmin/cross-school access
+    const notification = await Notification.findById(req.params.id)
+      .populate('classes', 'students teachers')
       .populate('schoolBranches', 'name');
     
     if (!notification) {
@@ -744,10 +744,25 @@ const markNotificationRead = asyncHandler(async (req, res) => {
       res.status(404);
       throw new Error('Notification not found');
     }
+
+    // Role-based security check for superadmins/admins
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const isLocalAdmin = req.user.role === 'admin' && notification.schoolId?.toString() === req.user.schoolId?.toString();
+    
+    // Check if this school/user is allowed to see this notification
+    if (!isSuperAdmin && notification.schoolId?.toString() !== req.user.schoolId?.toString()) {
+      // If school mismatch, only allowed if direct recipient
+      const isDirectRecipient = notification.recipients.some(r => r.user && r.user.toString() === req.user._id.toString());
+      if (!isDirectRecipient) {
+        console.log('NOTIFICATION_READ', `School mismatch and not a recipient: notification school ${notification.schoolId}, user school ${req.user.schoolId}`);
+        res.status(404); // Stealth 404 for security
+        throw new Error('Notification not found');
+      }
+    }
     
     console.log('NOTIFICATION_READ', `Found notification: ${notification.title}`);
     
-    // Check if this user is a recipient using the new recipient structure
+    // Check if user is a recipient or authorized admin
     let isAuthorizedRecipient = false;
     
     // Direct recipient check with new structure
@@ -757,11 +772,8 @@ const markNotificationRead = asyncHandler(async (req, res) => {
       console.log('NOTIFICATION_READ', 'User is direct recipient');
     }
     
-    // NOTE: With new recipient structure, we only check direct recipients
-    // Legacy role-based and class-based checks removed since recipients are now explicit
-    
-    // Admin/superadmin can always mark as read
-    if (!isAuthorizedRecipient && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    // Admin/superadmin can always mark as read if they can see it
+    if (!isAuthorizedRecipient && (isLocalAdmin || isSuperAdmin)) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_READ', 'Admin/superadmin access granted');
     }
@@ -791,7 +803,7 @@ const markNotificationRead = asyncHandler(async (req, res) => {
       userId: req.user._id,
       stack: error.stack
     });
-    res.status(error.status || 500);
+    res.status(res.statusCode || 500);
     throw new Error(error.message || 'Failed to mark notification as read');
   }
 });
@@ -803,17 +815,30 @@ const markNotificationSeen = asyncHandler(async (req, res) => {
   try {
     console.log('NOTIFICATION_SEEN', `Marking notification ${req.params.id} as seen by user ${req.user._id} (${req.user.role})`);
     
-    // Find the notification with schoolId filtering
-    const notification = await Notification.findOne({
-      _id: req.params.id,
-      schoolId: req.user.schoolId
-    }).populate('classes', 'students teachers')
+    // Find the notification - use findById to allow superadmin/cross-school access
+    const notification = await Notification.findById(req.params.id)
+      .populate('classes', 'students teachers')
       .populate('schoolBranches', 'name');
     
     if (!notification) {
       console.log('NOTIFICATION_SEEN', `Notification ${req.params.id} not found`);
       res.status(404);
       throw new Error('Notification not found');
+    }
+
+    // Role-based security check for superadmins/admins
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const isLocalAdmin = req.user.role === 'admin' && notification.schoolId?.toString() === req.user.schoolId?.toString();
+    
+    // Check if this school/user is allowed to see this notification
+    if (!isSuperAdmin && notification.schoolId?.toString() !== req.user.schoolId?.toString()) {
+      // If school mismatch, only allowed if direct recipient
+      const isDirectRecipient = notification.recipients.some(r => r.user && r.user.toString() === req.user._id.toString());
+      if (!isDirectRecipient) {
+        console.log('NOTIFICATION_SEEN', `School mismatch and not a recipient: notification school ${notification.schoolId}, user school ${req.user.schoolId}`);
+        res.status(404); // Stealth 404 for security
+        throw new Error('Notification not found');
+      }
     }
     
     // Check if user is authorized recipient
@@ -826,8 +851,8 @@ const markNotificationSeen = asyncHandler(async (req, res) => {
       console.log('NOTIFICATION_SEEN', 'User is direct recipient');
     }
     
-    // Admin/superadmin can always mark as seen
-    if (!isAuthorizedRecipient && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    // Admin/superadmin can always mark as seen if they can see it
+    if (!isAuthorizedRecipient && (isLocalAdmin || isSuperAdmin)) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_SEEN', 'Admin/superadmin access granted');
     }
@@ -858,7 +883,7 @@ const markNotificationSeen = asyncHandler(async (req, res) => {
       userId: req.user._id,
       stack: error.stack
     });
-    res.status(error.status || 500);
+    res.status(res.statusCode || 500);
     throw new Error(error.message || 'Failed to mark notification as seen');
   }
 });
@@ -926,7 +951,20 @@ const getNotificationById = asyncHandler(async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view this notification' });
     }
     
-    res.status(200).json(notification);
+    const notificationObj = notification.toObject();
+    
+    // Check if current user has read/seen this notification
+    const recipient = notification.recipients?.find(r => {
+      const recipientUserId = r.user?._id?.toString() || r.user?.toString();
+      return recipientUserId === req.user._id.toString();
+    });
+    
+    // Force read/seen status for superadmins to prevent unread clutter
+    const isSuperAdmin = req.user.role === 'superadmin';
+    notificationObj.isRead = isSuperAdmin ? true : (recipient ? recipient.isRead : false);
+    notificationObj.isSeen = isSuperAdmin ? true : (recipient ? recipient.isSeen : false);
+    
+    res.status(200).json(notificationObj);
   } catch (error) {
     console.error('[NOTIFICATION_DETAIL] Error fetching notification by ID:', error.message);
     res.status(500);
