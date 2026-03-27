@@ -23,6 +23,7 @@ import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
 import { Spinner } from '../components/ui/spinner';
+import { refreshAppCounts } from '../lib/utils';
 
 const NotificationDetail = () => {
   const { id } = useParams();
@@ -70,7 +71,7 @@ const NotificationDetail = () => {
       dispatch(markNotificationAsRead(id))
         .then(() => {
           // Dispatch custom event to refresh header counts
-          window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+          refreshAppCounts();
         });
     }
   }, [notification, isError, message, id, dispatch, navigate, user?.role]);

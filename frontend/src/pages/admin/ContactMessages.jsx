@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import LoadingState from '../../components/common/LoadingState';
 import ErrorState from '../../components/common/ErrorState';
+import { refreshAppCounts } from '../../lib/utils';
 
 const ContactMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -86,6 +87,9 @@ const ContactMessages = () => {
           msg._id === id ? { ...msg, read: !currentReadStatus } : msg
         )
       );
+      
+      // Refresh header counts
+      refreshAppCounts();
     } catch (err) {
       console.error('Error updating message status:', err);
     }
@@ -116,6 +120,9 @@ const ContactMessages = () => {
           msg._id === id ? response.data : msg
         )
       );
+      
+      // Refresh header counts
+      refreshAppCounts();
 
       return response.data;
     } catch (err) {
@@ -137,6 +144,9 @@ const ContactMessages = () => {
       
       // Remove message from local state
       setMessages(messages.filter(msg => msg._id !== messageId));
+      
+      // Refresh header counts
+      refreshAppCounts();
       
       // Close confirmation dialog
       setDeleteConfirmOpen(false);
