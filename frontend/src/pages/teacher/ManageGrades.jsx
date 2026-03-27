@@ -454,6 +454,14 @@ const ManageGrades = () => {
 
   // Mobile card layout for grades
   const renderMobileContent = () => {
+    if (loading && filteredGrades.length === 0) {
+      return (
+        <div className="flex justify-center py-12">
+          <Spinner className="text-primary" />
+        </div>
+      );
+    }
+
     if (filteredGrades.length === 0) {
       return (
         <div className="text-center py-8">
@@ -467,11 +475,16 @@ const ManageGrades = () => {
     }
 
     return (
-      <div className="px-1 sm:px-2">
+      <div className="px-1 sm:px-2 relative">
+        {loading && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-lg">
+            <Spinner className="text-primary mt-12" />
+          </div>
+        )}
         {filteredGrades.map((grade) => (
           <Card
             key={grade._id}
-            className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 dark:border-gray-600 dark:hover:shadow-gray-800/50"
+            className="mb-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-border dark:hover:shadow-primary/5"
           >
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-start gap-3">
@@ -522,7 +535,7 @@ const ManageGrades = () => {
                   size="sm"
                   onClick={() => handleEditGrade(grade)}
                   title={t('teacherGrades.edit')}
-                  className="hover:bg-muted dark:hover:bg-gray-700"
+                  className="hover:bg-muted"
                 >
                   <EditIcon className="h-4 w-4" />
                 </Button>
@@ -531,7 +544,7 @@ const ManageGrades = () => {
                   size="sm"
                   onClick={() => handleDeleteGrade(grade._id)}
                   title={t('common.delete')}
-                  className="hover:bg-red-700 dark:hover:bg-red-600"
+                  className="hover:bg-destructive/90"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -546,11 +559,17 @@ const ManageGrades = () => {
   // Desktop table layout
   const renderDesktopContent = () => {
     return (
-      <div className="rounded-lg border bg-card dark:border-gray-600">
+      <div className="rounded-lg border bg-card border-border overflow-hidden relative">
+        {loading && filteredGrades.length > 0 && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
+            <Spinner className="text-primary" />
+          </div>
+        )}
+        
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-600">
+              <tr className="border-b border-border bg-muted/30">
                 <th className="text-left p-4 text-foreground font-medium">
                   <Checkbox 
                     checked={selectedGrades.length === filteredGrades.length && filteredGrades.length > 0}
@@ -564,7 +583,7 @@ const ManageGrades = () => {
                   />
                 </th>
                 <th 
-                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('student')}
                 >
                   {t('teacherGrades.tableStudent')}
@@ -573,7 +592,7 @@ const ManageGrades = () => {
                   )}
                 </th>
                 <th 
-                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('subject')}
                 >
                   {t('teacherGrades.tableSubject')}
@@ -582,7 +601,7 @@ const ManageGrades = () => {
                   )}
                 </th>
                 <th 
-                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('value')}
                 >
                   {t('teacherGrades.tableGrade')}
@@ -591,7 +610,7 @@ const ManageGrades = () => {
                   )}
                 </th>
                 <th 
-                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50 dark:hover:bg-gray-800"
+                  className="text-left p-4 text-foreground font-medium cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('createdAt')}
                 >
                   {t('teacherGrades.tableDate')}
@@ -604,9 +623,15 @@ const ManageGrades = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredGrades.length > 0 ? (
+              {loading && filteredGrades.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12">
+                    <Spinner className="text-primary" />
+                  </td>
+                </tr>
+              ) : filteredGrades.length > 0 ? (
                 filteredGrades.map((grade) => (
-                  <tr key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                  <tr key={grade._id} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="p-4">
                       <Checkbox 
                         checked={selectedGrades.includes(grade._id)}
@@ -633,7 +658,7 @@ const ManageGrades = () => {
                           size="sm"
                           onClick={() => handleEditGrade(grade)}
                           title={t('teacherGrades.edit')}
-                          className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                          className="hover:bg-muted px-4 py-2"
                         >
                           <EditIcon className="h-4 w-4" />
                         </Button>
@@ -642,7 +667,7 @@ const ManageGrades = () => {
                           size="sm"
                           onClick={() => handleDeleteGrade(grade._id)}
                           title={t('common.delete')}
-                          className="hover:bg-red-700 dark:hover:bg-red-600 px-4 py-2"
+                          className="hover:bg-destructive/90 px-4 py-2"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -669,17 +694,6 @@ const ManageGrades = () => {
       </div>
     );
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Spinner className="text-primary" />
-          <p className="text-muted-foreground">{t('teacherGrades.loading')}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">

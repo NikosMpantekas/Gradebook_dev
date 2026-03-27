@@ -357,7 +357,7 @@ const StudentGrades = () => {
                   size="sm"
                   onClick={() => handleViewGrade(grade._id)}
                   title={t('student.viewDetails')}
-                  className="hover:bg-muted dark:hover:bg-gray-700 gap-2"
+                  className="hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 gap-2"
                 >
                   <Eye className="h-4 w-4" />
                   {t('student.viewDetails')}
@@ -393,7 +393,7 @@ const StudentGrades = () => {
                 filteredGrades
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((grade) => (
-                    <TableRow key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                    <TableRow key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-300">
                       <TableCell className="p-4 font-medium text-foreground text-base">
                         {grade.subject?.name || 'N/A'}
                       </TableCell>
@@ -419,7 +419,7 @@ const StudentGrades = () => {
                               size="sm"
                               onClick={() => handleViewGrade(grade._id)}
                               title={t('student.viewDetails')}
-                              className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
+                              className="hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 px-4 py-2"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

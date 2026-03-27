@@ -210,16 +210,6 @@ const Notifications = () => {
     navigate(path);
   }, [navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Spinner>
-          <Loader2 className="h-12 w-12 text-primary" />
-        </Spinner>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full mx-auto p-2 sm:p-4 lg:p-6">
       <Card>
@@ -252,7 +242,7 @@ const Notifications = () => {
         
         <CardContent>
           <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
-            <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'} gap-1`}>
+            <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'} gap-1 bg-muted`}>
               <TabsTrigger value="received" className="relative flex items-center justify-center text-sm">
                 <span className="truncate">{t('notifications.received')}</span>
                 {unreadCount > 0 && (
@@ -267,28 +257,40 @@ const Notifications = () => {
             </TabsList>
             
             <TabsContent value="received" className="mt-4">
-              <NotificationsList
-                notifications={displayedNotifications}
-                tabValue="received"
-                user={user}
-                onMarkAsRead={handleMarkAsRead}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onNavigate={handleNavigate}
-              />
-            </TabsContent>
-            
-            {(user?.role === 'teacher' || user?.role === 'admin') && (
-              <TabsContent value="sent" className="mt-4">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Spinner className="text-primary" />
+                </div>
+              ) : (
                 <NotificationsList
                   notifications={displayedNotifications}
-                  tabValue="sent"
+                  tabValue="received"
                   user={user}
                   onMarkAsRead={handleMarkAsRead}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onNavigate={handleNavigate}
                 />
+              )}
+            </TabsContent>
+            
+            {(user?.role === 'teacher' || user?.role === 'admin') && (
+              <TabsContent value="sent" className="mt-4">
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Spinner className="text-primary" />
+                  </div>
+                ) : (
+                  <NotificationsList
+                    notifications={displayedNotifications}
+                    tabValue="sent"
+                    user={user}
+                    onMarkAsRead={handleMarkAsRead}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onNavigate={handleNavigate}
+                  />
+                )}
               </TabsContent>
             )}
           </Tabs>

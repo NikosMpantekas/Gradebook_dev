@@ -288,17 +288,6 @@ const TeacherNotifications = () => {
     navigate('/app/teacher/notifications/create');
   };
 
-  if (!initialized) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Spinner className="text-primary" />
-          <p className="text-muted-foreground">{t('teacherNotifications.loading')}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between flex-col sm:flex-row gap-3">
@@ -340,7 +329,11 @@ const TeacherNotifications = () => {
           <div className="md:hidden">
             {activeTab === 'all' && (
               <div className="space-y-4 mt-4">
-                {data.all.length === 0 ? (
+                {panelLoading.all ? (
+                  <div className="flex justify-center py-12">
+                    <Spinner className="text-primary" />
+                  </div>
+                ) : data.all.length === 0 ? (
                   <div className="text-center py-8">
                     <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyAllTitle')}</h3>
@@ -365,7 +358,11 @@ const TeacherNotifications = () => {
 
             {activeTab === 'sent' && (
               <div className="space-y-4 mt-4">
-                {data.sent.length === 0 ? (
+                {panelLoading.sent ? (
+                  <div className="flex justify-center py-12">
+                    <Spinner className="text-primary" />
+                  </div>
+                ) : data.sent.length === 0 ? (
                   <div className="text-center py-8">
                     <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptySentTitle')}</h3>
@@ -393,7 +390,11 @@ const TeacherNotifications = () => {
 
             {activeTab === 'received' && (
               <div className="space-y-4 mt-4">
-                {data.received.length === 0 ? (
+                {panelLoading.received ? (
+                  <div className="flex justify-center py-12">
+                    <Spinner className="text-primary" />
+                  </div>
+                ) : data.received.length === 0 ? (
                   <div className="text-center py-8">
                     <MailOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyReceivedTitle')}</h3>
@@ -420,7 +421,7 @@ const TeacherNotifications = () => {
           {/* Desktop: Tabs */}
           <div className="hidden md:block">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
+              <TabsList className="grid w-full grid-cols-3 bg-muted">
                 <TabsTrigger value="all">{t('teacherNotifications.all')}</TabsTrigger>
                 <TabsTrigger value="sent">{t('teacherNotifications.sent')}</TabsTrigger>
                 <TabsTrigger value="received">{t('teacherNotifications.received')}</TabsTrigger>
@@ -428,7 +429,11 @@ const TeacherNotifications = () => {
           
               <TabsContent value="all" className="mt-6">
                 <div className="space-y-4">
-                  {data.all.length === 0 ? (
+                  {panelLoading.all ? (
+                    <div className="flex justify-center py-12">
+                      <Spinner className="text-primary" />
+                    </div>
+                  ) : data.all.length === 0 ? (
                     <div className="text-center py-8">
                       <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyAllTitle')}</h3>
@@ -452,7 +457,11 @@ const TeacherNotifications = () => {
               </TabsContent>
               <TabsContent value="sent" className="mt-6">
                 <div className="space-y-4">
-                  {data.sent.length === 0 ? (
+                  {panelLoading.sent ? (
+                    <div className="flex justify-center py-12">
+                      <Spinner className="text-primary" />
+                    </div>
+                  ) : data.sent.length === 0 ? (
                     <div className="text-center py-8">
                       <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptySentTitle')}</h3>
@@ -479,7 +488,11 @@ const TeacherNotifications = () => {
               </TabsContent>
               <TabsContent value="received" className="mt-6">
                 <div className="space-y-4">
-                  {data.received.length === 0 ? (
+                  {panelLoading.received ? (
+                    <div className="flex justify-center py-12">
+                      <Spinner className="text-primary" />
+                    </div>
+                  ) : data.received.length === 0 ? (
                     <div className="text-center py-8">
                       <MailOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyReceivedTitle')}</h3>

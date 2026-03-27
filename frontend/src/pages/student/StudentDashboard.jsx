@@ -517,7 +517,7 @@ const StudentDashboard = () => {
           <GradesGraph recentGrades={dashboardData.grades.length > 0 ? dashboardData.grades : (reduxGrades || [])} />
         </Card>
         {/* Quick Actions */}
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
