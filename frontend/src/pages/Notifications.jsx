@@ -19,6 +19,7 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { RefreshCw, Loader2 } from 'lucide-react';
 import { Spinner } from '../components/ui/spinner';
+import { refreshAppCounts } from '../lib/utils';
 
 const Notifications = () => {
   const { t } = useTranslation();
@@ -118,11 +119,8 @@ const Notifications = () => {
       .unwrap()
       .then(() => {
         toast.success(t('notifications.markedAsRead'));
-        // CRITICAL FIX: Don't immediately refresh - Redux state already updated
-        // dispatch(getMyNotifications()); // REMOVED: Causes race condition with stale cache
-        
         // Dispatch custom event to refresh header counts
-        window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+        refreshAppCounts();
       })
       .catch((error) => {
         console.error('Failed to mark notification as read:', error);
@@ -139,7 +137,7 @@ const Notifications = () => {
         toast.success(t('notifications.markedAsSeen'));
         // CRITICAL FIX: Removed full refetch to prevent race condition with stale cache
         // dispatch custom event to refresh header counts
-        window.dispatchEvent(new CustomEvent('refreshHeaderCounts'));
+        refreshAppCounts();
       })
       .catch((error) => {
         console.error('Failed to mark notification as seen:', error);

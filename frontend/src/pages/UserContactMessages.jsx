@@ -45,6 +45,7 @@ import {
   Megaphone as AnnouncementIcon,
   ChevronDown as ExpandMoreIcon
 } from 'lucide-react';
+import { refreshAppCounts } from '../lib/utils';
 const UserContactMessages = () => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -185,6 +186,9 @@ const UserContactMessages = () => {
           
           console.log(`Marked reply for message ${msg._id} as read`);
         }
+        
+        // Refresh header counts
+        refreshAppCounts();
         
         // Update local state
         setMessages(prev => prev.map(msg => 

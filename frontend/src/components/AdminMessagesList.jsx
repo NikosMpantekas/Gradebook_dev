@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 import { Separator } from './ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { refreshAppCounts } from '../lib/utils';
 
 const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
   const { t } = useTranslation();
@@ -94,6 +95,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       }, config);
 
       toast.success(t('contactMessages.statusUpdated'));
+      refreshAppCounts();
       if (onMessagesChanged) {
         onMessagesChanged();
       }
@@ -120,6 +122,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       }, config);
 
       toast.success(t('contactMessages.replySent'));
+      refreshAppCounts();
       setReplyText({
         ...replyText,
         [messageId]: ''
@@ -152,6 +155,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
       await axios.patch(`${API_URL}/api/contact/${messageId}/read`, {}, config);
 
       toast.success(t('contactMessages.markedAsRead'));
+      refreshAppCounts();
       if (onMessagesChanged) {
         onMessagesChanged();
       }

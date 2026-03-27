@@ -128,7 +128,8 @@ export const deleteNotification = createAsyncThunk(
   async (id, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.user.token;
-      return await notificationService.deleteNotification(id, token);
+      const response = await notificationService.deleteNotification(id, token);
+      return { ...response, id: id };
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
         return thunkAPI.rejectWithValue('CANCELLED');
@@ -155,7 +156,8 @@ export const markNotificationAsRead = createAsyncThunk(
       // so the reducer can properly update the state
       return {
         ...response,
-        id: id
+        id: id,
+        _id: id // Ensure both formats are available for reducer compatibility
       };
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {

@@ -199,10 +199,21 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
       console.error('Failed to fetch contact unread:', error);
     }
   }, [user]);
-
   useEffect(() => {
     fetchContactUnread();
   }, [fetchContactUnread]);
+
+  // Listen for global refresh events to update counts instantly
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('[Header] Global refresh event received: re-fetching counts');
+      fetchContactUnread();
+      dispatch(getMyNotifications());
+    };
+    
+    window.addEventListener('refreshHeaderCounts', handleRefresh);
+    return () => window.removeEventListener('refreshHeaderCounts', handleRefresh);
+  }, [fetchContactUnread, dispatch]);
 
   // Fetch notifications on page load
   useEffect(() => {
@@ -380,20 +391,13 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                     <div className="py-1">
                       {/* Dark Mode Toggle as a Switch Item */}
                       <DropdownMenuItem
-                        onSelect={(e) => e.preventDefault()}
-                        className="flex items-center justify-between gap-2 px-4 py-2 focus:bg-accent/50"
+                        onClick={handleDarkModeToggle}
+                        className="flex items-center gap-2 px-4 py-2 focus:bg-accent/50 cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">
-                          {darkMode ? <Sun className="h-4 w-4 text-primary" /> : <Moon className="h-4 w-4 text-primary" />}
-                          <Label htmlFor="mobile-dark-mode" className="text-sm cursor-pointer">
-                            {darkMode ? t('settings.lightMode', 'Light Mode') : t('settings.darkMode', 'Dark Mode')}
-                          </Label>
-                        </div>
-                        <Switch
-                          id="mobile-dark-mode"
-                          checked={darkMode}
-                          onCheckedChange={handleDarkModeToggle}
-                        />
+                        {darkMode ? <Sun className="h-4 w-4 text-primary" /> : <Moon className="h-4 w-4 text-primary" />}
+                        <span className="text-sm font-medium">
+                          {darkMode ? t('settings.lightMode', 'Light Mode') : t('settings.darkMode', 'Dark Mode')}
+                        </span>
                       </DropdownMenuItem>
                     </div>
 
