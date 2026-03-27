@@ -379,6 +379,7 @@
     "title": "Notifications",
     "addNotification": "Add Notification",
     "manageNotifications": "Manage Notifications",
+    "subtitle": "Manage your notifications and communication preferences.",
     "notificationTitle": "Title",
     "notificationMessage": "Message",
     "notificationDate": "Date",
@@ -414,10 +415,10 @@
     "dateError": "Date error",
     "invalidNotificationData": "Invalid notification data received. Please refresh the page.",
     "invalidNotificationDataShort": "Invalid notification data",
-    "noNotificationsReceived": "No notifications received",
-    "noNotificationsSent": "No notifications sent",
-    "noNotificationsReceivedDesc": "You will see new notifications here when they arrive.",
-    "noNotificationsSentDesc": "Notifications you send will appear here.",
+    "noNotificationsReceived": "No notifications found",
+    "noNotificationsSent": "No sent notifications found",
+    "noNotificationsReceivedDesc": "New notifications will appear here when they arrive.",
+    "noNotificationsSentDesc": "Notifications you send to others will appear here.",
     "allNotificationsInvalid": "All notifications contain invalid data. Please contact support.",
     "untitled": "Untitled",
     "noMessage": "No message",
@@ -1270,7 +1271,7 @@
       "my": "My Messages",
       "patch": "Patch Notes"
     },
-    "contactSupport": "Contact Support",
+    "contactSupport": "Contact Developers",
     "noUserMessages": "You haven't sent any messages yet.",
     "message": "Message",
     "adminReply": "Admin Reply",
@@ -1295,5 +1296,21 @@
     "reply": "Reply",
     "replyPlaceholder": "Type your reply...",
     "send": "Send"
+  },
+  "contactDeveloper": {
+    "title": "Contact Developers",
+    "subtitle": "Send us a message, report a bug, or request a feature",
+    "subject": "Subject",
+    "subjectPlaceholder": "Brief description of your message",
+    "message": "Message",
+    "messagePlaceholder": "Please provide detailed information...",
+    "isBugReport": "This is a bug report",
+    "bugReportHint": "Enable this if you’re reporting a defect so we can triage faster.",
+    "send": "Send Message",
+    "sending": "Sending...",
+    "successMessage": "Your message has been sent. We will review it as soon as possible.",
+    "errorMessage": "Failed to send message. Please try again.",
+    "fillingRequired": "Please fill out all fields",
+    "authRequired": "You must be logged in to send a message"
   }
 }

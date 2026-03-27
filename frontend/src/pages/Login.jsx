@@ -378,11 +378,13 @@ const Login = () => {
                 )}>
                   {animationStep === 'error' ? (
                     <XCircle className="h-7 w-7 animate-in zoom-in-50 duration-300" />
+                  ) : animationStep === 'transitioning' ? (
+                    <Check className="h-8 w-8 animate-in zoom-in-50 duration-500 stroke-[3px]" />
                   ) : (
                     <img 
                       src="/logo-transparent.png" 
                       alt="Logo" 
-                      className={cn("h-12 w-12 object-contain", animationStep === 'transitioning' && "animate-pulse")} 
+                      className="h-12 w-12 object-contain" 
                     />
                   )}
                 </div>

@@ -10,8 +10,10 @@ import { Checkbox } from './ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { useSelector } from 'react-redux';
 import { cn } from '../lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const ContactDeveloper = ({ open, onClose }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     subject: '',
     message: '',
@@ -26,7 +28,7 @@ const ContactDeveloper = ({ open, onClose }) => {
     if (!formData.subject || !formData.message) {
       setStatus({
         type: 'error',
-        message: 'Please fill out all fields'
+        message: t('contactDeveloper.fillingRequired')
       });
       return;
     }
@@ -39,7 +41,7 @@ const ContactDeveloper = ({ open, onClose }) => {
       const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
 
       if (!user || !user.token) {
-        throw new Error('You must be logged in to send a message');
+        throw new Error(t('contactDeveloper.authRequired'));
       }
 
       // Create the request configuration with the auth token
@@ -57,7 +59,7 @@ const ContactDeveloper = ({ open, onClose }) => {
 
       setStatus({
         type: 'success',
-        message: response.data.message || 'Your message has been sent. We will review it as soon as possible.'
+        message: response.data.message || t('contactDeveloper.successMessage')
       });
 
       // Reset form after successful submission
@@ -72,7 +74,7 @@ const ContactDeveloper = ({ open, onClose }) => {
       console.error('Error sending message:', error);
       setStatus({
         type: 'error',
-        message: error.response?.data?.message || 'Failed to send message. Please try again.'
+        message: error.response?.data?.message || t('contactDeveloper.errorMessage')
       });
     } finally {
       setSending(false);
@@ -98,35 +100,35 @@ const ContactDeveloper = ({ open, onClose }) => {
         <DialogHeader>
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
-            <DialogTitle>Contact Developer</DialogTitle>
+            <DialogTitle>{t('contactDeveloper.title')}</DialogTitle>
           </div>
           <DialogDescription>
-            Send us a message, report a bug, or request a feature
+            {t('contactDeveloper.subtitle')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject</Label>
+            <Label htmlFor="subject">{t('contactDeveloper.subject')}</Label>
             <Input
               id="subject"
               name="subject"
               value={formData.subject}
               onChange={handleChange}
-              placeholder="Brief description of your message"
+              placeholder={t('contactDeveloper.subjectPlaceholder')}
               disabled={sending}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
+            <Label htmlFor="message">{t('contactDeveloper.message')}</Label>
             <Textarea
               id="message"
               name="message"
               value={formData.message}
               onChange={handleChange}
-              placeholder="Please provide detailed information..."
+              placeholder={t('contactDeveloper.messagePlaceholder')}
               rows={4}
               disabled={sending}
               required
@@ -138,15 +140,15 @@ const ContactDeveloper = ({ open, onClose }) => {
               id="isBugReport"
               name="isBugReport"
               checked={formData.isBugReport}
-              onChange={handleChange}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isBugReport: checked }))}
               disabled={sending}
             />
             <Label htmlFor="isBugReport" className="text-sm">
-              This is a bug report
+              {t('contactDeveloper.isBugReport')}
             </Label>
           </div>
           <p className="text-xs text-muted-foreground -mt-2 ml-7">
-            Enable this if you’re reporting a defect so we can triage faster.
+            {t('contactDeveloper.bugReportHint')}
           </p>
 
           {status && (
@@ -167,12 +169,12 @@ const ContactDeveloper = ({ open, onClose }) => {
               {sending ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Sending...
+                  {t('contactDeveloper.sending')}
                 </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  Send Message
+                  {t('contactDeveloper.send')}
                 </>
               )}
             </Button>

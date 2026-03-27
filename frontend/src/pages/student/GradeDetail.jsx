@@ -16,14 +16,70 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Separator } from '../../components/ui/separator';
 import { Badge } from '../../components/ui/badge';
 import LoadingState from '../../components/common/LoadingState';
+import { Skeleton } from '../../components/ui/skeleton';
+
+const GradeDetailSkeleton = () => (
+  <div className="flex-1 space-y-6 animate-in fade-in duration-500">
+    <Skeleton className="h-10 w-32 mb-6" />
+
+    <div className="grid gap-6 md:grid-cols-3">
+      {/* Grade Summary Card Skeleton */}
+      <div className="md:col-span-1">
+        <Card className="h-full">
+          <CardContent className="flex flex-col items-center p-8">
+            <Skeleton className="h-8 w-40 mb-6 mx-auto" />
+            <div className="relative mb-6">
+              <Skeleton className="h-40 w-40 rounded-full" />
+            </div>
+            <Skeleton className="h-10 w-32 mb-3" />
+            <Skeleton className="h-4 w-48 mx-auto" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Grade Details Card Skeleton */}
+      <div className="md:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle><Skeleton className="h-7 w-32" /></CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Separator />
+            <div className="grid gap-6 md:grid-cols-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-start space-x-3">
+                  <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-5 w-full max-w-[150px]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Separator />
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-24" />
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </div>
+);
 
 const GradeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { grade, isLoading, isError, message } = useSelector((state) => state.grades);
+  const { grade: singleGrade, grades, isLoading, isError, message } = useSelector((state) => state.grades);
   const { user } = useSelector((state) => state.auth);
+
+  // Instant load: check if the grade is already in the grades list
+  const grade = singleGrade || (grades && id ? grades.find(g => g._id === id) : null);
 
   useEffect(() => {
     if (id) {
@@ -64,8 +120,15 @@ const GradeDetail = () => {
     return { status: 'Fail', color: '#e53935' };
   };
 
-  if (isLoading || !grade) {
-    return <LoadingState message="Loading grade details..." fullPage={true} />;
+  // Only show skeleton if we don't have the grade yet (neither cached nor just loaded)
+  if (!grade && isLoading) {
+    return <GradeDetailSkeleton />;
+  }
+
+  // If we still don't have the grade and it's not loading, something might be wrong
+  // but we'll show the skeleton briefly while the effect dispatches
+  if (!grade) {
+    return <GradeDetailSkeleton />;
   }
 
   const gradeStatus = getGradeStatus();

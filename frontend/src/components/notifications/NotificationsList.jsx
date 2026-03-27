@@ -122,10 +122,10 @@ const NotificationsList = ({
       <div className="flex flex-col items-center py-16 text-center px-4">
         <BellOff className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-          {tabValue === 0 ? t('notifications.noNotificationsReceived') : t('notifications.noNotificationsSent')}
+          {tabValue === 'received' ? t('notifications.noNotificationsReceived') : t('notifications.noNotificationsSent')}
         </h3>
         <p className="text-sm text-muted-foreground">
-          {tabValue === 0 
+          {tabValue === 'received' 
             ? t('notifications.noNotificationsReceivedDesc')
             : t('notifications.noNotificationsSentDesc')
           }
