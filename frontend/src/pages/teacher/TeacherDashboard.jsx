@@ -35,6 +35,7 @@ import MaintenanceNotifications from '../../components/MaintenanceNotifications'
 import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
+import { MonthlyCalendar } from '../../components/MonthlyCalendar';
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const TeacherDashboard = () => {
     notifications: [],
     recentGrades: [],
     upcomingClasses: [],
+    scheduleData: {},
     stats: {
       totalStudents: 0,
       totalClasses: 0,
@@ -115,6 +117,11 @@ const TeacherDashboard = () => {
         promises.push(fetchNotifications());
         dataKeys.push('notifications');
       }
+
+      // Fetch schedule data for calendar and today's classes
+      setPanelLoading(prev => ({ ...prev, classes: true }));
+      promises.push(fetchScheduleData());
+      dataKeys.push('scheduleData');
       
       // Execute all enabled data fetches
       const results = await Promise.allSettled(promises);
@@ -208,6 +215,24 @@ const TeacherDashboard = () => {
     }
   };
 
+  const fetchScheduleData = async () => {
+    try {
+      console.log('TeacherDashboard: Fetching schedule data...');
+      const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
+      
+      if (response.data && response.data.schedule) {
+        return response.data.schedule;
+      }
+      return response.data || {};
+    } catch (error) {
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        return {};
+      }
+      console.error('TeacherDashboard: Error fetching schedule data:', error);
+      return {};
+    }
+  };
+
   // Navigation handlers
   const handleManageGrades = () => navigate('/app/teacher/grades/manage');
   const handleCreateGrade = () => navigate('/app/teacher/grades/create');
@@ -266,164 +291,190 @@ const TeacherDashboard = () => {
       {/* Maintenance Notifications */}
       <MaintenanceNotifications />
 
-      {/* Quick Stats and Actions - Side by Side on Desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Stats */}
-        <div className="space-y-4 h-full flex flex-col justify-center">
-          <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1 flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('teacher.totalStudents')}</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="flex flex-col justify-center flex-1 pt-0">
-              <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalStudents}</div>
-              <p className="text-xs text-muted-foreground">{t('teacher.enrolledStudents')}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex-1 flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('teacher.activeClasses')}</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="flex flex-col justify-center flex-1 pt-0">
-              <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalClasses}</div>
-              <p className="text-xs text-muted-foreground">{t('teacher.currentClasses')}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-              {/* Quick Actions */}
-        <Card className="simple-fade-in">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Zap className="h-5 w-5 text-primary" />
-              <span>{t('teacher.quickActions')}</span>
-            </CardTitle>
+      {/* Quick Stats at the top */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('teacher.totalStudents')}</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => navigate('/app/teacher/grades/create')}
-                variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-              >
-                <Plus className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.createGrade')}</span>
-              </Button>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalStudents}</div>
+            <p className="text-xs text-muted-foreground">{t('teacher.enrolledStudents')}</p>
+          </CardContent>
+        </Card>
 
-              <Button
-                onClick={() => navigate('/app/teacher/grades/manage')}
-                variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-              >
-                <Edit className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.manageGrades')}</span>
-              </Button>
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('teacher.activeClasses')}</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalClasses}</div>
+            <p className="text-xs text-muted-foreground">{t('teacher.currentClasses')}</p>
+          </CardContent>
+        </Card>
 
-              <Button
-                onClick={() => navigate('/app/teacher/notifications/create')}
-                variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-              >
-                <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.sendNotifications')}</span>
-              </Button>
-
-              <Button
-                onClick={() => navigate('/app/teacher/notifications')}
-                variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-              >
-                <MessageSquare className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.viewNotifications')}</span>
-              </Button>
-
-              <Button
-                onClick={() => navigate('/app/teacher/schedule')}
-                variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-              >
-                <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.schedule')}</span>
-              </Button>
-
-              <Button
-                onClick={() => navigate('/app/teacher/student-stats')}
-                variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-              >
-                <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.studentStats')}</span>
-              </Button>
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('teacher.classesToday', 'Classes Today')}</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">
+              {(() => {
+                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                return dashboardData.scheduleData[today]?.length || 0;
+              })()}
             </div>
+            <p className="text-xs text-muted-foreground">
+              {(() => {
+                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                const todayClasses = dashboardData.scheduleData[today] || [];
+                if (todayClasses.length === 0) return t('teacher.noClassesScheduled', 'None scheduled');
+                const nextClass = todayClasses[0]; 
+                return t('teacher.nextAt', { time: nextClass.startTime, defaultValue: `Next: ${nextClass.startTime}` });
+              })()}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Notifications */}
-      <Card className="simple-fade-in">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <Bell className="h-5 w-5 text-primary" />
-            <span>{t('teacher.recentNotifications')}</span>
-          </CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate('/app/teacher/notifications')}
-            className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
-          >
-            {t('teacher.viewAll')}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {panelLoading.notifications ? (
-            <div className="flex justify-center py-8">
-              <Spinner className="text-primary" />
-            </div>
-          ) : dashboardData.notifications.length > 0 ? (
-            <div className="space-y-4">
-              {dashboardData.notifications.slice(0, 5).map((notification, index) => (
-                <div
-                  key={notification._id}
-                  className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
-                  style={{
-                      borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
-                                  notification.type === 'success' ? 'hsl(var(--success))' :
-                                  notification.type === 'warning' ? 'hsl(var(--warning))' :
-                                  notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
-                    animationDelay: `${(index + 1) * 0.1}s`
-                  }}
-                  onClick={() => navigate(`/app/teacher/notifications/${notification._id}`)}
+      {/* Middle Row: Calendar, Actions & Notifications */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions (Order 1 on Mobile, 2 on Desktop) */}
+        <div className="order-1 lg:order-2">
+          <Card className="simple-fade-in h-fit">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Zap className="h-5 w-5 text-primary" />
+                <span>{t('teacher.quickActions')}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  onClick={() => navigate('/app/teacher/grades/manage')}
+                  variant="ghost"
+                  className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
                 >
-                  <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-                    {notification.type === 'info' && <Info className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />}
-                    {notification.type === 'success' && <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />}
-                    {notification.type === 'warning' && <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--warning))'}} />}
-                    {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
-                    <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
-                  </div>
-                  <Badge 
-                    variant="secondary" 
-                    className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
-                  >
-                    {new Date(notification.createdAt).toLocaleDateString()}
-                  </Badge>
+                  <Edit className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                  <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.manageGrades')}</span>
+                </Button>
+
+                <Button
+                  onClick={() => navigate('/app/teacher/notifications/create')}
+                  variant="ghost"
+                  className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                >
+                  <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                  <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.sendNotifications')}</span>
+                </Button>
+
+                <Button
+                  onClick={() => navigate('/app/teacher/schedule')}
+                  variant="ghost"
+                  className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                >
+                  <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                  <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.schedule')}</span>
+                </Button>
+
+                <Button
+                  onClick={() => navigate('/app/teacher/student-stats')}
+                  variant="ghost"
+                  className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                >
+                  <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
+                  <span className="transition-colors duration-300 group-hover:text-primary">{t('teacher.studentStats')}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Monthly Calendar Widget (Order 2 on Mobile, 1 on Desktop) */}
+        <div className="order-2 lg:order-1 lg:row-span-2">
+          <Card className="simple-fade-in h-fit overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <span>{t('student.monthlyCalendar')}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <MonthlyCalendar scheduleData={dashboardData.scheduleData} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Notifications (Order 3 on Mobile & Desktop) */}
+        <div className="order-3 lg:order-3">
+          <Card className="simple-fade-in">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Bell className="h-5 w-5 text-primary" />
+                <span>{t('teacher.recentNotifications')}</span>
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/app/teacher/notifications')}
+                className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
+              >
+                {t('teacher.viewAll')}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {panelLoading.notifications ? (
+                <div className="flex justify-center py-8">
+                  <Spinner className="text-primary" />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground fade-in-up">
-              <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>{t('teacher.noRecentNotifications')}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              ) : dashboardData.notifications.length > 0 ? (
+                <div className="space-y-4">
+                  {dashboardData.notifications.slice(0, 5).map((notification, index) => (
+                    <div
+                      key={notification._id}
+                      className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                      style={{
+                          borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
+                                      notification.type === 'success' ? 'hsl(var(--success))' :
+                                      notification.type === 'warning' ? 'hsl(var(--warning))' :
+                                      notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
+                        animationDelay: `${(index + 1) * 0.1}s`
+                      }}
+                      onClick={() => navigate(`/app/teacher/notifications/${notification._id}`)}
+                    >
+                      <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+                        {notification.type === 'info' && <Info className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />}
+                        {notification.type === 'success' && <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />}
+                        {notification.type === 'warning' && <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--warning))'}} />}
+                        {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
+                      </div>
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
+                      >
+                        {new Date(notification.createdAt).toLocaleDateString()}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground fade-in-up">
+                  <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>{t('teacher.noRecentNotifications')}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
 
       {/* Feature Disabled Message */}
       {!isFeatureEnabled('enableNotifications') && (
