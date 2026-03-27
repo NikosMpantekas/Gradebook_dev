@@ -29,6 +29,87 @@ import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { GradesGraph } from "../../components/GradesGraph";
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
+import { Skeleton } from '../../components/ui/skeleton';
+
+const StudentDashboardSkeleton = () => (
+  <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="flex flex-col h-32">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 w-24 bg-muted/40 rounded-md" />
+              <div className="h-4 w-4 bg-muted/30 rounded-sm" />
+            </CardHeader>
+            <CardContent className="flex flex-col justify-center flex-1 pt-0">
+              <div className="h-8 w-16 mb-2 bg-muted/50 rounded-md" />
+              <div className="h-3 w-32 bg-muted/30 rounded-md" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card className="h-80">
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent className="h-64 relative overflow-hidden flex flex-col pt-0">
+          <div className="w-full h-full border-b border-l border-muted/50 relative p-4 mb-4">
+            {/* Grid lines skeleton (subtle) */}
+            {[1, 2, 3].map(i => <div key={i} className="absolute left-0 right-0 border-t border-muted/20" style={{ bottom: `${i * 25}%` }} />)}
+
+            {/* Line graph skeleton preview */}
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path
+                d="M 0,80 L 20,60 L 40,75 L 60,40 L 80,55 L 100,25"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-muted-foreground/15"
+              />
+            </svg>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="h-80">
+        <CardHeader>
+          <div className="h-6 w-32 bg-muted rounded-md" />
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 w-full rounded-lg bg-muted/40" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <Card className="lg:col-span-1 h-96">
+        <CardHeader>
+          <div className="h-6 w-32 bg-muted rounded-md" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 w-full rounded-lg bg-muted/30" />
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2 h-96">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="h-6 w-48 bg-muted rounded-md" />
+          <div className="h-9 w-24 bg-muted rounded-md" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-16 w-full rounded-lg bg-muted/30" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
 
 const StudentDashboard = () => {
   const { t } = useTranslation();
@@ -36,6 +117,10 @@ const StudentDashboard = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { isFeatureEnabled, loading: featuresLoading } = useFeatureToggles();
+  
+  // Get data from Redux store for instant loading
+  const { grades: reduxGrades } = useSelector((state) => state.grades || {});
+  const { notifications: reduxNotifications } = useSelector((state) => state.notifications || {});
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,6 +137,22 @@ const StudentDashboard = () => {
       classesToday: 0
     }
   });
+
+  // Calculate stats from redux data for instant display
+  const reduxStats = React.useMemo(() => {
+    if (!reduxGrades || reduxGrades.length === 0) return null;
+    
+    const gradeValues = reduxGrades.map(g => g.value);
+    const averageGrade = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
+    const subjects = [...new Set(reduxGrades.map(g => g.subject?.name).filter(Boolean))];
+    
+    return {
+      totalSubjects: subjects.length,
+      averageGrade: Math.round(averageGrade * 100) / 100,
+      gradesReceived: reduxGrades.length,
+      classesToday: 0 // Will be updated by fresh fetch
+    };
+  }, [reduxGrades]);
   
   const [panelLoading, setPanelLoading] = useState({
     notifications: false,
@@ -91,9 +192,14 @@ const StudentDashboard = () => {
   // Fetch dashboard data
   useEffect(() => {
     if (user && user.role === 'student' && !featuresLoading) {
+      // If we already have redux data, we can skip the "major" loading state
+      // but still fetch fresh data in the background
+      if (reduxStats) {
+        setLoading(false);
+      }
       fetchDashboardData();
     }
-  }, [user, featuresLoading]);
+  }, [user, featuresLoading, !!reduxStats]);
 
   const getAuthConfig = () => {
     return {
@@ -306,16 +412,7 @@ const StudentDashboard = () => {
   const handleViewCalendar = () => navigate('/app/calendar');
   const handleViewAllNotifications = () => navigate('/app/notifications');
 
-  // Show loading state
-  if (featuresLoading || loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <Spinner className="text-primary" />
-        </div>
-      </div>
-    );
-  }
+  // Loading logic is handled inline below to keep the header static
 
   // Show error state
   if (error) {
@@ -356,42 +453,50 @@ const StudentDashboard = () => {
       {/* Maintenance Notifications */}
       <MaintenanceNotifications />
 
+      {featuresLoading || (loading && !reduxStats) ? (
+        <StudentDashboardSkeleton />
+      ) : (
+        <>
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="flex flex-col justify-center flex-1 pt-0">
-            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalSubjects}</div>
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalSubjects || reduxStats?.totalSubjects || 0}</div>
             <p className="text-xs text-muted-foreground">{t('student.enrolledSubjects')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="flex flex-col justify-center flex-1 pt-0">
-            <div className="text-2xl font-bold mb-1">{dashboardData.stats.averageGrade.toFixed(1)}</div>
+            <div className="text-2xl font-bold mb-1">
+              {dashboardData.stats.averageGrade ? dashboardData.stats.averageGrade.toFixed(1) : 
+               reduxStats?.averageGrade ? reduxStats.averageGrade.toFixed(1) : '0.0'}
+            </div>
             <p className="text-xs text-muted-foreground">{t('student.currentAverage')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="flex flex-col justify-center flex-1 pt-0">
-            <div className="text-2xl font-bold mb-1">{dashboardData.stats.gradesReceived}</div>
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.gradesReceived || reduxStats?.gradesReceived || 0}</div>
             <p className="text-xs text-muted-foreground">{t('student.thisSemester')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.classesToday', 'Classes Today')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -408,11 +513,11 @@ const StudentDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="simple-fade-in overflow-hidden">
-          <GradesGraph recentGrades={dashboardData.grades} />
+        <Card className="overflow-hidden">
+          <GradesGraph recentGrades={dashboardData.grades.length > 0 ? dashboardData.grades : (reduxGrades || [])} />
         </Card>
         {/* Quick Actions */}
-        <Card className="simple-fade-in flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
@@ -462,7 +567,7 @@ const StudentDashboard = () => {
       {/* Recent Notifications and Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Monthly Calendar Widget */}
-        <Card className="simple-fade-in">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-primary" />
@@ -475,7 +580,7 @@ const StudentDashboard = () => {
         </Card>
 
         {/* Recent Notifications */}
-        <Card className="simple-fade-in lg:col-span-2">
+        <Card className="lg:col-span-2 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-primary" />
@@ -490,17 +595,17 @@ const StudentDashboard = () => {
               {t('navigation.viewAll')}
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col">
             {panelLoading.notifications ? (
               <div className="flex justify-center py-8">
                 <Spinner className="text-primary" />
               </div>
             ) : dashboardData.notifications.length > 0 ? (
               <div className="space-y-4">
-                {dashboardData.notifications.slice(0, 5).map((notification, index) => (
+                {(dashboardData.notifications.length > 0 ? dashboardData.notifications : (reduxNotifications || [])).slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -529,8 +634,32 @@ const StudentDashboard = () => {
                   </div>
                 ))}
               </div>
+            ) : (reduxNotifications && reduxNotifications.length > 0) ? (
+              <div className="space-y-4">
+                {reduxNotifications.slice(0, 5).map((notification, index) => (
+                  <div
+                    key={notification._id}
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
+                    onClick={() => navigate(`/app/notifications/${notification._id}`)}
+                  >
+                    <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+                      {notification.type === 'info' && <Info className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />}
+                      {notification.type === 'success' && <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />}
+                      {notification.type === 'warning' && <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--warning))'}} />}
+                      {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30">
+                      {new Date(notification.createdAt).toLocaleDateString()}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground fade-in-up">
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
                 <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>{t('student.noNotifications')}</p>
               </div>
@@ -551,6 +680,8 @@ const StudentDashboard = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+        </>
       )}
     </div>
   );

@@ -181,7 +181,7 @@ function SuperAdminDashboard() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>School Owners</CardTitle>
@@ -195,7 +195,7 @@ function SuperAdminDashboard() {
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col">
           {schoolOwners.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {schoolOwners.map((owner) => (
@@ -292,7 +292,7 @@ function SuperAdminDashboard() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
               <h3 className="text-lg font-medium text-muted-foreground mb-2">
                 No school owners found
               </h3>

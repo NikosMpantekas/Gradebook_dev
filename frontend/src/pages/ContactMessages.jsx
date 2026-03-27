@@ -155,13 +155,13 @@ const ContactMessages = () => {
           <CardHeader>
             <CardTitle className="text-xl md:text-2xl font-bold">{t('contactMessages.patchNotesManagement')}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-h-[400px] flex flex-col">
             {loading ? (
-              <div className="flex justify-center my-8">
+              <div className="flex-1 flex justify-center items-center">
                 <Spinner className="text-primary" />
               </div>
             ) : (
-              <>
+              <div className="flex-1">
                 {user?.role === 'superadmin' && (
                   <PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />
                 )}
@@ -171,7 +171,7 @@ const ContactMessages = () => {
                   onEdit={handleEditPatchNote}
                   onDelete={handleDeletePatchNote}
                 />
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -179,15 +179,50 @@ const ContactMessages = () => {
     );
   }
 
-  const tabDefs = isAdminRole
-    ? [
-      { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
-      { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
-    ]
-    : [
-      { key: 'my', label: t('contactMessages.tabs.my'), icon: <EmailIcon className="h-4 w-4" />, panel: (<>{loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : <UserMessagesList messages={userMessages} />}</>) },
-      { key: 'patch', label: t('contactMessages.tabs.patch'), icon: <AnnouncementIcon className="h-4 w-4" />, panel: (loading ? <div className="flex justify-center my-8"><Spinner className="text-primary" /></div> : (<>{user?.role === 'superadmin' && (<PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />)}<PatchNotesList patchNotes={patchNotes} user={user} onEdit={handleEditPatchNote} onDelete={handleDeletePatchNote} /></>)) },
-    ];
+  const tabDefs = [
+    { 
+      key: 'my', 
+      label: t('contactMessages.tabs.my'), 
+      icon: <EmailIcon className="h-4 w-4" />, 
+      panel: (
+        <div className="min-h-[400px] flex-1 flex justify-center items-center">
+          {loading ? (
+            <div className="flex-1 flex justify-center items-center">
+              <Spinner className="text-primary" />
+            </div>
+          ) : (
+            <UserMessagesList messages={userMessages} />
+          )}
+        </div>
+      ) 
+    },
+    { 
+      key: 'patch', 
+      label: t('contactMessages.tabs.patch'), 
+      icon: <AnnouncementIcon className="h-4 w-4" />, 
+      panel: (
+        <div className="min-h-[400px] flex-1 flex justify-center items-center">
+          {loading ? (
+            <div className="flex-1 flex justify-center items-center">
+              <Spinner className="text-primary" />
+            </div>
+          ) : (
+            <div className="flex-1 ">
+              {user?.role === 'superadmin' && (
+                <PatchNoteEditor ref={patchNoteEditorRef} user={user} onPatchNotesChanged={fetchPatchNotes} />
+              )}
+              <PatchNotesList 
+                patchNotes={patchNotes} 
+                user={user} 
+                onEdit={handleEditPatchNote} 
+                onDelete={handleDeletePatchNote} 
+              />
+            </div>
+          )}
+        </div>
+      ) 
+    },
+  ];
 
   return (
     <div className="w-full mx-auto p-4 sm:p-6">
@@ -256,7 +291,7 @@ const ContactMessages = () => {
 
           {/* Contact Support Button - Only visible on "My Messages" tab */}
           {tabValue === 'my' && (
-            <div className="flex justify-end mt-6 pt-4 border-t border-border">
+            <div className="flex justify-center md:justify-end mt-6 pt-4 border-t border-border">
               <Button
                 onClick={handleOpenContact}
                 className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-primary/30 hover:bg-primary/20 hover:border-primary/60 group bg-background border-2 border-border shadow-lg text-foreground"

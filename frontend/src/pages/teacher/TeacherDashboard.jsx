@@ -302,9 +302,8 @@ const TeacherDashboard = () => {
       {/* Maintenance Notifications */}
       <MaintenanceNotifications />
 
-      {/* Quick Stats at the top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('teacher.totalStudents')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -355,7 +354,7 @@ const TeacherDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions (Order 1 on Mobile, 2 on Desktop) */}
         <div className="order-1 lg:order-2">
-          <Card className="simple-fade-in h-fit">
+          <Card className="h-fit">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Zap className="h-5 w-5 text-primary" />
@@ -406,7 +405,7 @@ const TeacherDashboard = () => {
 
         {/* Monthly Calendar Widget (Order 2 on Mobile, 1 on Desktop) */}
         <div className="order-2 lg:order-1 lg:row-span-2">
-          <Card className="simple-fade-in h-fit overflow-hidden">
+          <Card className="h-fit overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5 text-primary" />
@@ -421,7 +420,7 @@ const TeacherDashboard = () => {
 
         {/* Recent Notifications (Order 3 on Mobile & Desktop) */}
         <div className="order-3 lg:order-3">
-          <Card className="simple-fade-in">
+          <Card className="flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <Bell className="h-5 w-5 text-primary" />
@@ -446,13 +445,12 @@ const TeacherDashboard = () => {
                   {dashboardData.notifications.slice(0, 5).map((notification, index) => (
                     <div
                       key={notification._id}
-                      className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                      className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
                       style={{
                           borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                       notification.type === 'success' ? 'hsl(var(--success))' :
                                       notification.type === 'warning' ? 'hsl(var(--warning))' :
                                       notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
-                        animationDelay: `${(index + 1) * 0.1}s`
                       }}
                       onClick={() => navigate(`/app/teacher/notifications/${notification._id}`)}
                     >
@@ -476,7 +474,7 @@ const TeacherDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground fade-in-up">
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
                   <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>{t('teacher.noRecentNotifications')}</p>
                 </div>

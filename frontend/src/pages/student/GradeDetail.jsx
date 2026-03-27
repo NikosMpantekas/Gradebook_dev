@@ -19,20 +19,20 @@ import LoadingState from '../../components/common/LoadingState';
 import { Skeleton } from '../../components/ui/skeleton';
 
 const GradeDetailSkeleton = () => (
-  <div className="flex-1 space-y-6 animate-in fade-in duration-500">
+  <div className="flex-1 space-y-6">
     <Skeleton className="h-10 w-32 mb-6" />
 
     <div className="grid gap-6 md:grid-cols-3">
-      {/* Grade Summary Card Skeleton */}
+      {/* Grade Summary Card Skeleton - Fixed stable placeholders */}
       <div className="md:col-span-1">
         <Card className="h-full">
           <CardContent className="flex flex-col items-center p-8">
-            <Skeleton className="h-8 w-40 mb-6 mx-auto" />
+            <div className="h-8 w-40 bg-muted rounded-md mb-6 mx-auto" />
             <div className="relative mb-6">
-              <Skeleton className="h-40 w-40 rounded-full" />
+              <div className="h-40 w-40 rounded-full bg-muted/30 border-8 border-muted/50" />
             </div>
-            <Skeleton className="h-10 w-32 mb-3" />
-            <Skeleton className="h-4 w-48 mx-auto" />
+            <div className="h-10 w-32 bg-muted/40 rounded-md mb-3" />
+            <div className="h-4 w-48 bg-muted/20 rounded-md mx-auto" />
           </CardContent>
         </Card>
       </div>
@@ -41,26 +41,26 @@ const GradeDetailSkeleton = () => (
       <div className="md:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle><Skeleton className="h-7 w-32" /></CardTitle>
+            <CardTitle><div className="h-7 w-32 bg-muted rounded-md" /></CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <Separator />
             <div className="grid gap-6 md:grid-cols-2">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-start space-x-3">
-                  <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+                  <div className="h-5 w-5 rounded-full bg-muted/40 mt-0.5" />
                   <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-5 w-full max-w-[150px]" />
+                    <div className="h-4 w-20 bg-muted/30 rounded-md" />
+                    <div className="h-5 w-full max-w-[150px] bg-muted/20 rounded-md" />
                   </div>
                 </div>
               ))}
             </div>
             <Separator />
             <div className="space-y-4">
-              <Skeleton className="h-6 w-24" />
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <Skeleton className="h-20 w-full" />
+              <div className="h-6 w-24 bg-muted rounded-md" />
+              <div className="bg-muted/10 p-4 rounded-lg">
+                <div className="h-20 w-full bg-muted/20 rounded-md" />
               </div>
             </div>
           </CardContent>
