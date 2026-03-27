@@ -538,7 +538,7 @@ const CreateNotification = () => {
               disabled={loading}
             >
               <X className="mr-2 h-4 w-4" />
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
             <Button type="submit" disabled={loading}>
               <Send className="mr-2 h-4 w-4" />

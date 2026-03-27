@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -36,6 +36,73 @@ import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
+import { Skeleton } from '../../components/ui/skeleton';
+
+const TeacherDashboardSkeleton = () => (
+  <div className="container mx-auto px-4 py-6 space-y-6">
+    {/* Welcome Section */}
+    <div className="space-y-2">
+      <div className="h-10 w-64 bg-muted/40 rounded-lg" />
+      <div className="h-5 w-48 bg-muted/30 rounded-md" />
+    </div>
+
+    {/* Top Stats Skeleton */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="flex flex-col h-32">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="h-4 w-24 bg-muted/40 rounded-md" />
+            <div className="h-4 w-4 bg-muted/30 rounded-sm" />
+          </CardHeader>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="h-8 w-16 mb-2 bg-muted/50 rounded-md" />
+            <div className="h-3 w-32 bg-muted/30 rounded-md" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    {/* Middle Layout Skeleton */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* Calendar (Left) */}
+      <Card className="lg:row-span-2 h-fit overflow-hidden">
+        <CardHeader>
+          <div className="h-6 w-32 bg-muted/40 rounded-md" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="h-[450px] w-full bg-muted/20" />
+        </CardContent>
+      </Card>
+
+      {/* Right Column top: Quick Actions */}
+      <Card className="h-fit">
+        <CardHeader>
+          <div className="h-6 w-32 bg-muted/40 rounded-md" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 w-full rounded-lg bg-muted/30" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Right Column bottom: Notifications */}
+      <Card className="flex flex-col h-[350px]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div className="h-6 w-40 bg-muted/40 rounded-md" />
+          <div className="h-8 w-20 bg-muted/30 rounded-md" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 w-full rounded-lg bg-muted/20" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -44,18 +111,37 @@ const TeacherDashboard = () => {
   const { isFeatureEnabled, loading: featuresLoading } = useFeatureToggles();
   const { t } = useTranslation();
   
-  const [loading, setLoading] = useState(true);
+  const { students: reduxStudents } = useSelector((state) => state.students || { students: [] });
+  const { classes: reduxClasses } = useSelector((state) => state.classes || { classes: [] });
+  const { notifications: reduxNotifications } = useSelector((state) => state.notifications || { notifications: [] });
+
+  const reduxStats = useMemo(() => ({
+    totalStudents: reduxStudents?.length || 0,
+    totalClasses: reduxClasses?.length || 0
+  }), [reduxStudents, reduxClasses]);
+
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
-    notifications: [],
+    notifications: reduxNotifications?.length ? reduxNotifications.slice(0, 10) : [],
     recentGrades: [],
     upcomingClasses: [],
     scheduleData: {},
-    stats: {
-      totalStudents: 0,
-      totalClasses: 0,
-    }
+    stats: reduxStats
   });
+
+  const displayStats = useMemo(() => ({
+    totalStudents: (dashboardData.stats.totalStudents || reduxStats.totalStudents) || 0,
+    totalClasses: (dashboardData.stats.totalClasses || reduxStats.totalClasses) || 0,
+  }), [dashboardData.stats, reduxStats]);
+
+  const [loading, setLoading] = useState(true);
+
+  // Sync effect to handle loading state based on Redux data
+  useEffect(() => {
+    if (reduxStats.totalStudents > 0 || reduxStats.totalClasses > 0) {
+      setLoading(false);
+    }
+  }, [reduxStats]);
   
   const [panelLoading, setPanelLoading] = useState({
     notifications: false,
@@ -110,7 +196,10 @@ const TeacherDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
+      // Small safety check: if we have zero from both sources, we show skeleton
+      if (!displayStats.totalStudents && !displayStats.totalClasses) {
+        setLoading(true);
+      }
       setError(null);
       
       console.log('TeacherDashboard: Fetching dashboard data...');
@@ -252,15 +341,9 @@ const TeacherDashboard = () => {
   const handleSchedule = () => navigate('/app/teacher/schedule');
   const handleViewAllNotifications = () => navigate('/app/teacher/notifications');
 
-  // Show loading state
-  if (featuresLoading || loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-              <div className="flex justify-center items-center min-h-[60vh]">
-        <Spinner className="text-primary" />
-      </div>
-      </div>
-    );
+  // Show cold start loading state (Skeletons)
+  if (loading && !displayStats.totalStudents && !displayStats.totalClasses) {
+    return <TeacherDashboardSkeleton />;
   }
 
   // Show error state
@@ -309,23 +392,23 @@ const TeacherDashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="flex flex-col justify-center flex-1 pt-0">
-            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalStudents}</div>
+            <div className="text-2xl font-bold mb-1">{displayStats.totalStudents}</div>
             <p className="text-xs text-muted-foreground">{t('teacher.enrolledStudents')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('teacher.activeClasses')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="flex flex-col justify-center flex-1 pt-0">
-            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalClasses}</div>
+            <div className="text-2xl font-bold mb-1">{displayStats.totalClasses}</div>
             <p className="text-xs text-muted-foreground">{t('teacher.currentClasses')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('teacher.classesToday', 'Classes Today')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -351,7 +434,22 @@ const TeacherDashboard = () => {
       </div>
 
       {/* Middle Row: Calendar, Actions & Notifications */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Monthly Calendar Widget (Order 2 on Mobile, 1 on Desktop) */}
+        <div className="order-2 lg:order-1 lg:row-span-2">
+          <Card className="h-fit overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <span>{t('student.monthlyCalendar')}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <MonthlyCalendar scheduleData={dashboardData.scheduleData} />
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Quick Actions (Order 1 on Mobile, 2 on Desktop) */}
         <div className="order-1 lg:order-2">
           <Card className="h-fit">
@@ -403,21 +501,6 @@ const TeacherDashboard = () => {
           </Card>
         </div>
 
-        {/* Monthly Calendar Widget (Order 2 on Mobile, 1 on Desktop) */}
-        <div className="order-2 lg:order-1 lg:row-span-2">
-          <Card className="h-fit overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span>{t('student.monthlyCalendar')}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <MonthlyCalendar scheduleData={dashboardData.scheduleData} />
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Recent Notifications (Order 3 on Mobile & Desktop) */}
         <div className="order-3 lg:order-3">
           <Card className="flex flex-col">
@@ -435,14 +518,14 @@ const TeacherDashboard = () => {
                 {t('teacher.viewAll')}
               </Button>
             </CardHeader>
-            <CardContent>
-              {panelLoading.notifications ? (
-                <div className="flex justify-center py-8">
+            <CardContent className="flex-1 flex flex-col">
+              {panelLoading.notifications && dashboardData.notifications.length === 0 ? (
+                <div className="flex-1 flex justify-center items-center py-8">
                   <Spinner className="text-primary" />
                 </div>
-              ) : dashboardData.notifications.length > 0 ? (
+              ) : (dashboardData.notifications.length > 0 || reduxNotifications.length > 0) ? (
                 <div className="space-y-4">
-                  {dashboardData.notifications.slice(0, 5).map((notification, index) => (
+                  {(dashboardData.notifications.length > 0 ? dashboardData.notifications : reduxNotifications).slice(0, 5).map((notification, index) => (
                     <div
                       key={notification._id}
                       className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"

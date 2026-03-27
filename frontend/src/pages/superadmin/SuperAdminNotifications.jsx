@@ -262,7 +262,7 @@ const SuperAdminNotifications = () => {
       </div>
 
       <Tabs defaultValue="send" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px] bg-muted">
           <TabsTrigger value="send">Send New</TabsTrigger>
           <TabsTrigger value="manage">Manage Sent</TabsTrigger>
         </TabsList>
