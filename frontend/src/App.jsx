@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { 
+  createBrowserRouter, 
+  RouterProvider, 
+  createRoutesFromElements, 
+  Route, 
+  Navigate,
+  ScrollRestoration,
+  Outlet
+} from 'react-router-dom';
 import { ThemeProvider as ShadcnThemeProvider } from './components/theme-provider';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from './components/ui/sonner';
@@ -8,7 +16,6 @@ import './globals.css';
 
 // Initialize i18n
 import './i18n/i18n';
-
 
 // CRITICAL FIX: Import error handling and safety guard systems
 import { initGlobalErrorHandlers, trackError } from './utils/errorHandler';
@@ -73,7 +80,6 @@ import CreateNotification from './pages/teacher/CreateNotification';
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
-// CRITICAL FIX: Use error-wrapped version of CreateUser to fix the TypeError in direction selection
 import CreateUserErrorWrapper from './pages/admin/CreateUserErrorWrapper';
 import EditUser from './pages/admin/EditUser';
 import StudentProgress from './pages/admin/StudentProgress';
@@ -104,7 +110,6 @@ import SystemLogs from './pages/superadmin/SystemLogs';
 import PushNotificationManager from './services/PushNotificationManager';
 import setupAxios from './app/setupAxios';
 import logger from './services/loggerService';
-// Using the ErrorBoundary from ./components/ErrorBoundary
 import { appConfig, initAppConfig } from './config/appConfig';
 
 // Feature toggles context provider
@@ -112,6 +117,21 @@ import { FeatureToggleProvider } from './contexts/FeatureToggleContext';
 
 // Custom components
 import HomeScreenPrompt from './components/HomeScreenPrompt';
+
+/**
+ * RootWrapper component to include ScrollRestoration and MaintenanceStatusChecker
+ * in the data router context.
+ */
+const RootWrapper = () => {
+  return (
+    <MaintenanceStatusChecker>
+      <ScrollRestoration />
+      <div className="flex flex-col min-h-screen">
+        <Outlet />
+      </div>
+    </MaintenanceStatusChecker>
+  );
+};
 
 function App() {
   const dispatch = useDispatch();
@@ -136,701 +156,209 @@ function App() {
         hasSchoolId: !!user.schoolId
       } : 'No user'
     });
-
-    // Special logging for superadmin users
-    if (user?.role === 'superadmin') {
-      logger.info('APP', 'Superadmin user detected', {
-        id: user._id || user.id || 'Missing ID',
-        token: user.token ? 'Present' : 'Missing',
-        currentPath: window.location.pathname,
-        userKeys: Object.keys(user)
-      });
-    }
   }, [user, isLoading, darkMode]);
 
   // Initialize app configuration and error handlers safely
   useEffect(() => {
     try {
-      // First, initialize the global error handlers
-      console.log('[App] Initializing global error handlers (v' + appConfig.version + ')');
       initGlobalErrorHandlers();
-
-      // CRITICAL FIX: Apply global safety guards to prevent TypeErrors
-      // This prevents the "x(...) is undefined" errors by providing safe fallbacks
-      // for all array operations and object property access
-      console.log('[App] Applying global safety guards to prevent TypeErrors');
-      const safetyApplied = applyGlobalSafetyGuards();
-      console.log(`[App] Global safety guards ${safetyApplied ? 'successfully applied' : 'failed to apply'}`);
-
-      // Then initialize app configuration
-      console.log('[App] Initializing app configuration');
+      applyGlobalSafetyGuards();
       const initResult = initAppConfig();
       setConfigInitialized(initResult);
-
-      if (!initResult) {
-        console.error('[App] Failed to initialize app configuration');
-        trackError(new Error('App configuration initialization failed'), 'App');
-      }
     } catch (error) {
       console.error('[App] Error during initialization:', error);
       trackError(error, 'App.initialization');
       setConfigInitialized(false);
     }
-  }, [setConfigInitialized]);
+  }, []);
 
-  // Initialize axios interceptors for token management
+  // Initialize axios interceptors
   useEffect(() => {
-    console.log('Setting up global axios interceptors');
     setupAxios();
   }, []);
 
-  // Initialize modern push notification service when user is logged in - AUTO-ENABLE FOR ALL USERS
+  // Initialize push notifications
   useEffect(() => {
     if (user && user.token && configInitialized) {
-      console.log('[App] User is logged in, auto-enabling push notifications for all users');
-
-      // Initialize and auto-enable push notifications
       const initializePushNotifications = async () => {
         try {
           const pushManager = new PushNotificationManager();
-
-          // Register the modern service worker
-          const result = await pushManager.initializeServiceWorker();
-
-          if (result.success) {
-            console.log('[App] Modern push notifications initialized successfully');
-
-            // Auto-enable push notifications after a short delay
-            setTimeout(async () => {
-              try {
-                console.log('[App] Auto-enabling push notifications for user');
-                const enableResult = await pushManager.enablePushNotifications();
-
-                if (enableResult.success) {
-                  console.log('[App] Push notifications auto-enabled successfully');
-                } else {
-                  console.log('[App] Push notifications auto-enable failed:', enableResult.error);
-                }
-              } catch (enableError) {
-                console.error('[App] Auto-enable push notifications error:', enableError);
-              }
-            }, 3000); // Wait 3 seconds to ensure everything is loaded
-
-          } else {
-            console.log('[App] Modern push notifications initialization failed:', result.error);
-          }
+          await pushManager.initializeServiceWorker();
         } catch (error) {
-          console.error('[App] Modern push notifications initialization error:', error);
+          console.error('[App] Push notifications init error:', error);
         }
       };
-
       initializePushNotifications();
     }
   }, [user, configInitialized]);
 
-  // Add service worker update handling
-  useEffect(() => {
-    // This effect handles service worker updates for PWA
-    if ('serviceWorker' in navigator) {
-      // Listen for service worker controller changes (which happen after updates)
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('Service Worker controller changed - new version available');
-        // Optional: can reload automatically or show a notification
-        // window.location.reload();
-      });
+  // Define the router with modern Data Router API
+  const router = useMemo(() => createBrowserRouter(
+    createRoutesFromElements(
+      <Route element={<RootWrapper />}>
+        {/* Public Routes */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/change-password" element={<PasswordChange />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/diagnostics" element={<DiagnosticPage />} />
+        <Route path="/maintenance" element={<Maintenance />} />
 
-      // Force update check on page load (for home screen launches)
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'CHECK_UPDATE' });
-      }
-    }
-  }, []);
+        {/* Root redirect based on role */}
+        <Route path="/" element={
+          (!user) ? <Navigate to="/home" replace /> :
+          (user.role === 'superadmin') ? <Navigate to="/superadmin/dashboard" replace /> :
+          (user.role === 'admin') ? <Navigate to="/app/admin" replace /> :
+          (user.role === 'teacher') ? <Navigate to="/app/teacher" replace /> :
+          (user.role === 'student') ? <Navigate to="/app/student" replace /> :
+          (user.role === 'parent') ? <Navigate to="/app/parent" replace /> :
+          <Navigate to="/login" replace />
+        } />
 
-  // Special initialization to ensure Redux is synced with storage
-  useEffect(() => {
-    // If Redux has no user but session storage does, we need to forcibly sync
-    if (!user) {
-      try {
-        const sessionUser = sessionStorage.getItem('user');
-        const localUser = localStorage.getItem('user');
+        {/* Legacy dashboard redirects */}
+        <Route path="/app/dashboard" element={
+          (!user?.role) ? <Navigate to="/login" replace /> :
+          (user.role === 'admin') ? <Navigate to="/app/admin" replace /> :
+          (user.role === 'teacher') ? <Navigate to="/app/teacher" replace /> :
+          (user.role === 'student') ? <Navigate to="/app/student" replace /> :
+          (user.role === 'parent') ? <Navigate to="/app/parent" replace /> :
+          <Navigate to="/login" replace />
+        } />
 
-        let userData = null;
-        if (sessionUser) {
-          userData = JSON.parse(sessionUser);
-          console.log('Found user in sessionStorage, syncing with Redux');
-        } else if (localUser) {
-          userData = JSON.parse(localUser);
-          console.log('Found user in localStorage, syncing with Redux');
-        }
+        {/* Simple direct Dashboard route */}
+        <Route path="/dashboard" element={
+          <PrivateRoute>
+            <StandaloneDashboard />
+          </PrivateRoute>
+        } />
 
-        if (userData && userData.token) {
-          // Create a manual login action to update Redux state
-          dispatch({
-            type: 'auth/login/fulfilled',
-            payload: userData
-          });
-        }
-      } catch (err) {
-        console.error('Error syncing storage with Redux:', err);
-      }
-    }
-  }, [user, dispatch]);
+        {/* Protected Routes with Layout */}
+        <Route element={
+          <PrivateRoute>
+            <Layout />
+          </PrivateRoute>
+        }>
+          <Route path="/app/admin" element={<AdminDashboard />} />
+          <Route path="/app/teacher" element={<TeacherDashboard />} />
+          <Route path="/app/student" element={<StudentDashboard />} />
+          <Route path="/app/parent" element={<ParentDashboard />} />
+          <Route path="/app/profile" element={<Profile />} />
+          <Route path="/app/notifications" element={<Notifications />} />
+          <Route path="/app/notifications/:id" element={<NotificationDetail />} />
+          <Route path="/app/admin/contact" element={<ContactMessages />} />
+          <Route path="/app/teacher/contact" element={<ContactMessages />} />
+          <Route path="/app/student/contact" element={<ContactMessages />} />
+          <Route path="/app/parent/contact" element={<ContactMessages />} />
+          <Route path="/app/contact-messages" element={<ContactMessages />} />
+          <Route path="/app/calendar" element={<Calendar />} />
+          <Route path="/app/schedule" element={<Schedule />} />
+          <Route path="/app/grades" element={<StudentGrades />} />
+          <Route path="/app/grades/:id" element={<GradeDetail />} />
+          <Route path="/app/ratings" element={<RatingSubmission />} />
+          
+          {/* Explicit Student Routes */}
+          <Route path="/app/student/grades" element={<StudentGrades />} />
+          <Route path="/app/student/grades/:id" element={<GradeDetail />} />
+          <Route path="/app/student/notifications" element={<Notifications />} />
+          <Route path="/app/student/notifications/:id" element={<NotificationDetail />} />
+          <Route path="/app/student/schedule" element={<Schedule />} />
+          
+          <Route path="/app/student/users" element={<StudentProgressRoute><ManageUsers /></StudentProgressRoute>} />
+          <Route path="/app/student/users/create" element={<StudentProgressRoute><CreateUserErrorWrapper /></StudentProgressRoute>} />
+          <Route path="/app/student/users/:id" element={<StudentProgressRoute><EditUser /></StudentProgressRoute>} />
+          <Route path="/app/student/classes" element={<StudentProgressRoute><ManageClasses /></StudentProgressRoute>} />
+          <Route path="/app/student/students" element={<StudentProgressRoute><ManageUsers /></StudentProgressRoute>} />
+          <Route path="/app/student/teachers" element={<StudentProgressRoute><ManageUsers /></StudentProgressRoute>} />
+          <Route path="/app/student/grades/create" element={<StudentProgressRoute><CreateGradeSimple /></StudentProgressRoute>} />
+          <Route path="/app/student/grades/manage" element={<StudentProgressRoute><ManageGrades /></StudentProgressRoute>} />
+          <Route path="/app/student/student-stats" element={<StudentProgressRoute><StudentStats /></StudentProgressRoute>} />
+          <Route path="/app/student/notifications/create" element={<StudentProgressRoute><CreateNotification /></StudentProgressRoute>} />
+          <Route path="/app/student/notifications/manage" element={<StudentProgressRoute><NotificationsManager /></StudentProgressRoute>} />
+          <Route path="/app/student/schools" element={<StudentProgressRoute><SchoolBranchManager /></StudentProgressRoute>} />
+          <Route path="/app/student/attendance" element={<StudentProgressRoute><StudentAttendanceView /></StudentProgressRoute>} />
 
-  // Theme colors are now handled by the ThemeProvider component
+          {/* Teacher Routes */}
+          <Route path="/app/teacher/grades/manage" element={<TeacherRoute><ManageGrades /></TeacherRoute>} />
+          <Route path="/app/teacher/grades/create" element={<TeacherRoute><ErrorBoundary componentName="Create Grade"><CreateGradeSimple /></ErrorBoundary></TeacherRoute>} />
+          <Route path="/app/teacher/notifications" element={<TeacherRoute><NotificationsManager /></TeacherRoute>} />
+          <Route path="/app/teacher/notifications/create" element={<TeacherRoute><CreateNotification /></TeacherRoute>} />
+          <Route path="/app/teacher/notifications/:id" element={<TeacherRoute><NotificationDetail /></TeacherRoute>} />
+          <Route path="/app/teacher/student-stats" element={<TeacherRoute><StudentStats /></TeacherRoute>} />
+          <Route path="/app/teacher/schedule" element={<TeacherRoute><Schedule /></TeacherRoute>} />
+          <Route path="/app/teacher/attendance" element={<TeacherRoute><TeacherAttendance /></TeacherRoute>} />
 
-  // Push notifications are now handled by the first useEffect above that checks for user authentication
+          {/* Admin Routes */}
+          <Route path="/app/admin/users" element={<AdminRoute><ManageUsers /></AdminRoute>} />
+          <Route path="/app/admin/progress" element={<AdminRoute><StudentProgress /></AdminRoute>} />
+          <Route path="/app/admin/progress/:studentId" element={<AdminRoute><StudentProgress /></AdminRoute>} />
+          <Route path="/app/admin/student-stats" element={<AdminRoute><StudentStats /></AdminRoute>} />
+          <Route path="/app/admin/notifications" element={<AdminRoute><NotificationsManager /></AdminRoute>} />
+          <Route path="/app/admin/notifications/create" element={<AdminRoute><CreateNotification /></AdminRoute>} />
+          <Route path="/app/admin/notifications/manage" element={<AdminRoute><NotificationsManager /></AdminRoute>} />
+          <Route path="/app/admin/notifications/:id" element={<AdminRoute><NotificationDetail /></AdminRoute>} />
+          <Route path="/app/admin/grades/create" element={<AdminRoute><CreateGradeSimple /></AdminRoute>} />
+          <Route path="/app/admin/grades/manage" element={<AdminRoute><ManageGrades /></AdminRoute>} />
+          <Route path="/app/admin/users/create" element={<AdminRoute><CreateUserErrorWrapper /></AdminRoute>} />
+          <Route path="/app/admin/users/:id" element={<AdminRoute><EditUser /></AdminRoute>} />
+          <Route path="/app/admin/schools" element={<AdminRoute><SchoolBranchManager /></AdminRoute>} />
+          <Route path="/app/admin/directions" element={<AdminRoute><ManageDirections /></AdminRoute>} />
+          <Route path="/app/admin/classes" element={<AdminRoute><ManageClasses /></AdminRoute>} />
+          <Route path="/app/admin/subjects" element={<AdminRoute><ManageSubjects /></AdminRoute>} />
+          <Route path="/app/admin/ratings" element={<AdminRoute><RatingManager /></AdminRoute>} />
+          <Route path="/app/admin/rating-statistics" element={<AdminRoute><ErrorBoundary componentName="Rating Statistics"><RatingStatistics /></ErrorBoundary></AdminRoute>} />
+          <Route path="/app/admin/schedule" element={<AdminRoute><Schedule /></AdminRoute>} />
+          <Route path="/app/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
+          <Route path="/app/admin/attendance" element={<AdminRoute><WeeklyAttendanceManagement /></AdminRoute>} />
+          
+          {/* Parent Routes */}
+          <Route path="/app/parent" element={<ParentRoute><ParentDashboard /></ParentRoute>} />
+          <Route path="/app/parent/dashboard" element={<ParentRoute><ParentDashboard /></ParentRoute>} />
+          <Route path="/app/parent/grades" element={<ParentRoute><ParentGrades /></ParentRoute>} />
+          <Route path="/app/parent/notifications" element={<ParentRoute><Notifications /></ParentRoute>} />
+          <Route path="/app/parent/notifications/:id" element={<ParentRoute><NotificationDetail /></ParentRoute>} />
+          <Route path="/app/parent/payments" element={<ParentRoute><ParentPayments /></ParentRoute>} />
+          <Route path="/app/parent/contact" element={<ParentRoute><UserContactMessages /></ParentRoute>} />
+        </Route>
 
-  // Console log initial state - helps with debugging
-  console.log('App rendering with auth state:', { isLoggedIn: !!user });
+        {/* SuperAdmin Routes */}
+        <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+          <Route path="/superadmin/dashboard" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
+          <Route path="/superadmin/create-school-owner" element={<SuperAdminRoute><CreateSchoolOwner /></SuperAdminRoute>} />
+          <Route path="/superadmin/school-owner/:id" element={<SuperAdminRoute><SchoolOwnerDetails /></SuperAdminRoute>} />
+          <Route path="/superadmin/contact" element={<SuperAdminRoute><AdminContactMessages /></SuperAdminRoute>} />
+          <Route path="/superadmin/patch-notes" element={<SuperAdminRoute><ContactMessages /></SuperAdminRoute>} />
+          <Route path="/superadmin/notifications" element={<SuperAdminRoute><SuperAdminNotifications /></SuperAdminRoute>} />
+          <Route path="/superadmin/notifications/:id" element={<SuperAdminRoute><NotificationDetail /></SuperAdminRoute>} />
+          <Route path="/superadmin/school-features" element={<SuperAdminRoute><ManageSchoolFeatures /></SuperAdminRoute>} />
+          <Route path="/superadmin/school-permissions" element={<SuperAdminRoute><SchoolPermissionsManager /></SuperAdminRoute>} />
+          <Route path="/superadmin/system-logs" element={<SuperAdminRoute><SystemLogs /></SuperAdminRoute>} />
+          <Route path="/superadmin/maintenance-announcements" element={<SuperAdminRoute><MaintenanceAnnouncements /></SuperAdminRoute>} />
+          <Route path="/superadmin/system-maintenance" element={<SuperAdminRoute><SystemMaintenance /></SuperAdminRoute>} />
+        </Route>
 
-  // Global error handler for uncaught exceptions
-  useEffect(() => {
-    const handleGlobalError = (event) => {
-      event.preventDefault();
-
-      logger.critical('GLOBAL', 'Unhandled error caught by window.onerror', {
-        message: event.message,
-        source: event.filename,
-        lineNumber: event.lineno,
-        columnNumber: event.colno,
-        error: event.error?.stack || 'No stack trace available',
-        currentPath: window.location.pathname
-      });
-
-      // Set routing error if related to routing
-      if (event.message?.includes('router') || event.message?.includes('navigate')) {
-        // setRoutingError(event.message); // This line was removed as per the edit hint
-      }
-    };
-
-    // Handle unhandled promise rejections
-    const handlePromiseRejection = (event) => {
-      logger.critical('GLOBAL', 'Unhandled Promise rejection', {
-        reason: event.reason?.message || event.reason,
-        stack: event.reason?.stack || 'No stack trace',
-        currentPath: window.location.pathname
-      });
-    };
-
-    /*     // Handle React errors
-        const handleReactError = (error, errorInfo) => {
-          logger.critical('REACT', 'Error in React component tree', {
-            error: error.message,
-            componentStack: errorInfo?.componentStack,
-            stack: error.stack,
-            currentPath: window.location.pathname
-          });
-        }; */
-
-    // Register handlers
-    window.addEventListener('error', handleGlobalError);
-    window.addEventListener('unhandledrejection', handlePromiseRejection);
-
-    // Clean up
-    return () => {
-      window.removeEventListener('error', handleGlobalError);
-      window.removeEventListener('unhandledrejection', handlePromiseRejection);
-    };
-  }, []); // Changed dependency array to []
+        {/* Standalone Pages */}
+        <Route path="/print-grades" element={<PrintGradePage />} />
+        <Route path="/student-stats/print" element={<StudentStatsPrint />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    )
+  ), [user]);
 
   return (
     <ErrorBoundary fallback={<DiagnosticPage />} componentName="Application Root">
       <ThemeProvider>
         <ShadcnThemeProvider>
-          <ScrollFix /> {/* Fix for Safari elastic scroll */}
+          <ScrollFix />
           <FeatureToggleProvider>
             <HomeScreenPrompt />
-            <Router>
-              <MaintenanceStatusChecker>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/home" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/change-password" element={<PasswordChange />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/diagnostics" element={<DiagnosticPage />} />
-                  <Route path="/maintenance" element={<Maintenance />} />
-
-                  {/* Root redirect based on role */}
-                  <Route path="/" element={
-                    (() => {
-                      console.log('=== ROOT ROUTE REDIRECT LOGIC ===');
-                      console.log('Current URL:', window.location.href);
-                      console.log('User object:', user);
-                      console.log('User role:', user?.role);
-                      console.log('Auth state:', { isAuthenticated: !!user, hasToken: !!user?.token });
-
-                      if (!user) {
-                        console.log('ROOT REDIRECT: No user found, redirecting to /home');
-                        return <Navigate to="/home" replace />;
-                      }
-
-                      const redirectPath =
-                        user.role === 'superadmin' ? '/superadmin/dashboard' :
-                          user.role === 'admin' ? '/app/admin' :
-                            user.role === 'teacher' ? '/app/teacher' :
-                              user.role === 'student' ? '/app/student' :
-                                user.role === 'parent' ? '/app/parent' :
-                                  '/login';
-
-                      console.log(`ROOT REDIRECT: User role ${user.role} redirecting to ${redirectPath}`);
-                      return <Navigate to={redirectPath} replace />;
-                    })()
-                  } />
-
-                  {/* Legacy dashboard redirects */}
-                  <Route path="/app/dashboard" element={
-                    (() => {
-                      console.log('=== LEGACY DASHBOARD REDIRECT ===');
-                      console.log('Current URL:', window.location.href);
-                      console.log('User:', user);
-                      console.log('User role:', user?.role);
-
-                      if (!user?.role) {
-                        console.log('LEGACY REDIRECT: No user role, redirecting to /login');
-                        return <Navigate to="/login" replace />;
-                      }
-
-                      const redirectPath =
-                        user.role === 'admin' ? '/app/admin' :
-                          user.role === 'teacher' ? '/app/teacher' :
-                            user.role === 'student' ? '/app/student' :
-                              user.role === 'parent' ? '/app/parent' :
-                                '/login';
-
-                      console.log(`LEGACY REDIRECT: ${user.role} redirecting to ${redirectPath}`);
-                      return <Navigate to={redirectPath} replace />;
-                    })()
-                  } />
-
-                  {/* Simple direct Dashboard route - using standalone component designed to work without Layout */}
-                  <Route path="/dashboard" element={
-                    <PrivateRoute>
-                      <StandaloneDashboard />
-                    </PrivateRoute>
-                  } />
-
-                  {/* Protected Routes with Layout */}
-                  <Route element={
-                    <PrivateRoute>
-                      <Layout />
-                    </PrivateRoute>
-                  }>
-                    {/* Dashboard Routes */}
-                    <Route path="/app/admin" element={<AdminDashboard />} />
-                    <Route path="/app/teacher" element={<TeacherDashboard />} />
-                    <Route path="/app/student" element={<StudentDashboard />} />
-                    <Route path="/app/parent" element={<ParentDashboard />} />
-
-                    <Route path="/app/profile" element={<Profile />} />
-                    {/* General notifications route */}
-                    <Route path="/app/notifications" element={<Notifications />} />
-                    {/* Notification detail route still available for deep linking */}
-                    <Route path="/app/notifications/:id" element={<NotificationDetail />} />
-                    {/* Contact routes for all account types */}
-                    <Route path="/app/admin/contact" element={<ContactMessages />} />
-                    <Route path="/app/teacher/contact" element={<ContactMessages />} />
-                    <Route path="/app/student/contact" element={<ContactMessages />} />
-                    <Route path="/app/parent/contact" element={<ContactMessages />} />
-                    {/* Legacy contact routes */}
-                    <Route path="/app/contact-messages" element={<ContactMessages />} />
-                    <Route path="/app/contact-support" element={<ContactMessages />} />
-                    {/* Calendar for all users */}
-                    <Route path="/app/calendar" element={<Calendar />} />
-                    {/* Schedule for all users */}
-                    <Route path="/app/schedule" element={<Schedule />} />
-
-                    {/* Student Routes */}
-                    <Route path="/app/grades" element={<StudentGrades />} />
-                    <Route path="/app/grades/:id" element={<GradeDetail />} />
-                    <Route path="/app/ratings" element={<RatingSubmission />} />
-
-                    {/* Student-specific routes (same content, different paths) */}
-                    <Route path="/app/student/grades" element={<StudentGrades />} />
-                    <Route path="/app/student/grades/:id" element={<GradeDetail />} />
-                    <Route path="/app/student/notifications" element={<Notifications />} />
-                    <Route path="/app/student/notifications/:id" element={<NotificationDetail />} />
-                    <Route path="/app/student/schedule" element={<Schedule />} />
-
-
-                    {/* STEP 2: DUPLICATE ALL ADMIN FUNCTIONS FOR STUDENT ROLE */}
-                    <Route path="/app/student/users" element={
-                      <StudentProgressRoute>
-                        <ManageUsers />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/users/create" element={
-                      <StudentProgressRoute>
-                        <CreateUserErrorWrapper />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/users/:id" element={
-                      <StudentProgressRoute>
-                        <EditUser />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/classes" element={
-                      <StudentProgressRoute>
-                        <ManageClasses />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/students" element={
-                      <StudentProgressRoute>
-                        <ManageUsers />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/teachers" element={
-                      <StudentProgressRoute>
-                        <ManageUsers />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/grades/create" element={
-                      <StudentProgressRoute>
-                        <CreateGradeSimple />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/grades/manage" element={
-                      <StudentProgressRoute>
-                        <ManageGrades />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/student-stats" element={
-                      <StudentProgressRoute>
-                        <StudentStats />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/notifications/create" element={
-                      <StudentProgressRoute>
-                        <CreateNotification />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/notifications/manage" element={
-                      <StudentProgressRoute>
-                        <NotificationsManager />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/schools" element={
-                      <StudentProgressRoute>
-                        <SchoolBranchManager />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/schedule" element={
-                      <StudentProgressRoute>
-                        <Schedule />
-                      </StudentProgressRoute>
-                    } />
-                    <Route path="/app/student/attendance" element={
-                      <StudentProgressRoute>
-                        <StudentAttendanceView />
-                      </StudentProgressRoute>
-                    } />
-
-                    {/* Teacher Routes */}
-                    <Route path="/app/teacher/grades/manage" element={
-                      <TeacherRoute>
-                        <ManageGrades />
-                      </TeacherRoute>
-                    } />
-                    <Route path="/app/teacher/grades/create" element={
-                      <TeacherRoute>
-                        <ErrorBoundary componentName="Create Grade">
-                          <CreateGradeSimple />
-                        </ErrorBoundary>
-                      </TeacherRoute>
-                    } />
-                    <Route path="/app/teacher/notifications" element={
-                      <TeacherRoute>
-                        <NotificationsManager />
-                      </TeacherRoute>
-                    } />
-                    <Route path="/app/teacher/notifications/create" element={
-                      <TeacherRoute>
-                        <CreateNotification />
-                      </TeacherRoute>
-                    } />
-                    <Route path="/app/teacher/notifications/:id" element={
-                      <TeacherRoute>
-                        <NotificationDetail />
-                      </TeacherRoute>
-                    } />
-                    {/* Add back the teacher student-stats route */}
-                    <Route path="/app/teacher/student-stats" element={
-                      <TeacherRoute>
-                        <StudentStats />
-                      </TeacherRoute>
-                    } />
-
-                    {/* STEP 2: TEACHER FUNCTIONS (REFINED - REMOVED MANAGEMENT FUNCTIONS PER USER REQUEST) */}
-                    {/* NOTE: Removed /app/teacher/users, /app/teacher/classes, /app/teacher/students, /app/teacher/teachers, /app/teacher/schools per user request */}
-                    <Route path="/app/teacher/schedule" element={
-                      <TeacherRoute>
-                        <Schedule />
-                      </TeacherRoute>
-                    } />
-                    <Route path="/app/teacher/attendance" element={
-                      <TeacherRoute>
-                        <TeacherAttendance />
-                      </TeacherRoute>
-                    } />
-
-                    {/* Admin Routes */}
-                    {/* Admin Dashboard - add both /app/admin and /app/admin/dashboard routes */}
-                    <Route path="/app/admin/users" element={
-                      <AdminRoute>
-                        <ManageUsers />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/progress" element={
-                      <AdminRoute>
-                        <StudentProgress />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/progress/:studentId" element={
-                      <AdminRoute>
-                        <StudentProgress />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/student-stats" element={
-                      <AdminRoute>
-                        <StudentStats />
-                      </AdminRoute>
-                    } />
-                    {/* Admin notifications - add missing base route that redirects to manage */}
-                    <Route path="/app/admin/notifications" element={
-                      <AdminRoute>
-                        <NotificationsManager />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/notifications/create" element={
-                      <AdminRoute>
-                        <CreateNotification />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/notifications/manage" element={
-                      <AdminRoute>
-                        <NotificationsManager />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/notifications/:id" element={
-                      <AdminRoute>
-                        <NotificationDetail />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/grades/create" element={
-                      <AdminRoute>
-                        <CreateGradeSimple />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/grades/manage" element={
-                      <AdminRoute>
-                        <ManageGrades />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/users/create" element={
-                      <AdminRoute>
-                        <CreateUserErrorWrapper />
-                      </AdminRoute>
-                    } />
-
-                    <Route path="/app/admin/users/:id" element={
-                      <AdminRoute>
-                        <EditUser />
-                      </AdminRoute>
-                    } />
-                    {/* Contact Messages moved to superadmin - route left here for backward compatibility */}
-                    <Route path="/app/admin/contact" element={
-                      <AdminRoute>
-                        <Navigate to="/superadmin/contact" replace />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/schools" element={
-                      <AdminRoute>
-                        <SchoolBranchManager />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/directions" element={
-                      <AdminRoute>
-                        <ManageDirections />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/classes" element={
-                      <AdminRoute>
-                        <ManageClasses />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/subjects" element={
-                      <AdminRoute>
-                        <ManageSubjects />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/ratings" element={
-                      <AdminRoute>
-                        <RatingManager />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/rating-statistics" element={
-                      <AdminRoute>
-                        <ErrorBoundary componentName="Rating Statistics">
-                          <RatingStatistics />
-                        </ErrorBoundary>
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/schedule" element={
-                      <AdminRoute>
-                        <Schedule />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/student-stats" element={
-                      <AdminRoute>
-                        <StudentStats />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/payments" element={
-                      <AdminRoute>
-                        <AdminPayments />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/admin/attendance" element={
-                      <AdminRoute>
-                        <WeeklyAttendanceManagement />
-                      </AdminRoute>
-                    } />
-                    <Route path="/app/teacher/student-stats" element={
-                      <TeacherRoute>
-                        <StudentStats />
-                      </TeacherRoute>
-                    } />
-
-
-                    {/* Parent Routes */}
-                    <Route path="/app/parent" element={
-                      <ParentRoute>
-                        <ParentDashboard />
-                      </ParentRoute>
-                    } />
-                    <Route path="/app/parent/dashboard" element={
-                      <ParentRoute>
-                        <ParentDashboard />
-                      </ParentRoute>
-                    } />
-                    <Route path="/app/parent/grades" element={
-                      <ParentRoute>
-                        <ParentGrades />
-                      </ParentRoute>
-                    } />
-                    <Route path="/app/parent/notifications" element={
-                      <ParentRoute>
-                        <Notifications />
-                      </ParentRoute>
-                    } />
-                    <Route path="/app/parent/notifications/:id" element={
-                      <ParentRoute>
-                        <NotificationDetail />
-                      </ParentRoute>
-                    } />
-                    <Route path="/app/parent/payments" element={
-                      <ParentRoute>
-                        <ParentPayments />
-                      </ParentRoute>
-                    } />
-                    <Route path="/app/parent/contact" element={
-                      <ParentRoute>
-                        <UserContactMessages />
-                      </ParentRoute>
-                    } />
-
-
-                  </Route>
-
-                  {/* SuperAdmin Routes - Using PrivateRoute + Layout + SuperAdminRoute pattern */}
-                  <Route element={
-                    <PrivateRoute>
-                      <Layout />
-                    </PrivateRoute>
-                  }>
-                    <Route path="/superadmin/dashboard" element={
-                      <SuperAdminRoute>
-                        <SuperAdminDashboard />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/create-school-owner" element={
-                      <SuperAdminRoute>
-                        <CreateSchoolOwner />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/school-owner/:id" element={
-                      <SuperAdminRoute>
-                        <SchoolOwnerDetails />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/contact" element={
-                      <SuperAdminRoute>
-                        <AdminContactMessages />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/patch-notes" element={
-                      <SuperAdminRoute>
-                        <ContactMessages />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/notifications" element={
-                      <SuperAdminRoute>
-                        <SuperAdminNotifications />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/notifications/:id" element={
-                      <SuperAdminRoute>
-                        <NotificationDetail />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/school-features" element={
-                      <SuperAdminRoute>
-                        <ManageSchoolFeatures />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/school-permissions" element={
-                      <SuperAdminRoute>
-                        <SchoolPermissionsManager />
-                      </SuperAdminRoute>
-                    } />
-
-                    <Route path="/superadmin/system-logs" element={
-                      <SuperAdminRoute>
-                        <SystemLogs />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/maintenance-announcements" element={
-                      <SuperAdminRoute>
-                        <MaintenanceAnnouncements />
-                      </SuperAdminRoute>
-                    } />
-                    <Route path="/superadmin/system-maintenance" element={
-                      <SuperAdminRoute>
-                        <SystemMaintenance />
-                      </SuperAdminRoute>
-                    } />
-                  </Route>
-
-                  {/* Print Grade Page - Standalone route without layout */}
-                  <Route path="/print-grades" element={<PrintGradePage />} />
-
-                  {/* Student Stats Print Page - Standalone route without layout */}
-                  <Route path="/student-stats/print" element={<StudentStatsPrint />} />
-
-
-                  {/* 404 Page */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </MaintenanceStatusChecker>
-            </Router>
-
+            <RouterProvider router={router} />
           </FeatureToggleProvider>
           <Toaster />
         </ShadcnThemeProvider>
       </ThemeProvider>
-    </ErrorBoundary >
+    </ErrorBoundary>
   );
 }
 
