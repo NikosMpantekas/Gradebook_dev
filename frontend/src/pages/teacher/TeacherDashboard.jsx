@@ -81,6 +81,17 @@ const TeacherDashboard = () => {
     console.log('TeacherDashboard: Teacher user authenticated:', user.email);
   }, [user, navigate]);
 
+  // Listen for refresh header counts events
+  useEffect(() => {
+    const handleRefresh = (e) => {
+      console.log('TeacherDashboard: Refresh event received:', e?.detail);
+      fetchDashboardData();
+    };
+
+    window.addEventListener('refreshHeaderCounts', handleRefresh);
+    return () => window.removeEventListener('refreshHeaderCounts', handleRefresh);
+  }, []);
+
   // Fetch dashboard data
   useEffect(() => {
     if (user && user.role === 'teacher' && !featuresLoading) {
