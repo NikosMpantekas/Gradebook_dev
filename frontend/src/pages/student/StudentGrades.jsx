@@ -32,7 +32,7 @@ import { Spinner } from '../../components/ui/spinner';
 import { Skeleton } from '../../components/ui/skeleton';
 
 const GradesSkeleton = ({ isMobile, t }) => (
-  <div className="space-y-6 animate-in fade-in duration-500">
+  <div className="space-y-6">
     {/* Stats Cards and Grade Distribution Chart Skeleton */}
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Stats Cards Skeleton */}
@@ -50,18 +50,18 @@ const GradesSkeleton = ({ isMobile, t }) => (
         ))}
       </div>
 
-      {/* Grade Distribution Chart Skeleton */}
+      {/* Grade Distribution Chart Skeleton - Static to reduce movement */}
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Skeleton className="h-5 w-5 rounded-full" />
-              <Skeleton className="h-6 w-48" />
+              <div className="h-5 w-5 rounded-full bg-muted/60" />
+              <div className="h-6 w-48 bg-muted/40 rounded-md" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="h-80 flex justify-center items-center">
-              <Skeleton className="h-64 w-64 rounded-full" />
+              <div className="h-64 w-64 rounded-full bg-muted/20 border-8 border-muted/30" />
             </div>
           </CardContent>
         </Card>
@@ -80,31 +80,31 @@ const GradesSkeleton = ({ isMobile, t }) => (
       </div>
     </div>
 
-    {/* Grades List Skeleton */}
+    {/* Grades List Skeleton - Static placeholders for stability */}
     <div className="mb-6">
-      <Skeleton className="h-7 w-32 mb-4" />
+      <div className="h-7 w-32 bg-muted rounded-md mb-4" />
       {isMobile ? (
         <div className="px-1 sm:px-2">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="mb-4 dark:border-gray-600">
               <CardContent className="p-3 sm:p-6">
                 <div className="flex justify-between mb-4">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-6 w-12 rounded-lg" />
+                  <div className="h-6 w-32 bg-muted/50 rounded-md" />
+                  <div className="h-6 w-12 bg-muted/40 rounded-lg" />
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-32" />
+                    <div className="h-4 w-4 rounded-full bg-muted/30" />
+                    <div className="h-4 w-32 bg-muted/30 rounded-md" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-40" />
+                    <div className="h-4 w-4 rounded-full bg-muted/30" />
+                    <div className="h-4 w-40 bg-muted/30 rounded-md" />
                   </div>
-                  <Skeleton className="h-10 w-full mt-2" />
+                  <div className="h-10 w-full bg-muted/20 rounded-md mt-2" />
                 </div>
                 <div className="flex justify-end mt-4">
-                  <Skeleton className="h-9 w-28" />
+                  <div className="h-9 w-28 bg-muted/40 rounded-md" />
                 </div>
               </CardContent>
             </Card>
@@ -115,23 +115,23 @@ const GradesSkeleton = ({ isMobile, t }) => (
           <Table>
             <TableHeader>
               <TableRow className="border-b border-gray-200 dark:border-gray-600">
-                <TableHead className="p-4"><Skeleton className="h-4 w-24" /></TableHead>
-                <TableHead className="p-4"><Skeleton className="h-4 w-12 mx-auto" /></TableHead>
-                <TableHead className="p-4"><Skeleton className="h-4 w-32" /></TableHead>
-                <TableHead className="p-4"><Skeleton className="h-4 w-24" /></TableHead>
-                <TableHead className="p-4"><Skeleton className="h-4 w-24" /></TableHead>
-                <TableHead className="p-4"><Skeleton className="h-4 w-16 mx-auto" /></TableHead>
+                <TableHead className="p-4"><div className="h-4 w-24 bg-muted/50 rounded-md" /></TableHead>
+                <TableHead className="p-4"><div className="h-4 w-12 bg-muted/40 rounded-md mx-auto" /></TableHead>
+                <TableHead className="p-4"><div className="h-4 w-32 bg-muted/50 rounded-md" /></TableHead>
+                <TableHead className="p-4"><div className="h-4 w-24 bg-muted/40 rounded-md" /></TableHead>
+                <TableHead className="p-4"><div className="h-4 w-24 bg-muted/40 rounded-md" /></TableHead>
+                <TableHead className="p-4 text-center"><div className="h-4 w-16 bg-muted/50 rounded-md mx-auto" /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {[1, 2, 3, 4, 5].map((i) => (
                 <TableRow key={i} className="border-b border-gray-200 dark:border-gray-600">
-                  <TableCell className="p-4"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="p-4 text-center"><Skeleton className="h-6 w-10 rounded-lg mx-auto" /></TableCell>
-                  <TableCell className="p-4"><Skeleton className="h-5 w-48" /></TableCell>
-                  <TableCell className="p-4"><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell className="p-4"><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell className="p-4 text-center"><Skeleton className="h-9 w-12 mx-auto" /></TableCell>
+                  <TableCell className="p-4"><div className="h-5 w-32 bg-muted/30 rounded-md" /></TableCell>
+                  <TableCell className="p-4 text-center"><div className="h-6 w-10 bg-muted/40 rounded-lg mx-auto" /></TableCell>
+                  <TableCell className="p-4"><div className="h-5 w-48 bg-muted/30 rounded-md" /></TableCell>
+                  <TableCell className="p-4"><div className="h-5 w-32 bg-muted/30 rounded-md" /></TableCell>
+                  <TableCell className="p-4"><div className="h-5 w-24 bg-muted/30 rounded-md" /></TableCell>
+                  <TableCell className="p-4 text-center"><div className="h-9 w-12 bg-muted/40 rounded-md mx-auto" /></TableCell>
                 </TableRow>
               ))}
             </TableBody>

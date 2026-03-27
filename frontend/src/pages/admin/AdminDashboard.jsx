@@ -280,9 +280,8 @@ const AdminDashboard = () => {
       {/* Maintenance Notifications */}
       <MaintenanceNotifications />
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -328,7 +327,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card className="simple-fade-in">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <TrendingUp className="h-5 w-5 text-primary" />
@@ -371,7 +370,7 @@ const AdminDashboard = () => {
 
       {/* Recent Notifications */}
       {isFeatureEnabled('enableNotifications') && (
-        <Card className="simple-fade-in">
+        <Card className="flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-primary" />
@@ -386,7 +385,7 @@ const AdminDashboard = () => {
               {t('admin.viewAll')}
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col">
             {panelLoading.notifications ? (
               <div className="flex justify-center py-8">
                 <Spinner className="text-primary" />
@@ -396,7 +395,7 @@ const AdminDashboard = () => {
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group fade-in-up"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -426,10 +425,10 @@ const AdminDashboard = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground fade-in-up">
-                <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>{t('admin.noRecentNotifications')}</p>
-              </div>
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
+                  <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>{t('admin.noRecentNotifications')}</p>
+                </div>
             )}
           </CardContent>
         </Card>
