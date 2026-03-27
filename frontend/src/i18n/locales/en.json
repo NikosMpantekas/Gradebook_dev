@@ -653,7 +653,11 @@
     "chooseForReport": "Choose a student and start/end dates above to generate a detailed grade report with class comparisons and progress charts",
     "noGradesForPeriod": "No grades found for this period",
     "tryDifferentPeriod": "Try selecting a different time period or check if grades have been recorded",
-    "noGradesFoundPeriod": "No grades found for the selected period"
+    "noGradesFoundPeriod": "No grades found for the selected period",
+    "noNotifications": "No recent notifications",
+    "classesToday": "Classes Today",
+    "noClassesToday": "None scheduled",
+    "checkSchedule": "Check your schedule"
   },
   "profile": {
     "title": "Profile",
@@ -733,7 +737,10 @@
     "studentStats": "Student Stats",
     "recentNotifications": "Recent Notifications",
     "viewAll": "View All",
-    "noRecentNotifications": "No recent notifications"
+    "noRecentNotifications": "No recent notifications",
+    "classesToday": "Classes Today",
+    "noClassesScheduled": "None scheduled",
+    "nextAt": "Next: {{time}}"
   },
   "admin": {
     "accessDenied": "Access denied. Admin privileges required.",

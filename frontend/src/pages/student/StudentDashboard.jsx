@@ -15,6 +15,7 @@ import {
   Zap,
   AlertTriangle,
   UserCheck,
+  Clock,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -47,7 +48,8 @@ const StudentDashboard = () => {
       totalSubjects: 0,
       averageGrade: 0,
       gradesReceived: 0,
-      pendingGrades: 0
+      pendingGrades: 0,
+      classesToday: 0
     }
   });
   
@@ -74,6 +76,17 @@ const StudentDashboard = () => {
     
     console.log('StudentDashboard: Student user authenticated:', user.email);
   }, [user, navigate]);
+
+  // Listen for refresh header counts events
+  useEffect(() => {
+    const handleRefresh = (e) => {
+      console.log('StudentDashboard: Refresh event received:', e?.detail);
+      fetchDashboardData();
+    };
+
+    window.addEventListener('refreshHeaderCounts', handleRefresh);
+    return () => window.removeEventListener('refreshHeaderCounts', handleRefresh);
+  }, []);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -116,9 +129,7 @@ const StudentDashboard = () => {
       
       if (isFeatureEnabled('enableClasses') || isFeatureEnabled('enableSchedule')) {
         setPanelLoading(prev => ({ ...prev, classes: true }));
-        promises.push(fetchUpcomingClasses());
-        dataKeys.push('classes');
-        // Also fetch the complete schedule data for calendar
+        // Fetch the complete schedule data for both calendar and upcoming list
         promises.push(fetchScheduleData());
         dataKeys.push('scheduleData');
       }
@@ -132,9 +143,16 @@ const StudentDashboard = () => {
         const key = dataKeys[index];
         if (result.status === 'fulfilled') {
           newData[key] = result.value;
+          
+          // If we just got the schedule data, also extract today's classes for the 'classes' state
+          if (key === 'scheduleData') {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            newData.classes = result.value[today] || result.value[today.toLowerCase()] || [];
+          }
         } else {
           console.error(`StudentDashboard: Error fetching ${key}:`, result.reason);
-          newData[key] = [];
+          // Default to empty array for notifications/grades, but empty object for scheduleData
+          newData[key] = key === 'scheduleData' ? {} : [];
         }
       });
       
@@ -143,14 +161,16 @@ const StudentDashboard = () => {
         const gradeValues = newData.grades.map(g => g.value);
         const averageGrade = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
         
-        // Get unique subjects
         const subjects = [...new Set(newData.grades.map(g => g.subject?.name).filter(Boolean))];
         
         newData.stats = {
           totalSubjects: subjects.length,
           averageGrade: Math.round(averageGrade * 100) / 100,
-          gradesReceived: newData.grades.length
+          gradesReceived: newData.grades.length,
+          classesToday: newData.classes?.length || 0
         };
+      } else {
+        newData.stats.classesToday = newData.classes?.length || 0;
       }
       
       setDashboardData(newData);
@@ -337,37 +357,52 @@ const StudentDashboard = () => {
       <MaintenanceNotifications />
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.totalSubjects}</div>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalSubjects}</div>
             <p className="text-xs text-muted-foreground">{t('student.enrolledSubjects')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.averageGrade.toFixed(1)}</div>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.averageGrade.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">{t('student.currentAverage')}</p>
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.gradesReceived}</div>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.gradesReceived}</div>
             <p className="text-xs text-muted-foreground">{t('student.thisSemester')}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('student.classesToday', 'Classes Today')}</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.classesToday || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {dashboardData.stats.classesToday === 0 
+                ? t('student.noClassesToday', 'None scheduled') 
+                : t('student.checkSchedule', 'Check your schedule')}
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -86,7 +86,8 @@ export function MonthlyCalendar({ scheduleData = {} }) {
   // Get classes for a specific date
   const getClassesForDate = (date) => {
     const dayOfWeek = dayNameMap[date.getDay()];
-    const daySchedule = scheduleData[dayOfWeek] || [];
+    // Try both Capitalized (backend default) and lowercase (fallback)
+    const daySchedule = scheduleData[dayOfWeek] || scheduleData[dayOfWeek.toLowerCase()] || [];
     return Array.isArray(daySchedule) ? daySchedule : [];
   };
 

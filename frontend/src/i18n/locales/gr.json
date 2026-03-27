@@ -642,7 +642,11 @@
     "systemReportFooter": "Σύστημα GradeBook - Αναφορά Ανάλυσης Βαθμών Μαθητή",
     "period": "Περίοδος",
     "performance": "Απόδοση",
-    "unknown": "Άγνωστο"
+    "unknown": "Άγνωστο",
+    "noNotifications": "Δεν υπάρχουν πρόσφατες ειδοποιήσεις",
+    "classesToday": "Σημερινά Μαθήματα",
+    "noClassesToday": "Κανένα προγραμματισμένο",
+    "checkSchedule": "Ελέγξτε το πρόγραμμα σας"
   },
   "success": {
     "operationCompleted": "Η λειτουργία ολοκληρώθηκε επιτυχώς",
@@ -732,7 +736,10 @@
     "studentStats": "Στατιστικά Μαθητών",
     "recentNotifications": "Πρόσφατες Ειδοποιήσεις",
     "viewAll": "Προβολή Όλων",
-    "noRecentNotifications": "Δεν υπάρχουν πρόσφατες ειδοποιήσεις"
+    "noRecentNotifications": "Δεν υπάρχουν πρόσφατες ειδοποιήσεις",
+    "classesToday": "Σημερινά Μαθήματα",
+    "noClassesScheduled": "Κανένα προγραμματισμένο",
+    "nextAt": "Επόμενο: {{time}}"
   },
   "admin": {
     "accessDenied": "Άρνηση πρόσβασης. Απαιτούνται δικαιώματα διαχειριστή.",
