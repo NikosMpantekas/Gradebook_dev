@@ -22,6 +22,12 @@ const initialState = {
   error: null,
   success: false,
   message: '',
+  dashboard: {
+    teacherStats: null,
+    teacherSchedule: null,
+    studentStats: null,
+    studentSchedule: null,
+  },
 };
 
 export const uiSlice = createSlice({
@@ -59,9 +65,15 @@ export const uiSlice = createSlice({
       state.success = false;
       state.message = '';
     },
+    setDashboardDataCache: (state, action) => {
+      state.dashboard = {
+        ...state.dashboard,
+        ...action.payload,
+      };
+    },
   },
 });
 
-export const { toggleDarkMode, toggleSidebar, setLoading, setError, setSuccess, setMessage, resetUIState, setThemeColor } = uiSlice.actions;
+export const { toggleDarkMode, toggleSidebar, setLoading, setError, setSuccess, setMessage, resetUIState, setThemeColor, setDashboardDataCache } = uiSlice.actions;
 
 export default uiSlice.reducer;

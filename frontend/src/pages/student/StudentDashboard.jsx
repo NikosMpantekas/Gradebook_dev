@@ -30,6 +30,7 @@ import { API_URL } from '../../config/appConfig';
 import { GradesGraph } from "../../components/GradesGraph";
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
 import { Skeleton } from '../../components/ui/skeleton';
+import { setDashboardDataCache } from '../../features/ui/uiSlice';
 
 const StudentDashboardSkeleton = () => (
   <div className="space-y-6">
@@ -121,15 +122,16 @@ const StudentDashboard = () => {
   // Get data from Redux store for instant loading
   const { grades: reduxGrades } = useSelector((state) => state.grades || {});
   const { notifications: reduxNotifications } = useSelector((state) => state.notifications || {});
+  const { dashboard: uiCache } = useSelector((state) => state.ui || { dashboard: {} });
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     notifications: [],
     grades: [],
-    classes: [],
-    scheduleData: {},
-    stats: {
+    classes: uiCache?.studentScheduleToday || [],
+    scheduleData: uiCache?.studentSchedule || {},
+    stats: uiCache?.studentStats || {
       totalSubjects: 0,
       averageGrade: 0,
       gradesReceived: 0,
@@ -140,6 +142,7 @@ const StudentDashboard = () => {
 
   // Calculate stats from redux data for instant display
   const reduxStats = React.useMemo(() => {
+    if (uiCache?.studentStats) return uiCache.studentStats;
     if (!reduxGrades || reduxGrades.length === 0) return null;
     
     const gradeValues = reduxGrades.map(g => g.value);
@@ -192,14 +195,12 @@ const StudentDashboard = () => {
   // Fetch dashboard data
   useEffect(() => {
     if (user && user.role === 'student' && !featuresLoading) {
-      // If we already have redux data, we can skip the "major" loading state
-      // but still fetch fresh data in the background
-      if (reduxStats) {
+      if (reduxStats && uiCache?.studentSchedule && uiCache?.studentScheduleToday) {
         setLoading(false);
       }
       fetchDashboardData();
     }
-  }, [user, featuresLoading, !!reduxStats]);
+  }, [user, featuresLoading, !!reduxStats, !!uiCache?.studentSchedule]);
 
   const getAuthConfig = () => {
     return {
@@ -248,36 +249,47 @@ const StudentDashboard = () => {
       results.forEach((result, index) => {
         const key = dataKeys[index];
         if (result.status === 'fulfilled') {
-          newData[key] = result.value;
-          
-          // If we just got the schedule data, also extract today's classes for the 'classes' state
-          if (key === 'scheduleData') {
-            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-            newData.classes = result.value[today] || result.value[today.toLowerCase()] || [];
+          if (result.value !== null && result.value !== undefined) {
+            newData[key] = result.value;
+            
+            // If we just got the schedule data, also extract today's classes for the 'classes' state
+            if (key === 'scheduleData') {
+              const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+              newData.classes = result.value[today] || result.value[today.toLowerCase()] || [];
+            }
           }
         } else {
           console.error(`StudentDashboard: Error fetching ${key}:`, result.reason);
-          // Default to empty array for notifications/grades, but empty object for scheduleData
-          newData[key] = key === 'scheduleData' ? {} : [];
+          // Keep existing cached data instead of resetting to 0s/empty
         }
       });
       
-      // Calculate stats from grades data
-      if (newData.grades && newData.grades.length > 0) {
-        const gradeValues = newData.grades.map(g => g.value);
-        const averageGrade = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
-        
-        const subjects = [...new Set(newData.grades.map(g => g.subject?.name).filter(Boolean))];
-        
-        newData.stats = {
-          totalSubjects: subjects.length,
-          averageGrade: Math.round(averageGrade * 100) / 100,
-          gradesReceived: newData.grades.length,
-          classesToday: newData.classes?.length || 0
-        };
-      } else {
-        newData.stats.classesToday = newData.classes?.length || 0;
+      // Only update stats/classesToday if we got valid fresh stats
+      if (newData.grades && Array.isArray(newData.grades)) {
+        if (newData.grades.length > 0) {
+          const gradeValues = newData.grades.map(g => g.value);
+          const averageGrade = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
+          const subjects = [...new Set(newData.grades.map(g => g.subject?.name).filter(Boolean))];
+          
+          newData.stats = {
+            totalSubjects: subjects.length,
+            averageGrade: Math.round(averageGrade * 100) / 100,
+            gradesReceived: newData.grades.length,
+            classesToday: newData.classes?.length || 0
+          };
+        } else {
+          newData.stats = {
+            ...newData.stats,
+            classesToday: newData.classes?.length || 0
+          };
+        }
       }
+      
+      // Save stats and classes to global cache so re-navigation is instant
+      dispatch(setDashboardDataCache({
+        studentStats: newData.stats,
+        studentScheduleToday: newData.classes || []
+      }));
       
       setDashboardData(newData);
       console.log('StudentDashboard: Dashboard data loaded successfully');
@@ -300,10 +312,10 @@ const StudentDashboard = () => {
       return response.data || [];
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
-        return [];
+        return null;
       }
       console.error('StudentDashboard: Error fetching notifications:', error);
-      return [];
+      return null;
     }
   };
 
@@ -317,15 +329,12 @@ const StudentDashboard = () => {
       const grades = response.data?.grades || response.data || [];
       // Return all grades for the graph (no limit needed)
       const allGrades = Array.isArray(grades) ? grades : [];
-      
       console.log('StudentDashboard: All grades for graph:', allGrades.length);
       return allGrades;
     } catch (error) {
-      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
-        return [];
-      }
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) return null;
       console.error('StudentDashboard: Error fetching grades:', error);
-      return [];
+      return null;
     }
   };
 
@@ -381,27 +390,16 @@ const StudentDashboard = () => {
     try {
       // Fetch complete schedule data for the calendar
       const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
+      const schedule = response.data?.schedule || response.data || {};
       
-      console.log('StudentDashboard: Full schedule response for calendar:', response.data);
+      // Save to global cache so re-navigation is instant
+      dispatch(setDashboardDataCache({ studentSchedule: schedule }));
       
-      if (response.data && response.data.schedule) {
-        console.log('StudentDashboard: Returning complete schedule data:', response.data.schedule);
-        return response.data.schedule;
-      }
-      
-      // Handle direct schedule format
-      if (response.data && typeof response.data === 'object') {
-        console.log('StudentDashboard: Using direct schedule format:', response.data);
-        return response.data;
-      }
-      
-      return {};
+      return schedule;
     } catch (error) {
-      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
-        return {};
-      }
+      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) return null;
       console.error('StudentDashboard: Error fetching schedule data:', error);
-      return {};
+      return null;
     }
   };
 
