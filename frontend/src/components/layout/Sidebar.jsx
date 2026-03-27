@@ -280,6 +280,20 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       return location.pathname.startsWith('/app/teacher/contact');
     }
 
+    // For student navigation items
+    if (path === '/app/student/grades') {
+      return location.pathname.startsWith('/app/student/grades') || location.pathname.startsWith('/app/grades');
+    }
+    if (path === '/app/student/notifications') {
+      return location.pathname.startsWith('/app/student/notifications') || location.pathname.startsWith('/app/notifications');
+    }
+    if (path === '/app/student/schedule') {
+      return location.pathname.startsWith('/app/student/schedule') || location.pathname.startsWith('/app/schedule');
+    }
+    if (path === '/app/student/ratings') {
+      return location.pathname.startsWith('/app/student/ratings') || location.pathname.startsWith('/app/ratings');
+    }
+
     return location.pathname.startsWith(path);
   };
 
@@ -508,12 +522,17 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Logout Confirmation Dialog */}
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent className={cn(
-          "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
-          darkMode
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
-            : "bg-background text-foreground border-border"
-        )}>
+        <DialogContent 
+          className={cn(
+            "w-[90vw] max-w-sm sm:max-w-md backdrop-blur-xl border-primary/20 transition-all duration-300",
+            darkMode ? "text-foreground shadow-2xl shadow-primary/5" : "text-foreground shadow-xl shadow-primary/5"
+          )}
+          style={{
+            backgroundColor: typeof themedMobileSidebarBg === 'string' && themedMobileSidebarBg.startsWith('rgba') 
+              ? themedMobileSidebarBg.replace(/0\.[67]/, '0.85') // Make it slightly more opaque for readability
+              : undefined
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t('sidebar.logoutConfirmTitle')}</DialogTitle>
           </DialogHeader>

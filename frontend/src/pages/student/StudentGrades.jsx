@@ -29,6 +29,118 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/too
 import { TooltipProvider } from '../../components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '../../components/ui/spinner';
+import { Skeleton } from '../../components/ui/skeleton';
+
+const GradesSkeleton = ({ isMobile, t }) => (
+  <div className="space-y-6 animate-in fade-in duration-500">
+    {/* Stats Cards and Grade Distribution Chart Skeleton */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Stats Cards Skeleton */}
+      <div className="grid grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+              <div className="flex items-center justify-center mb-2">
+                <Skeleton className="h-5 w-5 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-20 mx-auto mb-1" />
+              <Skeleton className="h-8 w-16 mx-auto" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Grade Distribution Chart Skeleton */}
+      <div className="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-6 w-48" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-80 flex justify-center items-center">
+              <Skeleton className="h-64 w-64 rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+
+    {/* Search Input */}
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={t ? t('student.searchGrades') : 'Search grades...'}
+          className="pl-10"
+          disabled
+        />
+      </div>
+    </div>
+
+    {/* Grades List Skeleton */}
+    <div className="mb-6">
+      <Skeleton className="h-7 w-32 mb-4" />
+      {isMobile ? (
+        <div className="px-1 sm:px-2">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="mb-4 dark:border-gray-600">
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex justify-between mb-4">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-6 w-12 rounded-lg" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  <Skeleton className="h-10 w-full mt-2" />
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Skeleton className="h-9 w-28" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-card dark:border-gray-600 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-gray-200 dark:border-gray-600">
+                <TableHead className="p-4"><Skeleton className="h-4 w-24" /></TableHead>
+                <TableHead className="p-4"><Skeleton className="h-4 w-12 mx-auto" /></TableHead>
+                <TableHead className="p-4"><Skeleton className="h-4 w-32" /></TableHead>
+                <TableHead className="p-4"><Skeleton className="h-4 w-24" /></TableHead>
+                <TableHead className="p-4"><Skeleton className="h-4 w-24" /></TableHead>
+                <TableHead className="p-4"><Skeleton className="h-4 w-16 mx-auto" /></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <TableRow key={i} className="border-b border-gray-200 dark:border-gray-600">
+                  <TableCell className="p-4"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="p-4 text-center"><Skeleton className="h-6 w-10 rounded-lg mx-auto" /></TableCell>
+                  <TableCell className="p-4"><Skeleton className="h-5 w-48" /></TableCell>
+                  <TableCell className="p-4"><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell className="p-4"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="p-4 text-center"><Skeleton className="h-9 w-12 mx-auto" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 // Import mobile detection and utilities
 import { useIsMobile } from '../../components/hooks/use-mobile';
@@ -339,15 +451,6 @@ const StudentGrades = () => {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <Spinner>
-          <Loader2 className="h-12 w-12 text-primary" />
-        </Spinner>
-      </div>
-    );
-  }
 
   return (
     <TooltipProvider>
@@ -361,7 +464,9 @@ const StudentGrades = () => {
           </div>
         </div>
 
-        {grades && grades.length > 0 ? (
+        {isLoading ? (
+          <GradesSkeleton isMobile={isMobile} t={t} />
+        ) : grades && grades.length > 0 ? (
           <>
             {/* Stats Cards and Grade Distribution Chart - Side by Side */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
