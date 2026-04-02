@@ -464,7 +464,10 @@ const StudentGrades = () => {
           </div>
         </div>
 
-        {isLoading ? (
+        {/* Show skeleton only on cold start (no cached grades yet). If Redux already
+            has grades from a prior visit or dashboard pre-fetch, render immediately
+            and let the background revalidation update silently. */}
+        {isLoading && (!grades || grades.length === 0) ? (
           <GradesSkeleton isMobile={isMobile} t={t} />
         ) : grades && grades.length > 0 ? (
           <>

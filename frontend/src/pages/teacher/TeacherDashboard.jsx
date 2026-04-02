@@ -24,6 +24,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 import MaintenanceNotifications from '../../components/MaintenanceNotifications';
 import { setDashboardDataCache } from '../../features/ui/uiSlice';
+import { fetchSchedule } from '../../features/schedule/scheduleSlice';
 import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
@@ -97,6 +98,13 @@ const TeacherDashboard = () => {
   const { classes: reduxClasses } = useSelector((state) => state.classes || { classes: [] });
   const { notifications: reduxNotifications } = useSelector((state) => state.notifications || { notifications: [] });
   const { dashboard: uiCache } = useSelector((state) => state.ui || { dashboard: {} });
+  const scheduleRedux = useSelector((state) => state.schedule);
+
+  // Raw schedule { Monday: [...], ... } from the shared Redux cache (no-filter slot)
+  const scheduleForDashboard = useMemo(
+    () => scheduleRedux.cache?.['']?.data?.schedule || {},
+    [scheduleRedux.cache]
+  );
 
   // Calculate redux-based stats for instant display (mirrors StudentDashboard pattern)
   const reduxStats = useMemo(() => {
@@ -117,11 +125,7 @@ const TeacherDashboard = () => {
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     notifications: [],
-    scheduleData: uiCache?.teacherSchedule || {},
-    stats: reduxStats || {
-      totalStudents: 0,
-      totalClasses: 0,
-    }
+    stats: reduxStats || { totalStudents: 0, totalClasses: 0 }
   });
 
   const [panelLoading, setPanelLoading] = useState({
@@ -151,12 +155,13 @@ const TeacherDashboard = () => {
   // Fetch on mount - if we have redux data, skip the blocking skeleton
   useEffect(() => {
     if (user && user.role === 'teacher' && !featuresLoading) {
-      if (reduxStats) {
-        setLoading(false); // We have cached data, show it immediately
+      // If we already have cached stats + a populated schedule slice, show data immediately
+      if (reduxStats && scheduleRedux.cache?.['']?.data) {
+        setLoading(false);
       }
       fetchDashboardData();
     }
-  }, [user, featuresLoading, !!reduxStats]);
+  }, [user, featuresLoading, !!reduxStats, !!scheduleRedux.cache?.['']?.data]);
 
   const getAuthConfig = () => ({
     headers: {
@@ -183,24 +188,22 @@ const TeacherDashboard = () => {
         dataKeys.push('notifications');
       }
 
-      setPanelLoading(prev => ({ ...prev, classes: true }));
-      promises.push(fetchScheduleData());
-      dataKeys.push('scheduleData');
-
       const results = await Promise.allSettled(promises);
 
       const newData = { ...dashboardData };
       results.forEach((result, index) => {
         const key = dataKeys[index];
-        if (result.status === 'fulfilled') {
-          if (result.value !== null) {
-            newData[key] = result.value;
-          }
-        } else {
-          console.error(`TeacherDashboard: Error fetching ${key}:`, result.reason);
-          // Keep existing cached data instead of resetting to 0s/empty
+        if (result.status === 'fulfilled' && result.value !== null) {
+          newData[key] = result.value;
         }
       });
+
+      // Fetch schedule via shared Redux slice (uses TTL cache — no duplicate request)
+      setPanelLoading(prev => ({ ...prev, classes: true }));
+      try {
+        await dispatch(fetchSchedule());
+        // scheduleForDashboard is derived from Redux state reactively — no local state needed
+      } catch { /* non-critical */ }
 
       setDashboardData(newData);
     } catch (err) {
@@ -247,20 +250,8 @@ const TeacherDashboard = () => {
     }
   };
 
-  const fetchScheduleData = async () => {
-    try {
-      const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
-      const schedule = response.data?.schedule || response.data || {};
-      
-      // Save to global cache so re-navigation is instant
-      dispatch(setDashboardDataCache({ teacherSchedule: schedule }));
-      
-      return schedule;
-    } catch (err) {
-      if (err.name === 'CanceledError' || err.message?.includes('Duplicate request')) return null;
-      return null;
-    }
-  };
+  // fetchScheduleData removed — schedule is now fetched via the shared scheduleSlice
+  // which deduplicates requests and provides instant loading on the Schedule page.
 
   // Error state
   if (error) {
@@ -334,14 +325,14 @@ const TeacherDashboard = () => {
                 <div className="text-2xl font-bold mb-1">
                   {(() => {
                     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-                    const todayClasses = dashboardData.scheduleData[today] || dashboardData.scheduleData[today.toLowerCase()] || [];
+                    const todayClasses = scheduleForDashboard[today] || scheduleForDashboard[today.toLowerCase()] || [];
                     return todayClasses.length;
                   })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {(() => {
                     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-                    const todayClasses = dashboardData.scheduleData[today] || dashboardData.scheduleData[today.toLowerCase()] || [];
+                    const todayClasses = scheduleForDashboard[today] || scheduleForDashboard[today.toLowerCase()] || [];
                     if (todayClasses.length === 0) return t('teacher.noClassesScheduled', 'None scheduled');
                     return t('teacher.nextAt', { time: todayClasses[0].startTime, defaultValue: `Next: ${todayClasses[0].startTime}` });
                   })()}
@@ -362,7 +353,7 @@ const TeacherDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <MonthlyCalendar scheduleData={dashboardData.scheduleData} />
+                  <MonthlyCalendar scheduleData={scheduleForDashboard} />
                 </CardContent>
               </Card>
             </div>
