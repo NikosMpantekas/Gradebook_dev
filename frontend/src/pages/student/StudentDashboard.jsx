@@ -31,6 +31,8 @@ import { GradesGraph } from "../../components/GradesGraph";
 import { MonthlyCalendar } from '../../components/MonthlyCalendar';
 import { Skeleton } from '../../components/ui/skeleton';
 import { setDashboardDataCache } from '../../features/ui/uiSlice';
+import { fetchSchedule } from '../../features/schedule/scheduleSlice';
+import { getStudentGrades } from '../../features/grades/gradeSlice';
 
 const StudentDashboardSkeleton = () => (
   <div className="space-y-6">
@@ -123,6 +125,13 @@ const StudentDashboard = () => {
   const { grades: reduxGrades } = useSelector((state) => state.grades || {});
   const { notifications: reduxNotifications } = useSelector((state) => state.notifications || {});
   const { dashboard: uiCache } = useSelector((state) => state.ui || { dashboard: {} });
+  const scheduleRedux = useSelector((state) => state.schedule);
+
+  // Raw schedule object { Monday: [...], ... } from the shared Redux cache (no-filter slot)
+  const scheduleForDashboard = React.useMemo(
+    () => scheduleRedux.cache?.['']?.data?.schedule || {},
+    [scheduleRedux.cache]
+  );
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -130,7 +139,6 @@ const StudentDashboard = () => {
     notifications: [],
     grades: [],
     classes: uiCache?.studentScheduleToday || [],
-    scheduleData: uiCache?.studentSchedule || {},
     stats: uiCache?.studentStats || {
       totalSubjects: 0,
       averageGrade: 0,
@@ -195,12 +203,13 @@ const StudentDashboard = () => {
   // Fetch dashboard data
   useEffect(() => {
     if (user && user.role === 'student' && !featuresLoading) {
-      if (reduxStats && uiCache?.studentSchedule && uiCache?.studentScheduleToday) {
+      // If we already have cached stats + a populated schedule slice, show data immediately
+      if (reduxStats && scheduleRedux.cache?.['']?.data) {
         setLoading(false);
       }
       fetchDashboardData();
     }
-  }, [user, featuresLoading, !!reduxStats, !!uiCache?.studentSchedule]);
+  }, [user, featuresLoading, !!reduxStats, !!scheduleRedux.cache?.['']?.data]);
 
   const getAuthConfig = () => {
     return {
@@ -234,43 +243,39 @@ const StudentDashboard = () => {
         dataKeys.push('grades');
       }
       
-      if (isFeatureEnabled('enableClasses') || isFeatureEnabled('enableSchedule')) {
-        setPanelLoading(prev => ({ ...prev, classes: true }));
-        // Fetch the complete schedule data for both calendar and upcoming list
-        promises.push(fetchScheduleData());
-        dataKeys.push('scheduleData');
-      }
-      
       // Execute all enabled data fetches
       const results = await Promise.allSettled(promises);
       
-      // Process results
+      // Process notifications + grades results
       const newData = { ...dashboardData };
       results.forEach((result, index) => {
         const key = dataKeys[index];
-        if (result.status === 'fulfilled') {
-          if (result.value !== null && result.value !== undefined) {
-            newData[key] = result.value;
-            
-            // If we just got the schedule data, also extract today's classes for the 'classes' state
-            if (key === 'scheduleData') {
-              const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-              newData.classes = result.value[today] || result.value[today.toLowerCase()] || [];
-            }
-          }
-        } else {
-          console.error(`StudentDashboard: Error fetching ${key}:`, result.reason);
-          // Keep existing cached data instead of resetting to 0s/empty
+        if (result.status === 'fulfilled' && result.value !== null && result.value !== undefined) {
+          newData[key] = result.value;
         }
       });
-      
-      // Only update stats/classesToday if we got valid fresh stats
+
+      // Fetch schedule via shared Redux slice (uses TTL cache — no duplicate request)
+      if (isFeatureEnabled('enableClasses') || isFeatureEnabled('enableSchedule')) {
+        setPanelLoading(prev => ({ ...prev, classes: true }));
+        try {
+          const schedResult = await dispatch(fetchSchedule()).unwrap();
+          // schedResult.data = { schedule: { Monday:[...], ... }, totalClasses: N }
+          const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+          const rawSchedule = schedResult?.data?.schedule || {};
+          const todayClasses = (rawSchedule[today] || rawSchedule[today.toLowerCase()] || []).slice(0, 10);
+          newData.classes = todayClasses;
+        } catch {
+          // Keep whatever is already in local state
+        }
+      }
+
+      // Compute stats from fresh data
       if (newData.grades && Array.isArray(newData.grades)) {
         if (newData.grades.length > 0) {
           const gradeValues = newData.grades.map(g => g.value);
           const averageGrade = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
           const subjects = [...new Set(newData.grades.map(g => g.subject?.name).filter(Boolean))];
-          
           newData.stats = {
             totalSubjects: subjects.length,
             averageGrade: Math.round(averageGrade * 100) / 100,
@@ -278,14 +283,11 @@ const StudentDashboard = () => {
             classesToday: newData.classes?.length || 0
           };
         } else {
-          newData.stats = {
-            ...newData.stats,
-            classesToday: newData.classes?.length || 0
-          };
+          newData.stats = { ...newData.stats, classesToday: newData.classes?.length || 0 };
         }
       }
-      
-      // Save stats and classes to global cache so re-navigation is instant
+
+      // Persist stats + today's class count to UI cache
       dispatch(setDashboardDataCache({
         studentStats: newData.stats,
         studentScheduleToday: newData.classes || []
@@ -321,87 +323,18 @@ const StudentDashboard = () => {
 
   const fetchAllGrades = async () => {
     try {
-      // For student, get all their grades using the student-specific endpoint
-      const response = await axiosInstance.get(`${API_URL}/api/grades/student`, getAuthConfig());
-      
-      console.log('StudentDashboard: Grades response:', response.data);
-      
-      const grades = response.data?.grades || response.data || [];
-      // Return all grades for the graph (no limit needed)
-      const allGrades = Array.isArray(grades) ? grades : [];
-      console.log('StudentDashboard: All grades for graph:', allGrades.length);
-      return allGrades;
+      // Dispatch into Redux so the StudentGrades page can read from cache instantly
+      const result = await dispatch(getStudentGrades(user._id)).unwrap();
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) return null;
-      console.error('StudentDashboard: Error fetching grades:', error);
       return null;
     }
   };
 
-  const fetchUpcomingClasses = async () => {
-    try {
-      // For student, get their schedule
-      const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
-      
-      console.log('StudentDashboard: Schedule response:', response.data);
-      
-      // Process schedule data to get upcoming classes
-      if (response.data) {
-        const today = new Date();
-        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-        
-        console.log('StudentDashboard: Today is:', dayOfWeek);
-        
-        // Handle different response formats - backend returns direct schedule object
-        let scheduleData = response.data;
-        
-        // If response has a schedule property, use it
-        if (scheduleData && scheduleData.schedule) {
-          scheduleData = scheduleData.schedule;
-        }
-        
-        console.log('StudentDashboard: Schedule data structure:', Object.keys(scheduleData));
-        console.log('StudentDashboard: Full schedule data:', scheduleData);
-        
-        // Get today's classes - handle both lowercase and capitalized day names
-        let todayClasses = scheduleData[dayOfWeek] || scheduleData[dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)] || [];
-        
-        console.log('StudentDashboard: Today classes found:', todayClasses.length);
-        console.log('StudentDashboard: Today classes data:', todayClasses);
-        
-        // Return the classes for today
-        const upcomingClasses = Array.isArray(todayClasses) ? todayClasses.slice(0, 10) : [];
-        console.log('StudentDashboard: Returning upcoming classes:', upcomingClasses);
-        
-        return upcomingClasses;
-      }
-      
-      return [];
-    } catch (error) {
-      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
-        return [];
-      }
-      console.error('StudentDashboard: Error fetching upcoming classes:', error);
-      return [];
-    }
-  };
-
-  const fetchScheduleData = async () => {
-    try {
-      // Fetch complete schedule data for the calendar
-      const response = await axiosInstance.get(`${API_URL}/api/schedule`, getAuthConfig());
-      const schedule = response.data?.schedule || response.data || {};
-      
-      // Save to global cache so re-navigation is instant
-      dispatch(setDashboardDataCache({ studentSchedule: schedule }));
-      
-      return schedule;
-    } catch (error) {
-      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) return null;
-      console.error('StudentDashboard: Error fetching schedule data:', error);
-      return null;
-    }
-  };
+  // fetchUpcomingClasses removed (was unused)
+  // fetchScheduleData removed — schedule is now fetched via the shared scheduleSlice
+  // which deduplicates requests and provides instant loading on the Schedule page.
 
   // Navigation handlers
   const handleViewGrades = () => navigate('/app/grades');
@@ -573,7 +506,7 @@ const StudentDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <MonthlyCalendar scheduleData={dashboardData.scheduleData} />
+            <MonthlyCalendar scheduleData={scheduleForDashboard} />
           </CardContent>
         </Card>
 

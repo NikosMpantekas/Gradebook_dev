@@ -12,6 +12,7 @@ import uiReducer from '../features/ui/uiSlice';
 import superAdminReducer from '../features/superadmin/superAdminSlice';
 import eventReducer from '../features/events/eventSlice';
 import ratingReducer from '../features/ratings/ratingSlice';
+import scheduleReducer from '../features/schedule/scheduleSlice';
 
 
 export const store = configureStore({
@@ -29,6 +30,7 @@ export const store = configureStore({
     superAdmin: superAdminReducer,
     events: eventReducer,
     ratings: ratingReducer,
+    schedule: scheduleReducer,
 
   },
 });
