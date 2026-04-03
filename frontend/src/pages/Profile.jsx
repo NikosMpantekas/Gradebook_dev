@@ -5,10 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
   GraduationCap,
   Building,
   Edit,
@@ -17,7 +13,6 @@ import {
   Eye,
   EyeOff,
   Shield,
-  Bell,
   Package,
   Euro,
   Star,
@@ -31,7 +26,7 @@ import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
 import { Spinner } from '../components/ui/spinner';
 import { DatePicker } from '../components/ui/date-picker';
-import { updateProfile } from '../features/auth/authSlice';
+import { updateProfile, getUserData } from '../features/auth/authSlice';
 import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
 import ThemeSelector from '../components/ui/theme-selector';
@@ -59,6 +54,19 @@ const useIsMobile = () => {
   return isMobile
 }
 
+// Helper to reliably extract the school name
+const getSchoolName = (userObj) => {
+  if (!userObj) return '';
+  if (userObj.schoolName) return userObj.schoolName;
+  if (userObj.school && typeof userObj.school === 'object') return userObj.school.name || '';
+  if (userObj.schoolId && typeof userObj.schoolId === 'object') return userObj.schoolId.name || '';
+  if (typeof userObj.school === 'string' && userObj.school.length !== 24) return userObj.school; // Ignore raw hex IDs
+  if (userObj.schools && Array.isArray(userObj.schools) && userObj.schools.length > 0) {
+    return userObj.schools.map(s => typeof s === 'object' ? s.name : s).filter(Boolean).join(', ');
+  }
+  return '';
+};
+
 const Profile = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -66,6 +74,9 @@ const Profile = () => {
   const { user, isLoading } = useSelector((state) => state.auth);
   const isMobile = useIsMobile();
   
+  console.log("EXACT USER PAYLOAD IN REDUX:", user);
+
+
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -84,6 +95,14 @@ const Profile = () => {
   
   const [errors, setErrors] = useState({});
 
+  // Robust fallback: if user has a schoolId but no explicit schoolName, fetch fully populated me profile
+  // This bypasses the Service Worker cache which might be intercepting initial logins
+  useEffect(() => {
+    if (user && user.role !== 'superadmin' && user.schoolId && !user.schoolName && !user.school) {
+      dispatch(getUserData());
+    }
+  }, [user, dispatch]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -98,7 +117,7 @@ const Profile = () => {
       contactEmail: user.contactEmail || '',
       dateOfBirth: user.dateOfBirth || '',
       role: user.role || '',
-      school: user.school || '',
+      school: getSchoolName(user),
       department: user.department || '',
       currentPassword: '',
       newPassword: '',
@@ -118,35 +137,17 @@ const Profile = () => {
         console.log('[PROFILE] Refreshing admin user data...');
         sessionStorage.setItem('profileRefreshed', 'true');
         
-        // Add timeout to prevent hanging requests
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 10000)
-        );
-        
-        const response = await Promise.race([
-          authService.getProfile(),
-          timeoutPromise
-        ]);
-        
-        if (response) {
-          // Update Redux store with fresh user data
-          dispatch(updateProfile(response));
-          // Update localStorage to persist the fresh data
-          localStorage.setItem('user', JSON.stringify(response));
-          console.log('[PROFILE] Admin pack info refreshed:', { 
-            packType: response.packType, 
-            monthlyPrice: response.monthlyPrice 
-          });
-        }
+        // Use the native Redux thunk to safely fetch and populate without doing a PUT request
+        await dispatch(getUserData()).unwrap();
+        console.log('[PROFILE] Admin user data successfully refreshed securely.');
       } catch (error) {
-        console.error('Error refreshing user data:', error);
-        // Remove the flag on error so it can retry
+        console.error('Error refreshing admin data:', error);
         sessionStorage.removeItem('profileRefreshed');
       }
     };
-    
+
     refreshUserData();
-  }, [user?.role]); // Only depend on user.role, not the entire user object
+  }, [user.role, dispatch]); // Only depend on user.role, not the entire user object
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -257,7 +258,7 @@ const Profile = () => {
       contactEmail: user.contactEmail || '',
       dateOfBirth: user.dateOfBirth || '',
       role: user.role || '',
-      school: user.school || '',
+      school: getSchoolName(user),
       department: user.department || '',
       currentPassword: '',
       newPassword: '',
@@ -343,11 +344,13 @@ const Profile = () => {
                   {user.role}
                 </Badge>
               </div>
-              <div className="flex items-center space-x-2">
-                <Building className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{t('profile.school')}:</span>
-                <span className="text-sm">{user.school || t('profile.notSpecified')}</span>
-              </div>
+              {user.role !== 'superadmin' && (
+                <div className="flex items-center space-x-2">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">{t('profile.school')}:</span>
+                  <span className="text-sm">{getSchoolName(user) || t('profile.notSpecified')}</span>
+                </div>
+              )}
               {user.department && (
                 <div className="flex items-center space-x-2">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
