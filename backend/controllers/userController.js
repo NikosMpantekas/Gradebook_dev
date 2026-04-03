@@ -543,6 +543,7 @@ const loginUser = asyncHandler(async (req, res) => {
       role: user.role,
       schoolId: user.schoolId,
       school: user.school,
+      schoolName: school ? school.name : null, // Add schoolName to login payload
       secretaryPermissions: user.secretaryPermissions,
       adminPermissions: user.adminPermissions,
       // Include school feature permissions
@@ -694,6 +695,7 @@ const getMe = asyncHandler(async (req, res) => {
     .select('-password')
     // Populate both old and new field names for maximum compatibility
     .populate('school', 'name')     // Old: Single school field (students)
+    .populate('schoolId', 'name')   // New: single DB tenant identifier
     .populate('direction', 'name direction subject schoolBranch')  // Legacy field now references Class model
     .populate('schools', 'name')    // New: Multiple schools array (teachers)
     .populate('directions', 'name direction subject schoolBranch') // Legacy field now references Class model
@@ -708,6 +710,13 @@ const getMe = asyncHandler(async (req, res) => {
       userResponse.packType = user.packType || 'lite';
       userResponse.monthlyPrice = user.monthlyPrice || 0;
       console.log(`[USER PROFILE] Admin pack info: packType=${userResponse.packType}, monthlyPrice=${userResponse.monthlyPrice}`);
+    }
+    
+    // Ensure schoolName is set since frontend expects it
+    if (userResponse.schoolId && userResponse.schoolId.name) {
+      userResponse.schoolName = userResponse.schoolId.name;
+    } else if (userResponse.school && userResponse.school.name) {
+      userResponse.schoolName = userResponse.school.name;
     }
     
     res.status(200).json(userResponse);
@@ -725,7 +734,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   if (user) {
     user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
+    // user.email = req.body.email || user.email; // Email updates disabled for security to match frontend policy
     user.darkMode = req.body.darkMode !== undefined ? req.body.darkMode : user.darkMode;
     user.saveCredentials = req.body.saveCredentials !== undefined ? req.body.saveCredentials : user.saveCredentials;
     
