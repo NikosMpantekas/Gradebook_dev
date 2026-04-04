@@ -152,23 +152,33 @@ const getSchools = asyncHandler(async (req, res) => {
 
 // @desc    Get a specific school
 // @route   GET /api/schools/:id
-// @access  Public
+// @access  Private (scoped by role)
 const getSchoolById = asyncHandler(async (req, res) => {
   const school = await School.findById(req.params.id);
 
-  if (school) {
-    res.status(200).json(school);
-  } else {
+  if (!school) {
     res.status(404);
     throw new Error('School not found');
   }
+
+  // Superadmins can access any school
+  if (req.user.role === 'superadmin') {
+    return res.status(200).json(school);
+  }
+
+  // All other roles can only access their own school
+  if (!req.user.schoolId || school._id.toString() !== req.user.schoolId.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to access this school');
+  }
+
+  res.status(200).json(school);
 });
 
 // @desc    Update a school
 // @route   PUT /api/schools/:id
 // @access  Private/Admin
 const updateSchool = asyncHandler(async (req, res) => {
-  // Validate that id is provided and not undefined
   if (!req.params.id || req.params.id === 'undefined') {
     res.status(400);
     throw new Error('School ID is required');
@@ -181,7 +191,14 @@ const updateSchool = asyncHandler(async (req, res) => {
     throw new Error('School not found');
   }
 
-  // Update fields
+  // Superadmins can manage any school
+  if (req.user.role !== 'superadmin') {
+    if (!req.user.schoolId || school._id.toString() !== req.user.schoolId.toString()) {
+      res.status(403);
+      throw new Error('Not authorized to manage this school');
+    }
+  }
+
   const updatedSchool = await School.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -195,15 +212,25 @@ const updateSchool = asyncHandler(async (req, res) => {
 // @route   DELETE /api/schools/:id
 // @access  Private/Admin
 const deleteSchool = asyncHandler(async (req, res) => {
-  // Find school first to verify it exists
+  if (!req.params.id || req.params.id === 'undefined') {
+    res.status(400);
+    throw new Error('School ID is required');
+  }
+
   const school = await School.findById(req.params.id);
 
   if (!school) {
     res.status(404);
     throw new Error('School not found');
   }
-  
-  // Use findByIdAndDelete instead of remove() method
+
+  if (req.user.role !== 'superadmin') {
+    if (!req.user.schoolId || school._id.toString() !== req.user.schoolId.toString()) {
+      res.status(403);
+      throw new Error('Not authorized to manage this school');
+    }
+  }
+
   await School.findByIdAndDelete(req.params.id);
   res.status(200).json({ message: 'School branch removed' });
 });
