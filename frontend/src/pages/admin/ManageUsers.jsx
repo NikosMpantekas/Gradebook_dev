@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { getUsers, deleteUser, reset } from '../../features/users/userSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
+import { API_URL } from '../../config/appConfig';
 
 // shadcn/ui components
 import { Button } from '../../components/ui/button';
@@ -166,7 +167,9 @@ const ManageUsers = () => {
     const fetchClasses = async () => {
       try {
         setClassesLoading(true);
-        const response = await fetch(`${currentUser?.baseURL || 'https://beta-backend.gradebook.pro'}/api/classes`, {
+        const baseUrl = currentUser?.baseURL || API_URL;
+        const classesApiUrl = baseUrl.endsWith('/') ? `${baseUrl}api/classes` : `${baseUrl}/api/classes`;
+        const response = await fetch(classesApiUrl, {
           headers: {
             'Authorization': `Bearer ${currentUser?.token}`,
             'Content-Type': 'application/json'

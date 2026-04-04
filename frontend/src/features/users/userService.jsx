@@ -2,7 +2,7 @@ import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 
 // API URL with base URL from config - normalize path to avoid double slashes
-const API_USERS = API_URL.endsWith('/') ? `${API_URL}api/users/` : `${API_URL}/api/users/`;
+const API_USERS = API_URL.endsWith('/') ? `${API_URL}api/users` : `${API_URL}/api/users`;
 
 // Get all users (admin only)
 const getUsers = async (token) => {
@@ -24,7 +24,7 @@ const getUserById = async (userId, token) => {
     },
   };
 
-  const response = await axios.get(API_USERS + userId, config);
+  const response = await axios.get(API_USERS + '/' + userId, config);
   return response.data;
 };
 
@@ -37,7 +37,7 @@ const createUser = async (userData, token) => {
   };
 
   // Use the admin-specific endpoint that properly handles password hashing
-  const response = await axios.post(API_USERS + 'admin/create', userData, config);
+  const response = await axios.post(API_USERS + '/admin/create', userData, config);
   return response.data;
 };
 
@@ -49,7 +49,7 @@ const updateUser = async (userId, userData, token) => {
     // Create detailed debug information for the request
     console.log('%c [userService] DETAILED UPDATE USER REQUEST INFO ', 'background: #3498db; color: #ffffff; font-size: 14px');
     console.log('User ID:', userId);
-    console.log('Request URL:', API_USERS + userId);
+    console.log('Request URL:', API_USERS + '/' + userId);
     
     // Log the entire userData object with formatting for better visibility
     console.group('Request Data:');
@@ -77,7 +77,7 @@ const updateUser = async (userId, userData, token) => {
       },
     };
 
-    const response = await axios.put(API_USERS + userId, userData, config);
+    const response = await axios.put(API_USERS + '/' + userId, userData, config);
     console.log('[userService] Update successful, response:', response.data);
     
     // Validate response.data to ensure it's a proper object
@@ -137,7 +137,7 @@ const deleteUser = async (userId, token) => {
   console.log('[userService] Deleting user with ID:', userId);
   
   try {
-    const response = await axios.delete(API_USERS + userId, config);
+    const response = await axios.delete(API_USERS + '/' + userId, config);
     // Ensure we return the userId so Redux can update the state properly
     return { ...response.data, id: userId };
   } catch (error) {
@@ -154,7 +154,7 @@ const getUsersByRole = async (role, token) => {
     },
   };
 
-  const response = await axios.get(API_USERS + 'role/' + role, config);
+  const response = await axios.get(API_USERS + '/role/' + role, config);
   return response.data;
 };
 
