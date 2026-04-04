@@ -1295,7 +1295,12 @@
     },
     "reply": "Reply",
     "replyPlaceholder": "Type your reply...",
-    "send": "Send"
+    "send": "Send",
+    "markAsRead": "Mark as Read",
+    "approveReset": "Approve Reset",
+    "deny": "Deny",
+    "actionPerformed": "Action performed: {{action}}",
+    "actionPerformFailed": "Action failed"
   },
   "contactDeveloper": {
     "title": "Contact Developers",

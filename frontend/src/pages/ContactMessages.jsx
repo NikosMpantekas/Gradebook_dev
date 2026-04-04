@@ -182,19 +182,19 @@ const ContactMessages = () => {
   const tabDefs = [
     { 
       key: 'my', 
-      label: t('contactMessages.tabs.my'), 
-      icon: <EmailIcon className="h-4 w-4" />, 
+      label: t('contactMessages.tabs.my'),
+      icon: <EmailIcon className="h-4 w-4" />,
       panel: (
-        <div className="min-h-[400px] flex-1 flex justify-center items-center">
+        <div className="min-h-[400px] flex-1">
           {loading ? (
-            <div className="flex-1 flex justify-center items-center">
+            <div className="flex justify-center items-center">
               <Spinner className="text-primary" />
             </div>
           ) : (
-            <UserMessagesList messages={userMessages} />
+            <UserMessagesList messages={userMessages} user={user} onMessagesChanged={fetchUserMessages} />
           )}
         </div>
-      ) 
+      )
     },
     { 
       key: 'patch', 

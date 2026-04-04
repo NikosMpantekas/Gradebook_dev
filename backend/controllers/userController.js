@@ -107,25 +107,34 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
       return genericOk();
     }
 
+    // Resolve school name for display in the contact message
+    let schoolName = 'Μη διαθέσιμο';
+    if (user.schoolId) {
+      const School = require('../models/schoolModel');
+      const school = await School.findById(user.schoolId).select('name').lean();
+      if (school) schoolName = school.name;
+    }
+
     console.log('[FORGOT-PASSWORD] Found user', {
       id: user._id?.toString(),
       name: user.name,
       email: user.email,
       role: user.role,
       schoolId: user.schoolId?.toString() || null,
+      schoolName,
     });
 
     // Build a contact message entry that will appear in admins panel
-    const subject = `[Password Reset] Request for ${user.email}`;
+    const subject = `[Επαναφορά Κωδικού] Αίτημα για ${user.email}`;
 
     const bodyLines = [
-      `A user requested a password reset.`,
-      `Name: ${user.name || 'N/A'}`,
+      `Ένας χρήστης ζήτησε επαναφορά κωδικού πρόσβασης.`,
+      `Όνομα: ${user.name || 'Μη διαθέσιμο'}`,
       `Email: ${user.email}`,
-      `Role: ${user.role}`,
-      user.schoolId ? `SchoolId: ${user.schoolId}` : null,
+      `Ρόλος: ${user.role}`,
+      `Φροντιστήριο: ${schoolName}`,
       '',
-      'Action requested: Please reset this user\'s password via the admin panel.',
+      'Αίτημα ενέργειας: Παρακαλώ επαναφέρετε τον κωδικό πρόσβασης του χρήστη μέσω του πίνακα διαχείρισης.',
     ].filter(Boolean);
 
     const contactDoc = await Contact.create({

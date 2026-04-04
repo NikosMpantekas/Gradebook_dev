@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { getUsers, deleteUser, reset } from '../../features/users/userSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
@@ -38,6 +38,7 @@ import { useIsMobile } from '../../components/hooks/use-mobile';
 
 const ManageUsers = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -46,7 +47,7 @@ const ManageUsers = () => {
   const { users, isLoading, isSuccess, isError, message } = useSelector(state => state.users);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [roleFilter, setRoleFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [classFilter, setClassFilter] = useState('all');
