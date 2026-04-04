@@ -335,6 +335,9 @@ function App() {
           <Route path="/superadmin/school-permissions" element={<SuperAdminRoute><SchoolPermissionsManager /></SuperAdminRoute>} />
           <Route path="/superadmin/system-logs" element={<SuperAdminRoute><SystemLogs /></SuperAdminRoute>} />
           <Route path="/superadmin/maintenance-announcements" element={<SuperAdminRoute><MaintenanceAnnouncements /></SuperAdminRoute>} />
+          <Route path="/superadmin/users" element={<SuperAdminRoute><ManageUsers /></SuperAdminRoute>} />
+          <Route path="/superadmin/users/create" element={<SuperAdminRoute><CreateUserErrorWrapper /></SuperAdminRoute>} />
+          <Route path="/superadmin/users/:id" element={<SuperAdminRoute><EditUser /></SuperAdminRoute>} />
           <Route path="/superadmin/system-maintenance" element={<SuperAdminRoute><SystemMaintenance /></SuperAdminRoute>} />
         </Route>
 

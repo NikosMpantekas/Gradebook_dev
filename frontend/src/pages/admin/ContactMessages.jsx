@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { format } from 'date-fns';
@@ -26,6 +27,7 @@ import ErrorState from '../../components/common/ErrorState';
 import { refreshAppCounts } from '../../lib/utils';
 
 const ContactMessages = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -312,13 +314,13 @@ const ContactMessages = () => {
                 </Button>
                 
                 {/* Show Approve/Deny for password reset requests */}
-                {message.subject?.startsWith('[Password Reset]') ? (
+                {message.subject?.startsWith('[Password Reset]') || message.subject?.startsWith('[Επαναφορά Κωδικού]') ? (
                   <>
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full sm:w-auto text-green-600 border-green-600 hover:bg-green-50"
-                      onClick={() => { /* no-op for now */ }}
+                      onClick={() => navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users')}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
                       Approve Reset

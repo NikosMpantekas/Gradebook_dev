@@ -155,17 +155,34 @@ const getContactMessages = asyncHandler(async (req, res) => {
     });
 
     // Superadmins can see all messages including public ones
-    // Regular admins see only their own messages within their school
+    // Regular admins see messages within their school, plus any untagged messages
     const filter = req.user.role === 'superadmin'
       ? {}
-      : { user: req.user._id, schoolId: req.user.schoolId };
+      : {
+          $or: [
+            { schoolId: req.user.schoolId },
+            { schoolId: null },
+            { schoolId: { $exists: false } }
+          ]
+        };
 
-    console.log('[CONTACT] Using filter', filter);
+    console.log('[CONTACT] Using filter', JSON.stringify(filter));
 
     // Get messages for this user/superadmin, newest first
     const messages = await Contact.find(filter)
       .sort({ createdAt: -1 })
       .lean();
+
+    // Debug diagnostics for admins
+    if (req.user.role === 'admin') {
+      const [bySchool, byNull, byMissing, total] = await Promise.all([
+        Contact.countDocuments({ schoolId: req.user.schoolId }),
+        Contact.countDocuments({ schoolId: null }),
+        Contact.countDocuments({ schoolId: { $exists: false } }),
+        Contact.countDocuments({}),
+      ]);
+      console.log('[CONTACT] DEBUG: schoolId match breakdown — bySchool:', bySchool, 'byNull:', byNull, 'byMissing:', byMissing, 'total:', total);
+    }
 
     console.log('[CONTACT] Retrieved messages count', messages.length);
 
@@ -280,11 +297,21 @@ const updateContactMessage = asyncHandler(async (req, res) => {
 // @access  Private (any authenticated user)
 const getUserMessages = asyncHandler(async (req, res) => {
   try {
+    // Admins/superadmins see all messages for their school (plus untagged); regular users see only their own
+    const filter = (req.user.role === 'superadmin')
+      ? {}
+      : (req.user.role === 'admin')
+        ? {
+            $or: [
+              { schoolId: req.user.schoolId },
+              { schoolId: null },
+              { schoolId: { $exists: false } }
+            ]
+          }
+        : { user: req.user._id, schoolId: req.user.schoolId };
+
     // CRITICAL FIX: First get ALL messages that might need fixing
-    const allUserMessages = await Contact.find({
-      user: req.user._id,
-      schoolId: req.user.schoolId
-    }).lean();
+    const allUserMessages = await Contact.find(filter).lean();
 
     console.log(`Found ${allUserMessages.length} messages for user ${req.user._id}`);
 
@@ -309,11 +336,8 @@ const getUserMessages = asyncHandler(async (req, res) => {
       }));
     }
 
-    // Now get the freshly updated messages
-    const messages = await Contact.find({
-      user: req.user._id,
-      schoolId: req.user.schoolId
-    })
+    // Now get the freshly updated messages using the same filter
+    const messages = await Contact.find(filter)
       .sort({ createdAt: -1 })
       .lean();
 

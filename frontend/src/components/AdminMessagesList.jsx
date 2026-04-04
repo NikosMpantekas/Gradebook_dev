@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
+import { useNavigate } from 'react-router-dom';
+import {
   Bug,
   Mail,
   Send,
   MailOpen,
+  CheckCircle,
+  AlertCircle,
   User,
   Building,
   ChevronDown
@@ -25,6 +28,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { refreshAppCounts } from '../lib/utils';
 
 const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [replyText, setReplyText] = useState({});
   const [replying, setReplying] = useState({});
@@ -260,7 +264,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                           <SelectItem value="closed">{t('contactMessages.status.closed')}</SelectItem>
                         </SelectContent>
                       </Select>
-                      
+
                       {!message.read && (
                         <Button
                           variant="outline"
@@ -270,6 +274,30 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                           <MailOpen className="mr-2 h-4 w-4" />
                           {t('contactMessages.markAsRead')}
                         </Button>
+                      )}
+
+                      {/* Approve/Deny buttons for password reset requests */}
+                      {(message.subject?.startsWith('[Password Reset]') || message.subject?.startsWith('[Επαναφορά Κωδικού]')) && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                            onClick={() => navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users')}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            {t('contactMessages.approveReset')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            onClick={() => navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users')}
+                          >
+                            <AlertCircle className="mr-2 h-4 w-4" />
+                            Deny
+                          </Button>
+                        </>
                       )}
                     </div>
                     

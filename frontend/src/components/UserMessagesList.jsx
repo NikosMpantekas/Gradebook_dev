@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   Bug,
   Mail,
-  MessageCircle
+  MessageCircle,
+  CheckCircle,
+  XCircle,
+  MailOpen
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader } from './ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { Button } from './ui/button';
+import axios from 'axios';
+import { API_URL } from '../config/appConfig';
+import { toast } from 'react-toastify';
+import { refreshAppCounts } from '../lib/utils';
 
-const UserMessagesList = ({ messages }) => {
+const UserMessagesList = ({ messages, user, onMessagesChanged }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [expandedMessage, setExpandedMessage] = useState(null);
 
   if (!messages || messages.length === 0) {
@@ -59,10 +69,43 @@ const UserMessagesList = ({ messages }) => {
     setExpandedMessage(expandedMessage === messageId ? null : messageId);
   };
 
+  const handleMarkAsRead = async (messageId) => {
+    if (!user || !user.token) return;
+
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        }
+      };
+
+      await axios.put(`${API_URL}/api/contact/${messageId}`, { read: true, status: 'read' }, config);
+
+      toast.success(t('contactMessages.markedAsRead'));
+      refreshAppCounts();
+      if (onMessagesChanged) onMessagesChanged();
+    } catch (error) {
+      console.error('Error marking as read:', error);
+      toast.error(t('contactMessages.markAsReadFailed'));
+    }
+  };
+
+  const handleAcceptReset = (message) => {
+    navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users');
+  };
+
+  const handleDenyReset = (message) => {
+    navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users');
+  };
+
+  const isPasswordReset = (message) =>
+    message.isBugReport !== true && (message.subject?.startsWith('[Password Reset]') || message.subject?.startsWith('[Επαναφορά Κωδικού]'));
+
   return (
-    <div className="space-y-4 mt-4">
+    <div className="w-full space-y-4 mt-4">
       {messages.map((message) => (
-        <Card key={message._id} className="overflow-hidden border-2 border-gray-600 dark:border-gray-400">
+        <Card key={message._id} className="w-full overflow-hidden border-2 border-gray-600 dark:border-gray-400">
           <Collapsible open={expandedMessage === message._id}>
             <CollapsibleTrigger asChild>
               <CardHeader
@@ -73,8 +116,10 @@ const UserMessagesList = ({ messages }) => {
                   <div className="flex items-center space-x-3">
                     {message.isBugReport ? (
                       <Bug className="h-5 w-5 text-destructive" />
-                    ) : (
+                    ) : !isPasswordReset(message) ? (
                       <Mail className="h-5 w-5 text-primary" />
+                    ) : (
+                      <MailOpen className="h-5 w-5 text-yellow-500" />
                     )}
                     <div className="flex flex-col items-start">
                       <h3 className="font-semibold text-foreground">
@@ -106,6 +151,42 @@ const UserMessagesList = ({ messages }) => {
                       {message.message}
                     </p>
                   </div>
+
+                  {/* Password reset action buttons */}
+                  {isPasswordReset(message) && user?.role === 'admin' && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {!message.read && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleMarkAsRead(message._id); }}
+                        >
+                          <MailOpen className="mr-2 h-4 w-4" />
+                          {t('contactMessages.markAsRead')}
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={(e) => { e.stopPropagation(); handleAcceptReset(message); }}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        {t('contactMessages.approveReset')}
+                      </Button>
+
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={(e) => { e.stopPropagation(); handleDenyReset(message); }}
+                      >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        {t('contactMessages.deny')}
+                      </Button>
+                    </div>
+                  )}
 
                   {message.adminReply && (
                     <div>
