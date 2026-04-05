@@ -136,38 +136,49 @@ const Login = () => {
   };
 
   const performNavigation = (user) => {
-    // Check if password change is required
+    // Clear form fields and blur all inputs before navigating
+    setFormData({
+      email: '',
+      password: '',
+      saveCredentials: false,
+    });
+    document.activeElement?.blur();
+    const inputs = document.querySelectorAll('#email, #password');
+    inputs.forEach(input => input.blur());
+
+    let redirectPath;
     if (user?.requirePasswordChange || user?.isFirstLogin) {
       console.log('PASSWORD CHANGE REQUIRED - Redirecting to password change page');
-      navigate('/change-password');
-      return;
-    }
-
-    // Navigate directly to role-specific route
-    let redirectPath;
-    switch (user?.role) {
-      case 'superadmin':
-        redirectPath = '/superadmin/dashboard';
-        break;
-      case 'admin':
-        redirectPath = '/app/admin';
-        break;
-      case 'teacher':
-        redirectPath = '/app/teacher';
-        break;
-      case 'student':
-        redirectPath = '/app/student';
-        break;
-      case 'parent':
-        redirectPath = '/app/parent';
-        break;
-      default:
-        console.error('Unknown user role:', user?.role);
-        redirectPath = '/app/dashboard';
+      redirectPath = '/change-password';
+    } else {
+      switch (user?.role) {
+        case 'superadmin':
+          redirectPath = '/superadmin/dashboard';
+          break;
+        case 'admin':
+          redirectPath = '/app/admin';
+          break;
+        case 'teacher':
+          redirectPath = '/app/teacher';
+          break;
+        case 'student':
+          redirectPath = '/app/student';
+          break;
+        case 'parent':
+          redirectPath = '/app/parent';
+          break;
+        default:
+          console.error('Unknown user role:', user?.role);
+          redirectPath = '/app/dashboard';
+      }
     }
 
     console.log('LOGIN REDIRECT: Navigating to', redirectPath);
-    navigate(redirectPath);
+    // Use window.location.replace() instead of React Router's navigate() to force a full
+    // page reload. This clears all extension-injected DOM (e.g. Bitwarden iframe) that
+    // would otherwise persist across client-side navigation and get stuck on screen.
+    const cacheBuster = new Date().getTime();
+    window.location.replace(`${redirectPath}?v=${cacheBuster}`);
   };
 
   const onSubmit = (e) => {
@@ -205,92 +216,11 @@ const Login = () => {
     }
   };
 
-  // Handle forgot password modal open with delay to prevent autofill conflicts
+  // Handle forgot password modal open
   const handleForgotOpen = () => {
-    try {
-      // Close Safari's email autocomplete dropdown if it's open
-      const emailInput = document.getElementById('email');
-      if (emailInput) {
-        // Blur the input to close any open autocomplete dropdowns
-        emailInput.blur();
-        // Force focus away from the input
-        document.activeElement?.blur();
-      }
-
-      // Close any password manager autofill overlays (Bitwarden, 1Password, etc.)
-      // These extensions often inject their own DOM elements that can conflict with modals
-      const passwordManagerOverlays = document.querySelectorAll('[data-1p-ignore], [data-lpignore], [data-bitwarden-widget]');
-      passwordManagerOverlays.forEach(overlay => {
-        if (overlay.style) {
-          overlay.style.display = 'none';
-        }
-      });
-
-      // More aggressive: Hide any elements that might be autofill overlays
-      // Look for common autofill overlay patterns
-      const potentialAutofillElements = document.querySelectorAll('div[style*="position: absolute"], div[style*="position: fixed"], div[class*="autofill"], div[class*="autocomplete"]');
-      potentialAutofillElements.forEach(element => {
-        if (element.style && !element.classList.contains('modal') && !element.classList.contains('dialog')) {
-          element.style.visibility = 'hidden';
-          // Store original visibility to restore later
-          element.dataset.originalVisibility = element.style.visibility;
-        }
-      });
-
-      // Prevent any DOM manipulation errors by temporarily disabling problematic scripts
-      const originalInsertBefore = Node.prototype.insertBefore;
-      const originalAppendChild = Node.prototype.appendChild;
-
-      // Override insertBefore to catch and ignore NotFoundError
-      Node.prototype.insertBefore = function (newNode, referenceNode) {
-        try {
-          return originalInsertBefore.call(this, newNode, referenceNode);
-        } catch (error) {
-          if (error.name === 'NotFoundError') {
-            console.warn('Caught and prevented NotFoundError in insertBefore:', error);
-            return newNode;
-          }
-          throw error;
-        }
-      };
-
-      // Override appendChild to catch and ignore NotFoundError
-      Node.prototype.appendChild = function (newNode) {
-        try {
-          return originalAppendChild.call(this, newNode);
-        } catch (error) {
-          if (error.name === 'NotFoundError') {
-            console.warn('Caught and prevented NotFoundError in appendChild:', error);
-            return newNode;
-          }
-          throw error;
-        }
-      };
-
-      // Longer delay to ensure modal is fully rendered and stable before any scripts can interfere
-      setTimeout(() => {
-        setForgotOpen(true);
-
-        // Restore original DOM methods after modal is stable
-        setTimeout(() => {
-          Node.prototype.insertBefore = originalInsertBefore;
-          Node.prototype.appendChild = originalAppendChild;
-
-          // Restore visibility of hidden elements after modal is stable
-          potentialAutofillElements.forEach(element => {
-            if (element.dataset.originalVisibility !== undefined) {
-              element.style.visibility = element.dataset.originalVisibility;
-              delete element.dataset.originalVisibility;
-            }
-          });
-        }, 500);
-      }, 200);
-
-    } catch (error) {
-      console.warn('Error in handleForgotOpen, opening modal anyway:', error);
-      // Fallback: just open the modal
-      setForgotOpen(true);
-    }
+    // Blur all inputs to close any autocomplete/autofill dropdowns
+    document.activeElement?.blur();
+    setForgotOpen(true);
   };
 
   return (
@@ -403,7 +333,7 @@ const Login = () => {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
+                <form onSubmit={onSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className={cn(
                       "text-xs font-medium uppercase tracking-wider",
@@ -441,7 +371,7 @@ const Login = () => {
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
+                        autoComplete="password"
                         required
                         value={password}
                         onChange={onChange}
