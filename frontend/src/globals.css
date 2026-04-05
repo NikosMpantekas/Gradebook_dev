@@ -76,6 +76,12 @@
     --error: 0 84% 60%;
     /* Default red error */
     --error-foreground: 0 0% 98%;
+
+    --chart-1: 207 56% 46%;
+    --chart-2: 142 70% 49%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 217 91% 60%;
+    --chart-5: 270 70% 60%;
   }
 
   .dark {
@@ -129,6 +135,12 @@
     --error: 0 93% 73%;
     /* Brighter red for dark */
     --error-foreground: 0 13% 6%;
+
+    --chart-1: 207 56% 56%;
+    --chart-2: 142 76% 73%;
+    --chart-3: 38 95% 69%;
+    --chart-4: 217 91% 73%;
+    --chart-5: 270 80% 75%;
   }
 }
 
