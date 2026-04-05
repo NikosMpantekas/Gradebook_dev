@@ -93,8 +93,8 @@ const PasswordChange = () => {
 
       if (response.ok) {
         toast.success('Password changed successfully! Please log in again.');
+        // authService.logout() already does window.location.replace('/login'), so no navigate needed
         dispatch(logout());
-        navigate('/login');
       } else {
         toast.error(data.message || 'Failed to change password');
       }

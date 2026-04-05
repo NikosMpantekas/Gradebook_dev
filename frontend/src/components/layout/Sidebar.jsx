@@ -63,12 +63,12 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     overlay.className = 'logout-overlay';
     document.body.appendChild(overlay);
 
-    // Navigate to login after animation completes
+    // After animation, dispatch logout which triggers authService.logout()
+    // authService.logout() already does window.location.replace('/login?...'), so we don't need navigate
     setTimeout(() => {
       dispatch(logout());
-      navigate('/login');
 
-      // Cleanup
+      // Cleanup overlay (window.location.replace() will reload anyway, but clean up for safety)
       document.body.classList.remove('logout-fade');
       try { overlay.remove(); } catch (e) { }
       setLogoutAnimating(false);
