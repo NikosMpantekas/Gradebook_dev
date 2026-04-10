@@ -320,7 +320,7 @@ const ContactMessages = () => {
                       variant="outline"
                       size="sm"
                       className="w-full sm:w-auto text-green-600 border-green-600 hover:bg-green-50"
-                      onClick={() => navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users')}
+                      onClick={() => navigate(message.user ? (user?.role === 'superadmin' ? `/superadmin/users/${message.user}` : `/app/admin/users/${message.user}`) : (user?.role === 'superadmin' ? '/superadmin/users' : '/app/admin/users'))}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
                       Approve Reset

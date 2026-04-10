@@ -340,7 +340,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
           backgroundColor: typeof themedHeaderBg === 'string' && themedHeaderBg.startsWith('rgba') ? themedHeaderBg : undefined
         }}
       >
-        <div className="flex h-14 max-w-screen-2xl items-center px-4 mx-auto w-full">
+        <div className="flex h-14 items-center px-4 w-full">
           {/* Sidebar toggle button - shown on mobile, tablet, and small desktop screens */}
           {isMobile && (
             <Button

@@ -95,8 +95,28 @@ const UserMessagesList = ({ messages, user, onMessagesChanged }) => {
     navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users');
   };
 
-  const handleDenyReset = (message) => {
-    navigate(message.user ? `/app/admin/users/${message.user}` : '/app/admin/users');
+  const handleDenyReset = async (message) => {
+    if (!user || !user.token) return;
+    if (!window.confirm("Are you sure you want to delete this password reset request?")) return;
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      };
+
+      await axios.delete(`${API_URL}/api/contact/${message._id}`, config);
+
+      toast.success('Message deleted successfully');
+      refreshAppCounts();
+      if (onMessagesChanged) {
+        onMessagesChanged();
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+    }
   };
 
   const isPasswordReset = (message) =>

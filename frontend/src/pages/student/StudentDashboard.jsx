@@ -435,9 +435,12 @@ const StudentDashboard = () => {
           <CardContent className="flex flex-col justify-center flex-1 pt-0">
             <div className="text-2xl font-bold mb-1">{dashboardData.stats.classesToday || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {dashboardData.stats.classesToday === 0 
-                ? t('student.noClassesToday', 'None scheduled') 
-                : t('student.checkSchedule', 'Check your schedule')}
+              {(() => {
+                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                const todayClasses = scheduleForDashboard[today] || scheduleForDashboard[today.toLowerCase()] || [];
+                if (todayClasses.length === 0) return t('student.noClassesToday', 'None scheduled');
+                return t('teacher.nextAt', { time: todayClasses[0].startTime, defaultValue: `Next: ${todayClasses[0].startTime}` });
+              })()}
             </p>
           </CardContent>
         </Card>
