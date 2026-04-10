@@ -21,18 +21,27 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
 
   const languages = [
     {
-      code: 'en',
-      name: 'English',
-      nativeName: 'English'
-    },
-    {
       code: 'gr',
       name: 'Greek',
       nativeName: 'Ελληνικά'
+    },
+    {
+      code: 'en',
+      name: 'English',
+      nativeName: 'English'
     }
   ];
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+  const getBaseLanguage = (langCode) => {
+    if (!langCode) return 'gr';
+    const lower = langCode.toLowerCase();
+    if (lower.startsWith('el') || lower.startsWith('gr')) return 'gr';
+    if (lower.startsWith('en')) return 'en';
+    return 'gr';
+  };
+
+  const currentLanguageCode = getBaseLanguage(i18n.language);
+  const currentLanguage = languages.find(lang => lang.code === currentLanguageCode) || languages.find(lang => lang.code === 'gr');
 
   const handleLanguageChange = (languageCode) => {
     i18n.changeLanguage(languageCode);
@@ -44,7 +53,6 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
-            <span className="text-lg">{currentLanguage.flag}</span>
             <Globe className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -59,12 +67,11 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
               onClick={() => handleLanguageChange(language.code)}
               className="gap-3"
             >
-              <span className="text-lg">{language.flag}</span>
               <div className="flex flex-col">
                 <span className="font-medium">{language.nativeName}</span>
                 <span className="text-xs text-muted-foreground">{language.name}</span>
               </div>
-              {i18n.language === language.code && (
+              {currentLanguageCode === language.code && (
                 <span className="ml-auto text-primary">✓</span>
               )}
             </DropdownMenuItem>
@@ -93,12 +100,11 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
                 onClick={() => handleLanguageChange(language.code)}
                 className="gap-3"
               >
-                <span className="text-lg">{language.flag}</span>
                 <div className="flex flex-col">
                   <span className="font-medium">{language.nativeName}</span>
                   <span className="text-xs text-muted-foreground">{language.name}</span>
                 </div>
-                {i18n.language === language.code && (
+                {currentLanguageCode === language.code && (
                   <span className="ml-auto text-primary">✓</span>
                 )}
               </DropdownMenuItem>
@@ -120,12 +126,11 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
           {languages.map((language) => (
             <Button
               key={language.code}
-              variant={i18n.language === language.code ? 'default' : 'outline'}
+              variant={currentLanguageCode === language.code ? 'default' : 'outline'}
               size="sm"
-              className="flex items-center justify-start gap-2 h-10 px-3 overflow-hidden"
+              className="flex items-center justify-center gap-2 h-10 px-3 overflow-hidden text-center"
               onClick={() => handleLanguageChange(language.code)}
             >
-              <span className="text-base flex-shrink-0">{language.flag}</span>
               <span className="text-xs font-medium truncate">{language.nativeName}</span>
             </Button>
           ))}
@@ -161,12 +166,11 @@ const LanguageSwitcher = ({ variant = 'icon' }) => {
               onClick={() => handleLanguageChange(language.code)}
               className="gap-3"
             >
-              <span className="text-lg">{language.flag}</span>
               <div className="flex flex-col">
                 <span className="font-medium">{language.nativeName}</span>
                 <span className="text-xs text-muted-foreground">{language.name}</span>
               </div>
-              {i18n.language === language.code && (
+              {currentLanguageCode === language.code && (
                 <span className="ml-auto text-primary">✓</span>
               )}
             </DropdownMenuItem>

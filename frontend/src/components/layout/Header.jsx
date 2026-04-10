@@ -210,7 +210,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
       fetchContactUnread();
       dispatch(getMyNotifications());
     };
-    
+
     window.addEventListener('refreshHeaderCounts', handleRefresh);
     return () => window.removeEventListener('refreshHeaderCounts', handleRefresh);
   }, [fetchContactUnread, dispatch]);

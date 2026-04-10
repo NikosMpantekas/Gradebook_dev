@@ -20,7 +20,7 @@ i18n
   // For all options read: https://www.i18next.com/overview/configuration-options
   .init({
     // Fallback language
-    fallbackLng: 'en',
+    fallbackLng: 'gr',
     debug: import.meta.env.MODE === 'development',
 
     interpolation: {
