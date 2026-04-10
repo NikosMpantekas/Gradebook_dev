@@ -48,40 +48,49 @@ const TeacherDashboardSkeleton = () => (
       ))}
     </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      <Card className="lg:row-span-2 h-fit overflow-hidden">
-        <CardHeader>
-          <div className="h-6 w-32 bg-muted/40 rounded-md" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="h-[450px] w-full bg-muted/20" />
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Calendar Skeleton */}
+      <div className="order-2 lg:order-1 lg:row-span-2 h-full flex flex-col">
+        <Card className="flex flex-col lg:min-h-[620px] h-full overflow-hidden">
+          <CardHeader>
+            <div className="h-6 w-32 bg-muted/40 rounded-md" />
+          </CardHeader>
+          <CardContent className="p-0 flex flex-col flex-1">
+            <div className="flex-1 w-full bg-muted/20" />
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card className="h-fit">
-        <CardHeader>
-          <div className="h-6 w-32 bg-muted/40 rounded-md" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+      {/* Quick Actions Skeleton */}
+      <div className="order-1 lg:order-2">
+        <Card className="h-full">
+          <CardHeader>
+            <div className="h-6 w-32 bg-muted/40 rounded-md" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-24 w-full rounded-lg bg-muted/30" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Notifications Skeleton */}
+      <div className="order-3 lg:order-3 h-full flex flex-col">
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="h-6 w-40 bg-muted/40 rounded-md" />
+            <div className="h-8 w-20 bg-muted/30 rounded-md" />
+          </CardHeader>
+          <CardContent className="flex flex-col flex-1 space-y-4 pt-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 w-full rounded-lg bg-muted/30" />
+              <div key={i} className="h-16 w-full rounded-lg bg-muted/20" />
             ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="flex flex-col h-[350px]">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div className="h-6 w-40 bg-muted/40 rounded-md" />
-          <div className="h-8 w-20 bg-muted/30 rounded-md" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 w-full rounded-lg bg-muted/20" />
-          ))}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   </div>
 );
@@ -342,17 +351,17 @@ const TeacherDashboard = () => {
           </div>
 
           {/* Main Grid: Calendar, Quick Actions, Notifications */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Calendar - spans 2 rows on desktop */}
-            <div className="order-2 lg:order-1 lg:row-span-2">
-              <Card className="h-fit overflow-hidden">
+            <div className="order-2 lg:order-1 lg:row-span-2 h-full flex flex-col">
+              <Card className="flex flex-col lg:min-h-[620px] h-full overflow-hidden">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Calendar className="h-5 w-5 text-primary" />
                     <span>{t('student.monthlyCalendar')}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 flex flex-col flex-1">
                   <MonthlyCalendar scheduleData={scheduleForDashboard} />
                 </CardContent>
               </Card>
@@ -360,7 +369,7 @@ const TeacherDashboard = () => {
 
             {/* Quick Actions */}
             <div className="order-1 lg:order-2">
-              <Card className="h-fit">
+              <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Zap className="h-5 w-5 text-primary" />
@@ -407,8 +416,8 @@ const TeacherDashboard = () => {
             </div>
 
             {/* Notifications */}
-            <div className="order-3 lg:order-3">
-              <Card className="flex flex-col">
+            <div className="order-3 lg:order-3 h-full flex flex-col">
+              <Card className="flex flex-col h-full">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center space-x-2">
                     <Bell className="h-5 w-5 text-primary" />
