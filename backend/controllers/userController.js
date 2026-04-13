@@ -927,8 +927,9 @@ const getUsersByRole = asyncHandler(async (req, res) => {
       // Get the teacher's classes first
       console.log(`Teacher ${req.user.name} (${req.user._id}) fetching their students`);
       
-      // Find classes where this teacher is assigned
+      // Find classes where this teacher is assigned — scoped to their school
       const teacherClasses = await Class.find({
+        schoolId: req.user.schoolId,
         teachers: req.user._id
       }).lean();
       
