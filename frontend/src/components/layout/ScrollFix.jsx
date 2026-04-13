@@ -60,15 +60,15 @@ const ScrollFix = () => {
         padding: 12px 16px !important;
       }
     `;
-    
+
     document.head.appendChild(style);
-    
+
     return () => {
       // Clean up when component unmounts
       document.head.removeChild(style);
     };
   }, []);
-  
+
   // This component doesn't render anything
   return null;
 };

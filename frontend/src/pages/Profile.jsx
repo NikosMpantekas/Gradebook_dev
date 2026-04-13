@@ -27,7 +27,6 @@ import { Separator } from '../components/ui/separator';
 import { Spinner } from '../components/ui/spinner';
 import { DatePicker } from '../components/ui/date-picker';
 import { updateProfile, getUserData } from '../features/auth/authSlice';
-import authService from '../features/auth/authService';
 import { Badge } from '../components/ui/badge';
 import ThemeSelector from '../components/ui/theme-selector';
 
@@ -41,13 +40,13 @@ const useIsMobile = () => {
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
       const isMobileWidth = window.innerWidth < 768
       const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      
+
       setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent))
     }
 
     checkDevice()
     window.addEventListener('resize', checkDevice)
-    
+
     return () => window.removeEventListener('resize', checkDevice)
   }, [])
 
@@ -73,8 +72,6 @@ const Profile = () => {
   const dispatch = useDispatch();
   const { user, isLoading } = useSelector((state) => state.auth);
   const isMobile = useIsMobile();
-  
-  console.log("EXACT USER PAYLOAD IN REDUX:", user);
 
 
   const [isEditing, setIsEditing] = useState(false);
@@ -92,7 +89,7 @@ const Profile = () => {
     newPassword: '',
     confirmPassword: ''
   });
-  
+
   const [errors, setErrors] = useState({});
 
   // Robust fallback: if user has a schoolId but no explicit schoolName, fetch fully populated me profile
@@ -108,13 +105,13 @@ const Profile = () => {
       navigate('/login');
       return;
     }
-    
+
     // Initialize form data with current user info
     setFormData({
       name: user.name || '',
       email: user.email || '',
-      phone: user.phone || '',
-      contactEmail: user.contactEmail || '',
+      phone: user.mobilePhone || user.phone || '',
+      contactEmail: user.personalEmail || user.contactEmail || '',
       dateOfBirth: user.dateOfBirth || '',
       role: user.role || '',
       school: getSchoolName(user),
@@ -128,15 +125,15 @@ const Profile = () => {
   // Separate useEffect for admin data refresh to avoid infinite loops
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
-    
+
     // Only refresh if we haven't refreshed in this session
     if (sessionStorage.getItem('profileRefreshed')) return;
-    
+
     const refreshUserData = async () => {
       try {
         console.log('[PROFILE] Refreshing admin user data...');
         sessionStorage.setItem('profileRefreshed', 'true');
-        
+
         // Use the native Redux thunk to safely fetch and populate without doing a PUT request
         await dispatch(getUserData()).unwrap();
         console.log('[PROFILE] Admin user data successfully refreshed securely.');
@@ -155,7 +152,7 @@ const Profile = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -170,7 +167,7 @@ const Profile = () => {
       ...prev,
       dateOfBirth: dateValue
     }));
-    
+
     // Clear error when user changes date
     if (errors.dateOfBirth) {
       setErrors(prev => ({
@@ -182,25 +179,25 @@ const Profile = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = t('profile.nameRequired');
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = t('profile.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = t('profile.emailInvalid');
     }
-    
+
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = t('profile.passwordMismatch');
     }
-    
+
     if (formData.newPassword && formData.newPassword.length < 6) {
       newErrors.newPassword = t('profile.passwordTooShort');
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -209,30 +206,29 @@ const Profile = () => {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       const updateData = {
         name: formData.name,
-        email: formData.email,
         phone: formData.phone,
         contactEmail: formData.contactEmail,
         dateOfBirth: formData.dateOfBirth,
-        school: formData.school,
         department: formData.department
       };
-      
+
       // Only include password fields if they're being changed
       if (formData.newPassword) {
         updateData.currentPassword = formData.currentPassword;
         updateData.newPassword = formData.newPassword;
       }
-      
-      const response = await authService.updateProfile(updateData);
-      
-      if (response.success) {
+
+      const resultAction = await dispatch(updateProfile(updateData));
+
+      if (updateProfile.fulfilled.match(resultAction)) {
+        // Refresh full user data from server so localStorage stays complete
+        await dispatch(getUserData());
         toast.success(t('profile.updateSuccess'));
         setIsEditing(false);
-        // Reset password fields
         setFormData(prev => ({
           ...prev,
           currentPassword: '',
@@ -240,7 +236,7 @@ const Profile = () => {
           confirmPassword: ''
         }));
       } else {
-        toast.error(response.message || t('profile.updateError'));
+        toast.error(resultAction.payload || t('profile.updateError'));
       }
     } catch (error) {
       console.error('Profile update error:', error);
@@ -254,8 +250,8 @@ const Profile = () => {
     setFormData({
       name: user.name || '',
       email: user.email || '',
-      phone: user.phone || '',
-      contactEmail: user.contactEmail || '',
+      phone: user.mobilePhone || user.phone || '',
+      contactEmail: user.personalEmail || user.contactEmail || '',
       dateOfBirth: user.dateOfBirth || '',
       role: user.role || '',
       school: getSchoolName(user),
@@ -344,7 +340,7 @@ const Profile = () => {
                   {user.role}
                 </Badge>
               </div>
-              {user.role !== 'superadmin' && (
+              {user.role !== 'superadmin' && user.role !== 'admin' && (
                 <div className="flex items-center space-x-2">
                   <Building className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">{t('profile.school')}:</span>
@@ -387,7 +383,7 @@ const Profile = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                       <Euro className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -399,7 +395,7 @@ const Profile = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                       <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -412,7 +408,7 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {user.packType === 'lite' && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
@@ -449,7 +445,7 @@ const Profile = () => {
                   />
                   {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="email">{t('common.email')} *</Label>
                   <Input
@@ -463,7 +459,7 @@ const Profile = () => {
                   />
                   <p className="text-sm text-muted-foreground">{t('profile.emailCannotChange')}</p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="phone">{t('profile.phoneNumber')}</Label>
                   <Input
@@ -475,7 +471,7 @@ const Profile = () => {
                     placeholder="6912345678"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="contactEmail">{t('profile.contactEmail')}</Label>
                   <Input
@@ -489,7 +485,7 @@ const Profile = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth">{t('profile.dateOfBirth')}</Label>
                 {isMobile ? (
@@ -518,7 +514,7 @@ const Profile = () => {
                 )}
                 {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
               </div>
-              
+
               {/* Theme Selection Panel - Moved under Personal Information */}
               <Separator />
               <div className="space-y-4">
@@ -561,7 +557,7 @@ const Profile = () => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">{t('profile.newPassword')}</Label>
                     <Input
@@ -576,7 +572,7 @@ const Profile = () => {
                     {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">{t('profile.confirmPassword')}</Label>
                   <Input
@@ -590,7 +586,7 @@ const Profile = () => {
                   />
                   {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
-                
+
                 <p className="text-sm text-muted-foreground">
                   {t('profile.passwordChangeNote')}
                 </p>

@@ -364,12 +364,21 @@ export const authSlice = createSlice({
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload;
+        // Merge updated fields into existing user to preserve schoolName, permissions, etc.
+        state.user = {
+          ...state.user,
+          ...action.payload
+        };
         // Update storage to persist the changes
         try {
-          localStorage.setItem('user', JSON.stringify(action.payload));
+          if (localStorage.getItem('user')) {
+            localStorage.setItem('user', JSON.stringify(state.user));
+          }
+          if (sessionStorage.getItem('user')) {
+            sessionStorage.setItem('user', JSON.stringify(state.user));
+          }
         } catch (error) {
-          console.error('Failed to update localStorage:', error);
+          console.error('Failed to update storage:', error);
         }
       })
       .addCase(updateProfile.rejected, (state, action) => {
