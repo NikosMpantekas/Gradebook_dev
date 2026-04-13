@@ -257,7 +257,19 @@ const CreateUser = (props) => {
       canManageSchools: false,
       canAccessStudentProgress: false,
     },
+    // Parent account creation fields (shown when role === 'student')
+    createParentAccount: false,
+    parentName: '',
+    parentEmail: '',
+    parentPassword: '',
+    parentMobilePhone: '',
+    parentPersonalEmail: '',
+    parentEmailCredentials: false,
+    parentGeneratedPassword: '',
   });
+
+  const [showParentPassword, setShowParentPassword] = useState(false);
+  const [parentPasswordGenerated, setParentPasswordGenerated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({
@@ -272,6 +284,45 @@ const CreateUser = (props) => {
     schools: '',
   });
   
+  // Auto-fill parent fields when student name or email changes
+  useEffect(() => {
+    if (formData.createParentAccount && formData.role === 'student') {
+      const studentEmail = formData.email;
+      if (!formData.parentName && formData.name) {
+        setFormData(prev => ({
+          ...prev,
+          parentName: `Parent of ${formData.name}`
+        }));
+      }
+      if (!formData.parentEmail && studentEmail && studentEmail.includes('@')) {
+        setFormData(prev => ({
+          ...prev,
+          parentEmail: `parent.${studentEmail}`
+        }));
+      }
+    }
+  }, [formData.createParentAccount, formData.name, formData.email, formData.role]);
+
+  const handleGenerateParentPassword = () => {
+    const newPassword = generateEasyPassword();
+    setFormData(prev => ({
+      ...prev,
+      parentPassword: newPassword,
+      parentGeneratedPassword: newPassword
+    }));
+    setParentPasswordGenerated(true);
+    toast.success('Parent password generated!');
+  };
+
+  const handleCopyParentPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(formData.parentGeneratedPassword);
+      toast.success('Parent password copied!');
+    } catch {
+      toast.error('Failed to copy password');
+    }
+  };
+
   // Update email when name changes - automatically generate email address
   useEffect(() => {
     if (formData.name && adminSchoolInfo.domain) {
@@ -480,6 +531,22 @@ const CreateUser = (props) => {
     if (formData.password !== formData.confirmPassword) {
               errors.confirmPassword = t('admin.createUserPage.validation.passwordsDoNotMatch');
       isValid = false;
+    }
+
+    // Validate parent fields if creating parent account
+    if (formData.createParentAccount && formData.role === 'student') {
+      if (!formData.parentName?.trim()) {
+        errors.parentName = 'Parent name is required';
+        isValid = false;
+      }
+      if (!formData.parentEmail?.trim() || !/\S+@\S+\.\S+/.test(formData.parentEmail)) {
+        errors.parentEmail = 'Valid parent email is required';
+        isValid = false;
+      }
+      if (!formData.parentPassword || formData.parentPassword.length < 6) {
+        errors.parentPassword = 'Parent password must be at least 6 characters';
+        isValid = false;
+      }
     }
 
     setFormErrors(errors);
@@ -1107,6 +1174,145 @@ const CreateUser = (props) => {
                       <Label htmlFor="canAddGradeDescriptions">Can Add Grade Descriptions</Label>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Parent Account Creation - shown when role is student */}
+            {formData.role === 'student' && (
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      <h3 className="text-lg font-semibold">Create Parent Account</h3>
+                    </div>
+                    <Switch
+                      id="createParentAccount"
+                      checked={formData.createParentAccount}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          createParentAccount: checked,
+                          parentName: checked ? `Parent of ${prev.name}` : '',
+                          parentEmail: checked && prev.email ? `parent.${prev.email}` : '',
+                          parentPassword: '',
+                          parentGeneratedPassword: '',
+                        }));
+                        if (!checked) setParentPasswordGenerated(false);
+                      }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Optionally create a linked parent account for this student in the same step.
+                  </p>
+
+                  {formData.createParentAccount && (
+                    <div className="space-y-4 pt-2 border-t">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="parentName">Parent Full Name *</Label>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="parentName"
+                              value={formData.parentName}
+                              onChange={(e) => setFormData(prev => ({ ...prev, parentName: e.target.value }))}
+                              placeholder="Parent's full name"
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="parentEmail">Parent Login Email *</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="parentEmail"
+                              type="email"
+                              value={formData.parentEmail}
+                              onChange={(e) => setFormData(prev => ({ ...prev, parentEmail: e.target.value }))}
+                              placeholder="parent@school.com"
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="parentPassword">Parent Password *</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="parentPassword"
+                              type={showParentPassword ? 'text' : 'password'}
+                              value={formData.parentPassword}
+                              onChange={(e) => setFormData(prev => ({ ...prev, parentPassword: e.target.value }))}
+                              placeholder="Enter or generate password"
+                              className="pl-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowParentPassword(!showParentPassword)}
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            >
+                              {showParentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <div className="flex gap-2 mt-1">
+                            <Button type="button" size="sm" variant="outline" onClick={handleGenerateParentPassword} className="gap-1">
+                              <RefreshCw className="h-3 w-3" /> Generate
+                            </Button>
+                            {parentPasswordGenerated && (
+                              <Button type="button" size="sm" variant="outline" onClick={handleCopyParentPassword} className="gap-1">
+                                <Copy className="h-3 w-3" /> Copy
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="parentMobilePhone">Parent Mobile Phone</Label>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="parentMobilePhone"
+                              value={formData.parentMobilePhone}
+                              onChange={(e) => setFormData(prev => ({ ...prev, parentMobilePhone: e.target.value }))}
+                              placeholder="+1234567890 (optional)"
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="parentPersonalEmail">Parent Personal Email</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="parentPersonalEmail"
+                              type="email"
+                              value={formData.parentPersonalEmail}
+                              onChange={(e) => setFormData(prev => ({ ...prev, parentPersonalEmail: e.target.value }))}
+                              placeholder="personal@example.com (optional)"
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 mt-4">
+                          <Switch
+                            id="parentEmailCredentials"
+                            checked={formData.parentEmailCredentials}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, parentEmailCredentials: checked }))}
+                          />
+                          <Label htmlFor="parentEmailCredentials">Email credentials to parent</Label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

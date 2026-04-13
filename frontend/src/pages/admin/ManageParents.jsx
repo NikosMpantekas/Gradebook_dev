@@ -62,7 +62,7 @@ const ManageParents = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setParents(data.users || []);
+        setParents(Array.isArray(data) ? data : (data.users || []));
       } else {
         throw new Error('Failed to fetch parents');
       }
@@ -84,7 +84,7 @@ const ManageParents = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setStudents(data.users || []);
+        setStudents(Array.isArray(data) ? data : (data.users || []));
       } else {
         throw new Error('Failed to fetch students');
       }
@@ -98,32 +98,40 @@ const ManageParents = () => {
   };
 
   const handleCreateParent = async () => {
-    if (!selectedStudents.length) {
-      toast.error('Please select at least one student');
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error('Name, email, and password are required');
       return;
     }
 
     try {
+      const payload = {
+        parentName: formData.name,
+        parentEmail: formData.email,
+        parentPassword: formData.password,
+        mobilePhone: formData.mobilePhone,
+        personalEmail: formData.personalEmail,
+        emailCredentials: formData.emailCredentials
+      };
+
+      // Only include studentIds if students were selected
+      if (selectedStudents.length > 0) {
+        payload.studentIds = selectedStudents.map(s => s._id);
+      } else {
+        // Backend requires at least a dummy array — send empty, backend handles it
+        payload.studentIds = [];
+      }
+
       const response = await fetch(`${API_URL}/api/users/create-parent`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          studentIds: selectedStudents.map(s => s._id),
-          parentName: formData.name,
-          parentEmail: formData.email,
-          parentPassword: formData.password,
-          mobilePhone: formData.mobilePhone,
-          personalEmail: formData.personalEmail,
-          emailCredentials: formData.emailCredentials
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        const data = await response.json();
-        toast.success('Parent created successfully');
+        toast.success(selectedStudents.length > 0 ? 'Parent created and linked to students' : 'Parent created (no students linked yet)');
         setDialogOpen(false);
         resetForm();
         fetchParents();
@@ -472,7 +480,9 @@ const ManageParents = () => {
             
             {(dialogType === 'create' || dialogType === 'link') && (
               <div className="space-y-2">
-                <Label>Select Students *</Label>
+                <Label>
+                  {dialogType === 'create' ? 'Link Students (optional)' : 'Select Students *'}
+                </Label>
                 <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
                   {students.map((student) => (
                     <div key={student._id} className="flex items-center space-x-2">
