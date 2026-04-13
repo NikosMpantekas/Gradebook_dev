@@ -201,100 +201,47 @@ const createClass = asyncHandler(async (req, res) => {
 // @route   GET /api/classes
 // @access  Private (Admin and Teachers)
 const getClasses = asyncHandler(async (req, res) => {
-  console.log('Getting classes for user with schoolId:', req.user.schoolId);
-  console.log('Full user object:', JSON.stringify(req.user, null, 2));
-  
-  // Check if user has schoolId, if not use user._id for admin
-  const userSchoolId = req.user.schoolId || req.user._id;
-  console.log('Using schoolId for query:', userSchoolId);
-  
-  // Construct query based on user role
-  let query = {};
-  
-  if (req.user.role === 'admin') {
-    // For admin, try multiple approaches to find classes
-    query = {
-      $or: [
-        { schoolId: userSchoolId },
-        { schoolId: req.user._id },
-        { createdBy: req.user._id }
-      ]
-    };
-  } else if (req.user.role === 'teacher') {
-    // If teacher, only return classes where they are assigned
-    query = { 
-      schoolId: req.user.schoolId || req.user._id,
-      teachers: req.user._id
-    };
-  } else {
-    // Default fallback
-    query = { schoolId: userSchoolId };
-  }
-  
-  console.log('Class query filter:', JSON.stringify(query, null, 2));
+  const userSchoolId = req.user.schoolId;
 
-  // Optional filtering
+  console.log('[getClasses] user:', req.user._id, 'role:', req.user.role, 'schoolId:', userSchoolId);
+
+  if (!userSchoolId) {
+    console.error('[getClasses] schoolId missing from user object - cannot safely fetch classes');
+    res.status(400);
+    throw new Error('School context is missing. Please re-login.');
+  }
+
+  // Strict schoolId filter — always scoped to the requesting user's school
+  let query = { schoolId: userSchoolId };
+
+  if (req.user.role === 'teacher') {
+    // Teachers only see classes they are assigned to within their school
+    query.teachers = req.user._id;
+  }
+
+  // Optional filters from query params
   const { subject, direction, schoolBranch, teacher, student } = req.query;
-  
-  if (subject) {
-    query.subject = { $regex: subject, $options: 'i' };
+
+  if (subject) query.subject = { $regex: subject, $options: 'i' };
+  if (direction) query.direction = { $regex: direction, $options: 'i' };
+  if (schoolBranch) query.schoolBranch = { $regex: schoolBranch, $options: 'i' };
+  if (teacher && mongoose.Types.ObjectId.isValid(teacher)) {
+    query.teachers = new mongoose.Types.ObjectId(teacher);
   }
-  
-  if (direction) {
-    query.direction = { $regex: direction, $options: 'i' };
-  }
-  
-  if (schoolBranch) {
-    query.schoolBranch = { $regex: schoolBranch, $options: 'i' };
-  }
-  
-  if (teacher) {
-    query.teachers = mongoose.Types.ObjectId.isValid(teacher) ? mongoose.Types.ObjectId(teacher) : null;
-  }
-  
-  if (student) {
-    query.students = mongoose.Types.ObjectId.isValid(student) ? mongoose.Types.ObjectId(student) : null;
+  if (student && mongoose.Types.ObjectId.isValid(student)) {
+    query.students = new mongoose.Types.ObjectId(student);
   }
 
-  // Execute query
+  console.log('[getClasses] query filter:', JSON.stringify(query));
+
   const classes = await Class.find(query)
     .populate('students', 'name email')
     .populate('teachers', 'name email')
     .sort({ name: 1 });
 
-  console.log(`Found ${classes.length} classes matching query`);
-  
-  // If no classes found, try a broader search for admin
-  if (classes.length === 0 && req.user.role === 'admin') {
-    console.log('No classes found with initial query, trying broader search...');
-    const allClasses = await Class.find({})
-      .populate('students', 'name email')
-      .populate('teachers', 'name email')
-      .sort({ name: 1 });
-    console.log(`Found ${allClasses.length} total classes in database`);
-    
-    if (allClasses.length > 0) {
-      console.log('Sample class structure:', JSON.stringify(allClasses[0], null, 2));
-    }
-  }
-  
-  if (classes.length > 0) {
-    // Only log first class to avoid excessive logging
-    console.log('Sample class data:', JSON.stringify(classes[0], null, 2));
-  }
+  console.log(`[getClasses] Found ${classes.length} classes for school ${userSchoolId}`);
 
-  // For admin users, if no classes found with strict query, return all classes
-  let finalClasses = classes;
-  if (req.user.role === 'admin' && classes.length === 0) {
-    console.log('Admin user - returning all classes as fallback');
-    finalClasses = await Class.find({})
-      .populate('students', 'name email')
-      .populate('teachers', 'name email')
-      .sort({ name: 1 });
-    console.log(`Fallback found ${finalClasses.length} total classes`);
-  }
-
-  res.status(200).json(finalClasses);
+  res.status(200).json(classes);
 });
 
 // @desc    Get a single class by ID
