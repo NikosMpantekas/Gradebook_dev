@@ -1381,23 +1381,28 @@ const createParentAccount = asyncHandler(async (req, res) => {
     emailCredentials
   } = req.body;
   
-  // Validate required fields
-  if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0 || !parentName || !parentEmail || !parentPassword) {
+  // Validate required fields — studentIds is now optional (can create standalone parent)
+  if (!parentName || !parentEmail || !parentPassword) {
     res.status(400);
-    throw new Error('Student IDs (array), parent name, email, and password are required');
+    throw new Error('Parent name, email, and password are required');
   }
+
+  const safeStudentIds = Array.isArray(studentIds) ? studentIds : [];
   
   try {
-    // Verify all students exist and belong to admin's school
-    const students = await User.find({
-      _id: { $in: studentIds },
-      role: 'student',
-      schoolId: req.user.schoolId
-    });
-    
-    if (students.length !== studentIds.length) {
-      res.status(404);
-      throw new Error('One or more students not found or not in your school');
+    // Verify all students exist and belong to admin's school (only if provided)
+    let students = [];
+    if (safeStudentIds.length > 0) {
+      students = await User.find({
+        _id: { $in: safeStudentIds },
+        role: 'student',
+        schoolId: req.user.schoolId
+      });
+      
+      if (students.length !== safeStudentIds.length) {
+        res.status(404);
+        throw new Error('One or more students not found or not in your school');
+      }
     }
     
     // Check if parent email already exists in this school
@@ -1413,8 +1418,22 @@ const createParentAccount = asyncHandler(async (req, res) => {
         throw new Error('Email already exists for a non-parent account');
       }
       
+      // If no students provided just return the existing parent
+      if (safeStudentIds.length === 0) {
+        return res.status(200).json({
+          _id: emailExists._id,
+          name: emailExists.name,
+          email: emailExists.email,
+          role: emailExists.role,
+          linkedStudentIds: emailExists.linkedStudentIds,
+          mobilePhone: emailExists.mobilePhone,
+          personalEmail: emailExists.personalEmail,
+          message: 'Parent account already exists'
+        });
+      }
+
       // Add new students to existing parent's linkedStudentIds
-      const newStudentIds = studentIds.filter(id => !emailExists.linkedStudentIds.includes(id));
+      const newStudentIds = safeStudentIds.filter(id => !emailExists.linkedStudentIds.map(s => s.toString()).includes(id.toString()));
       
       if (newStudentIds.length === 0) {
         res.status(400);
@@ -1456,7 +1475,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
       password: hashedPassword,
       role: 'parent',
       schoolId: req.user.schoolId,
-      linkedStudentIds: studentIds,
+      linkedStudentIds: safeStudentIds,
       mobilePhone: parentMobilePhone || '',
       personalEmail: parentPersonalEmail || '',
       active: true,
@@ -1466,11 +1485,13 @@ const createParentAccount = asyncHandler(async (req, res) => {
     
     const parent = await User.create(parentData);
     
-    // Update all students' parentIds arrays
-    await User.updateMany(
-      { _id: { $in: studentIds } },
-      { $addToSet: { parentIds: parent._id } }
-    );
+    // Update all students' parentIds arrays (only if students were provided)
+    if (safeStudentIds.length > 0) {
+      await User.updateMany(
+        { _id: { $in: safeStudentIds } },
+        { $addToSet: { parentIds: parent._id } }
+      );
+    }
     
     console.log(`Parent account created: ${parent.name} (${parent.email}) linked to ${students.length} students`);
     
