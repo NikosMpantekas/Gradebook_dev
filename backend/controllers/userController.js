@@ -174,31 +174,31 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Please add all fields');
   }
-  
+
   // Extract email domain to determine school
   const emailDomain = email.includes('@') ? email.split('@')[1] : null;
   if (!emailDomain) {
     res.status(400);
     throw new Error('Invalid email format');
   }
-  
+
   console.log(`User registration request for ${email} with domain ${emailDomain}`);
-  
+
   // Special case for superadmin registration - always in main database
   if (role === 'superadmin') {
     console.log('Superadmin registration detected - using main database');
-    
+
     // Check if user exists in main database
     const userExists = await User.findOne({ email });
     if (userExists) {
       res.status(400);
       throw new Error('User already exists');
     }
-    
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
+
     // Create superadmin in main database
     const user = await User.create({
       name,
@@ -206,7 +206,7 @@ const registerUser = asyncHandler(async (req, res) => {
       password: hashedPassword,
       role: 'superadmin',
     });
-    
+
     if (user) {
       res.status(201).json({
         _id: user.id,
@@ -219,32 +219,32 @@ const registerUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('Invalid user data');
     }
-    
+
     return;
   }
-  
+
   // For regular users, find the school based on email domain
   const school = await mongoose.model('School').findOne({ emailDomain });
   if (!school) {
     res.status(400);
     throw new Error('No school found for this email domain. Please use your school email address.');
   }
-  
+
   // Check if user with same email already exists in the school
-  const userExists = await User.findOne({ 
-    email, 
-    schoolId: school._id 
+  const userExists = await User.findOne({
+    email,
+    schoolId: school._id
   });
-  
+
   if (userExists) {
     res.status(400);
     throw new Error('User already exists in this school');
   }
-  
+
   // Hash password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  
+
   // Create user with schoolId for multi-tenancy
   const user = await User.create({
     name,
@@ -256,7 +256,7 @@ const registerUser = asyncHandler(async (req, res) => {
     school: school._id, // Legacy field - keeping for compatibility
     active: true,
   });
-  
+
   if (user) {
     res.status(201).json({
       _id: user.id,
@@ -278,10 +278,10 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const clientIp = req.ip;
-  
+
   // Import login attempt tracking
   const { isLockedOut, recordFailedAttempt, recordSuccessfulAttempt } = require('../utils/loginAttempts');
-  
+
   // SECURITY: Check if IP is locked out due to failed attempts
   const lockoutCheck = isLockedOut(clientIp);
   if (lockoutCheck.isLocked) {
@@ -291,11 +291,11 @@ const loginUser = asyncHandler(async (req, res) => {
       remainingLockoutSeconds: lockoutCheck.remainingTime,
       userAgent: req.headers['user-agent']
     });
-    
+
     res.status(429); // Too Many Requests
     throw new Error(`Too many failed login attempts. Account locked for ${lockoutCheck.remainingTime} seconds. Try again later.`);
   }
-  
+
   logger.info('AUTH', `Login attempt for email: ${email}`, {
     ip: clientIp,
     userAgent: req.headers['user-agent'],
@@ -305,14 +305,14 @@ const loginUser = asyncHandler(async (req, res) => {
   // Special handling for superadmin logins - always check by role
   try {
     const isSuperAdmin = await User.findOne({ email, role: 'superadmin' });
-    
-    logger.info('AUTH', 'Superadmin check result', { 
+
+    logger.info('AUTH', 'Superadmin check result', {
       email,
       found: !!isSuperAdmin,
       superadminId: isSuperAdmin?._id,
       hasPassword: !!isSuperAdmin?.password
     });
-    
+
     if (isSuperAdmin) {
       logger.info('AUTH', 'Superadmin login attempt', {
         id: isSuperAdmin._id,
@@ -321,7 +321,7 @@ const loginUser = asyncHandler(async (req, res) => {
         createdAt: isSuperAdmin.createdAt,
         hasToken: false // Not yet generated
       });
-      
+
       // Verify superadmin password and login status
       if (isSuperAdmin.active === false) {
         logger.warn('AUTH', `Superadmin account is disabled`, {
@@ -331,11 +331,11 @@ const loginUser = asyncHandler(async (req, res) => {
         res.status(403);
         throw new Error('Your account has been disabled. Please contact system administrator');
       }
-      
+
       const isMatch = await bcrypt.compare(password, isSuperAdmin.password);
       if (!isMatch) {
         logger.warn('AUTH', 'Invalid superadmin password', { id: isSuperAdmin._id, email });
-        
+
         // SECURITY: Record failed login attempt with exponential backoff
         const attemptResult = recordFailedAttempt(clientIp, email);
         logger.warn('AUTH', 'Failed superadmin login attempt recorded', {
@@ -344,25 +344,25 @@ const loginUser = asyncHandler(async (req, res) => {
           attemptsLeft: attemptResult.attemptsLeft,
           willBeLocked: attemptResult.isLocked
         });
-        
+
         res.status(401);
         throw new Error('Invalid credentials');
       }
-    
+
       // Update login timestamp and refresh token without triggering validation
       // Use updateOne instead of save to bypass validation that might require schoolId
       await User.updateOne(
         { _id: isSuperAdmin._id },
-        { 
+        {
           lastLogin: Date.now(),
           saveCredentials: req.body.saveCredentials || false
         }
       );
-      
+
       // Generate access token and refresh token for superadmin
       const accessToken = generateToken(isSuperAdmin._id);
       const userRefreshToken = generateRefreshToken(isSuperAdmin._id);
-      
+
       logger.info('AUTH', 'Superadmin tokens generated', {
         id: isSuperAdmin._id,
         hasAccessToken: !!accessToken,
@@ -376,7 +376,7 @@ const loginUser = asyncHandler(async (req, res) => {
         { _id: isSuperAdmin._id },
         { refreshToken: userRefreshToken }
       );
-      
+
       logger.info('AUTH', 'Superadmin data updated successfully');
 
       // Prepare response object with detailed logging
@@ -396,7 +396,7 @@ const loginUser = asyncHandler(async (req, res) => {
         subjects: [],
         darkMode: isSuperAdmin.darkMode || false
       };
-      
+
       // Log the response object keys for debugging
       logger.info('AUTH', 'Superadmin login response prepared', {
         responseKeys: Object.keys(responseObj),
@@ -424,7 +424,7 @@ const loginUser = asyncHandler(async (req, res) => {
     });
     throw error; // Re-throw to be caught by error handler
   }
-  
+
   // For non-superadmin users, determine the school based on email domain
   const emailDomain = email.split('@')[1];
   if (!emailDomain) {
@@ -432,7 +432,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error('Invalid email format');
   }
-  
+
   // Find the school associated with this email domain
   const school = await mongoose.model('School').findOne({ emailDomain });
   if (!school) {
@@ -440,35 +440,35 @@ const loginUser = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error('Invalid email domain. Please use your school email address.');
   }
-  
+
   // In the single-database architecture, we find the user directly with schoolId filter
   try {
     // Find the user with the matching email and schoolId
     console.log(`Looking for user with email ${email} in school ${school.name} (ID: ${school._id})`);
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email,
       schoolId: school._id
     });
-    
+
     // If user not found
     if (!user) {
       console.log(`No user found with email ${email} in school ${school.name}`);
       res.status(401);
       throw new Error('Invalid credentials');
     }
-    
+
     // Check if user account is active
     if (user.active === false) {
       console.log(`User account is disabled: ${email}`);
       res.status(403);
       throw new Error('Your account has been disabled. Please contact administrator');
     }
-    
+
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       console.log(`Invalid password for user: ${email}`);
-      
+
       // SECURITY: Record failed login attempt with exponential backoff
       const attemptResult = recordFailedAttempt(clientIp, email);
       logger.warn('AUTH', 'Failed regular user login attempt recorded', {
@@ -479,46 +479,46 @@ const loginUser = asyncHandler(async (req, res) => {
         attemptsLeft: attemptResult.attemptsLeft,
         willBeLocked: attemptResult.isLocked
       });
-      
+
       res.status(401);
       throw new Error('Invalid credentials');
     }
-    
+
     // Update user's last login timestamp
     user.lastLogin = Date.now();
     user.saveCredentials = req.body.saveCredentials || false;
     await user.save();
-    
+
     // Create a token that includes both user ID and school ID
     const token = generateToken(user._id, user.schoolId);
-    
+
     // Get school feature permissions from the dedicated SchoolPermissions collection
     let schoolFeatures = null;
     if (user.schoolId) {
       const SchoolPermissions = mongoose.model('SchoolPermissions');
-      
+
       // Try to find permissions for this school
       let permissions = await SchoolPermissions.findOne({ schoolId: user.schoolId });
-      
+
       // If no permissions record exists yet, check legacy location and create one
       if (!permissions) {
         logger.info('AUTH', 'No dedicated permissions found, creating default permissions', {
           schoolId: user.schoolId,
         });
-        
+
         // Create default permissions using SchoolPermissions model (no legacy fallback)
         permissions = await SchoolPermissions.createDefaultPermissions(user.schoolId);
-        
+
         logger.info('AUTH', 'Created new school permissions from legacy data', {
           schoolId: user.schoolId,
           features: Object.keys(permissions.features)
         });
       }
-      
+
       // Use the features from permissions record
       if (permissions && permissions.features) {
         schoolFeatures = permissions.features;
-        
+
         logger.info('AUTH', 'School features loaded from permissions collection', {
           schoolId: user.schoolId,
           features: Object.keys(permissions.features),
@@ -526,7 +526,7 @@ const loginUser = asyncHandler(async (req, res) => {
         });
       }
     }
-    
+
     logger.info('AUTH', 'Regular user login successful', {
       userId: user._id,
       role: user.role,
@@ -570,7 +570,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     res.json(responseData);
-    
+
   } catch (error) {
     console.error(`Login error: ${error.message}`);
     res.status(401);
@@ -590,32 +590,32 @@ const refreshAttempts = new Map();
 const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken: tokenFromRequest } = req.body;
   const clientIP = req.ip || req.connection.remoteAddress;
-  
+
   if (!tokenFromRequest) {
     res.status(400);
     throw new Error('Refresh token is required');
   }
-  
+
   // Rate limiting check
   const now = Date.now();
   const userKey = `${clientIP}:${tokenFromRequest.slice(-10)}`; // Use last 10 chars as identifier
   const attempts = refreshAttempts.get(userKey) || { count: 0, resetTime: now + 15 * 60 * 1000 };
-  
+
   if (now > attempts.resetTime) {
     // Reset attempts after 15 minutes
     attempts.count = 0;
     attempts.resetTime = now + 15 * 60 * 1000;
   }
-  
+
   if (attempts.count >= 10) {
     console.warn(`[SECURITY] Refresh token rate limit exceeded for IP: ${clientIP}`);
     res.status(429);
     throw new Error('Too many refresh attempts. Please try again later.');
   }
-  
+
   attempts.count += 1;
   refreshAttempts.set(userKey, attempts);
-  
+
   try {
     // Check if token is blacklisted (revoked)
     if (revokedRefreshTokens.has(tokenFromRequest)) {
@@ -623,44 +623,44 @@ const refreshToken = asyncHandler(async (req, res) => {
       res.status(401);
       throw new Error('Refresh token has been revoked');
     }
-    
+
     // Verify the refresh token
     const decoded = jwt.verify(tokenFromRequest, process.env.JWT_SECRET);
-    
+
     // Check if it's actually a refresh token
     if (!decoded.type || decoded.type !== 'refresh') {
       res.status(401);
       throw new Error('Invalid refresh token');
     }
-    
+
     // Find the user
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (!user) {
       res.status(401);
       throw new Error('User not found');
     }
-    
+
     // SECURITY: Token Rotation - Generate both new access AND refresh tokens
     const newAccessToken = generateToken(user._id, decoded.schoolId);
     const newRefreshToken = generateRefreshToken(user._id, decoded.schoolId);
-    
+
     // SECURITY: Blacklist the old refresh token (prevents replay attacks)
     revokedRefreshTokens.add(tokenFromRequest);
-    
+
     console.log(`[SECURITY] Token rotation successful for user ${user.name} (${user._id})`);
     console.log(`[SECURITY] Old refresh token blacklisted, new tokens generated`);
-    
+
     // Reset rate limiting on successful refresh
     refreshAttempts.delete(userKey);
-    
+
     // Return new tokens (BOTH access and refresh)
     res.json({
       token: newAccessToken,        // Frontend expects 'token' field
       refreshToken: newRefreshToken, // New refresh token for next rotation
       message: 'Tokens refreshed successfully'
     });
-    
+
   } catch (error) {
     console.error(`[SECURITY] Refresh token validation failed for IP ${clientIP}:`, error.message);
     res.status(401);
@@ -674,19 +674,19 @@ const refreshToken = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
   const clientIP = req.ip || req.connection.remoteAddress;
-  
+
   console.log(`[SECURITY] Logout request from user ${req.user.name} (${req.user._id}) from IP: ${clientIP}`);
-  
+
   // If refresh token is provided, add it to blacklist
   if (refreshToken) {
     revokedRefreshTokens.add(refreshToken);
     console.log(`[SECURITY] Refresh token revoked during logout for user ${req.user.name}`);
-    
+
     // Clear any rate limiting attempts for this token
     const userKey = `${clientIP}:${refreshToken.slice(-10)}`;
     refreshAttempts.delete(userKey);
   }
-  
+
   res.json({
     message: 'Logged out successfully',
     revokedToken: !!refreshToken
@@ -698,7 +698,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
   console.log(`[USER PROFILE] Loading profile for user ID: ${req.user.id}`);
-  
+
   // Find user and populate all reference fields
   const user = await User.findById(req.user.id)
     .select('-password')
@@ -713,21 +713,21 @@ const getMe = asyncHandler(async (req, res) => {
   if (user) {
     // Convert to plain object to add pack fields if needed
     const userResponse = user.toObject();
-    
+
     // Add pack information for admin users
     if (user.role === 'admin') {
       userResponse.packType = user.packType || 'lite';
       userResponse.monthlyPrice = user.monthlyPrice || 0;
       console.log(`[USER PROFILE] Admin pack info: packType=${userResponse.packType}, monthlyPrice=${userResponse.monthlyPrice}`);
     }
-    
+
     // Ensure schoolName is set since frontend expects it
     if (userResponse.schoolId && userResponse.schoolId.name) {
       userResponse.schoolName = userResponse.schoolId.name;
     } else if (userResponse.school && userResponse.school.name) {
       userResponse.schoolName = userResponse.school.name;
     }
-    
+
     res.status(200).json(userResponse);
   } else {
     res.status(404);
@@ -746,12 +746,20 @@ const updateProfile = asyncHandler(async (req, res) => {
     // user.email = req.body.email || user.email; // Email updates disabled for security to match frontend policy
     user.darkMode = req.body.darkMode !== undefined ? req.body.darkMode : user.darkMode;
     user.saveCredentials = req.body.saveCredentials !== undefined ? req.body.saveCredentials : user.saveCredentials;
-    
+
+    // Handle contact/profile fields
+    if (req.body.phone !== undefined) user.mobilePhone = req.body.phone;
+    if (req.body.mobilePhone !== undefined) user.mobilePhone = req.body.mobilePhone;
+    if (req.body.contactEmail !== undefined) user.personalEmail = req.body.contactEmail;
+    if (req.body.personalEmail !== undefined) user.personalEmail = req.body.personalEmail;
+    if (req.body.dateOfBirth !== undefined) user.dateOfBirth = req.body.dateOfBirth;
+    if (req.body.department !== undefined) user.department = req.body.department;
+
     // Handle avatar update if provided
     if (req.body.avatar) {
       user.avatar = req.body.avatar;
     }
-    
+
     if (req.body.password) {
       user.password = req.body.password;
     }
@@ -759,6 +767,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     const updatedUser = await user.save();
 
     const responseData = {
+      success: true,
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
@@ -766,6 +775,11 @@ const updateProfile = asyncHandler(async (req, res) => {
       darkMode: updatedUser.darkMode,
       saveCredentials: updatedUser.saveCredentials,
       avatar: updatedUser.avatar,
+      mobilePhone: updatedUser.mobilePhone || '',
+      personalEmail: updatedUser.personalEmail || '',
+      dateOfBirth: updatedUser.dateOfBirth || '',
+      department: updatedUser.department || '',
+      schoolId: updatedUser.schoolId,
       token: generateToken(updatedUser._id, updatedUser.schoolId),
     };
 
@@ -787,14 +801,14 @@ const updateProfile = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
   console.log('getUsers endpoint called');
-  
+
   try {
     let users = [];
-    
+
     // Check if this is a request from a school-specific user
     if (req.school) {
       console.log(`Fetching users from school with ID: ${req.school._id}`);
-      
+
       // In single-database architecture, we filter users by schoolId
       // Get all users for this school
       const rawUsers = await User.find({ schoolId: req.school._id })
@@ -805,9 +819,9 @@ const getUsers = asyncHandler(async (req, res) => {
         .populate('schools', 'name')
         .populate('directions', 'name direction subject schoolBranch')
         .lean();
-      
+
       console.log(`Found ${rawUsers.length} raw users in school database`);
-      
+
       // Use the raw users directly since we're already using the main User model
       users = rawUsers;
     } else {
@@ -822,51 +836,51 @@ const getUsers = asyncHandler(async (req, res) => {
         .populate('directions', 'name direction subject schoolBranch')
         .lean();
     }
-    
+
     // Process users to ensure consistent data structure
     const processedUsers = users.map(user => {
       // Convert to plain object or use as is
       const userData = user.toObject ? user.toObject() : user;
-      
+
       // CRITICAL: Ensure all contact fields are present and have at least empty string values
       if (!userData.contact) {
         userData.contact = {};
       }
-      
+
       // Make sure contact fields are never undefined
       const contactFields = [
         'mobilePhone', 'homePhone', 'address', 'city',
         'state', 'zipCode', 'emergencyContact', 'emergencyPhone'
       ];
-      
+
       contactFields.forEach(field => {
         if (!userData.contact[field]) {
           userData.contact[field] = '';
         }
       });
-      
+
       // Ensure school array for teachers even if empty
       if (userData.role === 'teacher' && !userData.schools) {
         userData.schools = [];
       }
-      
+
       // Ensure directions array for teachers even if empty
       if (userData.role === 'teacher' && !userData.directions) {
         userData.directions = [];
       }
-      
+
       // Ensure subjects array for teachers and students even if empty
       if ((userData.role === 'teacher' || userData.role === 'student') && !userData.subjects) {
         userData.subjects = [];
       }
-      
+
       // Ensure proper structured school object for students
       if (userData.role === 'student') {
         if (!userData.school && userData.schoolId) {
           userData.school = { _id: userData.schoolId, name: 'Unknown School' };
         }
       }
-      
+
       // Add secretary permissions if not present
       if (userData.role === 'secretary' && !userData.secretaryPermissions) {
         userData.secretaryPermissions = {
@@ -876,10 +890,10 @@ const getUsers = asyncHandler(async (req, res) => {
           canManageSubjects: false,
         };
       }
-      
+
       return userData;
     });
-    
+
     console.log(`Retrieved ${processedUsers.length} users`);
     res.status(200).json(processedUsers);
   } catch (error) {
@@ -897,14 +911,14 @@ const getUsers = asyncHandler(async (req, res) => {
 const getUsersByRole = asyncHandler(async (req, res) => {
   const { role } = req.params;
   const validRoles = ['admin', 'teacher', 'student', 'secretary', 'parent'];
-  
+
   console.log(`getUsersByRole endpoint called for role: ${role} by user ${req.user.name} (${req.user.role})`);
-  
+
   if (!validRoles.includes(role)) {
     res.status(400);
     throw new Error(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
   }
-  
+
   try {
     // Check if requesting user is admin, teacher, or secretary
     const canAccess = ['admin', 'teacher', 'secretary', 'superadmin'].includes(req.user.role);
@@ -912,31 +926,31 @@ const getUsersByRole = asyncHandler(async (req, res) => {
       res.status(403);
       throw new Error('Not authorized to access user list by role');
     }
-    
+
     // Apply schoolId filtering for multi-tenancy (except for superadmin)
     const filter = { role };
     if (req.user.role !== 'superadmin' && req.user.schoolId) {
       filter.schoolId = req.user.schoolId;
     }
-    
+
     // CLASS-BASED FILTERING FOR TEACHERS
     // If teacher is looking for students, only show students from their classes
     let users = [];
-    
+
     if (req.user.role === 'teacher' && role === 'student') {
       // Get the teacher's classes first
       console.log(`Teacher ${req.user.name} (${req.user._id}) fetching their students`);
-      
+
       // Find classes where this teacher is assigned — scoped to their school
       const teacherClasses = await Class.find({
         schoolId: req.user.schoolId,
         teachers: req.user._id
       }).lean();
-      
+
       if (teacherClasses && teacherClasses.length > 0) {
-        console.log(`Teacher has ${teacherClasses.length} assigned classes:`, 
+        console.log(`Teacher has ${teacherClasses.length} assigned classes:`,
           teacherClasses.map(c => c.name || c._id));
-        
+
         // Get all student IDs from these classes
         const studentIds = [];
         for (const cls of teacherClasses) {
@@ -944,27 +958,27 @@ const getUsersByRole = asyncHandler(async (req, res) => {
             studentIds.push(...cls.students);
           }
         }
-        
+
         // Remove duplicates from studentIds
         const uniqueStudentIds = [...new Set(studentIds)];
         console.log(`Found ${uniqueStudentIds.length} unique students in teacher's classes`);
-        
+
         // Add student IDs to filter
         if (uniqueStudentIds.length > 0) {
           filter._id = { $in: uniqueStudentIds };
         } else {
           // If teacher has no students, return empty array instead of all students
           console.log(`Teacher has no students in their classes, returning empty array`);
-          return res.json([]); 
+          return res.json([]);
         }
       } else {
         console.log(`Teacher has no assigned classes, returning empty array`);
         return res.json([]);
       }
     }
-    
+
     console.log(`Fetching ${role}s with filter:`, filter);
-    
+
     users = await User.find(filter)
       .select('-password')
       .populate('school', 'name')
@@ -973,7 +987,7 @@ const getUsersByRole = asyncHandler(async (req, res) => {
       .populate('schools', 'name')
       .populate('directions', 'name direction subject schoolBranch')
       .lean();
-    
+
     console.log(`Found ${users.length} ${role}s`);
     return res.json(users); // Added return to ensure response completes
   } catch (error) {
@@ -990,7 +1004,7 @@ const getUsersByRole = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getUserById = asyncHandler(async (req, res) => {
   console.log(`getUserById endpoint called for ID: ${req.params.id}`);
-  
+
   try {
     // Check if id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -998,18 +1012,18 @@ const getUserById = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('Invalid user ID format');
     }
-    
+
     // Find the user with multi-tenancy filtering for regular admins
     // Superadmins can access any user
     const query = { _id: req.params.id };
-    
+
     // If not superadmin, restrict to users in the same school
     if (req.user.role !== 'superadmin') {
       query.schoolId = req.user.schoolId;
     }
-    
+
     console.log(`Searching for user with query:`, query);
-    
+
     // Find user with populated fields
     const user = await User.findOne(query)
       .select('-password')
@@ -1018,13 +1032,13 @@ const getUserById = asyncHandler(async (req, res) => {
       .populate('schools', 'name domain')
       .populate('directions', 'name direction subject schoolBranch')
       .populate('subjects', 'name');
-    
+
     if (!user) {
       console.error(`User not found with ID: ${req.params.id}`);
       res.status(404);
       throw new Error('User not found');
     }
-    
+
     console.log(`Found user: ${user.name} (${user.email})`);
     res.status(200).json(user);
   } catch (error) {
@@ -1042,17 +1056,17 @@ const getUserById = asyncHandler(async (req, res) => {
 const updateUser = asyncHandler(async (req, res) => {
   console.log(`updateUser endpoint called for user ID: ${req.params.id}`);
   console.log('Update data:', req.body);
-  
+
   try {
     // Find the user by ID
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       console.error(`User with ID ${req.params.id} not found`);
       res.status(404);
       throw new Error('User not found');
     }
-    
+
     // Update user fields if provided in the request
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
@@ -1060,12 +1074,12 @@ const updateUser = asyncHandler(async (req, res) => {
     if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
     if (req.body.mobilePhone !== undefined) user.mobilePhone = req.body.mobilePhone;
     if (req.body.personalEmail !== undefined) user.personalEmail = req.body.personalEmail;
-    
+
     // Handle array fields specially - replacing the entire array if provided
     if (req.body.schools) {
       console.log('Updating schools:', req.body.schools);
       user.schools = req.body.schools;
-      
+
       // CRITICAL FIX: Don't set school singular field for teachers/secretaries
       // This prevents schema validation errors with arrays vs single values
       if (user.role === 'student' && req.body.school) {
@@ -1076,12 +1090,12 @@ const updateUser = asyncHandler(async (req, res) => {
       // Handle singular school field - only for students
       user.school = req.body.school;
     }
-    
+
     if (req.body.directions) {
       console.log('Updating directions:', req.body.directions);
       // Set the array field
       user.directions = req.body.directions;
-      
+
       // CRITICAL FIX: Don't set direction singular field for teachers/secretaries
       // This prevents the casting error when trying to assign an array to a single ObjectId
       if (user.role === 'student' && req.body.direction) {
@@ -1092,30 +1106,30 @@ const updateUser = asyncHandler(async (req, res) => {
       // Handle singular direction field - only for students
       user.direction = req.body.direction;
     }
-    
+
     // Update subjects if provided
     if (req.body.subjects) {
       console.log('Updating subjects:', req.body.subjects);
       user.subjects = req.body.subjects;
     }
-    
+
     // CRITICAL FIX: Handle teacher-specific permission fields
     if (user.role === 'teacher') {
       console.log('Processing teacher permissions:');
-      
+
       // Handle canSendNotifications permission
       if (req.body.canSendNotifications !== undefined) {
         console.log(`Setting canSendNotifications to: ${req.body.canSendNotifications}`);
         user.canSendNotifications = req.body.canSendNotifications;
       }
-      
+
       // Handle canAddGradeDescriptions permission
       if (req.body.canAddGradeDescriptions !== undefined) {
         console.log(`Setting canAddGradeDescriptions to: ${req.body.canAddGradeDescriptions}`);
         user.canAddGradeDescriptions = req.body.canAddGradeDescriptions;
       }
     }
-    
+
     // Handle secretary permissions if present
     if (user.role === 'secretary' && req.body.secretaryPermissions) {
       console.log('Updating secretary permissions:', req.body.secretaryPermissions);
@@ -1124,17 +1138,17 @@ const updateUser = asyncHandler(async (req, res) => {
         ...req.body.secretaryPermissions // Apply updates
       };
     }
-    
+
     // Only update password if provided and not empty
     if (req.body.password && req.body.password.trim() !== '') {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.password, salt);
     }
-    
+
     // Save the updated user
     const updatedUser = await user.save();
     console.log('User successfully updated with ID:', updatedUser._id);
-    
+
     // Return the updated user without password
     res.status(200).json({
       _id: updatedUser._id,
@@ -1165,16 +1179,16 @@ const updateUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getTeachers = asyncHandler(async (req, res) => {
   console.log('getTeachers endpoint called for admin');
-  
+
   try {
     const teachers = await User.find({
       schoolId: req.user.schoolId,
       role: 'teacher',
       isActive: { $ne: false }
     })
-    .select('_id name email')
-    .lean();
-    
+      .select('_id name email')
+      .lean();
+
     console.log(`Found ${teachers.length} teachers for school ${req.user.schoolId}`);
     res.json(teachers);
   } catch (error) {
@@ -1189,7 +1203,7 @@ const getTeachers = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const deleteUser = asyncHandler(async (req, res) => {
   console.log(`deleteUser endpoint called for ID: ${req.params.id} by user ${req.user.name} (${req.user.role})`);
-  
+
   try {
     // Check if id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -1197,43 +1211,43 @@ const deleteUser = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('Invalid user ID format');
     }
-    
+
     // Prevent users from deleting themselves
     if (req.params.id === req.user.id.toString()) {
       console.error(`User ${req.user.name} attempted to delete themselves`);
       res.status(400);
       throw new Error('Cannot delete your own account');
     }
-    
+
     // Find the user with multi-tenancy filtering for regular admins
     // Superadmins can delete any user
     const query = { _id: req.params.id };
-    
+
     // If not superadmin, restrict to users in the same school
     if (req.user.role !== 'superadmin') {
       query.schoolId = req.user.schoolId;
     }
-    
+
     console.log(`Searching for user to delete with query:`, query);
-    
+
     // Find the user first to check if it exists
     const userToDelete = await User.findOne(query);
-    
+
     if (!userToDelete) {
       console.error(`User not found with ID: ${req.params.id}`);
       res.status(404);
       throw new Error('User not found');
     }
-    
+
     // Prevent deletion of superadmin users by non-superadmins
     if (userToDelete.role === 'superadmin' && req.user.role !== 'superadmin') {
       console.error(`Non-superadmin ${req.user.name} attempted to delete superadmin user`);
       res.status(403);
       throw new Error('Cannot delete superadmin users');
     }
-    
+
     console.log(`Deleting user: ${userToDelete.name} (${userToDelete.email}) - Role: ${userToDelete.role}`);
-    
+
     // CRITICAL FIX: Clean up push subscriptions before deleting user
     try {
       const Subscription = require('../models/subscriptionModel');
@@ -1243,12 +1257,12 @@ const deleteUser = asyncHandler(async (req, res) => {
       console.warn(`PUSH_CLEANUP: Failed to clean up subscriptions for user ${userToDelete.name}:`, subscriptionError.message);
       // Don't fail user deletion if subscription cleanup fails
     }
-    
+
     // Delete the user
     await User.findByIdAndDelete(req.params.id);
-    
+
     console.log(`Successfully deleted user: ${userToDelete.name}`);
-    
+
     res.json({
       message: `User ${userToDelete.name} deleted successfully`,
       deletedUser: {
@@ -1280,12 +1294,12 @@ const generateToken = (id, schoolId = null) => {
 // Generate refresh token (longer-lived)
 const generateRefreshToken = (id, schoolId = null) => {
   const payload = { id, type: 'refresh' };
-  
+
   // Include schoolId in the token payload if provided
   if (schoolId) {
     payload.schoolId = schoolId;
   }
-  
+
   // Use the same secret for refresh token
   // We only need the 'type' field to differentiate between token types
   return jwt.sign(payload, process.env.JWT_SECRET, {
@@ -1298,66 +1312,66 @@ const generateRefreshToken = (id, schoolId = null) => {
 // @access  Private
 const changePassword = asyncHandler(async (req, res) => {
   console.log(`changePassword endpoint called for user ${req.user.name} (${req.user._id})`);
-  
+
   const { currentPassword, newPassword } = req.body;
-  
+
   // Validate required fields
   if (!currentPassword || !newPassword) {
     res.status(400);
     throw new Error('Current password and new password are required');
   }
-  
+
   // Validate new password length
   if (newPassword.length < 6) {
     res.status(400);
     throw new Error('New password must be at least 6 characters long');
   }
-  
+
   try {
     // Get the current user
     const user = await User.findById(req.user._id);
-    
+
     if (!user) {
       res.status(404);
       throw new Error('User not found');
     }
-    
+
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-    
+
     if (!isCurrentPasswordValid) {
       console.log(`Invalid current password for user: ${user.email}`);
       res.status(400);
       throw new Error('Current password is incorrect');
     }
-    
+
     // Check if new password is different from current
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
-    
+
     if (isSamePassword) {
       res.status(400);
       throw new Error('New password must be different from current password');
     }
-    
+
     // Hash the new password
     const salt = await bcrypt.genSalt(10);
     const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-    
+
     // Update user password and clear first-login flags
     user.password = hashedNewPassword;
     user.requirePasswordChange = false;
     user.isFirstLogin = false;
-    
+
     await user.save();
-    
+
     console.log(`Password changed successfully for user: ${user.email}`);
-    
+
     res.json({
       message: 'Password changed successfully',
       requirePasswordChange: false,
       isFirstLogin: false
     });
-    
+
   } catch (error) {
     console.error(`Error changing password for user ${req.user._id}:`, error.message);
     res.status(error.statusCode || 500);
@@ -1370,7 +1384,7 @@ const changePassword = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const createParentAccount = asyncHandler(async (req, res) => {
   console.log('createParentAccount endpoint called');
-  
+
   const {
     studentIds, // Now accepts array of student IDs
     parentName,
@@ -1380,7 +1394,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
     parentPersonalEmail,
     emailCredentials
   } = req.body;
-  
+
   // Validate required fields — studentIds is now optional (can create standalone parent)
   if (!parentName || !parentEmail || !parentPassword) {
     res.status(400);
@@ -1388,7 +1402,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
   }
 
   const safeStudentIds = Array.isArray(studentIds) ? studentIds : [];
-  
+
   try {
     // Verify all students exist and belong to admin's school (only if provided)
     let students = [];
@@ -1398,26 +1412,26 @@ const createParentAccount = asyncHandler(async (req, res) => {
         role: 'student',
         schoolId: req.user.schoolId
       });
-      
+
       if (students.length !== safeStudentIds.length) {
         res.status(404);
         throw new Error('One or more students not found or not in your school');
       }
     }
-    
+
     // Check if parent email already exists in this school
     const emailExists = await User.findOne({
       email: parentEmail,
       schoolId: req.user.schoolId
     });
-    
+
     if (emailExists) {
       // If parent already exists, link to additional students
       if (emailExists.role !== 'parent') {
         res.status(400);
         throw new Error('Email already exists for a non-parent account');
       }
-      
+
       // If no students provided just return the existing parent
       if (safeStudentIds.length === 0) {
         return res.status(200).json({
@@ -1434,23 +1448,23 @@ const createParentAccount = asyncHandler(async (req, res) => {
 
       // Add new students to existing parent's linkedStudentIds
       const newStudentIds = safeStudentIds.filter(id => !emailExists.linkedStudentIds.map(s => s.toString()).includes(id.toString()));
-      
+
       if (newStudentIds.length === 0) {
         res.status(400);
         throw new Error('Parent is already linked to all specified students');
       }
-      
+
       emailExists.linkedStudentIds.push(...newStudentIds);
       await emailExists.save();
-      
+
       // Update students' parentIds arrays
       await User.updateMany(
         { _id: { $in: newStudentIds } },
         { $addToSet: { parentIds: emailExists._id } }
       );
-      
+
       console.log(`Linked existing parent ${emailExists.name} to ${newStudentIds.length} additional students`);
-      
+
       return res.status(200).json({
         _id: emailExists._id,
         name: emailExists.name,
@@ -1463,11 +1477,11 @@ const createParentAccount = asyncHandler(async (req, res) => {
         message: 'Parent linked to additional students'
       });
     }
-    
+
     // Hash password for new parent
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(parentPassword, salt);
-    
+
     // Create new parent account
     const parentData = {
       name: parentName,
@@ -1482,9 +1496,9 @@ const createParentAccount = asyncHandler(async (req, res) => {
       requirePasswordChange: true, // Force password change on first login
       isFirstLogin: true
     };
-    
+
     const parent = await User.create(parentData);
-    
+
     // Update all students' parentIds arrays (only if students were provided)
     if (safeStudentIds.length > 0) {
       await User.updateMany(
@@ -1492,9 +1506,9 @@ const createParentAccount = asyncHandler(async (req, res) => {
         { $addToSet: { parentIds: parent._id } }
       );
     }
-    
+
     console.log(`Parent account created: ${parent.name} (${parent.email}) linked to ${students.length} students`);
-    
+
     // Send credentials email if requested
     if (emailCredentials && parentEmail) {
       try {
@@ -1512,7 +1526,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
         // Don't fail the entire operation if email fails
       }
     }
-    
+
     // Return parent account info (without password)
     res.status(201).json({
       _id: parent._id,
@@ -1525,7 +1539,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
       personalEmail: parent.personalEmail,
       createdAt: parent.createdAt
     });
-    
+
   } catch (error) {
     console.error('Error creating parent account:', error.message);
     res.status(error.statusCode || 500);
@@ -1538,7 +1552,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getParentsByStudent = asyncHandler(async (req, res) => {
   console.log(`getParentsByStudent called for student ID: ${req.params.studentId}`);
-  
+
   try {
     // Verify student exists and belongs to admin's school
     const student = await User.findOne({
@@ -1546,30 +1560,30 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
       role: 'student',
       schoolId: req.user.schoolId
     });
-    
+
     if (!student) {
       res.status(404);
       throw new Error('Student not found or not in your school');
     }
-    
+
     console.log(`[GET_PARENTS_BY_STUDENT] Student ${student.name} has parentIds:`, student.parentIds);
-    
+
     // Find all parent accounts linked to this student using the student's parentIds array
     const parents = await User.find({
       _id: { $in: student.parentIds || [] },
       role: 'parent',
       schoolId: req.user.schoolId
     }).select('-password');
-    
+
     console.log(`[GET_PARENTS_BY_STUDENT] Found ${parents.length} parents for student ${student.name}`);
-    
+
     // Disable caching to ensure fresh parent data
     res.set({
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
     });
-    
+
     res.json({
       hasParents: parents.length > 0,
       parentCount: parents.length,
@@ -1586,7 +1600,7 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
         createdAt: parent.createdAt
       }))
     });
-    
+
   } catch (error) {
     console.error('Error getting parents by student:', error.message);
     res.status(error.statusCode || 500);
@@ -1599,14 +1613,14 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
 // @access  Private/Parent
 const getStudentsDataForParent = asyncHandler(async (req, res) => {
   console.log(`getStudentsDataForParent called for parent: ${req.user.email}`);
-  
+
   try {
     // Verify user is a parent
     if (req.user.role !== 'parent') {
       res.status(403);
       throw new Error('Access denied. Parent role required.');
     }
-    
+
     // Debug parent user data
     console.log('Parent user data:', {
       id: req.user._id,
@@ -1616,38 +1630,38 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
       linkedStudentIdsCount: req.user.linkedStudentIds?.length || 0,
       linkedStudentIds: req.user.linkedStudentIds
     });
-    
+
     // Get all parent's linked students
     const students = await User.find({
       _id: { $in: req.user.linkedStudentIds },
       role: 'student'
     }).select('-password');
-    
+
     console.log('Found linked students:', {
       studentsCount: students.length,
       studentIds: students.map(s => s._id),
       studentNames: students.map(s => s.name)
     });
-    
+
     if (students.length === 0) {
       res.status(404);
       throw new Error('No linked students found');
     }
-    
+
     const Grade = require('../models/gradeModel');
     const Notification = require('../models/notificationModel');
-    
+
     // Get data for each student
     const studentsData = await Promise.all(students.map(async (student) => {
       // Get recent grades for this student
       const recentGrades = await Grade.find({
         student: student._id
       })
-      .populate('subject', 'name')
-      .populate('teacher', 'name')
-      .sort({ createdAt: -1 })
-      .limit(5); // Limit per student to avoid too much data
-      
+        .populate('subject', 'name')
+        .populate('teacher', 'name')
+        .sort({ createdAt: -1 })
+        .limit(5); // Limit per student to avoid too much data
+
       // Get recent notifications for this student
       const recentNotifications = await Notification.find({
         $or: [
@@ -1655,10 +1669,10 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
           { recipientRole: 'student' }
         ]
       })
-      .populate('senderId', 'name')
-      .sort({ createdAt: -1 })
-      .limit(5); // Limit per student
-      
+        .populate('senderId', 'name')
+        .sort({ createdAt: -1 })
+        .limit(5); // Limit per student
+
       return {
         student: {
           _id: student._id,
@@ -1687,29 +1701,29 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
         }))
       };
     }));
-    
+
     // Also get combined recent activity across all students
     const allStudentIds = students.map(s => s._id);
-    
+
     const allRecentGrades = await Grade.find({
       student: { $in: allStudentIds }
     })
-    .populate('student', 'name')
-    .populate('subject', 'name')
-    .populate('teacher', 'name')
-    .sort({ createdAt: -1 })
-    .limit(10);
-    
+      .populate('student', 'name')
+      .populate('subject', 'name')
+      .populate('teacher', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
     const allRecentNotifications = await Notification.find({
       $or: [
         { recipientIds: { $in: allStudentIds } },
         { recipientRole: 'student' }
       ]
     })
-    .populate('senderId', 'name')
-    .sort({ createdAt: -1 })
-    .limit(10);
-    
+      .populate('senderId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
     res.json({
       studentsCount: students.length,
       studentsData,
@@ -1731,7 +1745,7 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
         createdAt: notification.createdAt
       }))
     });
-    
+
   } catch (error) {
     console.error('Error getting students data for parent:', error.message);
     res.status(error.statusCode || 500);
@@ -1744,7 +1758,7 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getStudentsByParent = asyncHandler(async (req, res) => {
   console.log(`getStudentsByParent called for parent ID: ${req.params.parentId}`);
-  
+
   try {
     // Verify parent exists and belongs to admin's school
     const parent = await User.findOne({
@@ -1752,18 +1766,18 @@ const getStudentsByParent = asyncHandler(async (req, res) => {
       role: 'parent',
       schoolId: req.user.schoolId
     });
-    
+
     if (!parent) {
       res.status(404);
       throw new Error('Parent not found or not in your school');
     }
-    
+
     // Get all students linked to this parent
     const students = await User.find({
       _id: { $in: parent.linkedStudentIds },
       role: 'student'
     }).select('-password');
-    
+
     res.json({
       parentId: parent._id,
       parentName: parent.name,
@@ -1778,7 +1792,7 @@ const getStudentsByParent = asyncHandler(async (req, res) => {
         createdAt: student.createdAt
       }))
     });
-    
+
   } catch (error) {
     console.error('Error getting students by parent:', error.message);
     res.status(error.statusCode || 500);
@@ -1791,14 +1805,14 @@ const getStudentsByParent = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const unlinkParentFromStudents = asyncHandler(async (req, res) => {
   console.log(`unlinkParentFromStudents called for parent ID: ${req.params.parentId}`);
-  
+
   const { studentIds } = req.body; // Array of student IDs to unlink
-  
+
   if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
     res.status(400);
     throw new Error('Student IDs array is required');
   }
-  
+
   try {
     // Verify parent exists and belongs to admin's school
     const parent = await User.findOne({
@@ -1806,33 +1820,33 @@ const unlinkParentFromStudents = asyncHandler(async (req, res) => {
       role: 'parent',
       schoolId: req.user.schoolId
     });
-    
+
     if (!parent) {
       res.status(404);
       throw new Error('Parent not found or not in your school');
     }
-    
+
     // Remove students from parent's linkedStudentIds
     parent.linkedStudentIds = parent.linkedStudentIds.filter(
       id => !studentIds.includes(id.toString())
     );
     await parent.save();
-    
+
     // Remove parent from students' parentIds arrays
     await User.updateMany(
       { _id: { $in: studentIds } },
       { $pull: { parentIds: parent._id } }
     );
-    
+
     console.log(`Unlinked parent ${parent.name} from ${studentIds.length} students`);
-    
+
     res.json({
       message: 'Parent-student links removed successfully',
       parentId: parent._id,
       unlinkedStudentIds: studentIds,
       remainingLinkedStudents: parent.linkedStudentIds.length
     });
-    
+
   } catch (error) {
     console.error('Error unlinking parent from students:', error.message);
     res.status(error.statusCode || 500);
@@ -1922,13 +1936,13 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
     if (createParentAccount && role === 'student' && parentName && parentEmail) {
       try {
         console.log('CREATE_USER_BY_ADMIN', `Creating parent account for student ${user._id}`);
-        
+
         // Use the actual parent password from the request body
         const parentPassword = req.body.parentPassword || req.body.parentGeneratedPassword || 'TempPass123!';
         const hashedParentPassword = await bcrypt.hash(parentPassword, 10);
-        
+
         console.log('CREATE_USER_BY_ADMIN', `Using parent password from request body (length: ${parentPassword.length})`);
-        
+
         // Create parent account data
         const parentData = {
           name: parentName,
@@ -1940,16 +1954,16 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
           requirePasswordChange: true,
           isFirstLogin: true
         };
-        
+
         parentAccount = await User.create(parentData);
-        
+
         // Update student with parent link
         await User.findByIdAndUpdate(user._id, {
           $push: { parentIds: parentAccount._id }
         });
-        
+
         console.log('CREATE_USER_BY_ADMIN', `Parent account created with ID: ${parentAccount._id}`);
-        
+
         // Send parent credentials email if requested
         if (parentEmailCredentials) {
           try {
@@ -1966,7 +1980,7 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
             console.error('CREATE_USER_BY_ADMIN', `Failed to send parent credentials email:`, emailError.message);
           }
         }
-        
+
       } catch (parentError) {
         console.error('CREATE_USER_BY_ADMIN', `Failed to create parent account:`, parentError.message);
         // Don't fail the main user creation if parent creation fails
@@ -1986,7 +2000,7 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
         personalEmail: user.personalEmail
       }
     };
-    
+
     if (parentAccount) {
       response.parentAccount = {
         _id: parentAccount._id,
@@ -1998,7 +2012,7 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
 
     console.log('CREATE_USER_BY_ADMIN', `User creation completed successfully`);
     res.status(201).json(response);
-    
+
   } catch (error) {
     console.error('CREATE_USER_BY_ADMIN', `Error creating user:`, error.message);
     res.status(500);
@@ -2012,23 +2026,23 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
 const getSchoolOwnersWithUserCounts = asyncHandler(async (req, res) => {
   try {
     console.log(`[SUPERADMIN] SuperAdmin ${req.user._id} requesting school owners with user counts`);
-    
+
     // Get all admin users
     const adminUsers = await User.find({ role: 'admin' })
       .select('name email schoolId packType monthlyPrice active createdAt')
       .populate('schoolId', 'name');
-    
+
     // Get user counts for each admin's school
     const adminUsersWithCounts = await Promise.all(
       adminUsers.map(async (admin) => {
         let userCount = 0;
         if (admin.schoolId) {
-          userCount = await User.countDocuments({ 
+          userCount = await User.countDocuments({
             schoolId: admin.schoolId._id,
             role: { $in: ['teacher', 'student', 'parent', 'secretary'] }
           });
         }
-        
+
         return {
           _id: admin._id,
           name: admin.name,
@@ -2046,7 +2060,7 @@ const getSchoolOwnersWithUserCounts = asyncHandler(async (req, res) => {
 
     console.log(`[SUPERADMIN] Found ${adminUsersWithCounts.length} school owners`);
     res.json(adminUsersWithCounts);
-    
+
   } catch (error) {
     console.error('[SUPERADMIN] Error getting school owners:', error.message);
     res.status(500);
@@ -2061,42 +2075,42 @@ const updateAdminPack = asyncHandler(async (req, res) => {
   try {
     const { packType, monthlyPrice } = req.body;
     const adminId = req.params.id;
-    
+
     console.log(`[SUPERADMIN] SuperAdmin ${req.user._id} updating pack for admin ${adminId}:`, { packType, monthlyPrice });
-    
+
     // Validate inputs
     if (!['lite', 'pro'].includes(packType)) {
       res.status(400);
       throw new Error('Pack type must be either "lite" or "pro"');
     }
-    
+
     if (typeof monthlyPrice !== 'number' || monthlyPrice < 0) {
       res.status(400);
       throw new Error('Monthly price must be a non-negative number');
     }
-    
+
     // Find and update admin user
     const adminUser = await User.findById(adminId);
     if (!adminUser) {
       res.status(404);
       throw new Error('Admin user not found');
     }
-    
+
     if (adminUser.role !== 'admin') {
       res.status(400);
       throw new Error('User is not an admin');
     }
-    
+
     // Update pack information
     adminUser.packType = packType;
     adminUser.monthlyPrice = monthlyPrice;
     await adminUser.save();
-    
+
     // Populate school information for response
     await adminUser.populate('schoolId', 'name');
-    
+
     console.log(`[SUPERADMIN] Successfully updated pack for admin ${adminUser.name}: ${packType} - €${monthlyPrice}/month`);
-    
+
     const response = {
       _id: adminUser._id,
       name: adminUser.name,
@@ -2106,9 +2120,9 @@ const updateAdminPack = asyncHandler(async (req, res) => {
       monthlyPrice: adminUser.monthlyPrice,
       active: adminUser.active
     };
-    
+
     res.json(response);
-    
+
   } catch (error) {
     console.error('[SUPERADMIN] Error updating admin pack:', error.message);
     res.status(500);

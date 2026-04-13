@@ -391,7 +391,7 @@ const StudentDashboard = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -402,7 +402,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -416,7 +416,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
@@ -427,7 +427,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.classesToday', 'Classes Today')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -451,7 +451,7 @@ const StudentDashboard = () => {
           <GradesGraph recentGrades={dashboardData.grades.length > 0 ? dashboardData.grades : (reduxGrades || [])} />
         </Card>
         {/* Quick Actions */}
-        <Card className="transition-all duration-300 ease-in-out flex flex-col">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-primary" />
@@ -463,36 +463,40 @@ const StudentDashboard = () => {
               <Button
                 onClick={() => navigate('/app/student/grades')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
-                <BookOpen className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.viewMyGrades')}</span>
+                <BookOpen className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+                <span className="group-hover:text-primary">{t('student.viewMyGrades')}</span>
               </Button>
 
               <Button
                 onClick={() => navigate('/app/student/schedule')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
-                <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('student.mySchedule')}</span>
+                <Calendar className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+                <span className="group-hover:text-primary">{t('student.mySchedule')}</span>
               </Button>
 
               <Button
                 onClick={() => navigate('/app/student/notifications')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
-                <Bell className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.notifications')}</span>
+                <Bell className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+                <span className="group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
                 onClick={() => navigate('/app/student/attendance')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
-                <UserCheck className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-                <span className="transition-colors duration-300 group-hover:text-primary">{t('navigation.myAttendance')}</span>
+                <UserCheck className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+                <span className="group-hover:text-primary">{t('navigation.myAttendance')}</span>
               </Button>
             </div>
           </CardContent>
@@ -524,7 +528,7 @@ const StudentDashboard = () => {
               variant="outline" 
               size="sm" 
               onClick={() => navigate('/app/notifications')}
-              className="transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
+              className="transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
             >
               {t('navigation.viewAll')}
             </Button>
@@ -539,7 +543,7 @@ const StudentDashboard = () => {
                 {(dashboardData.notifications.length > 0 ? dashboardData.notifications : (reduxNotifications || [])).slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group transition-[transform,box-shadow]"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -556,12 +560,12 @@ const StudentDashboard = () => {
                       {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
+                      <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground truncate group-hover:text-foreground transition-colors">{notification.message}</p>
                     </div>
                     <Badge 
                       variant="secondary" 
-                      className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
+                      className="text-xs group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
                     >
                       {new Date(notification.createdAt).toLocaleDateString()}
                     </Badge>
@@ -573,7 +577,7 @@ const StudentDashboard = () => {
                 {reduxNotifications.slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group transition-[transform,box-shadow]"
                     onClick={() => navigate(`/app/notifications/${notification._id}`)}
                   >
                     <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
@@ -583,10 +587,10 @@ const StudentDashboard = () => {
                       {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
+                      <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground truncate group-hover:text-foreground transition-colors">{notification.message}</p>
                     </div>
-                    <Badge variant="secondary" className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30">
+                    <Badge variant="secondary" className="text-xs group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30">
                       {new Date(notification.createdAt).toLocaleDateString()}
                     </Badge>
                   </div>

@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { API_URL } from '../../config/appConfig';
-import { 
-  Calendar, 
-  Clock, 
-  Users, 
-  User, 
-  BookOpen, 
+import {
+  Calendar,
+  Clock,
+  Users,
+  User,
+  BookOpen,
   Building2,
   Filter
 } from 'lucide-react';
@@ -27,19 +27,7 @@ import { fetchSchedule, serializeCacheKey } from '../../features/schedule/schedu
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const ScheduleSkeleton = () => (
-  <div className="container mx-auto px-4 py-6 space-y-6">
-    <Card>
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3 mb-4">
-          <Skeleton className="h-12 w-12 rounded-lg" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-56" />
-            <Skeleton className="h-4 w-80" />
-          </div>
-        </div>
-      </CardHeader>
-    </Card>
-
+  <div className="space-y-6">
     {/* Grid skeleton — desktop */}
     <Card className="hidden lg:block">
       <CardContent className="p-4">
@@ -96,14 +84,14 @@ function processSchedule(apiResponse, daysOfWeek, dayMapping) {
   daysOfWeek.forEach(day => { processedSchedule[day] = []; });
 
   Object.keys(apiResponse.schedule).forEach(englishDay => {
-    const events       = apiResponse.schedule[englishDay];
+    const events = apiResponse.schedule[englishDay];
     const localisedDay = dayMapping[englishDay] || englishDay;
     if (Array.isArray(events) && events.length > 0) {
       processedSchedule[localisedDay] = events.map((event, index) => ({
         ...event,
-        _id:         event._id || event.classId || `event-${localisedDay}-${index}`,
+        _id: event._id || event.classId || `event-${localisedDay}-${index}`,
         originalDay: englishDay,
-        displayDay:  localisedDay,
+        displayDay: localisedDay,
       }));
     }
   });
@@ -114,13 +102,13 @@ function processSchedule(apiResponse, daysOfWeek, dayMapping) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const Schedule = () => {
-  const { t }    = useTranslation();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { user }              = useSelector(state => state.auth);
-  const scheduleRedux         = useSelector(state => state.schedule);
-  const authToken             = user?.token || localStorage.getItem('token');
+  const { user } = useSelector(state => state.auth);
+  const scheduleRedux = useSelector(state => state.schedule);
+  const authToken = user?.token || localStorage.getItem('token');
 
   // ── Filter state (admin / teacher only) ───────────────────────────────────
   const [filters, setFilters] = useState({ schoolBranch: 'all', teacher: 'all' });
@@ -139,13 +127,13 @@ const Schedule = () => {
     t('days.thursday'), t('days.friday'), t('days.saturday'), t('days.sunday')
   ];
   const dayMapping = {
-    'Monday':    t('days.monday'),
-    'Tuesday':   t('days.tuesday'),
+    'Monday': t('days.monday'),
+    'Tuesday': t('days.tuesday'),
     'Wednesday': t('days.wednesday'),
-    'Thursday':  t('days.thursday'),
-    'Friday':    t('days.friday'),
-    'Saturday':  t('days.saturday'),
-    'Sunday':    t('days.sunday')
+    'Thursday': t('days.thursday'),
+    'Friday': t('days.friday'),
+    'Saturday': t('days.saturday'),
+    'Sunday': t('days.sunday')
   };
   const timeSlots = [
     '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -157,16 +145,16 @@ const Schedule = () => {
   const queryParams = useMemo(() => {
     const params = {};
     if (filters.schoolBranch !== 'all') params.schoolBranch = filters.schoolBranch;
-    if (filters.teacher      !== 'all') params.teacherId    = filters.teacher;
+    if (filters.teacher !== 'all') params.teacherId = filters.teacher;
     return params;
   }, [filters.schoolBranch, filters.teacher]);
 
   const cacheKey = useMemo(() => serializeCacheKey(queryParams), [queryParams]);
 
   // ── Redux-derived loading / error / data for current filter combo ──────────
-  const isLoading    = !!scheduleRedux.loadingKeys[cacheKey];
+  const isLoading = !!scheduleRedux.loadingKeys[cacheKey];
   const errorMessage = scheduleRedux.errorKeys[cacheKey] || null;
-  const cachedEntry  = scheduleRedux.cache[cacheKey];
+  const cachedEntry = scheduleRedux.cache[cacheKey];
 
   // Process the raw API response into localised day keys
   const scheduleData = useMemo(
@@ -228,10 +216,10 @@ const Schedule = () => {
   const fetchBranchNames = async (branchIds) => {
     if (!branchIds?.length) return;
     try {
-      const config   = { headers: { Authorization: `Bearer ${authToken}` } };
+      const config = { headers: { Authorization: `Bearer ${authToken}` } };
       const response = await axios.post(`${API_URL}/api/branches/batch`, { branchIds }, config);
-      let branches   = Array.isArray(response.data) ? response.data : (response.data?.branches ?? []);
-      const map      = {};
+      let branches = Array.isArray(response.data) ? response.data : (response.data?.branches ?? []);
+      const map = {};
       branches.forEach(b => { if (b?._id && b?.name) map[b._id] = b.name; });
       setBranchNames(prev => ({ ...prev, ...map }));
     } catch {
@@ -345,7 +333,7 @@ const Schedule = () => {
 
   // ── Event renderers ───────────────────────────────────────────────────────
   const renderMobileEvent = (event, index) => {
-    const bg           = getSubjectColor(event.subject);
+    const bg = getSubjectColor(event.subject);
     const teacherCount = event.teacherNames?.length ?? 0;
     const studentCount = event.studentNames?.length ?? 0;
     const teacherLabel = teacherCount > 0
@@ -414,23 +402,10 @@ const Schedule = () => {
     );
   };
 
-  // ── Guard: show skeleton only when we have nothing to display yet ──────────
-  if (isLoading && !scheduleData) return <ScheduleSkeleton />;
-
-  if (errorMessage) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
-          ⚠️ {errorMessage}
-        </div>
-      </div>
-    );
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
+      {/* Header - Always immediately rendered */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3 mb-4">
@@ -442,7 +417,7 @@ const Schedule = () => {
               <p className="text-muted-foreground">
                 {user?.role === 'student' && t('schedule.header.student')}
                 {user?.role === 'teacher' && t('schedule.header.teacher')}
-                {user?.role === 'admin'   && t('schedule.header.admin')}
+                {user?.role === 'admin' && t('schedule.header.admin')}
               </p>
             </div>
           </div>
@@ -496,144 +471,154 @@ const Schedule = () => {
         </CardHeader>
       </Card>
 
-      {/* Desktop calendar grid */}
-      <Card className="hidden lg:block">
-        <CardContent className="p-4">
-          <div className="overflow-x-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-8 gap-0 min-w-[800px]">
-              {/* Corner header */}
-              <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border dark:border-white/10">
-                <div className="p-2 h-[50px] flex items-center justify-center text-sm font-semibold">
-                  {t('schedule.time')}
-                </div>
-              </div>
-              {/* Day headers */}
-              {daysOfWeek.map(day => (
-                <div key={`header-${day}`} className="border-b-2 border-primary border-r border-border dark:border-white/10 bg-primary text-primary-foreground">
-                  <div className="p-2 text-center h-[50px] flex items-center justify-center text-sm font-semibold">{day}</div>
-                </div>
-              ))}
-              {/* Time rows */}
-              {timeSlots.map(timeSlot => (
-                <Fragment key={timeSlot}>
-                  <div className="border-r border-border dark:border-white/10 border-b bg-muted/30 text-foreground sticky left-0 z-10">
-                    <div className="p-2 text-center text-xs font-medium min-h-[60px] flex items-center justify-center">
-                      {formatTime(timeSlot)}
+      {isLoading && !scheduleData ? (
+        <ScheduleSkeleton />
+      ) : errorMessage ? (
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
+          ⚠️ {errorMessage}
+        </div>
+      ) : (
+        <>
+          {/* Desktop calendar grid */}
+          <Card className="hidden lg:block">
+            <CardContent className="p-4">
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-8 gap-0 min-w-[800px]">
+                  {/* Corner header */}
+                  <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border dark:border-white/10">
+                    <div className="p-2 h-[50px] flex items-center justify-center text-sm font-semibold">
+                      {t('schedule.time')}
                     </div>
                   </div>
-                  {daysOfWeek.map(day => {
-                    const events = getEventsForTimeSlot(day, timeSlot);
-                    return (
-                      <div key={`${day}-${timeSlot}`} className="border-r border-border dark:border-white/10 border-b bg-background relative min-h-[60px]">
-                        {mergeConsecutiveClasses(events).map(ev => renderEvent(ev, false))}
-                      </div>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mobile list */}
-      <Card className="lg:hidden">
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            {daysOfWeek.map(day => {
-              const events = getAllEventsForDay(day);
-              if (!events.length) return null;
-              return (
-                <div key={day} className="space-y-3">
-                  <h3 className="text-lg font-semibold text-primary border-b border-border pb-2">{day}</h3>
-                  {events.map((ev, i) => renderMobileEvent(ev, i))}
-                </div>
-              );
-            })}
-            {daysOfWeek.every(day => !getAllEventsForDay(day).length) && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>{t('schedule.noLessonsThisWeek')}</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Event detail dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('schedule.lessonDetails')}</DialogTitle>
-          </DialogHeader>
-          {selectedEvent && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{t('schedule.lesson')}: {selectedEvent.subject}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{t('schedule.time')}: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span>{t('schedule.branch')}: {
-                      selectedEvent.schoolBranch
-                        ? branchNames[selectedEvent.schoolBranch] || selectedEvent.schoolBranchName || selectedEvent.schoolBranch
-                        : t('schedule.unknownBranch')
-                    }</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>{t('schedule.direction')}: {selectedEvent.direction}</span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-medium mb-2">
-                      <User className="h-4 w-4 inline mr-2" />
-                      {t('schedule.teachers')} ({selectedEvent.teacherCount || 0}):
-                    </h4>
-                    {selectedEvent.teacherNames?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {selectedEvent.teacherNames.map((teacher, i) => (
-                          <Badge key={i} variant="secondary">{teacher}</Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{t('schedule.noTeachersAssigned')}</p>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">
-                      <Users className="h-4 w-4 inline mr-2" />
-                      {t('schedule.students')} ({selectedEvent.studentCount || 0}):
-                    </h4>
-                    {selectedEvent.studentNames?.length > 0 ? (
-                      <div className="max-h-[200px] overflow-auto">
-                        <div className="flex flex-wrap gap-2">
-                          {selectedEvent.studentNames.slice(0, 10).map((s, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">{s}</Badge>
-                          ))}
+                  {/* Day headers */}
+                  {daysOfWeek.map(day => (
+                    <div key={`header-${day}`} className="border-b-2 border-primary border-r border-border dark:border-white/10 bg-primary text-primary-foreground">
+                      <div className="p-2 text-center h-[50px] flex items-center justify-center text-sm font-semibold">{day}</div>
+                    </div>
+                  ))}
+                  {/* Time rows */}
+                  {timeSlots.map(timeSlot => (
+                    <Fragment key={timeSlot}>
+                      <div className="border-r border-border dark:border-white/10 border-b bg-muted/30 text-foreground sticky left-0 z-10">
+                        <div className="p-2 text-center text-xs font-medium min-h-[60px] flex items-center justify-center">
+                          {formatTime(timeSlot)}
                         </div>
-                        {selectedEvent.studentNames.length > 10 && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {t('schedule.andMoreStudents', { count: selectedEvent.studentNames.length - 10 })}
-                          </p>
+                      </div>
+                      {daysOfWeek.map(day => {
+                        const events = getEventsForTimeSlot(day, timeSlot);
+                        return (
+                          <div key={`${day}-${timeSlot}`} className="border-r border-border dark:border-white/10 border-b bg-background relative min-h-[60px]">
+                            {mergeConsecutiveClasses(events).map(ev => renderEvent(ev, false))}
+                          </div>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mobile list */}
+          <Card className="lg:hidden">
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                {daysOfWeek.map(day => {
+                  const events = getAllEventsForDay(day);
+                  if (!events.length) return null;
+                  return (
+                    <div key={day} className="space-y-3">
+                      <h3 className="text-lg font-semibold text-primary border-b border-border pb-2">{day}</h3>
+                      {events.map((ev, i) => renderMobileEvent(ev, i))}
+                    </div>
+                  );
+                })}
+                {daysOfWeek.every(day => !getAllEventsForDay(day).length) && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>{t('schedule.noLessonsThisWeek')}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Event detail dialog */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{t('schedule.lessonDetails')}</DialogTitle>
+              </DialogHeader>
+              {selectedEvent && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{t('schedule.lesson')}: {selectedEvent.subject}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span>{t('schedule.time')}: {formatTime(selectedEvent.startTime)} - {formatTime(selectedEvent.endTime)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span>{t('schedule.branch')}: {
+                          selectedEvent.schoolBranch
+                            ? branchNames[selectedEvent.schoolBranch] || selectedEvent.schoolBranchName || selectedEvent.schoolBranch
+                            : t('schedule.unknownBranch')
+                        }</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>{t('schedule.direction')}: {selectedEvent.direction}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-medium mb-2">
+                          <User className="h-4 w-4 inline mr-2" />
+                          {t('schedule.teachers')} ({selectedEvent.teacherCount || 0}):
+                        </h4>
+                        {selectedEvent.teacherNames?.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedEvent.teacherNames.map((teacher, i) => (
+                              <Badge key={i} variant="secondary">{teacher}</Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">{t('schedule.noTeachersAssigned')}</p>
                         )}
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{t('schedule.noStudentsRegistered')}</p>
-                    )}
+                      <div>
+                        <h4 className="font-medium mb-2">
+                          <Users className="h-4 w-4 inline mr-2" />
+                          {t('schedule.students')} ({selectedEvent.studentCount || 0}):
+                        </h4>
+                        {selectedEvent.studentNames?.length > 0 ? (
+                          <div className="max-h-[200px] overflow-auto">
+                            <div className="flex flex-wrap gap-2">
+                              {selectedEvent.studentNames.slice(0, 10).map((s, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">{s}</Badge>
+                              ))}
+                            </div>
+                            {selectedEvent.studentNames.length > 10 && (
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {t('schedule.andMoreStudents', { count: selectedEvent.studentNames.length - 10 })}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">{t('schedule.noStudentsRegistered')}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 };

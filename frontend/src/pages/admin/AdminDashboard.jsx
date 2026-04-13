@@ -37,6 +37,52 @@ import MaintenanceNotifications from '../../components/MaintenanceNotifications'
 import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
+import { setDashboardDataCache } from '../../features/ui/uiSlice';
+
+// Static skeleton - no animations, matches AdminDashboard pattern exactly
+const AdminDashboardSkeleton = () => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i} className="flex flex-col h-32">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="h-4 w-24 bg-muted/40 rounded-md" />
+            <div className="h-4 w-4 bg-muted/30 rounded-sm" />
+          </CardHeader>
+          <CardContent className="flex flex-col flex-1 pt-0 mt-2">
+            <div className="h-8 w-16 mb-2 bg-muted/50 rounded-md" />
+            <div className="h-3 w-32 bg-muted/30 rounded-md" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    <Card>
+      <CardHeader>
+        <div className="h-6 w-32 bg-muted/40 rounded-md" />
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-24 w-full rounded-lg bg-muted/30" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card className="flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="h-6 w-40 bg-muted/40 rounded-md" />
+        <div className="h-8 w-20 bg-muted/30 rounded-md" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-16 w-full rounded-lg bg-muted/20" />
+        ))}
+      </CardContent>
+    </Card>
+  </div>
+);
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -45,13 +91,21 @@ const AdminDashboard = () => {
   const { isFeatureEnabled, loading: featuresLoading } = useFeatureToggles();
   const { t } = useTranslation();
   
-  const [loading, setLoading] = useState(true);
+  // Redux store data for instant display (cache)
+  const { dashboard: uiCache } = useSelector((state) => state.ui || { dashboard: {} });
+
+  const reduxStats = React.useMemo(() => {
+    if (uiCache?.adminStats) return uiCache.adminStats;
+    return null;
+  }, [uiCache]);
+  
+  const [loading, setLoading] = useState(!reduxStats);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     notifications: [],
     grades: [],
     classes: [],
-    stats: {
+    stats: reduxStats || {
       totalUsers: 0,
       totalStudents: 0,
       totalTeachers: 0,
@@ -82,7 +136,7 @@ const AdminDashboard = () => {
     }
     
     console.log('AdminDashboard: Admin user authenticated:', user.email);
-  }, [user, navigate]);
+  }, [user, navigate, t]);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -102,7 +156,9 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
+      if (!reduxStats) {
+        setLoading(true);
+      }
       setError(null);
       
       console.log('AdminDashboard: Fetching dashboard data...');
@@ -126,11 +182,13 @@ const AdminDashboard = () => {
       
       // Process results
       const newData = { ...dashboardData };
+      let updatedStats = null;
       results.forEach((result, index) => {
         const key = dataKeys[index];
         if (result.status === 'fulfilled') {
           if (key === 'stats') {
             newData.stats = result.value;
+            updatedStats = result.value;
           } else {
             newData[key] = result.value;
           }
@@ -151,6 +209,9 @@ const AdminDashboard = () => {
       });
       
       setDashboardData(newData);
+      if (updatedStats) {
+        dispatch(setDashboardDataCache({ adminStats: updatedStats }));
+      }
       console.log('AdminDashboard: Dashboard data loaded successfully');
       
     } catch (error) {
@@ -230,17 +291,6 @@ const AdminDashboard = () => {
   const handleStudentProgress = () => navigate('/app/admin/student-stats');
   const handleManageSchedule = () => navigate('/app/admin/schedule');
 
-  // Show loading state
-  if (featuresLoading || loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <Spinner className="text-primary" />
-        </div>
-      </div>
-    );
-  }
-
   // Show error state
   if (error) {
     return (
@@ -271,7 +321,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Welcome Section */}
+      {/* Welcome Section - Always rendered immediately from session */}
       <div className="space-y-2">
         <h1 className="text-3xl font-light tracking-wide">{t('admin.welcomeBackName', { name: user?.name })}</h1>
         <p className="text-muted-foreground">{t('admin.subtitle')}</p>
@@ -280,8 +330,12 @@ const AdminDashboard = () => {
       {/* Maintenance Notifications */}
       <MaintenanceNotifications />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+      {featuresLoading || (loading && !reduxStats) ? (
+        <AdminDashboardSkeleton />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -292,7 +346,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.students')}</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -303,7 +357,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.teachers')}</CardTitle>
             <UserCog className="h-4 w-4 text-muted-foreground" />
@@ -314,7 +368,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="simple-fade-in transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.classes')}</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
@@ -336,33 +390,39 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button onClick={handleManageUsers} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
-              <Users className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageUsers')}</span>
+            <Button onClick={handleManageUsers} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
+              <Users className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+              <span className="group-hover:text-primary">{t('admin.manageUsers')}</span>
             </Button>
             
-            <Button onClick={handleManageSchools} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
-              <Building className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.schoolBranches')}</span>
+            <Button onClick={handleManageSchools} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
+              <Building className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+              <span className="group-hover:text-primary">{t('admin.schoolBranches')}</span>
             </Button>
             
-            <Button onClick={handleManageGrades} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
-              <Book className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageGrades')}</span>
+            <Button onClick={handleManageGrades} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
+              <Book className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+              <span className="group-hover:text-primary">{t('admin.manageGrades')}</span>
             </Button>
             
-            <Button onClick={handleManageSubjects} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
-              <FileText className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageClasses')}</span>
+            <Button onClick={handleManageSubjects} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
+              <FileText className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+              <span className="group-hover:text-primary">{t('admin.manageClasses')}</span>
             </Button>
             
-            <Button onClick={handleStudentProgress} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
-              <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.studentProgress')}</span>
+            <Button onClick={handleStudentProgress} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
+              <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+              <span className="group-hover:text-primary">{t('admin.studentProgress')}</span>
             </Button>
-            <Button onClick={handleManageSchedule} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group">
-              <Calendar className="h-8 w-8 mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:text-primary" />
-              <span className="transition-colors duration-300 group-hover:text-primary">{t('admin.manageSchedule')}</span>
+            <Button onClick={handleManageSchedule} variant="ghost" className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
+              <Calendar className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+              <span className="group-hover:text-primary">{t('admin.manageSchedule')}</span>
             </Button>
           </div>
         </CardContent>
@@ -395,7 +455,7 @@ const AdminDashboard = () => {
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
                   <div
                     key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group"
+                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group transition-[transform,box-shadow]"
                     style={{
                       borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
                                   notification.type === 'success' ? 'hsl(var(--success))' :
@@ -412,8 +472,8 @@ const AdminDashboard = () => {
                       {notification.type === 'error' && <XCircle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate transition-colors duration-300 group-hover:text-primary">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground truncate transition-colors duration-300 group-hover:text-foreground">{notification.message}</p>
+                      <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground truncate group-hover:text-foreground transition-colors">{notification.message}</p>
                     </div>
                     <Badge 
                       variant="secondary" 
@@ -446,6 +506,8 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+      </>
       )}
     </div>
   );
