@@ -87,9 +87,9 @@ const CreateNotification = () => {
     }
   }, [user]);
 
-  // Load students when filters change
+  // Load users when filters change (only schoolBranch is strictly required now)
   useEffect(() => {
-    if (selectedFilters.schoolBranch && selectedFilters.direction && selectedFilters.subject && user?.token) {
+    if (selectedFilters.schoolBranch && user?.token) {
       loadFilteredUsers();
     } else {
       setRecipientsData({ students: [], teachers: [], parents: [] });
@@ -124,7 +124,7 @@ const CreateNotification = () => {
   };
 
   const loadFilteredUsers = async () => {
-    if (!selectedFilters.schoolBranch || !selectedFilters.direction || !selectedFilters.subject) return;
+    if (!selectedFilters.schoolBranch) return;
     
     try {
       setRecipientsLoading(true);
@@ -136,13 +136,21 @@ const CreateNotification = () => {
         }
       };
       
-      // Build query parameters for filtered users
-      const params = new URLSearchParams({
+      // Build query parameters for filtered users with optional filters
+      const queryParams = {
         schoolBranch: selectedFilters.schoolBranch,
-        direction: selectedFilters.direction,
-        subject: selectedFilters.subject,
         userRole: 'all' // Get all user types
-      });
+      };
+      
+      if (selectedFilters.direction) {
+        queryParams.direction = selectedFilters.direction;
+      }
+      
+      if (selectedFilters.subject) {
+        queryParams.subject = selectedFilters.subject;
+      }
+      
+      const params = new URLSearchParams(queryParams);
       
       const endpoint = `${API_URL}/api/students/notification/filtered?${params}`;
       const response = await fetch(endpoint, config);

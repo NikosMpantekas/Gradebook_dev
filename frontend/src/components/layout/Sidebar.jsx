@@ -294,6 +294,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       return location.pathname.startsWith('/app/student/ratings') || location.pathname.startsWith('/app/ratings');
     }
 
+    // General notification highlighting for all roles (Admin, Teacher, Student)
+    if (path.includes('notifications')) {
+      return location.pathname.includes('notifications');
+    }
+
     return location.pathname.startsWith(path);
   };
 

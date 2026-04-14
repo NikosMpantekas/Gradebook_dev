@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
+import {
   ArrowLeft,
   Delete,
   Bell,
   User,
+  Users,
   Calendar,
   AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
-import { 
-  getNotification, 
+import {
+  getNotification,
   markNotificationAsRead,
   deleteNotification,
   reset,
@@ -29,7 +30,7 @@ const NotificationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
   const { user } = useSelector((state) => state.auth);
   const { notification, isLoading, isError, isSuccess, message } = useSelector(
     (state) => state.notifications
@@ -39,7 +40,7 @@ const NotificationDetail = () => {
     if (id) {
       dispatch(getNotification(id));
     }
-    
+
     return () => {
       dispatch(reset());
     };
@@ -65,7 +66,7 @@ const NotificationDetail = () => {
       toast.error(message || 'Failed to load notification');
       goBack();
     }
-    
+
     // If notification is not read, mark it as read
     if (notification && !notification.isRead) {
       dispatch(markNotificationAsRead(id))
@@ -105,7 +106,7 @@ const NotificationDetail = () => {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Spinner className="text-primary mb-2" />
-            <p className="text-muted-foreground text-sm animate-pulse">Loading notification...</p>
+            <p className="text-muted-foreground text-sm">Loading notification...</p>
           </div>
         </div>
       </div>
@@ -149,11 +150,11 @@ const NotificationDetail = () => {
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <Button 
-            onClick={handleDelete} 
-            variant="destructive" 
+          <Button
+            onClick={handleDelete}
+            variant="destructive"
             size="sm"
             className="flex items-center gap-2"
           >
@@ -166,8 +167,8 @@ const NotificationDetail = () => {
       {/* Notification Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
               <Avatar className="h-12 w-12">
                 <AvatarFallback className="text-lg">
                   <Bell className="h-6 w-6" />
@@ -175,7 +176,7 @@ const NotificationDetail = () => {
               </Avatar>
               <div>
                 <CardTitle className="text-xl">{notification.title}</CardTitle>
-                <div className="flex items-center space-x-2 mt-2">
+                <div className="flex items-center space-x-2 mt-1">
                   {notification.urgent && (
                     <Badge variant="destructive">Important</Badge>
                   )}
@@ -187,69 +188,58 @@ const NotificationDetail = () => {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
-          {/* Message */}
-          <div>
-            <h3 className="font-semibold mb-2">Message</h3>
-            <p className="text-muted-foreground whitespace-pre-wrap">
+          {/* Message - primary content, large and prominent */}
+          <div className="space-y-2">
+            <p className="text-base leading-relaxed whitespace-pre-wrap">
               {notification.message}
             </p>
           </div>
 
           <Separator />
 
-          {/* Sender Information */}
-          <div className="flex items-center space-x-3">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">From:</span>
-            <span className="font-medium">
-              {notification.senderName || notification.sender?.name || 'Unknown Sender'}
-            </span>
-          </div>
-
-          {/* Date */}
-          <div className="flex items-center space-x-3">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Sent:</span>
-            <span className="font-medium">
-              {formatDate(notification.createdAt)}
-            </span>
-          </div>
-
-          {/* Additional Details */}
-          {notification.targetRole && (
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-muted-foreground">Target Role:</span>
-              <Badge variant="outline">{notification.targetRole}</Badge>
+          {/* Compact metadata row */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
+              <span>From:</span>
+              <span className="font-medium text-foreground">
+                {notification.senderName || notification.sender?.name || 'Unknown Sender'}
+              </span>
             </div>
-          )}
 
-          {notification.classes && notification.classes.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Target Classes</h4>
-              <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>Sent:</span>
+              <span className="font-medium text-foreground">{formatDate(notification.createdAt)}</span>
+            </div>
+
+            {notification.recipients && notification.recipients.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                <span>
+                  {notification.recipients.length} {notification.recipients.length === 1 ? 'Recipient' : 'Recipients'}
+                </span>
+              </div>
+            )}
+
+            {notification.targetRole && notification.targetRole !== 'all' && (
+              <Badge variant="outline" className="capitalize text-xs px-2 py-0.5">
+                {notification.targetRole}
+              </Badge>
+            )}
+
+            {notification.classes && notification.classes.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {notification.classes.map((cls, index) => (
-                  <Badge key={index} variant="outline">
+                  <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
                     {cls.name || `Class ${index + 1}`}
                   </Badge>
                 ))}
               </div>
-            </div>
-          )}
-
-          {notification.recipients && notification.recipients.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Recipients</h4>
-              <div className="flex flex-wrap gap-2">
-                {notification.recipients.map((recipient, index) => (
-                  <Badge key={index} variant="outline">
-                    {recipient.name || recipient.email || `Recipient ${index + 1}`}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

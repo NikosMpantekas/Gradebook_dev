@@ -293,7 +293,22 @@ const createNotification = asyncHandler(async (req, res) => {
 
     console.log('NOTIFICATION_CREATE', `Found ${uniqueRecipients.length} unique recipients`);
 
-    // Update notification with final recipient list - convert to new structure
+    // Intelligently set targetRole if it was 'all' but recipients are role-specific
+    let finalTargetRole = targetRole || 'all';
+    
+    // Check if we have validated recipients objects to check roles from
+    if (finalTargetRole === 'all' && uniqueRecipients.length > 0) {
+      // Re-fetch roles if necessary or use what we have
+      const recipientUsers = await User.find({ _id: { $in: uniqueRecipients } }).select('role');
+      const recipientRoles = [...new Set(recipientUsers.map(u => u.role))];
+      
+      if (recipientRoles.length === 1) {
+        finalTargetRole = recipientRoles[0];
+        console.log(`[TARGET_INFERENCE] Inferred targetRole '${finalTargetRole}' from ${uniqueRecipients.length} recipients`);
+      }
+    }
+
+    // Update notification with final recipient list and inferred role
     const recipientObjects = uniqueRecipients.map(recipientId => ({
       user: recipientId,
       isRead: false,
@@ -303,6 +318,7 @@ const createNotification = asyncHandler(async (req, res) => {
     }));
     
     newNotification.recipients = recipientObjects;
+    newNotification.targetRole = finalTargetRole;
     newNotification.deliveryStats.totalRecipients = recipientObjects.length;
     newNotification.deliveryStats.read = 0;
     newNotification.deliveryStats.seen = 0;
