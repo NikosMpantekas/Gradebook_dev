@@ -555,6 +555,9 @@ const loginUser = asyncHandler(async (req, res) => {
       schoolName: school ? school.name : null, // Add schoolName to login payload
       secretaryPermissions: user.secretaryPermissions,
       adminPermissions: user.adminPermissions,
+      // Teacher permission fields
+      canSendNotifications: user.canSendNotifications,
+      canAddGradeDescriptions: user.canAddGradeDescriptions,
       // Profile fields
       mobilePhone: user.mobilePhone || '',
       personalEmail: user.personalEmail || '',

@@ -73,7 +73,7 @@ const AttendanceManagement = () => {
     setError(null);
     try {
       logAction('Fetching classes');
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const response = await axios.get(`${API_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -111,7 +111,7 @@ const AttendanceManagement = () => {
     setError(null);
     try {
       logAction('Fetching sessions', { classId: selectedClass, date: selectedDate });
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const response = await axios.get(`${API_URL}/api/attendance/sessions`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { classId: selectedClass, date: selectedDate }
@@ -135,7 +135,7 @@ const AttendanceManagement = () => {
     setLoading(true);
     try {
       logAction('Fetching attendance reports');
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const response = await axios.get(`${API_URL}/api/reports/attendance`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -155,7 +155,7 @@ const AttendanceManagement = () => {
   const createSession = async (sessionData) => {
     try {
       logAction('Creating session', sessionData);
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const response = await axios.post(`${API_URL}/api/sessions/classes/${selectedClass}/sessions/generate`, sessionData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -172,8 +172,8 @@ const AttendanceManagement = () => {
   const exportAttendanceReport = async () => {
     try {
       logAction('Exporting attendance report', { classId: selectedClass, date: selectedDate });
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/reports/attendance/export', {
+      const token = user?.token;
+      const response = await axios.get(`${API_URL}/api/reports/attendance/export`, {
         params: { classId: selectedClass, date: selectedDate },
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
