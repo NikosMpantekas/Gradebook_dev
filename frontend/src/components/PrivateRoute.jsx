@@ -77,6 +77,12 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
+  // If user must change their password, block access to all other routes
+  if ((user.requirePasswordChange || user.isFirstLogin) && location.pathname !== '/change-password') {
+    console.log('=== PRIVATE ROUTE: PASSWORD CHANGE REQUIRED - blocking access to', location.pathname);
+    return <Navigate to="/change-password" replace />;
+  }
+
   console.log('=== PRIVATE ROUTE: USER AUTHENTICATED, RENDERING CONTENT ===');
   console.log('User role:', user.role);
   console.log('Current path:', location.pathname);
