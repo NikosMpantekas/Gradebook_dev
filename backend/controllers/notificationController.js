@@ -9,13 +9,13 @@ const { pushService } = require('./pushController');
 // @route   POST /api/notifications
 // @access  Private/Teacher Admin
 const createNotification = asyncHandler(async (req, res) => {
-  const { 
-    title, 
-    message, 
-    recipients, 
+  const {
+    title,
+    message,
+    recipients,
     classes,
     schoolBranches,
-    targetRole, 
+    targetRole,
     urgent,
     expiresAt,
     sendToAll,
@@ -40,10 +40,10 @@ const createNotification = asyncHandler(async (req, res) => {
     throw new Error('Please provide both title and message');
   }
 
-  if (!sendToAll && (!recipients || recipients.length === 0) && 
-      (!classes || classes.length === 0) && 
-      (!schoolBranches || schoolBranches.length === 0) && 
-      !targetRole) {
+  if (!sendToAll && (!recipients || recipients.length === 0) &&
+    (!classes || classes.length === 0) &&
+    (!schoolBranches || schoolBranches.length === 0) &&
+    !targetRole) {
     console.log('NOTIFICATION_CREATE', 'Validation failed: No recipients specified');
     res.status(400);
     throw new Error('Please specify at least one recipient, class, school branch, or target role');
@@ -51,7 +51,7 @@ const createNotification = asyncHandler(async (req, res) => {
 
   try {
     console.log('NOTIFICATION_CREATE', '🔧 CODE FIX ACTIVE - Recipients will be processed after creation');
-    
+
     // Create notification with new class-based structure - recipients will be populated after processing
     const notificationData = {
       title,
@@ -69,7 +69,7 @@ const createNotification = asyncHandler(async (req, res) => {
       sendToAll: sendToAll || false,
       status: 'sent'
     };
-    
+
     console.log('NOTIFICATION_CREATE', '✅ Recipients initialized as empty array for proper processing');
 
     console.log('NOTIFICATION_CREATE', 'Creating notification with data:', {
@@ -84,7 +84,7 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // CRITICAL SECURITY: Validate sender permissions before determining recipients
     console.log(`[SECURITY] Validating sender permissions for ${req.user.role} creating notification with targetRole: ${targetRole}`);
-    
+
     // SECURITY CHECK: Validate sender can target the specified role
     if (targetRole && targetRole !== 'all') {
       if (req.user.role === 'teacher' && targetRole === 'admin') {
@@ -101,7 +101,7 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // Find all potential recipients with STRICT role-based filtering
     let potentialRecipients = [];
-    
+
     if (sendToAll) {
       console.log(`[SECURITY] Processing sendToAll notification with role restrictions`);
       // SECURITY: Only admins can send to all users - teachers limited to students only
@@ -116,13 +116,13 @@ const createNotification = asyncHandler(async (req, res) => {
         res.status(403);
         throw new Error('Unauthorized to send notifications to all users');
       }
-      
+
       const userQuery = { role: { $in: allowedRoles } };
       // SECURITY: If not superadmin, restrict to their own school
       if (req.user.role !== 'superadmin') {
         userQuery.schoolId = req.user.schoolId;
       }
-      
+
       const allUsers = await User.find(userQuery).select('_id role');
       potentialRecipients = allUsers.map(user => user._id);
       console.log(`[SECURITY] SendToAll filtered to ${potentialRecipients.length} users with roles: ${allowedRoles.join(', ')}`);
@@ -130,7 +130,7 @@ const createNotification = asyncHandler(async (req, res) => {
       // Get direct recipients if specified with STRICT role validation
       if (recipients && recipients.length > 0) {
         console.log(`[SECURITY] Validating ${recipients.length} direct recipients for sender role: ${req.user.role}`);
-        
+
         // Extract recipient IDs from frontend format {type, id} or plain ObjectId
         const recipientIds = recipients.map(recipient => {
           if (typeof recipient === 'object' && recipient.id) {
@@ -138,9 +138,9 @@ const createNotification = asyncHandler(async (req, res) => {
           }
           return recipient; // Plain ObjectId format
         });
-        
+
         console.log(`[SECURITY] Extracted ${recipientIds.length} recipient IDs:`, recipientIds);
-        
+
         // SECURITY: Validate each recipient against sender permissions
         const userQuery = { _id: { $in: recipientIds } };
         // SECURITY: If not superadmin, restrict to their own school
@@ -149,7 +149,7 @@ const createNotification = asyncHandler(async (req, res) => {
         }
 
         const recipientUsers = await User.find(userQuery).select('_id role name');
-        
+
         const validatedRecipients = [];
         for (const recipient of recipientUsers) {
           // STRICT SECURITY CHECK: Teachers can ONLY send to students
@@ -164,11 +164,11 @@ const createNotification = asyncHandler(async (req, res) => {
             res.status(403);
             throw new Error('Students cannot send notifications');
           }
-          
+
           validatedRecipients.push(recipient._id);
           console.log(`[SECURITY] Recipient ${recipient._id} (${recipient.role}) validated for sender ${req.user.role}`);
         }
-        
+
         potentialRecipients = [...potentialRecipients, ...validatedRecipients];
         console.log(`[SECURITY] Added ${validatedRecipients.length} validated direct recipients`);
       }
@@ -177,18 +177,18 @@ const createNotification = asyncHandler(async (req, res) => {
       if (classes && classes.length > 0) {
         console.log(`[SECURITY] Finding recipients from ${classes.length} classes for sender role: ${req.user.role}`);
         const Class = mongoose.model('Class');
-        const classData = await Class.find({ 
+        const classData = await Class.find({
           _id: { $in: classes },
           schoolId: req.user.schoolId
         }).populate('students teachers');
-        
+
         classData.forEach(cls => {
           // SECURITY: Always include students if they exist (unless specifically excluded)
           if (cls.students && (targetRole === 'student' || targetRole === 'all' || !targetRole)) {
             potentialRecipients = [...potentialRecipients, ...cls.students.map(s => s._id)];
             console.log(`[SECURITY] Added ${cls.students.length} students from class ${cls.name || cls._id}`);
           }
-          
+
           // SECURITY: Teachers can only be included if sender is admin or targeting teachers/all
           if (cls.teachers && cls.teachers.length > 0) {
             if (req.user.role === 'admin' && (targetRole === 'teacher' || targetRole === 'all')) {
@@ -208,7 +208,7 @@ const createNotification = asyncHandler(async (req, res) => {
       // Get recipients based on school branches with STRICT role validation
       if (schoolBranches && schoolBranches.length > 0) {
         console.log(`[SECURITY] Finding recipients from ${schoolBranches.length} school branches for sender role: ${req.user.role}`);
-        
+
         // SECURITY: Determine allowed roles based on sender permissions
         let allowedRoles = [];
         if (req.user.role === 'admin' || req.user.role === 'superadmin') {
@@ -230,7 +230,7 @@ const createNotification = asyncHandler(async (req, res) => {
           res.status(403);
           throw new Error('Unauthorized to send notifications via school branches');
         }
-        
+
         const userQuery = {
           schoolBranch: { $in: schoolBranches },
           role: { $in: allowedRoles }
@@ -241,7 +241,7 @@ const createNotification = asyncHandler(async (req, res) => {
         }
 
         const usersInBranches = await User.find(userQuery).select('_id role');
-        
+
         potentialRecipients = [...potentialRecipients, ...usersInBranches.map(u => u._id)];
         console.log(`[SECURITY] Added ${usersInBranches.length} users from school branches with roles: ${allowedRoles.join(', ')}`);
       }
@@ -249,7 +249,7 @@ const createNotification = asyncHandler(async (req, res) => {
       // Get recipients based on target role only with STRICT validation
       if (targetRole && (!classes || classes.length === 0) && (!schoolBranches || schoolBranches.length === 0)) {
         console.log(`[SECURITY] Finding recipients with target role: ${targetRole} for sender: ${req.user.role}`);
-        
+
         // SECURITY: Validate sender can target this role
         if (req.user.role === 'teacher' && targetRole === 'admin') {
           console.error(`[SECURITY] Teacher ${req.user._id} attempted to target admin role - BLOCKED`);
@@ -261,7 +261,7 @@ const createNotification = asyncHandler(async (req, res) => {
           res.status(403);
           throw new Error('Students cannot create notifications');
         }
-        
+
         let roleQuery;
         if (targetRole === 'all') {
           if (req.user.role === 'teacher') {
@@ -272,7 +272,7 @@ const createNotification = asyncHandler(async (req, res) => {
         } else {
           roleQuery = targetRole;
         }
-        
+
         const userQuery = { role: roleQuery };
         // SECURITY: If not superadmin, restrict to their own school
         if (req.user.role !== 'superadmin') {
@@ -280,7 +280,7 @@ const createNotification = asyncHandler(async (req, res) => {
         }
 
         const usersWithRole = await User.find(userQuery).select('_id role');
-        
+
         potentialRecipients = [...potentialRecipients, ...usersWithRole.map(u => u._id)];
         console.log(`[SECURITY] Added ${usersWithRole.length} users with target role: ${targetRole}`);
       }
@@ -295,13 +295,13 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // Intelligently set targetRole if it was 'all' but recipients are role-specific
     let finalTargetRole = targetRole || 'all';
-    
+
     // Check if we have validated recipients objects to check roles from
     if (finalTargetRole === 'all' && uniqueRecipients.length > 0) {
       // Re-fetch roles if necessary or use what we have
       const recipientUsers = await User.find({ _id: { $in: uniqueRecipients } }).select('role');
       const recipientRoles = [...new Set(recipientUsers.map(u => u.role))];
-      
+
       if (recipientRoles.length === 1) {
         finalTargetRole = recipientRoles[0];
         console.log(`[TARGET_INFERENCE] Inferred targetRole '${finalTargetRole}' from ${uniqueRecipients.length} recipients`);
@@ -316,7 +316,7 @@ const createNotification = asyncHandler(async (req, res) => {
       readAt: null,
       seenAt: null
     }));
-    
+
     newNotification.recipients = recipientObjects;
     newNotification.targetRole = finalTargetRole;
     newNotification.deliveryStats.totalRecipients = recipientObjects.length;
@@ -326,23 +326,23 @@ const createNotification = asyncHandler(async (req, res) => {
 
     // SECURITY FIX: Find web push subscriptions for ONLY intended recipients
     console.log('[PUSH_SECURITY] Filtering push subscriptions for intended recipients only');
-    
+
     // CRITICAL: ALWAYS send to validated recipients (tied to user ID)
     // Push service is always active - user preference controls receiving only
     console.log('[PUSH_SECURITY] Processing ALL validated recipients for push notifications');
-    
+
     // Get actual user objects for push notifications
     const validatedRecipients = await User.find({
       _id: { $in: uniqueRecipients }
     }).select('_id name email role');
-    
+
     const recipientUserIds = validatedRecipients.map(recipient => {
       console.log(`[PUSH_SECURITY] User ${recipient._id} (${recipient.name}): will receive push if subscribed`);
       return recipient._id;
     });
-    
+
     console.log('[PUSH_SECURITY] All recipient user IDs:', recipientUserIds.map(id => id.toString()));
-    
+
     // CRITICAL FIX: Find subscriptions for ALL validated recipients (always active service)
     const subscriptions = await PushSubscription.find({
       userId: { $in: recipientUserIds },
@@ -351,14 +351,14 @@ const createNotification = asyncHandler(async (req, res) => {
 
     console.log('[PUSH_SECURITY]', `Found ${subscriptions.length} push subscriptions for intended recipients only`);
     console.log('[PUSH_SECURITY] Subscription user IDs:', subscriptions.map(sub => sub.userId.toString()));
-    
+
     // EMERGENCY DEBUG: Get ALL push subscriptions to check for sharing
     const allSubscriptions = await PushSubscription.find({ isActive: true }).select('userId endpoint');
     console.log('[EMERGENCY_DEBUG] ALL ACTIVE PUSH SUBSCRIPTIONS:');
     allSubscriptions.forEach((sub, index) => {
       console.log(`[EMERGENCY_DEBUG] ${index + 1}. User: ${sub.userId} | Endpoint: ${sub.endpoint.substring(0, 50)}...`);
     });
-    
+
     // Check for endpoint sharing
     const endpointMap = new Map();
     allSubscriptions.forEach(sub => {
@@ -367,7 +367,7 @@ const createNotification = asyncHandler(async (req, res) => {
       }
       endpointMap.get(sub.endpoint).push(sub.userId.toString());
     });
-    
+
     console.log('[EMERGENCY_DEBUG] ENDPOINT SHARING ANALYSIS:');
     for (const [endpoint, userIds] of endpointMap) {
       if (userIds.length > 1) {
@@ -380,10 +380,10 @@ const createNotification = asyncHandler(async (req, res) => {
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
       const webpush = require('web-push');
-      
+
       const pushPromises = subscriptions.map(subscription => {
         console.log('[PUSH_SECURITY] Sending push to user:', subscription.userId.toString(), 'subscription:', subscription._id.toString());
-        
+
         // Apple-specific payload optimization
         const isAppleEndpoint = subscription.endpoint.includes('web.push.apple.com');
         const basePayload = {
@@ -400,7 +400,7 @@ const createNotification = asyncHandler(async (req, res) => {
             urgent: newNotification.urgent || false
           }
         };
-        
+
         // Apple push notifications need smaller payloads and specific formatting
         const payload = JSON.stringify(isAppleEndpoint ? {
           title: newNotification.title.substring(0, 50), // Limit title length for Apple
@@ -412,7 +412,7 @@ const createNotification = asyncHandler(async (req, res) => {
             url: '/app/notifications'
           }
         } : basePayload);
-        
+
         console.log('[PUSH_PAYLOAD] Payload for user:', subscription.userId.toString(), {
           isAppleEndpoint,
           payloadSize: payload.length,
@@ -441,7 +441,7 @@ const createNotification = asyncHandler(async (req, res) => {
         }).catch(error => {
           const isAppleEndpoint = subscription.endpoint.includes('web.push.apple.com');
           const isParentUser = subscription.userId.toString() === '6897ace5d6b1c27e343f78ae';
-          
+
           console.error('[PUSH_SECURITY] Push notification FAILED for user:', subscription.userId.toString(), {
             error: error.message,
             statusCode: error.statusCode,
@@ -452,7 +452,7 @@ const createNotification = asyncHandler(async (req, res) => {
             errorBody: error.body || 'No error body',
             headers: error.headers || 'No headers'
           });
-          
+
           // Apple-specific error handling
           if (isAppleEndpoint) {
             console.error('[APPLE_PUSH_DEBUG] Apple push failed:', {
@@ -477,7 +477,7 @@ const createNotification = asyncHandler(async (req, res) => {
               }
             });
           }
-          
+
           // Handle expired/invalid subscriptions - immediate cleanup
           if (error.statusCode === 410 || error.statusCode === 404) {
             console.log('[PUSH_CLEANUP] Removing expired/invalid subscription:', subscription._id.toString());
@@ -485,7 +485,7 @@ const createNotification = asyncHandler(async (req, res) => {
               console.error('[PUSH_CLEANUP] Failed to remove expired subscription:', cleanupError.message);
             });
           }
-          
+
           // Handle Apple-specific errors that might indicate subscription issues
           if (isAppleEndpoint && (error.statusCode >= 400 && error.statusCode < 500)) {
             console.log('[APPLE_PUSH_DEBUG] Apple client error - potential subscription issue:', {
@@ -527,13 +527,13 @@ const getAllNotifications = asyncHandler(async (req, res) => {
   try {
     const user = req.user;
     console.log('[NOTIFICATION] getAllNotifications endpoint called for user', user._id, `(${user.role})`);
-    
+
     // Get limit from query params, default to 10
     const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-    
+
     // Build query conditions array
     const conditions = [];
-    
+
     // 1. School-level filtering (unless superadmin)
     if (req.user.role !== 'superadmin') {
       conditions.push({
@@ -544,7 +544,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
         ]
       });
     }
-    
+
     // 2. Role-specific visibility filtering
     if (req.user.role === 'student') {
       // STUDENTS: Can ONLY see notifications where they are direct recipients
@@ -564,15 +564,15 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     else if (req.user.role === 'admin') {
       // ADMINS: Can see notifications they sent, direct recipients, AND teacher-to-student notifications for safety monitoring
       const User = mongoose.model('User');
-      const teacherIds = await User.find({ 
-        schoolId: req.user.schoolId, 
-        role: 'teacher' 
+      const teacherIds = await User.find({
+        schoolId: req.user.schoolId,
+        role: 'teacher'
       }).select('_id');
-      
+
       const teacherIdList = teacherIds.map(t => t._id);
-      const studentIds = await User.find({ 
-        schoolId: req.user.schoolId, 
-        role: 'student' 
+      const studentIds = await User.find({
+        schoolId: req.user.schoolId,
+        role: 'student'
       }).select('_id');
       const studentIdList = studentIds.map(s => s._id);
 
@@ -580,7 +580,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
         $or: [
           { sender: req.user._id }, // Notifications they created
           { 'recipients.user': req.user._id }, // Directly addressed to this admin
-          { 
+          {
             sender: { $in: teacherIdList }, // SAFETY: Teacher-to-student notifications for monitoring
             'recipients.user': { $in: studentIdList }
           }
@@ -605,9 +605,9 @@ const getAllNotifications = asyncHandler(async (req, res) => {
 
     // Final query: combine all conditions with $and
     const query = conditions.length > 0 ? { $and: conditions } : {};
-    
+
     console.log('Notification query:', JSON.stringify(query));
-    
+
     // Find notifications with appropriate filters
     const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
@@ -616,43 +616,43 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       .populate('recipients.user', 'name')
       .populate('schoolId', 'name')
       .populate('classes', 'name');
-    
+
     console.log(`Found ${notifications.length} notifications`);
-    
+
     // Compute isRead and isSeen for each notification for the current user
     const notificationsWithReadStatus = notifications.map(notification => {
       const notificationObj = notification.toObject();
-      
+
       // Check if current user has read/seen this notification in recipients array
       // Handle both ObjectId and populated user objects
       const recipient = notification.recipients?.find(r => {
         if (!r.user) return false;
-        
+
         // Handle populated user object (has _id property)
         if (r.user._id) {
           return r.user._id.toString() === user._id.toString();
         }
-        
+
         // Handle ObjectId
         return r.user.toString() === user._id.toString();
       });
-      
+
       // Debug logging for seen status extraction
       console.log(`NOTIFICATION_STATUS Processing notification ${notification._id}:`);
       console.log(`NOTIFICATION_STATUS - User ID: ${user._id.toString()}`);
       console.log(`NOTIFICATION_STATUS - Raw recipients:`, JSON.stringify(notification.recipients, null, 2));
-      
+
       // Try different approaches to find recipient
       const attempts = [];
-      
+
       notification.recipients?.forEach((r, index) => {
         if (r.user) {
           // Method 1: Direct ObjectId comparison
           const directMatch = r.user.toString() === user._id.toString();
-          
+
           // Method 2: _id property comparison
           const idMatch = r.user._id ? r.user._id.toString() === user._id.toString() : false;
-          
+
           attempts.push({
             index,
             userType: typeof r.user,
@@ -666,25 +666,51 @@ const getAllNotifications = asyncHandler(async (req, res) => {
           });
         }
       });
-      
+
       console.log(`NOTIFICATION_STATUS - Match attempts:`, attempts);
       console.log(`NOTIFICATION_STATUS - Found recipient:`, recipient ? {
         user: recipient.user._id ? recipient.user._id.toString() : recipient.user.toString(),
         isRead: recipient.isRead,
         isSeen: recipient.isSeen
       } : 'NO RECIPIENT FOUND');
-      
-      // Force read/seen status for superadmins to prevent unread clutter
+
+      // Compute read/seen status based on role:
+      // - Superadmins: always read (no inbox clutter)
+      // - Senders: always read (you wrote it)
+      // - Admins: only unread if the sender is a superadmin AND admin is a direct recipient
+      // - Everyone else: use their actual recipient read state
       const isSuperAdmin = req.user.role === 'superadmin';
-      notificationObj.isRead = isSuperAdmin ? true : (recipient ? recipient.isRead : false);
-      notificationObj.isSeen = isSuperAdmin ? true : (recipient ? recipient.isSeen : false);
-      
+      const isSender = notification.sender && (
+        notification.sender._id?.toString() === user._id.toString() ||
+        notification.sender.toString() === user._id.toString()
+      );
+      const isAdminRole = req.user.role === 'admin';
+      const isSuperAdminSender = notification.senderRole === 'superadmin';
+
+      if (isSuperAdmin || isSender) {
+        notificationObj.isRead = true;
+        notificationObj.isSeen = true;
+      } else if (isAdminRole) {
+        // Admins only get unread status for direct messages from superadmins
+        if (isSuperAdminSender && recipient) {
+          notificationObj.isRead = recipient.isRead;
+          notificationObj.isSeen = recipient.isSeen;
+        } else {
+          // Everything else (teacher monitoring, own sent) = always read for admin
+          notificationObj.isRead = true;
+          notificationObj.isSeen = true;
+        }
+      } else {
+        notificationObj.isRead = recipient ? recipient.isRead : false;
+        notificationObj.isSeen = recipient ? recipient.isSeen : false;
+      }
+
       // Additional logging to confirm extraction
       console.log(`NOTIFICATION_STATUS - Final status: isRead=${notificationObj.isRead}, isSeen=${notificationObj.isSeen}`);
-      
+
       return notificationObj;
     });
-    
+
     console.log(`Returning ${notificationsWithReadStatus.length} notifications with read status for user ${user._id}`);
     res.status(200).json(notificationsWithReadStatus);
   } catch (error) {
@@ -702,15 +728,15 @@ const getAllNotifications = asyncHandler(async (req, res) => {
 const getSentNotifications = asyncHandler(async (req, res) => {
   try {
     console.log('NOTIFICATION_SENT', `Getting sent notifications for user ${req.user._id} (${req.user.role}) in school ${req.user.schoolId}`);
-    
+
     // In single database architecture, use schoolId filtering
     const query = {
       sender: req.user._id,
       schoolId: req.user.schoolId
     };
-    
+
     console.log('NOTIFICATION_SENT', 'Query:', query);
-    
+
     // Find sent notifications with new recipient structure populate
     const sentNotifications = await Notification.find(query)
       .sort({ createdAt: -1 })
@@ -719,9 +745,9 @@ const getSentNotifications = asyncHandler(async (req, res) => {
       .populate('schoolBranches', 'name location')
       .populate('sender', 'name role')
       .lean(); // Use lean for better performance
-    
+
     console.log('NOTIFICATION_SENT', `Found ${sentNotifications.length} sent notifications`);
-    
+
     // Add computed fields for frontend compatibility
     const enrichedNotifications = sentNotifications.map(notification => ({
       ...notification,
@@ -730,7 +756,7 @@ const getSentNotifications = asyncHandler(async (req, res) => {
       readCount: notification.deliveryStats?.read || 0,
       seenCount: notification.deliveryStats?.seen || 0
     }));
-    
+
     res.status(200).json(enrichedNotifications);
   } catch (error) {
     console.error('NOTIFICATION_SENT', `Error fetching sent notifications: ${error.message}`, {
@@ -749,12 +775,12 @@ const getSentNotifications = asyncHandler(async (req, res) => {
 const markNotificationRead = asyncHandler(async (req, res) => {
   try {
     console.log('NOTIFICATION_READ', `Marking notification ${req.params.id} as read by user ${req.user._id} (${req.user.role})`);
-    
+
     // Find the notification - use findById instead of findOne with schoolId filter to allow superadmin/cross-school access
     const notification = await Notification.findById(req.params.id)
       .populate('classes', 'students teachers')
       .populate('schoolBranches', 'name');
-    
+
     if (!notification) {
       console.log('NOTIFICATION_READ', `Notification ${req.params.id} not found`);
       res.status(404);
@@ -764,7 +790,7 @@ const markNotificationRead = asyncHandler(async (req, res) => {
     // Role-based security check for superadmins/admins
     const isSuperAdmin = req.user.role === 'superadmin';
     const isLocalAdmin = req.user.role === 'admin' && notification.schoolId?.toString() === req.user.schoolId?.toString();
-    
+
     // Check if this school/user is allowed to see this notification
     if (!isSuperAdmin && notification.schoolId?.toString() !== req.user.schoolId?.toString()) {
       // If school mismatch, only allowed if direct recipient
@@ -775,42 +801,52 @@ const markNotificationRead = asyncHandler(async (req, res) => {
         throw new Error('Notification not found');
       }
     }
-    
+
     console.log('NOTIFICATION_READ', `Found notification: ${notification.title}`);
-    
+
     // Check if user is a recipient or authorized admin
     let isAuthorizedRecipient = false;
-    
+
     // Direct recipient check with new structure
     const recipientEntry = notification.recipients.find(r => r.user && r.user.toString() === req.user._id.toString());
     if (recipientEntry) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_READ', 'User is direct recipient');
     }
-    
+
     // Admin/superadmin can always mark as read if they can see it
     if (!isAuthorizedRecipient && (isLocalAdmin || isSuperAdmin)) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_READ', 'Admin/superadmin access granted');
     }
-    
+
     if (!isAuthorizedRecipient) {
       console.log('NOTIFICATION_READ', `User ${req.user._id} not authorized to mark notification ${req.params.id} as read`);
       res.status(403);
       throw new Error('Not authorized to mark this notification as read');
     }
-    
-    // Use the new markAsReadBy method
+
+    const isSender = notification.sender.toString() === req.user._id.toString();
+
+    // Senders are always considered to have read their own notification — no state update needed
+    if (isSender) {
+      console.log('NOTIFICATION_READ', `User ${req.user._id} is the sender — treating as already read`);
+      return res.status(200).json({ success: true, message: 'Already marked as read' });
+    }
+
+    // For actual recipients: mark as read if in recipients array
+    const inRecipients = notification.recipients.some(r => r.user && r.user.toString() === req.user._id.toString());
     const wasAlreadyRead = notification.isReadBy(req.user._id);
-    if (!wasAlreadyRead) {
+
+    if (inRecipients && !wasAlreadyRead) {
       await notification.markAsReadBy(req.user._id);
       console.log('NOTIFICATION_READ', `Notification ${req.params.id} marked as read by user ${req.user._id}`);
     } else {
-      console.log('NOTIFICATION_READ', `Notification ${req.params.id} already marked as read by user ${req.user._id}`);
+      console.log('NOTIFICATION_READ', `Notification ${req.params.id} already read or user not a direct recipient`);
     }
-    
-    res.status(200).json({ 
-      success: true, 
+
+    res.status(200).json({
+      success: true,
       message: wasAlreadyRead ? 'Already marked as read' : 'Marked as read'
     });
   } catch (error) {
@@ -830,12 +866,12 @@ const markNotificationRead = asyncHandler(async (req, res) => {
 const markNotificationSeen = asyncHandler(async (req, res) => {
   try {
     console.log('NOTIFICATION_SEEN', `Marking notification ${req.params.id} as seen by user ${req.user._id} (${req.user.role})`);
-    
+
     // Find the notification - use findById to allow superadmin/cross-school access
     const notification = await Notification.findById(req.params.id)
       .populate('classes', 'students teachers')
       .populate('schoolBranches', 'name');
-    
+
     if (!notification) {
       console.log('NOTIFICATION_SEEN', `Notification ${req.params.id} not found`);
       res.status(404);
@@ -845,7 +881,7 @@ const markNotificationSeen = asyncHandler(async (req, res) => {
     // Role-based security check for superadmins/admins
     const isSuperAdmin = req.user.role === 'superadmin';
     const isLocalAdmin = req.user.role === 'admin' && notification.schoolId?.toString() === req.user.schoolId?.toString();
-    
+
     // Check if this school/user is allowed to see this notification
     if (!isSuperAdmin && notification.schoolId?.toString() !== req.user.schoolId?.toString()) {
       // If school mismatch, only allowed if direct recipient
@@ -856,29 +892,29 @@ const markNotificationSeen = asyncHandler(async (req, res) => {
         throw new Error('Notification not found');
       }
     }
-    
+
     // Check if user is authorized recipient
     let isAuthorizedRecipient = false;
-    
+
     // Direct recipient check with new structure
     const recipientEntry = notification.recipients.find(r => r.user && r.user.toString() === req.user._id.toString());
     if (recipientEntry) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_SEEN', 'User is direct recipient');
     }
-    
+
     // Admin/superadmin can always mark as seen if they can see it
     if (!isAuthorizedRecipient && (isLocalAdmin || isSuperAdmin)) {
       isAuthorizedRecipient = true;
       console.log('NOTIFICATION_SEEN', 'Admin/superadmin access granted');
     }
-    
+
     if (!isAuthorizedRecipient) {
       console.log('NOTIFICATION_SEEN', `User ${req.user._id} not authorized to mark notification ${req.params.id} as seen`);
       res.status(403);
       throw new Error('Not authorized to mark this notification as seen');
     }
-    
+
     // Use the new markAsSeenBy method
     const wasAlreadySeen = notification.isSeenBy(req.user._id);
     if (!wasAlreadySeen) {
@@ -887,12 +923,12 @@ const markNotificationSeen = asyncHandler(async (req, res) => {
     } else {
       console.log('NOTIFICATION_SEEN', `Notification ${req.params.id} already marked as seen by user ${req.user._id}`);
     }
-    
-    res.status(200).json({ 
-      success: true, 
+
+    res.status(200).json({
+      success: true,
       message: wasAlreadySeen ? 'Already marked as seen' : 'Marked as seen'
     });
-    
+
   } catch (error) {
     console.error('NOTIFICATION_SEEN', `Error marking notification as seen: ${error.message}`, {
       notificationId: req.params.id,
@@ -911,15 +947,15 @@ const getNotificationById = asyncHandler(async (req, res) => {
   try {
     const notificationId = req.params.id;
     console.log(`[NOTIFICATION_DETAIL] Fetching notification by ID: ${notificationId} for user ${req.user._id}`);
-    
+
     // Find notification by ID first, then check authorization
     // This allows users to see notifications addressed to them even if their schoolId doesn't match (e.g. system-wide)
     const notification = await Notification.findById(notificationId)
-    .populate('sender', 'name')
-    .populate('recipients.user', 'name')
-    .populate('schoolId', 'name')
-    .populate('classes', 'name');
-    
+      .populate('sender', 'name')
+      .populate('recipients.user', 'name')
+      .populate('schoolId', 'name')
+      .populate('classes', 'name');
+
     if (!notification) {
       console.log(`[NOTIFICATION_DETAIL] Notification ${notificationId} not found in database`);
       return res.status(404).json({ message: 'Notification not found' });
@@ -946,7 +982,7 @@ const getNotificationById = asyncHandler(async (req, res) => {
         const recipientUserId = r.user?._id?.toString() || r.user?.toString();
         return recipientUserId === req.user._id.toString();
       });
-      
+
       if (isRecipient) {
         isAuthorized = true;
         console.log('[NOTIFICATION_DETAIL] Authorization granted: User is a recipient');
@@ -966,20 +1002,20 @@ const getNotificationById = asyncHandler(async (req, res) => {
       console.error(`[NOTIFICATION_DETAIL] Authorization DENIED for user ${req.user._id} to view notification ${notificationId}`);
       return res.status(403).json({ message: 'Not authorized to view this notification' });
     }
-    
+
     const notificationObj = notification.toObject();
-    
+
     // Check if current user has read/seen this notification
     const recipient = notification.recipients?.find(r => {
       const recipientUserId = r.user?._id?.toString() || r.user?.toString();
       return recipientUserId === req.user._id.toString();
     });
-    
+
     // Force read/seen status for superadmins to prevent unread clutter
     const isSuperAdmin = req.user.role === 'superadmin';
     notificationObj.isRead = isSuperAdmin ? true : (recipient ? recipient.isRead : false);
     notificationObj.isSeen = isSuperAdmin ? true : (recipient ? recipient.isSeen : false);
-    
+
     res.status(200).json(notificationObj);
   } catch (error) {
     console.error('[NOTIFICATION_DETAIL] Error fetching notification by ID:', error.message);
@@ -1023,11 +1059,11 @@ const deleteNotification = asyncHandler(async (req, res) => {
 
     console.log(`Deleting notification ${notification._id}`);
     await Notification.findByIdAndDelete(req.params.id);
-    
+
     console.log(`Notification ${notification._id} successfully deleted`);
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      message: 'Notification successfully removed' 
+      message: 'Notification successfully removed'
     });
   } catch (error) {
     console.error(`Error deleting notification:`, error);
@@ -1043,27 +1079,27 @@ const deleteNotification = asyncHandler(async (req, res) => {
 // @access  Private
 const getVapidPublicKey = asyncHandler(async (req, res) => {
   console.log('[NOTIFICATIONS] VAPID public key request from user:', req.user._id);
-  
+
   const publicKey = process.env.VAPID_PUBLIC_KEY;
-  
+
   console.log('[NOTIFICATIONS] VAPID key check:', {
     hasKey: !!publicKey,
     keyLength: publicKey ? publicKey.length : 0,
     userId: req.user._id
   });
-  
+
   if (!publicKey) {
     console.error('[NOTIFICATIONS] VAPID_PUBLIC_KEY environment variable not set');
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      error: 'Push notifications not configured on server' 
+      error: 'Push notifications not configured on server'
     });
   }
 
   console.log('[NOTIFICATIONS] Returning VAPID public key to client');
-  res.status(200).json({ 
+  res.status(200).json({
     success: true,
-    vapidPublicKey: publicKey 
+    vapidPublicKey: publicKey
   });
 });
 
@@ -1081,24 +1117,24 @@ const createPushSubscription = asyncHandler(async (req, res) => {
     hasAuth: !!req.body.keys?.auth,
     expirationTime: req.body.expirationTime
   });
-  
+
   const { endpoint, keys, expirationTime } = req.body;
-  
+
   if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
     console.error('[SUBSCRIPTION_CREATE] VALIDATION FAILED - Missing required fields');
     res.status(400);
     throw new Error('Invalid subscription data - missing required fields');
   }
-  
+
   try {
     console.log(`[SUBSCRIPTION_CREATE] Creating/updating push subscription for user ${req.user._id}`);
-    
+
     // Find existing subscription for this user and endpoint
     let subscription = await PushSubscription.findOne({
       userId: req.user._id,
       endpoint
     });
-    
+
     if (subscription) {
       // Update existing subscription
       subscription.keys.p256dh = keys.p256dh;
@@ -1132,14 +1168,14 @@ const createPushSubscription = asyncHandler(async (req, res) => {
           osName: req.headers['user-agent'] || ''
         }
       };
-      
+
       if (expirationTime) {
         subscriptionData.expirationTime = expirationTime;
       }
-      
+
       // Use upsert to update existing or create new subscription
       subscription = await PushSubscription.findOneAndUpdate(
-        { 
+        {
           $or: [
             { userId: req.user._id, endpoint: endpoint },
             { endpoint: endpoint }
@@ -1151,18 +1187,18 @@ const createPushSubscription = asyncHandler(async (req, res) => {
           isActive: true,
           updatedAt: new Date()
         },
-        { 
-          new: true, 
+        {
+          new: true,
           upsert: true,
           runValidators: true
         }
       );
-      
+
       console.log(`[SUBSCRIPTION_CREATE] ✅ SUBSCRIPTION SAVED FOR USER ${req.user._id}`);
       console.log(`[SUBSCRIPTION_CREATE] Subscription ID: ${subscription._id}`);
       console.log(`[SUBSCRIPTION_CREATE] Endpoint: ${subscription.endpoint.substring(0, 50)}...`);
     }
-    
+
     // CRITICAL: Verify subscription was actually saved
     const verifySubscription = await PushSubscription.findById(subscription._id);
     if (verifySubscription) {
@@ -1170,11 +1206,11 @@ const createPushSubscription = asyncHandler(async (req, res) => {
     } else {
       console.error(`[SUBSCRIPTION_CREATE] ❌ VERIFICATION FAILED - Subscription not found in database after save!`);
     }
-    
+
     // Count total subscriptions for this user  
     const userSubCount = await PushSubscription.countDocuments({ userId: req.user._id, isActive: true });
     console.log(`[SUBSCRIPTION_CREATE] User ${req.user._id} now has ${userSubCount} active subscriptions`);
-    
+
     res.status(201).json({
       success: true,
       message: 'Push subscription saved successfully',
@@ -1195,14 +1231,14 @@ const createPushSubscription = asyncHandler(async (req, res) => {
 const getUserSubscriptions = asyncHandler(async (req, res) => {
   try {
     console.log(`[SUBSCRIPTIONS] Getting subscriptions for user ${req.user._id}`);
-    
+
     const subscriptions = await PushSubscription.find({
       userId: req.user._id,
       isActive: true
     }).select('endpoint platform createdAt lastUsed stats');
-    
+
     console.log(`[SUBSCRIPTIONS] Found ${subscriptions.length} active subscriptions`);
-    
+
     res.status(200).json({
       success: true,
       subscriptions,
@@ -1220,25 +1256,25 @@ const getUserSubscriptions = asyncHandler(async (req, res) => {
 // @access  Private
 const deletePushSubscription = asyncHandler(async (req, res) => {
   const { endpoint } = req.body;
-  
+
   if (!endpoint) {
     res.status(400);
     throw new Error('Endpoint is required');
   }
-  
+
   try {
     console.log(`[SUBSCRIPTIONS] Deleting subscription for user ${req.user._id}, endpoint: ${endpoint.substring(0, 50)}...`);
-    
+
     const result = await PushSubscription.deleteOne({
       userId: req.user._id,
       endpoint
     });
-    
+
     if (result.deletedCount === 0) {
       console.log(`[SUBSCRIPTIONS] Subscription not found or already deleted - treating as success`);
       return res.status(200).json({ success: true, message: 'Subscription already removed' });
     }
-    
+
     console.log(`[SUBSCRIPTIONS] Successfully deleted subscription`);
     res.status(200).json({
       success: true,
@@ -1257,22 +1293,22 @@ const deletePushSubscription = asyncHandler(async (req, res) => {
 const sendTestPush = asyncHandler(async (req, res) => {
   try {
     console.log(`[TEST_PUSH] Sending test notification to user ${req.user._id}`);
-    
+
     const subscriptions = await PushSubscription.find({
       userId: req.user._id,
       isActive: true
     });
-    
+
     if (subscriptions.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'No active push subscriptions found'
       });
     }
-    
+
     const webpush = require('web-push');
     const { title = 'Test Notification', body = 'This is a test push notification from GradeBook' } = req.body;
-    
+
     const payload = JSON.stringify({
       title,
       body,
@@ -1283,10 +1319,10 @@ const sendTestPush = asyncHandler(async (req, res) => {
         timestamp: Date.now()
       }
     });
-    
+
     let successful = 0;
     let failed = 0;
-    
+
     const pushPromises = subscriptions.map(async (subscription) => {
       try {
         await webpush.sendNotification(subscription, payload);
@@ -1299,9 +1335,9 @@ const sendTestPush = asyncHandler(async (req, res) => {
         console.error(`[TEST_PUSH] Failed for subscription ${subscription._id}:`, error.message);
       }
     });
-    
+
     await Promise.allSettled(pushPromises);
-    
+
     console.log(`[TEST_PUSH] Test completed: ${successful} successful, ${failed} failed`);
     res.status(200).json({
       success: true,
