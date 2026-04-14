@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, isValid } from 'date-fns';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -27,11 +27,12 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../../config/apiConfig';
 import axios from 'axios';
+import { AttendanceMonthlyCalendar } from '../../components/AttendanceMonthlyCalendar';
 
 const StudentAttendanceView = () => {
   const { t } = useTranslation();
   const { user, token } = useSelector((state) => state.auth);
-  
+
   // Add CSS animation keyframes
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -90,7 +91,7 @@ const StudentAttendanceView = () => {
   // Localized day abbreviations (Monday first)
   const getDayAbbreviations = () => {
     return [
-      t('calendar.days.mon') || 'M', 
+      t('calendar.days.mon') || 'M',
       t('calendar.days.tue') || 'T',
       t('calendar.days.wed') || 'W',
       t('calendar.days.thu') || 'T',
@@ -103,9 +104,9 @@ const StudentAttendanceView = () => {
   // Localized month names
   const getLocalizedMonthName = (monthIndex) => {
     const monthKeys = [
-      'calendar.months.january', 'calendar.months.february', 'calendar.months.march', 
+      'calendar.months.january', 'calendar.months.february', 'calendar.months.march',
       'calendar.months.april', 'calendar.months.may', 'calendar.months.june',
-      'calendar.months.july', 'calendar.months.august', 'calendar.months.september', 
+      'calendar.months.july', 'calendar.months.august', 'calendar.months.september',
       'calendar.months.october', 'calendar.months.november', 'calendar.months.december'
     ];
     return t(monthKeys[monthIndex]) || new Date(2000, monthIndex, 1).toLocaleDateString('en-US', { month: 'long' });
@@ -128,15 +129,24 @@ const StudentAttendanceView = () => {
   }, []);
 
   useEffect(() => {
-    if (classes.length > 0) {
-      fetchAttendanceData();
-    }
-  }, [selectedMonth, selectedClass, classes]);
+    fetchAttendanceData();
+  }, [selectedMonth]);
 
-  // Calculate stats whenever attendanceData changes
+  // The controller's $project removes classId and unwinds 'class' as a scalar object (not array).
+  // So we match against record.class._id.
+  const filteredAttendance = useMemo(() => {
+    if (!selectedClass) return attendanceData;
+    const targetId = String(selectedClass._id);
+    return attendanceData.filter(record => {
+      const recordClassId = record.class?._id ? String(record.class._id) : null;
+      return recordClassId === targetId;
+    });
+  }, [attendanceData, selectedClass]);
+
+  // Calculate stats whenever filteredAttendance changes
   useEffect(() => {
-    calculateStats();
-  }, [attendanceData]);
+    calculateStats(filteredAttendance);
+  }, [filteredAttendance]);
 
   const fetchClasses = async () => {
     try {
@@ -146,17 +156,16 @@ const StudentAttendanceView = () => {
           Authorization: `Bearer ${token}`,
         },
       };
-      
+
       const response = await axios.get(`${API_URL}/api/classes/my-classes`, config);
-      
+
       if (response.data) {
         // Handle both possible response formats
         const classData = response.data.classes || response.data;
         const classList = Array.isArray(classData) ? classData : [];
         setClasses(classList);
-        if (classList.length > 0) {
-          setSelectedClass(classList[0]);
-        }
+        // Default to 'all' attendance information
+        setSelectedClass(null);
       }
     } catch (error) {
       console.error('Error fetching classes:', error);
@@ -167,11 +176,6 @@ const StudentAttendanceView = () => {
   };
 
   const fetchAttendanceData = async () => {
-    if (!selectedClass) {
-      setAttendanceData([]);
-      return;
-    }
-    
     try {
       setLoading(true);
       const config = {
@@ -182,26 +186,16 @@ const StudentAttendanceView = () => {
 
       const startDate = startOfMonth(selectedMonth);
       const endDate = endOfMonth(selectedMonth);
-      
-      console.log('Fetching attendance data:', {
-        classId: selectedClass._id,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      });
-      
+
+      // Always fetch ALL attendance for the month to allow instant switching
       const response = await axios.get(
-        `${API_URL}/api/attendance/student/${user._id}?classId=${selectedClass._id}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+        `${API_URL}/api/attendance/student/${user._id}?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
         config
       );
-      
-      console.log('Attendance response:', response.data);
-      
+
       if (response.data && response.data.attendance) {
-        const attendanceArray = Array.isArray(response.data.attendance) ? response.data.attendance : [];
-        console.log('Setting attendance data:', attendanceArray);
-        setAttendanceData(attendanceArray);
+        setAttendanceData(Array.isArray(response.data.attendance) ? response.data.attendance : []);
       } else {
-        console.log('No attendance data found, setting empty array');
         setAttendanceData([]);
       }
     } catch (error) {
@@ -213,8 +207,8 @@ const StudentAttendanceView = () => {
     }
   };
 
-  const calculateStats = () => {
-    if (!attendanceData.length) {
+  const calculateStats = (recordsToCalculate) => {
+    if (!recordsToCalculate.length) {
       setStats({
         totalSessions: 0,
         presentSessions: 0,
@@ -224,33 +218,11 @@ const StudentAttendanceView = () => {
       return;
     }
 
-    // Filter out invalid records first
-    const validRecords = attendanceData.filter(record => {
-      return record && record.status && typeof record.status === 'string';
-    });
-
+    const validRecords = recordsToCalculate.filter(record => record && record.status);
     const totalSessions = validRecords.length;
-    
-    // Count different statuses
-    const presentSessions = validRecords.filter(record => 
-      record.status === 'present' || record.status === 'late'
-    ).length; // Late counts as attended
-    
-    const absentSessions = validRecords.filter(record => 
-      record.status === 'absent'
-    ).length;
-    
-    // Calculate attendance rate based on present + late vs total
+    const presentSessions = validRecords.filter(record => record.status === 'present' || record.status === 'late').length;
+    const absentSessions = validRecords.filter(record => record.status === 'absent').length;
     const attendanceRate = totalSessions > 0 ? Math.round((presentSessions / totalSessions) * 100) : 0;
-
-    console.log('Stats calculation:', {
-      totalRecords: attendanceData.length,
-      validRecords: validRecords.length,
-      statuses: validRecords.map(r => r.status),
-      presentSessions,
-      absentSessions,
-      attendanceRate
-    });
 
     setStats({
       totalSessions,
@@ -263,11 +235,11 @@ const StudentAttendanceView = () => {
   const getAttendanceForDay = (date) => {
     return attendanceData.find(record => {
       if (!record.session) return false;
-      
+
       // Try different possible date fields
       const sessionDate = record.session.scheduledStartAt || record.session.date || record.date;
       const parsedDate = safeParseDate(sessionDate);
-      
+
       return parsedDate && isSameDay(parsedDate, date);
     });
   };
@@ -275,22 +247,22 @@ const StudentAttendanceView = () => {
   const getDaysInMonth = () => {
     const firstDay = startOfMonth(selectedMonth);
     const lastDay = endOfMonth(selectedMonth);
-    
+
     // Get first day of month and adjust for Monday-first week
     const firstDayIndex = (firstDay.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
     const daysInMonth = lastDay.getDate();
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayIndex; i++) {
       days.push(null);
     }
-    
+
     // Add actual days
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), day));
     }
-    
+
     return days;
   };
 
@@ -345,96 +317,6 @@ const StudentAttendanceView = () => {
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4 min-h-[88px] flex items-center">
-            {loading ? (
-              <div className="flex items-center space-x-2 w-full">
-                <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="h-[20px] w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
-                  <div className="h-[32px] w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <BookOpen className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.totalSessions')}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalSessions}</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 min-h-[88px] flex items-center">
-            {loading ? (
-              <div className="flex items-center space-x-2 w-full">
-                <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="h-[20px] w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
-                  <div className="h-[32px] w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.attendedSessions')}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.presentSessions}</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 min-h-[88px] flex items-center">
-            {loading ? (
-              <div className="flex items-center space-x-2 w-full">
-                <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="h-[20px] w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
-                  <div className="h-[32px] w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <XCircle className="h-8 w-8 text-red-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.missedSessions')}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.absentSessions}</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 min-h-[88px] flex items-center">
-            {loading ? (
-              <div className="flex items-center space-x-2 w-full">
-                <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="h-[20px] w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
-                  <div className="h-[32px] w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-8 w-8 text-purple-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('attendance.attendanceRate')}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.attendanceRate}%</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Class Selection */}
@@ -446,31 +328,53 @@ const StudentAttendanceView = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {loading ? (
-                // Loading skeleton for classes
-                Array.from({ length: 3 }, (_, i) => (
-                  <div key={i} className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
-                    <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="space-y-4">
+                  <div className="h-[88px] w-full bg-muted/40 rounded-2xl border border-border/10" />
+                  <div className="h-[20px] w-24 bg-muted/40 rounded mx-1" />
+                  <div className="space-y-3">
+                    {Array.from({ length: 4 }, (_, i) => (
+                      <div key={i} className="h-[76px] w-full bg-muted/20 rounded-2xl border border-border/10" />
+                    ))}
                   </div>
-                ))
+                </div>
               ) : (
-                classes.map((classItem) => (
+                <>
                   <Button
-                    key={classItem._id}
-                    variant={selectedClass?._id === classItem._id ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setSelectedClass(classItem)}
+                    variant={selectedClass === null ? "default" : "outline"}
+                    className={`w-full justify-start h-auto p-4 transition-all duration-200 ${selectedClass === null ? 'shadow-lg shadow-primary/20 scale-[1.02]' : ''}`}
+                    onClick={() => setSelectedClass(null)}
                   >
-                    <div className="text-left">
-                      <div className="font-medium">{classItem.name}</div>
-                      <div className="text-sm opacity-75">
-                        {classItem.subject} - {classItem.schoolBranch}
+                    <div className="text-left flex items-center space-x-3">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <div>
+                        <div className="font-bold text-sm tracking-tight">{t('attendance.allAttendance')}</div>
+                        <div className="text-[10px] opacity-70 uppercase tracking-widest font-bold">{t('attendance.comprehensiveView')}</div>
                       </div>
                     </div>
                   </Button>
-                ))
+
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">{t('common.classes')}</div>
+
+                  <div className="space-y-3">
+                    {classes.map((classItem) => (
+                      <Button
+                        key={classItem._id}
+                        variant={selectedClass?._id === classItem._id ? "default" : "outline"}
+                        className={`w-full justify-start h-auto p-4 transition-all duration-200 border-border/40 ${selectedClass?._id === classItem._id ? 'shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted/50 hover:scale-[1.01]'}`}
+                        onClick={() => setSelectedClass(classItem)}
+                      >
+                        <div className="text-left w-full">
+                          <div className="font-bold text-sm tracking-tight truncate">{classItem.subject || classItem.name}</div>
+                          {classItem.subject && classItem.subject !== classItem.name && (
+                            <div className="text-[10px] opacity-60 tracking-wide truncate mt-0.5">{classItem.name}</div>
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </CardContent>
@@ -485,157 +389,29 @@ const StudentAttendanceView = () => {
                 <span className="hidden sm:inline">{t('attendance.monthlyCalendar')}</span>
                 <span className="sm:hidden">Calendar</span>
               </CardTitle>
-              <div className="flex items-center justify-center space-x-2 min-w-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateMonth(-1)}
-                  className="shrink-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm sm:text-lg font-semibold flex-1 text-center px-1 sm:px-2 min-w-0">
-                  <span className="hidden sm:inline">{getLocalizedMonthName(selectedMonth.getMonth())} {selectedMonth.getFullYear()}</span>
-                  <span className="sm:hidden">{getLocalizedMonthName(selectedMonth.getMonth()).slice(0, 3)} {selectedMonth.getFullYear()}</span>
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateMonth(1)}
-                  className="shrink-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
             <CardDescription>
-              {selectedClass ? 
-                `${t('attendance.attendanceFor')} ${selectedClass.name}` : 
+              {selectedClass ?
+                `${t('attendance.attendanceFor')} ${selectedClass.name}` :
                 t('attendance.selectClassToView')
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2 text-gray-600 dark:text-gray-400">{t('common.loading')}...</span>
-              </div>
-            ) : selectedClass ? (
-              <div className="grid grid-cols-7 gap-2">
-                {/* Day headers */}
-                {getDayAbbreviations().map((day, index) => (
-                  <div key={index} className="h-8 flex items-center justify-center text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">
-                    {day}
-                  </div>
-                ))}
-                
-                {/* Calendar days */}
-                {getDaysInMonth().map((date, index) => {
-                  if (!date) {
-                    // Empty cell for padding
-                    return <div key={`empty-${index}`} className="h-12" />;
-                  }
-                  
-                  const attendance = getAttendanceForDay(date);
-                  const isToday = isSameDay(date, new Date());
-                  
-                  return attendance ? (
-                    <Popover key={date.toISOString()}>
-                      <PopoverTrigger asChild>
-                        <div
-                          className={`
-                            calendar-day
-                            min-h-[60px] p-2 border rounded-md relative cursor-pointer
-                            transition-all duration-300 ease-out transform-gpu
-                            ${isToday 
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' 
-                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                            }
-                            hover:bg-gray-50 dark:hover:bg-gray-700
-                            hover:shadow-xl hover:shadow-primary/30
-                            hover:scale-[1.08] hover:-translate-y-2
-                            active:scale-[0.98] active:translate-y-0 active:shadow-md
-                            focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2
-                            will-change-transform
-                          `}
-                        >
-                          <div className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-50">
-                            {format(date, 'd')}
-                          </div>
-                          <Badge
-                            className={`absolute bottom-0.5 left-0.5 text-xs p-1 sm:p-1 sm:bottom-1 sm:left-1 font-medium min-h-[20px] sm:min-h-[18px] ${getAttendanceColor(attendance.status)}`}
-                          >
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center">
-                              {getAttendanceIcon(attendance.status)}
-                            </div>
-                            <span className="ml-1 hidden sm:inline">{t(`attendance.${attendance.status}`)}</span>
-                          </Badge>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent 
-                        className="w-48 h-48 p-0 shadow-xl border-2 border-primary/20 bg-background/95 backdrop-blur-sm animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2" 
-                        side="top" 
-                        sideOffset={12}
-                        align="center"
-                        avoidCollisions={true}
-                        collisionPadding={8}
-                        style={{
-                          transformOrigin: 'bottom center',
-                          animation: 'popover-show 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                        }}
-                      >
-                        <div className="p-4 h-full flex flex-col justify-center items-center text-center space-y-3">
-                          <div className="text-xs font-medium text-muted-foreground">
-                            {format(date, 'MMM d')}
-                          </div>
-                          <div className="flex flex-col items-center space-y-2">
-                            <div className="w-8 h-8 flex items-center justify-center">
-                              {attendance.status === 'present' ? (
-                                <CheckCircle2 className="w-8 h-8 text-green-600" />
-                              ) : attendance.status === 'absent' ? (
-                                <XCircle className="w-8 h-8 text-red-600" />
-                              ) : attendance.status === 'late' ? (
-                                <Clock className="w-8 h-8 text-yellow-600" />
-                              ) : (
-                                <Eye className="w-8 h-8 text-gray-600" />
-                              )}
-                            </div>
-                            <Badge className={`text-xs shadow-sm ${getAttendanceColor(attendance.status)}`}>
-                              <span className="font-medium">{t(`attendance.${attendance.status}`)}</span>
-                            </Badge>
-                          </div>
-                          {attendance.note && (
-                            <div className="pt-2 border-t border-border/50 w-full">
-                              <p className="text-xs text-muted-foreground mb-1">{t('attendance.note')}:</p>
-                              <p className="text-xs text-foreground/90 leading-tight">{attendance.note}</p>
-                            </div>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <div
-                      key={date.toISOString()}
-                      className={`
-                        min-h-[60px] p-2 border rounded-md relative transition-colors
-                        ${isToday 
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' 
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }
-                      `}
-                    >
-                      <div className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-50">
-                        {format(date, 'd')}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="w-full h-[400px] bg-muted/10 rounded-2xl border border-border/10 flex flex-col p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                  <div className="h-10 w-48 bg-muted/30 rounded-xl" />
+                  <div className="h-10 w-32 bg-muted/30 rounded-xl" />
+                </div>
+                <div className="grid grid-cols-7 gap-4 flex-1">
+                  {Array.from({ length: 28 }, (_, i) => (
+                    <div key={i} className="bg-muted/20 rounded-xl shadow-inner border border-border/5" />
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                {t('attendance.selectClassToViewCalendar')}
-              </div>
+              <AttendanceMonthlyCalendar attendanceRecords={filteredAttendance} />
             )}
           </CardContent>
         </Card>
@@ -647,70 +423,70 @@ const StudentAttendanceView = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Clock className="h-5 w-5" />
-              <span>{t('attendance.detailedSessionHistory')} {selectedClass.name}</span>
+              <span>{t('attendance.detailedSessionHistory')} {selectedClass ? selectedClass.name : t('attendance.allClasses')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }, (_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  <div key={i} className="flex items-center justify-between p-4 border border-border/50 rounded-2xl bg-muted/20">
+                    <div className="flex items-center space-x-4">
+                      <div className="h-10 w-10 bg-muted/40 rounded-xl" />
                       <div>
-                        <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1"></div>
-                        <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                        <div className="h-4 w-48 bg-muted/40 rounded mb-2" />
+                        <div className="h-3 w-32 bg-muted/30 rounded" />
                       </div>
                     </div>
-                    <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-6 w-20 bg-muted/40 rounded-lg" />
                   </div>
                 ))}
               </div>
             ) : (
               <div className="space-y-3">
-                {attendanceData.length > 0 ? (
-                  attendanceData
+                {filteredAttendance.length > 0 ? (
+                  filteredAttendance
                     .filter(session => {
-                      // Filter out sessions with completely invalid data
                       const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
-                      return sessionDate; // Only include sessions that have some date field
+                      return sessionDate;
                     })
+                    .sort((a, b) => new Date(b.date || b.session?.date) - new Date(a.date || a.session?.date))
                     .map((session, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                      <div className="flex items-center space-x-3">
-                        {session.status === 'present' ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600" />
-                        )}
-                        <div>
-                          {(() => {
-                            // Try different possible date fields
-                            const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
-                            const parsedDate = safeParseDate(sessionDate);
-                            
-                            return (
-                              <p className="font-medium">
-                                {parsedDate 
-                                  ? format(parsedDate, 'EEEE, MMM dd, yyyy')
-                                  : 'Invalid Date'
-                                }
+                      <div key={index} className="flex items-center justify-between p-4 border border-border/50 rounded-2xl bg-muted/20 hover:bg-muted/30 transition-all duration-200">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 rounded-xl ${session.status === 'present' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                            {session.status === 'present' ? (
+                              <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-red-500" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex flex-col">
+                              <p className="font-bold text-sm tracking-tight text-foreground">
+                                {session.class?.subject || session.class?.name || '--'}
                               </p>
-                            );
-                          })()}
-                          {session.note && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{session.note}</p>
-                          )}
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+                                {(() => {
+                                  const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
+                                  const parsedDate = safeParseDate(sessionDate);
+                                  return parsedDate ? format(parsedDate, 'EEEE, MMM dd, yyyy') : 'Invalid Date';
+                                })()}
+                              </p>
+                            </div>
+                            {session.note && (
+                              <p className="text-xs text-muted-foreground mt-1 bg-muted/40 px-2 py-0.5 rounded inline-block">{session.note}</p>
+                            )}
+                          </div>
                         </div>
+                        <Badge
+                          variant={session.status === 'present' ? 'default' : 'destructive'}
+                          className={`text-[10px] font-bold uppercase tracking-wider ${session.status === 'present' ? 'bg-green-500 text-white border-none' : ''}`}
+                        >
+                          {session.status === 'present' ? t('attendance.present') : t('attendance.absent')}
+                        </Badge>
                       </div>
-                      <Badge 
-                        variant={session.status === 'present' ? 'default' : 'destructive'}
-                        className={session.status === 'present' ? 'bg-green-100 text-green-800' : ''}
-                      >
-                        {session.status === 'present' ? t('attendance.present') : t('attendance.absent')}
-                      </Badge>
-                    </div>
-                  ))
+                    ))
                 ) : (
                   <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                     {t('attendance.noAttendanceData')}

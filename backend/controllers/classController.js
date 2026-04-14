@@ -560,6 +560,23 @@ const getMyClasses = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get all students in a class
+// @route   GET /api/classes/:id/students
+// @access  Private (Admin and Teachers)
+const getStudentsInClass = asyncHandler(async (req, res) => {
+  const classItem = await Class.findOne({
+    _id: req.params.id,
+    schoolId: req.user.schoolId
+  }).populate('students', 'name email active');
+
+  if (!classItem) {
+    res.status(404);
+    throw new Error('Class not found');
+  }
+
+  res.status(200).json(classItem.students);
+});
+
 module.exports = {
   createClass,
   getClasses,
@@ -567,6 +584,7 @@ module.exports = {
   updateClass,
   deleteClass,
   getClassCategories,
+  getStudentsInClass,
   addStudentsToClass,
   removeStudentsFromClass,
   addTeachersToClass,

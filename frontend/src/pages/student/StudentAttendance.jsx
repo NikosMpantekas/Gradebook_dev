@@ -25,6 +25,7 @@ import {
   TrendingUp as TrendingIcon,
   Filter as FilterIcon
 } from 'lucide-react';
+import { AttendanceMonthlyCalendar } from '../../components/AttendanceMonthlyCalendar';
 
 const StudentAttendance = () => {
   const { t } = useTranslation();
@@ -34,7 +35,7 @@ const StudentAttendance = () => {
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [stats, setStats] = useState({
@@ -195,105 +196,10 @@ const StudentAttendance = () => {
         </p>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="class-select">{t('common.class')}</Label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('attendance.allClasses')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('attendance.allClasses')}</SelectItem>
-                  {(classes || []).map((cls) => (
-                    <SelectItem key={cls._id} value={cls._id}>
-                      {cls.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="month-select">{t('common.month')}</Label>
-              <Input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t('attendance.totalSessions')}
-                </p>
-                <p className="text-2xl font-bold">{stats.totalSessions}</p>
-              </div>
-              <CalendarIcon className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t('attendance.attendedSessions')}
-                </p>
-                <p className="text-2xl font-bold text-green-600">{stats.attendedSessions}</p>
-              </div>
-              <PresentIcon className="w-8 h-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t('attendance.missedSessions')}
-                </p>
-                <p className="text-2xl font-bold text-red-600">{stats.missedSessions}</p>
-              </div>
-              <AbsentIcon className="w-8 h-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t('attendance.attendanceRate')}
-                </p>
-                <p className="text-2xl font-bold">{stats.attendanceRate}%</p>
-              </div>
-              <TrendingIcon className={`w-8 h-8 ${stats.attendanceRate >= 80 ? 'text-green-500' : 'text-yellow-500'}`} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <StatsIcon className="w-4 h-4" />
-            {t('attendance.overview')}
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="calendar" className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4" />
             {t('attendance.calendar')}
@@ -304,104 +210,52 @@ const StudentAttendance = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('attendance.attendanceOverview')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span>{t('attendance.totalSessions')}</span>
-                  <Badge variant="outline">{stats.totalSessions}</Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <span className="flex items-center gap-2">
-                    <PresentIcon className="w-4 h-4 text-green-600" />
-                    {t('attendance.attendedSessions')}
-                  </span>
-                  <Badge variant="default" className="bg-green-500">{stats.attendedSessions}</Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <span className="flex items-center gap-2">
-                    <AbsentIcon className="w-4 h-4 text-red-600" />
-                    {t('attendance.missedSessions')}
-                  </span>
-                  <Badge variant="destructive">{stats.missedSessions}</Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <span className="flex items-center gap-2">
-                    <TrendingIcon className="w-4 h-4 text-blue-600" />
-                    {t('attendance.attendanceRate')}
-                  </span>
-                  <Badge variant={stats.attendanceRate >= 80 ? 'default' : 'secondary'}>
-                    {stats.attendanceRate}%
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Calendar Tab */}
         <TabsContent value="calendar" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('attendance.monthlyCalendar')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                  <div key={day} className="p-2 text-center font-medium text-gray-500">
-                    {day}
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="md:w-64 space-y-4">
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  <div>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 block">
+                      {t('common.class')}
+                    </Label>
+                    <Select value={selectedClass} onValueChange={setSelectedClass}>
+                      <SelectTrigger className="w-full bg-muted/20 border-border/50">
+                        <SelectValue placeholder={t('attendance.allClasses')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t('attendance.allClasses')}</SelectItem>
+                        {(classes || []).map((cls) => (
+                          <SelectItem key={cls._id} value={cls._id}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {(calendarDays || []).map((date) => {
-                  const status = getAttendanceStatus(date);
-                  const dayRecords = getAttendanceForDate(date);
-                  
-                  return (
-                    <div
-                      key={date.toISOString()}
-                      className={`
-                        p-2 text-center rounded-lg border min-h-[60px] flex flex-col justify-center
-                        ${status === 'present' ? 'bg-green-100 dark:bg-green-900/20 border-green-300' : ''}
-                        ${status === 'absent' ? 'bg-red-100 dark:bg-red-900/20 border-red-300' : ''}
-                        ${status === 'no-session' ? 'bg-gray-50 dark:bg-gray-800 border-gray-200' : ''}
-                      `}
-                    >
-                      <div className="text-sm font-medium">{format(date, 'd')}</div>
-                      {(dayRecords || []).length > 0 && (
-                        <div className="text-xs">
-                          {status === 'present' && <PresentIcon className="w-3 h-3 mx-auto text-green-600" />}
-                          {status === 'absent' && <AbsentIcon className="w-3 h-3 mx-auto text-red-600" />}
-                        </div>
-                      )}
+
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-3 bg-green-500/5 rounded-xl border border-green-500/10">
+                         <div className="text-[10px] font-bold text-green-500 uppercase tracking-tight mb-1">{t('attendance.present')}</div>
+                         <div className="text-xl font-bold">{stats.attendedSessions || stats.presentSessions || 0}</div>
+                      </div>
+                      <div className="p-3 bg-red-500/5 rounded-xl border border-red-500/10">
+                         <div className="text-[10px] font-bold text-red-500 uppercase tracking-tight mb-1">{t('attendance.absent')}</div>
+                         <div className="text-xl font-bold">{stats.missedSessions || stats.absentSessions || 0}</div>
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-              
-              {/* Legend */}
-              <div className="flex justify-center gap-4 mt-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-green-200 rounded"></div>
-                  <span>{t('attendance.present')}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-red-200 rounded"></div>
-                  <span>{t('attendance.absent')}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-gray-200 rounded"></div>
-                  <span>{t('attendance.noSession')}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex-1">
+              <AttendanceMonthlyCalendar attendanceRecords={attendanceRecords} />
+            </div>
+          </div>
         </TabsContent>
 
         {/* Sessions Tab */}
@@ -427,8 +281,8 @@ const StudentAttendance = () => {
                       <div key={session._id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div>
                           <h3 className="font-medium">{session.title}</h3>
-                          <p className="text-sm text-gray-500">
-                            {session.className} • {format(new Date(session.date), 'PPP')}
+                          <p className="text-xs font-bold uppercase tracking-widest text-primary mt-1">
+                            {attendance?.session?.classId?.subject || session.subject || '--'} • {format(new Date(session.date), 'PPP')}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">

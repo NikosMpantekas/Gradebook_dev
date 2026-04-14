@@ -849,12 +849,7 @@ const ManageClasses = () => {
 
       {/* Delete confirmation dialog */}
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className={cn(
-          "w-[90vw] max-w-md transition-colors duration-100",
-          darkMode
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
-            : "bg-background text-foreground border-border"
-        )}>
+        <DialogContent className="w-[90vw] max-w-md bg-card border-border shadow-lg">
           <DialogHeader>
             <DialogTitle>{t('admin.manageClassesPage.dialogs.deleteClass.title')}</DialogTitle>
             <DialogDescription>
@@ -874,17 +869,12 @@ const ManageClasses = () => {
 
       {/* Add/Edit form dialog */}
       <Dialog open={formOpen} onOpenChange={handleFormClose}>
-        <DialogContent className={cn(
-          "w-[90vw] max-w-4xl max-h-[90vh] transition-colors duration-100 overflow-hidden",
-          darkMode
-            ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
-            : "bg-background text-foreground border-border"
-        )}>
-          <DialogHeader>
-            <DialogTitle>{formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.title') : t('admin.manageClassesPage.dialogs.editClass.title')}</DialogTitle>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] bg-card border-border shadow-2xl overflow-hidden p-0 gap-0">
+          <DialogHeader className="p-6 border-b">
+            <DialogTitle className="text-xl font-bold">{formMode === 'add' ? t('admin.manageClassesPage.dialogs.addClass.title') : t('admin.manageClassesPage.dialogs.editClass.title')}</DialogTitle>
           </DialogHeader>
 
-          <div className="overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+          <div className="overflow-y-auto max-h-[calc(90vh-10rem)] p-6">
             <form onSubmit={handleFormSubmit} className="space-y-6">
               <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
@@ -1130,9 +1120,14 @@ const ManageClasses = () => {
                       {t('admin.manageClassesPage.form.scheduleDescription')}
                     </p>
 
-                    <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-2 bg-muted/10">
+                    <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-4 bg-muted/20 custom-scrollbar">
                       {classData.schedule.map((daySchedule, index) => (
-                        <Card key={daySchedule.day} className={`p-4 ${daySchedule.active ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''}`}>
+                        <Card key={daySchedule.day} className={cn(
+                          "p-4 transition-all duration-200 border",
+                          daySchedule.active 
+                            ? "bg-primary/[0.04] border-primary/30 shadow-sm" 
+                            : "bg-transparent border-transparent"
+                        )}>
                           <div className="flex items-center space-x-4">
                             <Checkbox
                               id={`day-${index}`}
@@ -1177,11 +1172,11 @@ const ManageClasses = () => {
                 </TabsContent>
               </Tabs>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleFormClose} disabled={isSubmitting}>
+              <DialogFooter className="p-4 border-t px-6 bg-muted/30 gap-3">
+                <Button type="button" variant="outline" onClick={handleFormClose} disabled={isSubmitting} className="font-medium">
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="font-medium px-8 transition-all hover:translate-y-[-1px] active:translate-y-[0]">
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
                       <Spinner size="sm" />

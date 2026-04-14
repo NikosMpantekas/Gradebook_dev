@@ -7,6 +7,7 @@ const {
   updateClass, 
   deleteClass,
   getClassCategories,
+  getStudentsInClass,
   addStudentsToClass,
   removeStudentsFromClass,
   addTeachersToClass,
@@ -39,6 +40,7 @@ router.route('/:id')
 
 // Routes for managing students in classes - admin only
 router.route('/:id/students')
+  .get(protect, getStudentsInClass)
   .put(protect, admin, addStudentsToClass)
   .delete(protect, admin, removeStudentsFromClass);
 
