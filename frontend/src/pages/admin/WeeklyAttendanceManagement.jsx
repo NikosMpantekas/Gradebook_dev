@@ -207,7 +207,7 @@ const WeeklyAttendanceManagement = () => {
 
   const loadProcessedClasses = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const startDate = format(startOfWeek(new Date()), 'yyyy-MM-dd');
       const endDate = format(endOfWeek(new Date()), 'yyyy-MM-dd');
       
@@ -229,7 +229,7 @@ const WeeklyAttendanceManagement = () => {
   const fetchClasses = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -257,7 +257,7 @@ const WeeklyAttendanceManagement = () => {
       const branchIds = [...new Set(classes.map(cls => cls.schoolBranch))].filter(Boolean);
       
       // Fetch school branch details from API
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -339,7 +339,7 @@ const WeeklyAttendanceManagement = () => {
     
     // Fetch existing attendance data for this class and date
     try {
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const dateStr = format(date, 'yyyy-MM-dd');
       const response = await axios.get(`${API_URL}/api/attendance/class-attendance`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -407,7 +407,7 @@ const WeeklyAttendanceManagement = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const response = await axios.get(`${API_URL}/api/users/search`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { query, role: 'student' }
@@ -450,7 +450,7 @@ const WeeklyAttendanceManagement = () => {
     try {
       logAction('Saving class attendance', { classId: selectedClass._id, date: classDate });
       
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       const attendanceData = {
         classId: selectedClass._id,
         date: format(classDate, 'yyyy-MM-dd'),
@@ -491,7 +491,7 @@ const WeeklyAttendanceManagement = () => {
     try {
       logAction('Exporting attendance', { type, filterId });
       
-      const token = localStorage.getItem('token');
+      const token = user?.token;
       let url = `${API_URL}/api/reports/attendance/export`;
       const params = { type };
       
