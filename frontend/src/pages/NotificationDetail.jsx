@@ -152,15 +152,17 @@ const NotificationDetail = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button
-            onClick={handleDelete}
-            variant="destructive"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Delete className="h-4 w-4" />
-            Delete
-          </Button>
+          {(user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'teacher') && (
+            <Button
+              onClick={handleDelete}
+              variant="destructive"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Delete className="h-4 w-4" />
+              Delete
+            </Button>
+          )}
         </div>
       </div>
 
