@@ -221,6 +221,7 @@ const NotificationRecipients = ({
                 <CardContent className="pt-0">
                   <div className="flex items-center space-x-2 mb-3">
                     <Button
+                      type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => selectAllInSection(getFilteredStudents(), 'student')}
@@ -229,6 +230,7 @@ const NotificationRecipients = ({
                       {t('teacherNotifications.createPage.selectAll')}
                     </Button>
                     <Button
+                      type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => deselectAllInSection(getFilteredStudents(), 'student')}
@@ -294,6 +296,7 @@ const NotificationRecipients = ({
                   <CardContent className="pt-0">
                     <div className="flex items-center space-x-2 mb-3">
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => selectAllInSection(getFilteredTeachers(), 'teacher')}
@@ -302,6 +305,7 @@ const NotificationRecipients = ({
                         {t('teacherNotifications.createPage.selectAll')}
                       </Button>
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => deselectAllInSection(getFilteredTeachers(), 'teacher')}
@@ -368,6 +372,7 @@ const NotificationRecipients = ({
                   <CardContent className="pt-0">
                     <div className="flex items-center space-x-2 mb-3">
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => selectAllInSection(getFilteredParents(), 'parent')}
@@ -376,6 +381,7 @@ const NotificationRecipients = ({
                         {t('teacherNotifications.createPage.selectAll')}
                       </Button>
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => deselectAllInSection(getFilteredParents(), 'parent')}
@@ -424,6 +430,7 @@ const NotificationRecipients = ({
                 {t('teacherNotifications.createPage.recipientsSummary', { count: selectedRecipients.length })}
               </span>
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
                 onClick={() => onRecipientsChange([])}
