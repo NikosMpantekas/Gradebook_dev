@@ -91,18 +91,15 @@ const ContactDeveloper = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={!sending ? onClose : undefined}>
-      <DialogContent className={cn(
-        "max-w-md transition-colors duration-100",
-        darkMode
-          ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
-          : "bg-background text-foreground border-border"
-      )}>
+      <DialogContent className="max-w-md bg-card border-border shadow-lg">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <DialogTitle>{t('contactDeveloper.title')}</DialogTitle>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 text-primary rounded-lg">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-xl font-bold">{t('contactDeveloper.title')}</DialogTitle>
           </div>
-          <DialogDescription>
+          <DialogDescription className="pt-1">
             {t('contactDeveloper.subtitle')}
           </DialogDescription>
         </DialogHeader>
