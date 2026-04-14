@@ -506,22 +506,49 @@ export const ThemeProvider = ({ children }) => {
     // Apply border radius
     root.style.setProperty('--radius', '0.5rem');
 
-    // Apply theme to body background for full coverage
-    document.body.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
-    document.body.style.color = `hsl(${hexToHsl(colors.foreground)})`;
+    // CALCULATE TINTED BACKGROUND (matching Layout.jsx logic)
+    // This ensures the browser background matches the tinted dashboard exactly
+    const getTintedColor = () => {
+      try {
+        const bgHex = colors.background.replace('#', '');
+        const bgR = parseInt(bgHex.substr(0, 2), 16);
+        const bgG = parseInt(bgHex.substr(2, 2), 16);
+        const bgB = parseInt(bgHex.substr(4, 2), 16);
 
-    // Apply to html element as well for full coverage
-    document.documentElement.style.backgroundColor = `hsl(${hexToHsl(colors.background)})`;
-    document.documentElement.style.color = `hsl(${hexToHsl(colors.foreground)})`;
+        const primaryHex = colors.primary.replace('#', '');
+        const pR = parseInt(primaryHex.substr(0, 2), 16);
+        const pG = parseInt(primaryHex.substr(2, 2), 16);
+        const pB = parseInt(primaryHex.substr(4, 2), 16);
 
-    // Update <meta name="theme-color"> so iOS status bar / notch area matches the theme
+        // Blend a very subtle primary tint onto the actual background (matching Layout.jsx)
+        const blend = isDark ? 0.04 : 0.02;
+        const r = Math.round(bgR + (pR - bgR) * blend);
+        const g = Math.round(bgG + (pG - bgG) * blend);
+        const b = Math.round(bgB + (pB - bgB) * blend);
+
+        return `rgb(${r}, ${g}, ${b})`;
+      } catch (e) {
+        return colors.background;
+      }
+    };
+
+    const finalBg = getTintedColor();
+
+    // Apply exact tinted theme to body/html background for perfect overscroll coverage
+    document.body.style.backgroundColor = finalBg;
+    document.body.style.color = isDark ? '#E0E8F0' : '#1E293B';
+    document.documentElement.style.backgroundColor = finalBg;
+    document.documentElement.style.color = isDark ? '#E0E8F0' : '#1E293B';
+
+    // Update <meta name="theme-color"> so iOS status bar area matches the background
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', colors.background);
+      metaThemeColor.setAttribute('content', finalBg);
     }
 
-    // Ensure dark class is properly set for shadcn components
+    // Ensure dark class and color scheme are properly set for browser chrome and shadcn
     root.classList.toggle('dark', Boolean(isDark));
+    root.style.colorScheme = isDark ? 'dark' : 'light';
 
     // Toggle high-contrast class for CSS overrides
     root.classList.toggle('theme-high-contrast', themeId === 'high-contrast');
