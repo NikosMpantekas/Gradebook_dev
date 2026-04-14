@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -24,6 +24,13 @@ const PasswordChange = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+
+  // Redirect to login if no authenticated session
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -92,9 +99,30 @@ const PasswordChange = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Password changed successfully! Please log in again.');
-        // authService.logout() already does window.location.replace('/login'), so no navigate needed
-        dispatch(logout());
+        toast.success('Password changed successfully! Redirecting to your dashboard...');
+
+        // Update stored user data to clear the first-login flags without a full logout
+        const updatedUser = { ...user, requirePasswordChange: false, isFirstLogin: false };
+        if (localStorage.getItem('user')) {
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        } else if (sessionStorage.getItem('user')) {
+          sessionStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+
+        // Determine dashboard path by role
+        const rolePaths = {
+          superadmin: '/superadmin/dashboard',
+          admin: '/app/admin',
+          teacher: '/app/teacher',
+          student: '/app/student',
+          parent: '/app/parent',
+        };
+        const dashboardPath = rolePaths[user.role] || '/app/dashboard';
+
+        // Full page reload so Redux reinitialises from the updated storage
+        setTimeout(() => {
+          window.location.replace(dashboardPath);
+        }, 1000);
       } else {
         toast.error(data.message || 'Failed to change password');
       }
