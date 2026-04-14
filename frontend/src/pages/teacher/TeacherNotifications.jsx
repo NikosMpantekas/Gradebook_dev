@@ -101,8 +101,14 @@ const TeacherNotifications = () => {
       setData(prev => ({
         ...prev,
         [tab]: notificationsArray,
-        // Keep received in sync with all if loaded from the same endpoint
-        ...(tab !== 'sent' ? { received: notificationsArray, all: notificationsArray } : {})
+        ...(tab !== 'sent' ? {
+          all: notificationsArray,
+          // For admins: received tab only shows direct messages from superadmins
+          // For everyone else: received = everything
+          received: user?.role === 'admin'
+            ? notificationsArray.filter(n => n.senderRole === 'superadmin')
+            : notificationsArray
+        } : {})
       }));
     } catch (error) {
       console.error('Error loading notifications:', error);
