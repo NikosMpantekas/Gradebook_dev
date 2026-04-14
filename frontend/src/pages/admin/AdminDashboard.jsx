@@ -453,18 +453,18 @@ const AdminDashboard = () => {
             ) : dashboardData.notifications.length > 0 ? (
               <div className="space-y-3">
                 {dashboardData.notifications.slice(0, 5).map((notification, index) => (
-                  <div
-                    key={notification._id}
-                    className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group transition-[transform,box-shadow]"
-                    style={{
-                      borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
-                                  notification.type === 'success' ? 'hsl(var(--success))' :
-                                  notification.type === 'warning' ? 'hsl(var(--warning))' :
-                                  notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
-                      animationDelay: `${(index + 1) * 0.1}s`
-                    }}
-                    onClick={() => navigate(`/app/admin/notifications/${notification._id}`)}
-                  >
+                      <div
+                        key={notification._id}
+                        className="flex items-center space-x-3 p-4 rounded-lg border bg-muted/30 hover:scale-[1.01] hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer group transition-[transform,box-shadow]"
+                        style={{
+                          borderColor: notification.type === 'info' ? 'hsl(var(--info))' :
+                                      notification.type === 'success' ? 'hsl(var(--success))' :
+                                      notification.type === 'warning' ? 'hsl(var(--warning))' :
+                                      notification.type === 'error' ? 'hsl(var(--error))' : 'hsl(var(--border))',
+                          animationDelay: `${(index + 1) * 0.1}s`
+                        }}
+                        onClick={() => navigate(`/app/admin/notifications/${notification._id}`)}
+                      >
                     <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
                       {notification.type === 'info' && <Info className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />}
                       {notification.type === 'success' && <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />}

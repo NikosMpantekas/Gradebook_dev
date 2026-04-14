@@ -23,6 +23,7 @@ import { applyGlobalSafetyGuards } from './utils/safetyGuards';
 
 // Layout Components
 import Layout from './components/layout/Layout';
+import GlobalErrorElement from './components/GlobalErrorElement';
 import ScrollFix from './components/layout/ScrollFix';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -195,7 +196,7 @@ function App() {
   // Define the router with modern Data Router API
   const router = useMemo(() => createBrowserRouter(
     createRoutesFromElements(
-      <Route element={<RootWrapper />}>
+      <Route element={<RootWrapper />} errorElement={<GlobalErrorElement />}>
         {/* Public Routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/about" element={<About />} />

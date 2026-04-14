@@ -1,15 +1,23 @@
 import React from 'react';
-import { AlertTriangle, ChevronDown, Bug, Search, RotateCcw, Home, Copy, RefreshCw } from 'lucide-react';
+import { 
+  AlertTriangle, 
+  Home, 
+  RefreshCw, 
+  ArrowRight,
+  GraduationCap,
+  Bug,
+  ChevronDown,
+  Terminal
+} from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { cn } from '../../lib/utils';
 
 /**
- * ENHANCED ERROR BOUNDARY
- * Comprehensive error catching and detailed logging for easier debugging
- * Provides detailed error reports in both development and production
+ * REFINED ERROR BOUNDARY
+ * Aligned with the GradeBook maintenance page aesthetic.
  */
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,291 +26,133 @@ class ErrorBoundary extends React.Component {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorDetails: null,
-      errorLocation: null,
-      errorTime: null,
-      stackParsed: false,
-      errorType: null
+      isExploded: false
     };
   }
 
   static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
 
-  // Parse the minified stack trace to find useful information
-  parseMinifiedStack(error, errorInfo) {
-    try {
-      const errorStack = error.stack || '';
-      const componentStack = errorInfo.componentStack || '';
-      
-      // Try to identify the error type
-      let errorType = 'Unknown Error';
-      if (error.name) {
-        errorType = error.name;
-      }
-      
-      // Check for common error patterns
-      if (errorStack.includes('TypeError') && errorStack.includes('undefined')) {
-        if (errorStack.includes('is not a function')) {
-          errorType = 'Function Not Found Error';
-        } else {
-          errorType = 'Undefined Value Error';
-        }
-      }
-      
-      // Try to find the function name where the error occurred
-      let errorLocation = 'Unknown';
-      const functionMatch = errorStack.match(/at ([\w.<>]+)/);
-      if (functionMatch && functionMatch[1]) {
-        errorLocation = functionMatch[1];
-      }
-      
-      // Extract React component information
-      let componentInfo = [];
-      const componentLines = componentStack.split('\n').filter(line => line.trim() !== '');
-      componentInfo = componentLines.map(line => {
-        const match = line.match(/in ([\w]+)/); 
-        return match ? match[1] : line.trim();
-      }).filter(Boolean);
-      
-      // Look for a possible undefined function call
-      let possibleUndefinedCall = '';
-      if (error.message && error.message.includes('undefined')) {
-        const matches = error.message.match(/([\w.]+)\(\.\.\.[\s\S]*is undefined/i);
-        if (matches && matches[1]) {
-          possibleUndefinedCall = matches[1];
-        } else if (error.message.includes('x(...) is undefined') || error.message.includes('y(...) is undefined')) {
-          possibleUndefinedCall = 'Minified function call (likely a Redux action or selector)';
-        }
-      }
-      
-      return {
-        errorType,
-        errorLocation,
-        componentPath: componentInfo.join(' → '),
-        possibleUndefinedCall,
-        isReduxError: errorStack.includes('dispatch') || componentStack.includes('Provider') || possibleUndefinedCall.includes('Redux')
-      };
-    } catch (parsingError) {
-      console.error('Error while parsing error stack:', parsingError);
-      return { 
-        errorType: 'Error Parsing Failed',
-        errorLocation: 'Unknown',
-        componentPath: 'Unknown',
-        possibleUndefinedCall: 'Unknown',
-        isReduxError: false
-      };
-    }
-  }
-
   componentDidCatch(error, errorInfo) {
-    // Get current time for the error
-    const errorTime = new Date().toISOString();
-    
-    // Parse the error stack for better debugging
-    const errorDetails = this.parseMinifiedStack(error, errorInfo);
-    
-    // Log the error with detailed information
-    console.error('🚨 ERROR BOUNDARY CAUGHT AN ERROR:', {
-      error: error.toString(),
-      errorInfo: errorInfo.componentStack,
-      errorDetails,
-      errorTime,
-      componentName: this.props.componentName || 'Unknown Component',
-      location: window.location.href,
-      userAgent: navigator.userAgent
-    });
-    
-    // Update state with error information
-    this.setState({
-      error,
-      errorInfo,
-      errorDetails,
-      errorTime,
-      stackParsed: true
-    });
-    
-    // Log to external service if available (e.g., Sentry, LogRocket)
-    if (window.logErrorToService) {
-      try {
-        window.logErrorToService(error, errorInfo, errorDetails);
-      } catch (loggingError) {
-        console.error('Failed to log error to external service:', loggingError);
-      }
-    }
+    console.error('🚨 ERROR BOUNDARY:', { error, errorInfo });
+    this.setState({ error, errorInfo });
+    setTimeout(() => this.setState({ isExploded: true }), 100);
   }
 
-  copyErrorDetailsToClipboard = () => {
-    const errorDetails = {
-      error: this.state.error?.toString(),
-      errorInfo: this.state.errorInfo?.componentStack,
-      errorDetails: this.state.errorDetails,
-      errorTime: this.state.errorTime,
-      componentName: this.props.componentName,
-      location: window.location.href,
-      userAgent: navigator.userAgent
-    };
-    
-    const errorText = JSON.stringify(errorDetails, null, 2);
-    
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(errorText).then(() => {
-        // You could add a toast notification here
-        console.log('Error details copied to clipboard');
-      }).catch(err => {
-        console.error('Failed to copy error details:', err);
-      });
-    } else {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = errorText;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      console.log('Error details copied to clipboard (fallback method)');
-    }
-  };
-  
   render() {
     if (this.state.hasError) {
-      const { errorDetails, isReduxError } = this.state;
-      
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <Card className="max-w-4xl w-full">
-            <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle className="w-8 h-8 text-red-600" />
+        <div className="min-h-screen flex flex-col font-sans bg-zinc-950 text-zinc-100 relative overflow-hidden transition-colors duration-300">
+          {/* Background dot grid */}
+          <div className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundImage: `radial-gradient(#27272a 1px, transparent 1px)`,
+              backgroundSize: '32px 32px'
+            }}
+          />
+
+          {/* Ambient glow */}
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-500 rounded-full opacity-10 blur-[120px] z-0" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-500 rounded-full opacity-10 blur-[120px] z-0" />
+
+          {/* Header */}
+          <header className="relative z-10 w-full p-6 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center">
+                <GraduationCap className="w-6 h-6" />
               </div>
-              <CardTitle className="text-2xl font-bold text-red-600 mb-2">
-                Something went wrong
-              </CardTitle>
-              <p className="text-gray-600">
-                {this.props.componentName ? 
-                  `An error occurred in the ${this.props.componentName} component.` : 
-                  'An unexpected error occurred.'
-                }
-              </p>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-            {/* Error Summary */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-red-800 mb-2">Error Summary</h3>
-                {errorDetails?.errorType && (
-                  <p className="text-sm text-red-700 mb-2">
-                    <strong>Error Type:</strong> {errorDetails.errorType}
-                  </p>
-                )}
+              <span className="text-2xl font-serif font-bold tracking-tight text-white">
+                GradeBook
+              </span>
+            </div>
+          </header>
+
+          <main className="flex-1 flex items-center justify-center p-4 relative z-10">
+            <div className={cn(
+              "w-full max-w-2xl transition-all duration-700 transform",
+              this.state.isExploded ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-8"
+            )}>
+              <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm shadow-2xl overflow-hidden">
+                <div className="h-1.5 bg-gradient-to-r from-red-500 via-red-400 to-orange-500" />
                 
-                {errorDetails?.errorLocation && (
-                  <p className="text-sm text-red-700 mb-2">
-                    <strong>Error Location:</strong> {errorDetails.errorLocation}
-                  </p>
-              )}
-              
-              {errorDetails?.componentPath && (
-                  <p className="text-sm text-red-700 mb-2">
-                  <strong>Component Path:</strong> {errorDetails.componentPath}
-                  </p>
-              )}
-              
-              {isReduxError && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-3">
-                    <p className="text-sm text-yellow-800">
-                    <strong>Redux Error Detected:</strong> This appears to be an issue with Redux state management.
-                    Likely causes include missing action exports or selectors.
+                <CardContent className="p-8 md:p-12 text-center space-y-8">
+                  {/* Icon */}
+                  <div className="flex justify-center">
+                    <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center animate-pulse">
+                      <Bug className="w-10 h-10" />
+                    </div>
+                  </div>
+
+                  {/* Message */}
+                  <div className="space-y-3">
+                    <Badge variant="outline" className="px-3 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold border-red-500/50 text-red-400 bg-red-500/5">
+                      Σφάλμα Συστήματος
+                    </Badge>
+
+                    <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight text-white leading-tight">
+                      Παρουσιάστηκε πρόβλημα
+                    </h1>
+
+                    <p className="text-base md:text-lg max-w-lg mx-auto leading-relaxed text-zinc-400 italic">
+                      "{this.state.error?.message || 'Η εφαρμογή αντιμετώπισε ένα πρόβλημα κατά την εμφάνιση αυτού του στοιχείου.'}"
+                    </p>
+
+                    <p className="text-sm text-zinc-500 max-w-md mx-auto">
+                      Η ομάδα μας πιθανότατα ήδη δουλεύει για την επίλυση αυτού του προβλήματος
                     </p>
                   </div>
-              )}
-              </div>
-            
-            {/* Technical Details (collapsible) */}
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    <div className="flex items-center">
-                      <Bug className="mr-2 w-4 h-4" />
-                      Technical Details
-                    </div>
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                {this.state.error && (
-                    <div className="p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium text-red-600 mb-2">
-                      Error: {this.state.error.toString()}
-                      </p>
-                    {this.state.errorInfo && (
-                        <pre className="text-xs text-gray-700 mt-2 overflow-auto max-h-48 bg-white p-2 rounded border">
-                        {this.state.errorInfo.componentStack}
-                        </pre>
-                    )}
-                    </div>
-                )}
-                </CollapsibleContent>
-              </Collapsible>
-            
-            {/* Suggestions for fixing */}
-            {isReduxError && (
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      <div className="flex items-center">
-                        <Search className="mr-2 w-4 h-4" />
-                        Suggested Fixes
-                      </div>
-                      <ChevronDown className="w-4 h-4" />
+
+                  {/* CTA Buttons */}
+                  <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      size="lg"
+                      onClick={() => window.location.reload()}
+                      className="rounded-full px-8 h-12 text-base font-semibold group"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-700" />
+                      Δοκιμάστε Ξανά
                     </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-2">
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                      <li>Check if all reducers in Redux slices are properly exported</li>
-                      <li>Verify that <code>ensureValidData</code> action is exported from directionSlice.js</li>
-                      <li>Ensure no dynamic imports or requires are used in component code</li>
-                      <li>Look for typos in imported action names</li>
-                    </ol>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-            )}
-            
-            {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3 pt-4">
-              <Button 
-                onClick={() => window.location.href = '/'}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                  <Home className="mr-2 w-4 h-4" />
-                Go to Home
-              </Button>
-              <Button 
-                  variant="outline"
-                onClick={() => window.location.reload()}
-              >
-                  <RefreshCw className="mr-2 w-4 h-4" />
-                Reload Page
-              </Button>
-              <Button 
-                  variant="outline"
-                onClick={this.copyErrorDetailsToClipboard}
-              >
-                  <Copy className="mr-2 w-4 h-4" />
-                Copy Error Details
-              </Button>
-              </div>
-            </CardContent>
-          </Card>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => window.location.href = '/'}
+                      className="rounded-full px-8 h-12 text-base font-semibold border-zinc-700 hover:bg-zinc-800"
+                    >
+                      Αρχική Σελίδα
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+
+                  {/* Diagnostics */}
+                  <div className="pt-6 border-t border-zinc-800/50">
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center space-x-2 mx-auto text-[10px] uppercase tracking-widest font-bold text-zinc-500 hover:text-zinc-300 transition-colors">
+                        <Terminal className="w-3 h-3" />
+                        <span>Τεχνικά Στοιχεία</span>
+                        <ChevronDown className="w-3 h-3" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4 text-left">
+                        <pre className="text-[10px] text-zinc-500 leading-relaxed font-mono p-4 bg-black/30 rounded-xl overflow-auto max-h-48 border border-zinc-800">
+                          {this.state.errorInfo?.componentStack}
+                        </pre>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </main>
+
+          <footer className="relative z-10 w-full p-6 text-center">
+            <p className="text-xs text-zinc-600">
+              © {new Date().getFullYear()} GradeBook
+            </p>
+          </footer>
         </div>
       );
     }
 
-    // When there's no error, render children normally
     return this.props.children;
   }
 }
