@@ -555,6 +555,11 @@ const loginUser = asyncHandler(async (req, res) => {
       schoolName: school ? school.name : null, // Add schoolName to login payload
       secretaryPermissions: user.secretaryPermissions,
       adminPermissions: user.adminPermissions,
+      // Profile fields
+      mobilePhone: user.mobilePhone || '',
+      personalEmail: user.personalEmail || '',
+      dateOfBirth: user.dateOfBirth || '',
+      department: user.department || '',
       // Include school feature permissions
       schoolFeatures,
       // First-login password change fields

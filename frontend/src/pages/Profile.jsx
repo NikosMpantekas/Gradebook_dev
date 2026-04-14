@@ -122,29 +122,11 @@ const Profile = () => {
     });
   }, [user, navigate]);
 
-  // Separate useEffect for admin data refresh to avoid infinite loops
+  // Always fetch fresh user data when Profile page mounts
   useEffect(() => {
-    if (!user || user.role !== 'admin') return;
-
-    // Only refresh if we haven't refreshed in this session
-    if (sessionStorage.getItem('profileRefreshed')) return;
-
-    const refreshUserData = async () => {
-      try {
-        console.log('[PROFILE] Refreshing admin user data...');
-        sessionStorage.setItem('profileRefreshed', 'true');
-
-        // Use the native Redux thunk to safely fetch and populate without doing a PUT request
-        await dispatch(getUserData()).unwrap();
-        console.log('[PROFILE] Admin user data successfully refreshed securely.');
-      } catch (error) {
-        console.error('Error refreshing admin data:', error);
-        sessionStorage.removeItem('profileRefreshed');
-      }
-    };
-
-    refreshUserData();
-  }, [user.role, dispatch]); // Only depend on user.role, not the entire user object
+    if (!user) return;
+    dispatch(getUserData());
+  }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
