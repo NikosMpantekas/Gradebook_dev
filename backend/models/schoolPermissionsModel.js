@@ -83,6 +83,16 @@ const schoolPermissionsSchema = mongoose.Schema(
         default: true,
         description: 'Allow student rating and feedback system'
       },
+      enableRatings: {
+        type: Boolean,
+        default: true,
+        description: 'Allow ratings via /app/ratings route'
+      },
+      enableAttendance: {
+        type: Boolean,
+        default: true,
+        description: 'Allow attendance tracking and management'
+      },
       enableAnalytics: {
         type: Boolean,
         default: true,
@@ -183,6 +193,7 @@ schoolPermissionsSchema.statics.getAvailableFeatures = function() {
     enableSchedule: 'Schedule',
     enableRatingSystem: 'Rating System',
     enableRatings: 'Rating System (/app/ratings)',
+    enableAttendance: 'Attendance Management',
     enableAnalytics: 'Analytics',
     enableUserManagement: 'User Management',
     enableSchoolSettings: 'School Settings',
@@ -232,6 +243,8 @@ schoolPermissionsSchema.statics.createDefaultPermissions = async function(school
         enableCalendar: true,
         enableSchedule: true,
         enableRatingSystem: true,
+        enableRatings: true,
+        enableAttendance: true,
         enableAnalytics: true,
         enableUserManagement: true,
         enableSchoolSettings: true,

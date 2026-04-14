@@ -82,7 +82,7 @@ const updateSchoolPermissions = asyncHandler(async (req, res) => {
     }
     
     // Find existing permissions or create new ones
-    let permissions = await SchoolPermissions.findOne({ school_id: schoolId });
+    let permissions = await SchoolPermissions.findOne({ schoolId: schoolId });
     
     if (!permissions) {
       permissions = await SchoolPermissions.createDefaultPermissions(schoolId, req.user._id);
@@ -352,7 +352,7 @@ const fixSchoolPermissions = asyncHandler(async (req, res) => {
         console.log(`Processing school: ${school.name} (${school._id})`);
         
         // Check if permissions already exist
-        const existingPermissions = await SchoolPermissions.findOne({ school_id: school._id });
+        const existingPermissions = await SchoolPermissions.findOne({ schoolId: school._id });
         
         if (!existingPermissions) {
           // Create default permissions

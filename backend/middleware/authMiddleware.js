@@ -455,9 +455,10 @@ const requireSchoolFeature = (featureName) => {
     // Get user's school permissions from new schoolpermissions collection
     try {
       const SchoolPermissions = require('../models/schoolPermissionsModel');
-      const schoolPermissions = await SchoolPermissions.findOne({ schoolId: req.user.schoolId });
+      // getSchoolPermissions auto-creates default permissions (all enabled) when none exist
+      const schoolPermissions = await SchoolPermissions.getSchoolPermissions(req.user.schoolId);
       
-      if (!schoolPermissions || !schoolPermissions.features || !schoolPermissions.features[featureName]) {
+      if (!schoolPermissions || !schoolPermissions.features || schoolPermissions.features[featureName] === false) {
         console.log(`🚫 Feature '${featureName}' disabled for school ${req.user.schoolId}`);
         return res.status(403).json({ 
           success: false, 
