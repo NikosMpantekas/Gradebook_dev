@@ -37,6 +37,7 @@ import { getUserById, updateUser, reset } from '../../features/users/userSlice';
 import { updateCurrentUserPermissions } from '../../features/auth/authSlice';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
+import ParentLinkingSection from '../../components/admin/ParentLinkingSection';
 
 const EditUser = () => {
   const { t } = useTranslation();
@@ -61,12 +62,6 @@ const EditUser = () => {
   const [schools, setSchools] = useState([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   
-  // State for parent linking functionality
-  const [availableParents, setAvailableParents] = useState([]);
-  const [linkedParents, setLinkedParents] = useState([]);
-  const [parentLinkingLoading, setParentLinkingLoading] = useState(false);
-  const [linkParentDialogOpen, setLinkParentDialogOpen] = useState(false);
-  const [selectedParentId, setSelectedParentId] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -720,6 +715,16 @@ const EditUser = () => {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Parent / Student Linking Section */}
+            {(formData.role === 'student' || formData.role === 'parent') && userData?._id && (
+              <ParentLinkingSection
+                userId={id}
+                userRole={formData.role}
+                userName={userData.name}
+                token={currentUser?.token}
+              />
             )}
 
             {/* Submit Button */}
