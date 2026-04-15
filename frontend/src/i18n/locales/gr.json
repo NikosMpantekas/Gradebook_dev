@@ -132,7 +132,7 @@
     "studentDescription": "Δείτε τα αρχεία και τα στατιστικά παρουσιών σας",
     "selectClass": "Επιλέξτε τάξη",
     "allClasses": "Όλες οι Τάξεις",
-    "sessions": "Συνεδρίες",
+    "sessions": "Μαθήματα",
     "attendance": "Παρουσίες",
     "reports": "Αναφορές",
     "sessionsManagement": "Διαχείριση Συνεδριών",
@@ -232,9 +232,9 @@
     "classes": "Τάξεις",
     "students": "Μαθητές",
     "notes": "Σημειώσεις",
-    "totalSessions": "Σύνολο Συνεδριών",
-    "attendedSessions": "Συνεδρίες Παρουσίας",
-    "missedSessions": "Χαμένες Συνεδρίες",
+    "totalSessions": "Σύνολο Μαθημάτων",
+    "attendedSessions": "Μαθήματα με Παρουσία",
+    "missedSessions": "Μαθήματα με Απουσία",
     "attendanceRate": "Ποσοστό Παρουσίας",
     "overview": "Επισκόπηση",
     "calendar": "Ημερολόγιο",
@@ -249,7 +249,7 @@
     "markPresent": "Σήμανση ως Παρουσία",
     "allAttendance": "Όλες οι Παρουσίες",
     "comprehensiveView": "Συνολική Εικόνα",
-    "sessions": "Συνεδρίες"
+    "sessions": "Μαθήματα"
   },
   "ratings": {
     "answerRequiredQuestions": "Παρακαλώ απαντήστε σε όλες τις υποχρεωτικές ερωτήσεις",

@@ -38,15 +38,29 @@ const saveClassSessionAttendance = asyncHandler(async (req, res) => {
     }
 
     // Parse the date and create session timing
-    const sessionDate = new Date(date);
-    const [startHour, startMinute] = startTime.split(':');
-    const [endHour, endMinute] = endTime.split(':');
+    let scheduledStart, scheduledEnd;
     
-    const scheduledStart = new Date(sessionDate);
-    scheduledStart.setHours(parseInt(startHour), parseInt(startMinute), 0, 0);
-    
-    const scheduledEnd = new Date(sessionDate);
-    scheduledEnd.setHours(parseInt(endHour), parseInt(endMinute), 0, 0);
+    if (startTime && startTime.includes('T')) {
+      // Handle full ISO strings sent from modern clients
+      scheduledStart = new Date(startTime);
+      scheduledEnd = new Date(endTime);
+    } else if (startTime && startTime.includes(':')) {
+      // Legacy fallback: parse raw HH:mm strings
+      const sessionDate = new Date(date);
+      const [startHour, startMinute] = startTime.split(':');
+      const [endHour, endMinute] = endTime.split(':');
+      
+      scheduledStart = new Date(sessionDate);
+      scheduledStart.setHours(parseInt(startHour), parseInt(startMinute), 0, 0);
+      
+      scheduledEnd = new Date(sessionDate);
+      scheduledEnd.setHours(parseInt(endHour), parseInt(endMinute), 0, 0);
+    } else {
+      // Default fallback
+      scheduledStart = new Date(date);
+      scheduledEnd = new Date(date);
+      scheduledEnd.setHours(scheduledEnd.getHours() + 1);
+    }
 
     // Find or create session for this class and date
     let session = await Session.findOne({
@@ -697,6 +711,97 @@ const getProcessedClasses = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Reset class attendance (delete sessions and records for a date)
+// @route   DELETE /api/attendance/class-session/:classId/:date
+// @access  Private (Admin)
+const resetClassAttendance = asyncHandler(async (req, res) => {
+  const { classId, date } = req.params;
+
+  logger.info('CLASS_ATTENDANCE', 'Resetting class attendance', {
+    userId: req.user._id,
+    classId,
+    date
+  });
+
+  try {
+    // Validate class exists
+    const classData = await Class.findById(classId);
+    if (!classData) {
+      res.status(404);
+      throw new Error('Class not found');
+    }
+
+    // Check authorization (Admin only for destructive reset)
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+    if (!isAdmin) {
+      res.status(403);
+      throw new Error('Only administrators can reset attendance data');
+    }
+
+    // Parse date and find sessions for this date
+    const sessionDate = new Date(date);
+    const startOfDay = new Date(sessionDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(sessionDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Find sessions within this 24h window
+    const sessions = await Session.find({
+      classId: classId,
+      scheduledStartAt: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    if (sessions.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No sessions found to reset for this date'
+      });
+    }
+
+    const sessionIds = sessions.map(s => s._id);
+
+    // Delete all attendance records for these sessions
+    const attendanceDeleteResult = await Attendance.deleteMany({
+      sessionId: { $in: sessionIds }
+    });
+
+    // Delete the sessions themselves
+    const sessionDeleteResult = await Session.deleteMany({
+      _id: { $in: sessionIds }
+    });
+
+    logger.info('CLASS_ATTENDANCE', 'Successfully reset attendance', {
+      classId,
+      date,
+      sessionsDeleted: sessionDeleteResult.deletedCount,
+      recordsDeleted: attendanceDeleteResult.deletedCount
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully reset attendance for ${date}`,
+      details: {
+        sessionsDeleted: sessionDeleteResult.deletedCount,
+        recordsDeleted: attendanceDeleteResult.deletedCount
+      }
+    });
+
+  } catch (error) {
+    logger.error('CLASS_ATTENDANCE', 'Error resetting class attendance', {
+      userId: req.user._id,
+      classId,
+      date,
+      error: error.message
+    });
+    
+    res.status(500);
+    throw new Error('Failed to reset class attendance');
+  }
+});
+
 module.exports = {
   saveClassSessionAttendance,
   getClassSessionAttendance,
@@ -704,5 +809,6 @@ module.exports = {
   getProcessedClasses,
   getStudentAttendanceData,
   searchStudents,
-  exportAttendanceReport
+  exportAttendanceReport,
+  resetClassAttendance
 };

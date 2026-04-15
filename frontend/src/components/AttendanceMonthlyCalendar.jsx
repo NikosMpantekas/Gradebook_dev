@@ -52,6 +52,7 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
 
   const goToPreviousMonth = () => setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
   const goToNextMonth = () => setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+  const goToToday = () => setCurrentDate(new Date());
 
   const generateCalendarDays = () => {
     const days = [];
@@ -63,7 +64,7 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
       const date = new Date(currentYear, currentMonth, day);
       const isToday = isSameDay(date, new Date());
       const records = getRecordsForDate(date);
-      
+
       const hasAbsence = records.some(r => r.status === 'absent');
 
       days.push(
@@ -71,28 +72,25 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
           <Popover key={day}>
             <PopoverTrigger asChild>
               <div
-                className={`h-12 sm:h-16 flex flex-col items-center justify-center text-sm rounded-xl cursor-pointer transition-all duration-300 transform-gpu border ${
-                  isToday 
-                    ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-lg ring-2 ring-primary/20 scale-105 z-10' 
+                className={`h-12 sm:h-16 flex flex-col items-center justify-center text-sm rounded-xl cursor-pointer transition-all duration-300 transform-gpu border ${isToday
+                    ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-lg ring-2 ring-primary/20 scale-105 z-10'
                     : 'hover:bg-accent hover:text-accent-foreground border-border/50 hover:border-primary/40 hover:shadow-xl hover:scale-110 hover:-translate-y-1.5'
-                } relative overflow-hidden group`}
+                  } relative overflow-hidden group`}
               >
                 {/* Background decorative gradient for days with records */}
-                <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br ${
-                  hasAbsence ? 'from-destructive to-transparent' : 'from-primary to-transparent'
-                }`} />
-                
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br ${hasAbsence ? 'from-destructive to-transparent' : 'from-primary to-transparent'
+                  }`} />
+
                 <span className={`text-xs sm:text-sm mb-1 z-10 ${isToday ? 'font-bold' : 'font-medium opacity-80'}`}>{day}</span>
-                
+
                 <div className="flex gap-1 justify-center z-10">
                   {records.slice(0, 3).map((r, i) => (
                     <div
                       key={i}
-                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ring-1 ring-white/20 ${
-                        r.status === 'present' ? 'bg-green-500' : 
-                        r.status === 'absent' ? 'bg-red-500' : 
-                        r.status === 'late' ? 'bg-amber-500' : 'bg-blue-500'
-                      }`}
+                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ring-1 ring-white/20 ${r.status === 'present' ? 'bg-green-500' :
+                          r.status === 'absent' ? 'bg-red-500' :
+                            r.status === 'late' ? 'bg-amber-500' : 'bg-blue-500'
+                        }`}
                     />
                   ))}
                 </div>
@@ -126,14 +124,14 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
                             </span>
                           </div>
                         </div>
-                        <Badge 
+                        <Badge
                           variant={r.status === 'present' ? 'default' : r.status === 'absent' ? 'destructive' : 'secondary'}
                           className="text-[10px] h-5 font-bold uppercase tracking-wider shrink-0"
                         >
                           {t(`attendance.${r.status}`)}
                         </Badge>
                       </div>
-                      
+
                       {/* Show session title as subtitle if it exists and is different from class name */}
                       {r.session?.title && r.session.title !== (r.class?.subject || r.class?.name) && (
                         <div className="mt-2 pt-2 border-t border-border/20 text-[10px] text-muted-foreground font-medium pl-5 italic opacity-80">
@@ -149,11 +147,10 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
         ) : (
           <div
             key={day}
-            className={`h-12 sm:h-16 flex flex-col items-center justify-center text-sm rounded-xl transition-all border ${
-              isToday 
-                ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-lg scale-105 z-10' 
+            className={`h-12 sm:h-16 flex flex-col items-center justify-center text-sm rounded-xl transition-all border ${isToday
+                ? 'bg-primary text-primary-foreground font-semibold border-primary shadow-lg scale-105 z-10'
                 : 'hover:bg-muted/40 hover:text-foreground border-transparent'
-            }`}
+              }`}
           >
             <span className={`text-xs sm:text-sm ${isToday ? 'font-bold' : 'font-medium opacity-40'}`}>{day}</span>
           </div>
@@ -165,17 +162,39 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
 
   return (
     <div className="w-full p-4 sm:p-6 bg-card rounded-2xl border shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" size="icon" onClick={goToPreviousMonth} className="rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <div className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5 text-primary" />
-          {getLocalizedMonthName(currentMonth)} {currentYear}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+            className="rounded-2xl font-bold text-[10px] uppercase tracking-wider px-4 h-9 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300 border-primary/20"
+          >
+            {t('attendance.today')}
+          </Button>
+          <h2 className="text-xl font-black text-foreground tracking-tight px-4 py-2 bg-muted/30 rounded-2xl border border-white/5 shadow-inner">
+            {getLocalizedMonthName(currentMonth)} {currentYear}
+          </h2>
         </div>
-        <Button variant="ghost" size="icon" onClick={goToNextMonth} className="rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+
+        <div className="flex items-center justify-end gap-1.5 bg-muted/20 p-1 rounded-2xl border border-white/5">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPreviousMonth}
+            className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextMonth}
+            className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4">

@@ -122,12 +122,39 @@ sessionSchema.statics.generateSessionsForClass = async function(classId, startDa
       if (scheduleForDay) {
         const [startHour, startMinute] = scheduleForDay.startTime.split(':').map(Number);
         const [endHour, endMinute] = scheduleForDay.endTime.split(':').map(Number);
-        
-        const scheduledStart = new Date(currentDate);
-        scheduledStart.setHours(startHour, startMinute, 0, 0);
-        
-        const scheduledEnd = new Date(currentDate);
-        scheduledEnd.setHours(endHour, endMinute, 0, 0);
+
+        // Helper to construct UTC date from Athens local time
+        const getUTCDateForAthens = (baseDate, hour, minute) => {
+          // Create date string in YYYY-MM-DD format
+          const d = new Date(baseDate);
+          const dateStr = d.toISOString().split('T')[0];
+          
+          // Construct local date string
+          const localStr = `${dateStr}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+          
+          // We use Intl.DateTimeFormat to find how many minutes Athens is ahead of UTC at this specific date
+          const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Europe/Athens',
+            year: 'numeric', month: 'numeric', day: 'numeric',
+            hour: 'numeric', minute: 'numeric', second: 'numeric',
+            hour12: false
+          });
+          
+          // Get the UTC time for the "blind" local construction
+          const testDate = new Date(localStr + 'Z'); 
+          const parts = formatter.formatToParts(testDate);
+          const partValues = {};
+          parts.forEach(p => partValues[p.type] = p.value);
+          
+          // Reconstruct the Athens time as if it were UTC to find the offset
+          const athensDate = new Date(`${partValues.year}-${partValues.month.padStart(2, '0')}-${partValues.day.padStart(2, '0')}T${partValues.hour.padStart(2, '0')}:${partValues.minute.padStart(2, '0')}:00Z`);
+          
+          const offsetMs = athensDate.getTime() - testDate.getTime();
+          return new Date(testDate.getTime() - offsetMs);
+        };
+
+        const scheduledStart = getUTCDateForAthens(currentDate, startHour, startMinute);
+        const scheduledEnd = getUTCDateForAthens(currentDate, endHour, endMinute);
         
         sessions.push({
           classId: classData._id,

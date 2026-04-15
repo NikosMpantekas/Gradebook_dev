@@ -306,76 +306,156 @@ const StudentAttendanceView = () => {
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          {t('attendance.myAttendance')}
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          {t('attendance.viewAttendanceHistory')}
-        </p>
+  const StatsCard = ({ title, value, icon: Icon, colorClass, subValue }) => (
+    <div className="overflow-hidden relative rounded-2xl border border-border/40 bg-card p-4">
+      <div className="flex items-center justify-between space-x-3">
+        <div className="space-y-0.5 min-w-0">
+          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground truncate">{title}</p>
+          <div className="flex items-baseline space-x-1.5">
+            <h3 className="text-xl font-black tracking-tight">{value}</h3>
+            {subValue && <span className="text-[10px] font-bold text-muted-foreground truncate">{subValue}</span>}
+          </div>
+        </div>
+        <div className={`p-2 rounded-xl ${colorClass.replace('bg-', 'bg-').replace('-500', '/10')} text-${colorClass.split('-')[1]}-500 shrink-0`}>
+          <Icon className="h-4 w-4" />
+        </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-light tracking-wide text-foreground">
+            {t('attendance.myAttendance')}
+          </h1>
+          <p className="text-muted-foreground text-sm font-medium">
+            {t('attendance.viewAttendanceHistory')}
+          </p>
+        </div>
+
+      </div>
+
 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Class Selection */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BookOpen className="h-5 w-5" />
-              <span>{t('navigation.classes')}</span>
-            </CardTitle>
-          </CardHeader>
+        <Card className="lg:col-span-1 border-none shadow-none bg-transparent">
+          <div className="mb-4 flex items-center justify-between px-1">
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <BookOpen className="h-4 w-4" />
+              <span className="text-[10px] uppercase font-black tracking-[.2em]">{t('navigation.classes')}</span>
+            </div>
+          </div>
           <CardContent>
-            <div className="space-y-4">
-              {loading ? (
-                <div className="space-y-4">
-                  <div className="h-[88px] w-full bg-muted/40 rounded-2xl border border-border/10" />
-                  <div className="h-[20px] w-24 bg-muted/40 rounded mx-1" />
-                  <div className="space-y-3">
-                    {Array.from({ length: 4 }, (_, i) => (
-                      <div key={i} className="h-[76px] w-full bg-muted/20 rounded-2xl border border-border/10" />
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <Button
-                    variant={selectedClass === null ? "default" : "outline"}
-                    className={`w-full justify-start h-auto p-4 transition-all duration-200 ${selectedClass === null ? 'shadow-lg shadow-primary/20 scale-[1.02]' : ''}`}
-                    onClick={() => setSelectedClass(null)}
-                  >
-                    <div className="text-left flex items-center space-x-3">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      <div>
-                        <div className="font-bold text-sm tracking-tight">{t('attendance.allAttendance')}</div>
-                        <div className="text-[10px] opacity-70 uppercase tracking-widest font-bold">{t('attendance.comprehensiveView')}</div>
-                      </div>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                {loading ? (
+                  <div className="space-y-4">
+                    <div className="h-[88px] w-full bg-muted/40 rounded-2xl border border-border/10" />
+                    <div className="h-[20px] w-24 bg-muted/40 rounded mx-1" />
+                    <div className="space-y-3">
+                      {Array.from({ length: 4 }, (_, i) => (
+                        <div key={i} className="h-[76px] w-full bg-muted/20 rounded-2xl border border-border/10" />
+                      ))}
                     </div>
-                  </Button>
-
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">{t('common.classes')}</div>
-
-                  <div className="space-y-3">
-                    {classes.map((classItem) => (
-                      <Button
-                        key={classItem._id}
-                        variant={selectedClass?._id === classItem._id ? "default" : "outline"}
-                        className={`w-full justify-start h-auto p-4 transition-all duration-200 border-border/40 ${selectedClass?._id === classItem._id ? 'shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted/50 hover:scale-[1.01]'}`}
-                        onClick={() => setSelectedClass(classItem)}
-                      >
-                        <div className="text-left w-full">
-                          <div className="font-bold text-sm tracking-tight truncate">{classItem.subject || classItem.name}</div>
-                          {classItem.subject && classItem.subject !== classItem.name && (
-                            <div className="text-[10px] opacity-60 tracking-wide truncate mt-0.5">{classItem.name}</div>
-                          )}
-                        </div>
-                      </Button>
-                    ))}
                   </div>
-                </>
-              )}
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setSelectedClass(null)}
+                      className={`w-full group relative flex items-center p-5 rounded-2xl transition-all duration-300 border ${selectedClass === null
+                        ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-[1.02] z-10'
+                        : 'bg-card border-border/40 hover:border-primary/40 hover:bg-primary/5'
+                        }`}
+                    >
+                      <div className="flex-1 text-left min-w-0 flex items-center space-x-4">
+                        <TrendingUp className={`h-5 w-5 ${selectedClass === null ? 'text-primary-foreground' : 'text-primary'}`} />
+                        <div>
+                          <div className={`font-bold text-base tracking-tight truncate ${selectedClass === null ? 'text-primary-foreground' : 'text-foreground'}`}>
+                            {t('attendance.allAttendance')}
+                          </div>
+                          <div className={`text-[10px] uppercase font-bold tracking-widest mt-0.5 opacity-60 ${selectedClass === null ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                            {t('attendance.comprehensiveView')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`ml-4 transition-all duration-300 ${selectedClass === null ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-hover:scale-110'}`}>
+                        <ChevronRight className="h-5 w-5" />
+                      </div>
+                    </button>
+
+
+
+                    <div className="space-y-2">
+                      {classes.map((classItem) => {
+                        const isActive = selectedClass?._id === classItem._id;
+                        return (
+                          <button
+                            key={classItem._id}
+                            onClick={() => setSelectedClass(classItem)}
+                            className={`w-full group relative flex items-center p-4 rounded-2xl transition-all duration-300 border ${isActive
+                              ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-[1.02] z-10'
+                              : 'bg-card border-border/40 hover:border-primary/40 hover:bg-primary/5'
+                              }`}
+                          >
+                            <div className="flex-1 text-left min-w-0">
+                              <div className={`font-bold text-sm tracking-tight truncate ${isActive ? 'text-primary-foreground' : 'text-foreground'}`}>
+                                {classItem.subject || classItem.name}
+                              </div>
+                              {classItem.subject && classItem.subject !== classItem.name && (
+                                <div className={`text-[10px] uppercase font-bold tracking-widest mt-0.5 opacity-60 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                                  {classItem.name}
+                                </div>
+                              )}
+                            </div>
+                            <div className={`ml-4 transition-all duration-300 ${isActive ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-hover:scale-110'}`}>
+                              <ChevronRight className="h-4 w-4" />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Stats Overview in Sidebar */}
+              <div className="space-y-4 pt-4 border-t border-border/40">
+                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-[.2em] px-1 flex items-center space-x-2">
+                  <div className="w-1.5 h-[1px] bg-border" />
+                  <span>{t('attendance.overview')}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+                  <StatsCard
+                    title={t('attendance.totalSessions')}
+                    value={stats.totalSessions}
+                    icon={Calendar}
+                    colorClass="bg-blue-500"
+                  />
+                  <StatsCard
+                    title={t('attendance.attendedSessions')}
+                    value={stats.presentSessions}
+                    icon={CheckCircle2}
+                    colorClass="bg-green-500"
+                    subValue={stats.totalSessions > 0 ? `${Math.round((stats.presentSessions / stats.totalSessions) * 100)}%` : '0%'}
+                  />
+                  <StatsCard
+                    title={t('attendance.missedSessions')}
+                    value={stats.absentSessions}
+                    icon={XCircle}
+                    colorClass="bg-red-500"
+                    subValue={stats.totalSessions > 0 ? `${Math.round((stats.absentSessions / stats.totalSessions) * 100)}%` : '0%'}
+                  />
+                  <StatsCard
+                    title={t('attendance.attendanceRate')}
+                    value={`${stats.attendanceRate}%`}
+                    icon={TrendingUp}
+                    colorClass="bg-amber-500"
+                  />
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -451,42 +531,65 @@ const StudentAttendanceView = () => {
                       return sessionDate;
                     })
                     .sort((a, b) => new Date(b.date || b.session?.date) - new Date(a.date || a.session?.date))
-                    .map((session, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 border border-border/50 rounded-2xl bg-muted/20 hover:bg-muted/30 transition-all duration-200">
-                        <div className="flex items-center space-x-4">
-                          <div className={`p-2 rounded-xl ${session.status === 'present' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                            {session.status === 'present' ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            ) : (
-                              <XCircle className="h-5 w-5 text-red-500" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="flex flex-col">
-                              <p className="font-bold text-sm tracking-tight text-foreground">
-                                {session.class?.subject || session.class?.name || '--'}
-                              </p>
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
-                                {(() => {
-                                  const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
-                                  const parsedDate = safeParseDate(sessionDate);
-                                  return parsedDate ? format(parsedDate, 'EEEE, MMM dd, yyyy') : 'Invalid Date';
-                                })()}
-                              </p>
+                    .map((session, index) => {
+                      const isPresent = session.status === 'present' || session.status === 'late';
+                      const isLate = session.status === 'late';
+
+                      return (
+                        <div key={index} className="group relative bg-card border border-border/40 rounded-3xl p-5 transition-all duration-300 hover:shadow-2xl hover:border-primary/20 hover:-translate-y-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center space-x-4">
+                              <div className={`p-4 rounded-2xl ${isPresent ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'} transition-transform duration-300 group-hover:scale-110 shadow-inner`}>
+                                {isPresent ? (
+                                  isLate ? <Clock className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />
+                                ) : (
+                                  <XCircle className="h-6 w-6" />
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <h4 className="font-black text-lg tracking-tight text-foreground group-hover:text-primary transition-colors">
+                                  {session.class?.subject || session.class?.name || '--'}
+                                </h4>
+                                <div className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-[.15em] text-muted-foreground">
+                                  <span>
+                                    {(() => {
+                                      const sessionDate = session.date || session.session?.scheduledStartAt || session.session?.date;
+                                      const parsedDate = safeParseDate(sessionDate);
+                                      return parsedDate ? format(parsedDate, 'EEEE, MMM dd, yyyy') : 'Invalid Date';
+                                    })()}
+                                  </span>
+                                  {session.session?.scheduledStartAt && (
+                                    <>
+                                      <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                      <span className="flex items-center">
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        {format(new Date(session.session.scheduledStartAt), 'HH:mm')}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            {session.note && (
-                              <p className="text-xs text-muted-foreground mt-1 bg-muted/40 px-2 py-0.5 rounded inline-block">{session.note}</p>
-                            )}
+
+                            <div className="flex items-center justify-between sm:justify-end gap-3 pt-4 sm:pt-0 border-t sm:border-none border-border/10">
+                              {session.note && (
+                                <Badge variant="outline" className="text-[10px] font-bold bg-muted/30 border-none px-3 py-1">
+                                  {session.note}
+                                </Badge>
+                              )}
+                              <Badge
+                                className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border-none shadow-sm ${isPresent
+                                  ? isLate ? 'bg-amber-500 text-white' : 'bg-green-500 text-white'
+                                  : 'bg-red-500 text-white'
+                                  }`}
+                              >
+                                {t(`attendance.${session.status}`)}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                        <Badge
-                          variant={session.status === 'present' ? 'default' : 'destructive'}
-                          className={`text-[10px] font-bold uppercase tracking-wider ${session.status === 'present' ? 'bg-green-500 text-white border-none' : ''}`}
-                        >
-                          {session.status === 'present' ? t('attendance.present') : t('attendance.absent')}
-                        </Badge>
-                      </div>
-                    ))
+                      );
+                    })
                 ) : (
                   <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                     {t('attendance.noAttendanceData')}
