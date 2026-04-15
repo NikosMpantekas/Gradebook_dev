@@ -863,9 +863,6 @@ const WeeklyAttendanceManagement = () => {
                                             </div>
                                           </div>
                                           <div className="flex flex-wrap gap-1.5 mt-auto">
-                                            <Badge variant="outline" className="text-[9px] h-4 font-bold border-muted-foreground/30 text-muted-foreground uppercase leading-none">
-                                              {cls.subject}
-                                            </Badge>
                                             {isProcessed && (
                                               <Badge className="text-[9px] h-4 font-bold bg-primary/20 text-primary border-none uppercase leading-none">
                                                 {t('attendance.saved')}
