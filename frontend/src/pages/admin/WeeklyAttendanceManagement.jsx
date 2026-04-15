@@ -68,6 +68,7 @@ import { API_URL } from '../../config/apiConfig';
 import axios from 'axios';
 import { Spinner } from '../../components/ui/spinner';
 import { cn } from '../../lib/utils';
+import { convertToCSV, downloadCSV } from '../../utils/exportUtils';
 
 
 // Memoized Student Row Component
@@ -145,6 +146,20 @@ const WeeklyAttendanceManagement = () => {
   const [pendingSemesterChange, setPendingSemesterChange] = useState(null);
   const [processedClasses, setProcessedClasses] = useState(new Set());
   const [error, setError] = useState(null);
+
+  // Export State
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportConfig, setExportConfig] = useState({
+    type: 'all',
+    filterId: '',
+    dateRange: 'semester',
+    customStartDate: '',
+    customEndDate: ''
+  });
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportStudents, setExportStudents] = useState([]);
+  const [exportStudentSearch, setExportStudentSearch] = useState('');
+  const [isSearchingExportStudents, setIsSearchingExportStudents] = useState(false);
 
   // Semester configuration handlers
   const handleSemesterStartChange = (value) => {
@@ -638,6 +653,139 @@ const WeeklyAttendanceManagement = () => {
     }
   };
 
+  // Export Logic
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+      const token = user?.token;
+
+      // Calculate dates based on range
+      let start, end;
+      const today = new Date();
+
+      switch (exportConfig.dateRange) {
+        case 'week':
+          start = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+          end = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+          break;
+        case 'month':
+          start = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
+          end = format(new Date(today.getFullYear(), today.getMonth() + 1, 0), 'yyyy-MM-dd');
+          break;
+        case 'semester':
+          start = semesterStart;
+          end = semesterEnd;
+          break;
+        case 'custom':
+          start = exportConfig.customStartDate;
+          end = exportConfig.customEndDate;
+          break;
+        default:
+          start = semesterStart;
+          end = semesterEnd;
+      }
+
+      const params = {
+        type: exportConfig.type,
+        startDate: start,
+        endDate: end
+      };
+
+      if (exportConfig.type !== 'all') {
+        if (!exportConfig.filterId) {
+          toast.error(t('attendance.selectTarget', 'Please select a target for export'));
+          setExportLoading(false);
+          return;
+        }
+        params.filterId = exportConfig.filterId;
+      }
+
+      const response = await axios.get(`${API_URL}/api/attendance/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+      });
+
+      if (response.data && response.data.success && response.data.data) {
+        const data = response.data.data;
+        if (data.length === 0) {
+          toast.info(t('attendance.noDataForExport', 'No records found for the selected criteria'));
+          setExportLoading(false);
+          return;
+        }
+
+        // Calculate Stats on raw data
+        const total = data.length;
+        const present = data.filter(r => r.status === 'present').length;
+        const absent = data.filter(r => r.status === 'absent').length;
+        const uniqueSessions = new Set(data.map(r => `${format(new Date(r.date), 'yyyy-MM-dd')}|${r.className}`)).size;
+        const percentage = total > 0 ? ((present / total) * 100).toFixed(2) : 0;
+
+        const formattedData = data
+          .filter(r => r.status === 'absent')
+          .map(r => ({
+            ...r,
+            date: r.date ? format(new Date(r.date), 'yyyy-MM-dd') : '',
+            status: t(`attendance.${r.status}`)
+          }));
+
+        const columns = [
+          { key: 'date', label: t('common.date') },
+          { key: 'className', label: t('classes.className') },
+          { key: 'studentName', label: t('students.studentName') },
+          { key: 'status', label: t('common.status') },
+          { key: 'note', label: t('attendance.note') }
+        ];
+
+        let csv = convertToCSV(formattedData, columns);
+        
+        // Append Summary
+        csv += `\n\n`;
+        csv += `${t('attendance.totalPresent')},${present}\n`;
+        csv += `${t('attendance.totalAbsent')},${absent}\n`;
+        csv += `${t('attendance.totalSessions')},${uniqueSessions}\n`;
+        csv += `${t('attendance.attendancePercentage')},${percentage}%\n`;
+
+        const filename = `Attendance_${exportConfig.type}_${start}_${end}.csv`;
+        downloadCSV(csv, filename);
+        toast.success(t('attendance.exportCompleted'));
+        setExportDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(t('attendance.exportFailed'));
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const searchExportStudents = async (query) => {
+    if (!query || query.length < 2) return;
+    try {
+      setIsSearchingExportStudents(true);
+      const token = user?.token;
+      const response = await axios.get(`${API_URL}/api/attendance/students/search`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { query }
+      });
+      if (response.data && response.data.success) {
+        setExportStudents(response.data.students);
+      }
+    } catch (error) {
+      console.error('Error searching students for export:', error);
+    } finally {
+      setIsSearchingExportStudents(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (exportStudentSearch) {
+        searchExportStudents(exportStudentSearch);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [exportStudentSearch]);
+
 
   if (loading) {
     return (
@@ -681,6 +829,181 @@ const WeeklyAttendanceManagement = () => {
           </p>
         </div>
 
+        <div className="flex items-center gap-3">
+          <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 shadow-sm hover:shadow-md bg-background">
+                <Download className="w-4 h-4 text-primary" />
+                <span className="font-semibold">{t('attendance.exportReports', 'Export Reports')}</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden outline-none border-none shadow-2xl">
+              <DialogHeader className="p-6 bg-primary/[0.03] border-b">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 text-primary rounded-xl">
+                    <Download className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl font-bold">{t('attendance.exportReports')}</DialogTitle>
+                    <DialogDescription>{t('attendance.exportDescription', 'Generate and download attendance reports in CSV format')}</DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                {/* Export Type / Scope */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.exportScope', 'Export Scope')}</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['all', 'class', 'student'].map((type) => (
+                      <Button
+                        key={type}
+                        type="button"
+                        variant={exportConfig.type === type ? "default" : "outline"}
+                        className={cn(
+                          "h-10 text-xs font-bold uppercase tracking-wider transition-all",
+                          exportConfig.type === type ? "shadow-md shadow-primary/20" : "hover:bg-primary/5"
+                        )}
+                        onClick={() => setExportConfig({ ...exportConfig, type, filterId: '' })}
+                      >
+                        {t(`attendance.${type}`, type.charAt(0).toUpperCase() + type.slice(1))}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Target Selection (Conditional) */}
+                {exportConfig.type === 'class' && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.selectClass')}</Label>
+                    <Select
+                      value={exportConfig.filterId}
+                      onValueChange={(val) => setExportConfig({ ...exportConfig, filterId: val })}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder={t('attendance.chooseClass', 'Select a class...')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map(cls => (
+                          <SelectItem key={cls._id} value={cls._id}>{cls.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {exportConfig.type === 'student' && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.selectStudent')}</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t('attendance.searchStudents')}
+                        value={exportStudentSearch}
+                        onChange={(e) => setExportStudentSearch(e.target.value)}
+                        className="pl-9 h-11"
+                      />
+                      {isSearchingExportStudents && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Spinner size="sm" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {exportStudents.length > 0 && (
+                      <div className="border rounded-lg divide-y bg-muted/20 max-h-[150px] overflow-y-auto overflow-x-hidden">
+                        {exportStudents.map(student => (
+                          <div
+                            key={student._id}
+                            className={cn(
+                              "p-2.5 px-4 text-sm cursor-pointer transition-colors flex items-center justify-between group",
+                              exportConfig.filterId === student._id ? "bg-primary/10 text-primary" : "hover:bg-background"
+                            )}
+                            onClick={() => {
+                              setExportConfig({ ...exportConfig, filterId: student._id });
+                              setExportStudentSearch(student.name);
+                              setExportStudents([]);
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-semibold">{student.name}</span>
+                              <span className="text-[10px] text-muted-foreground group-hover:text-primary/70">{student.email}</span>
+                            </div>
+                            {exportConfig.filterId === student._id && <CheckCircle2 className="w-4 h-4" />}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Date Range Selection */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.dateRange', 'Date Range')}</Label>
+                  <Select
+                    value={exportConfig.dateRange}
+                    onValueChange={(val) => setExportConfig({ ...exportConfig, dateRange: val })}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="week">{t('attendance.currentWeek')}</SelectItem>
+                      <SelectItem value="month">{t('attendance.currentMonth', 'Current Month')}</SelectItem>
+                      <SelectItem value="semester">{t('attendance.fullSemester', 'Full Semester')}</SelectItem>
+                      <SelectItem value="custom">{t('attendance.customRange', 'Custom Range')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {exportConfig.dateRange === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('attendance.startDate')}</Label>
+                      <Input
+                        type="date"
+                        value={exportConfig.customStartDate}
+                        onChange={(e) => setExportConfig({ ...exportConfig, customStartDate: e.target.value })}
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('attendance.endDate')}</Label>
+                      <Input
+                        type="date"
+                        value={exportConfig.customEndDate}
+                        onChange={(e) => setExportConfig({ ...exportConfig, customEndDate: e.target.value })}
+                        className="h-10"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="p-6 pt-2 bg-muted/30 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setExportDialogOpen(false)}
+                  className="px-6 font-semibold"
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  onClick={handleExport}
+                  disabled={exportLoading}
+                  className="px-8 font-bold gap-2 shadow-lg shadow-primary/20"
+                >
+                  {exportLoading ? (
+                    <Spinner size="sm" className="text-primary-foreground" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  {t('attendance.downloadCSV', 'Download CSV')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
@@ -1056,7 +1379,7 @@ const WeeklyAttendanceManagement = () => {
               <Button
                 size="sm"
                 disabled={popupLoading}
-                className="px-6 h-9 font-medium shadow-md transition-all active:scale-95 shadow-primary/10"
+                className="px-6 h-9 font-medium shadow-md shadow-primary/10"
                 onClick={saveClassAttendance}
               >
                 <Save className="w-3.5 h-3.5 mr-2" />
