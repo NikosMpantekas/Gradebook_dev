@@ -175,14 +175,14 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         items.push({ icon: Clock, label: t('navigation.schedule'), path: '/app/teacher/schedule' });
       }
 
+      if (isFeatureEnabled('enableClasses')) {
+        items.push({ icon: UserCheck, label: t('navigation.attendance'), path: '/app/teacher/attendance' });
+      }
+
       if (isFeatureEnabled('enableContact')) {
         items.push({ icon: MessageSquare, label: t('navigation.contactMessages'), path: '/app/teacher/contact' });
       }
 
-      // Attendance System - Temporarily disabled for teachers
-      // if (isFeatureEnabled('enableClasses')) {
-      //   items.push({ icon: UserCheck, label: t('navigation.attendance'), path: '/app/teacher/attendance' });
-      // }
     }
 
     if (isStudent) {
@@ -527,13 +527,13 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Logout Confirmation Dialog */}
       <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent 
+        <DialogContent
           className={cn(
             "w-[90vw] max-w-sm sm:max-w-md backdrop-blur-xl border-primary/20 transition-all duration-300",
             darkMode ? "text-foreground shadow-2xl shadow-primary/5" : "text-foreground shadow-xl shadow-primary/5"
           )}
           style={{
-            backgroundColor: typeof themedMobileSidebarBg === 'string' && themedMobileSidebarBg.startsWith('rgba') 
+            backgroundColor: typeof themedMobileSidebarBg === 'string' && themedMobileSidebarBg.startsWith('rgba')
               ? themedMobileSidebarBg.replace(/0\.[67]/, '0.85') // Make it slightly more opaque for readability
               : undefined
           }}
@@ -559,5 +559,5 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
 
