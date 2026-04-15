@@ -377,109 +377,69 @@ const exportAttendanceReport = asyncHandler(async (req, res) => {
     const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), 0, 1);
     const end = endDate ? new Date(endDate) : new Date();
 
-    switch (type) {
-      case 'all':
-        // Export all attendance data
-        attendanceData = await Attendance.aggregate([
-          {
-            $lookup: {
-              from: 'sessions',
-              localField: 'sessionId',
-              foreignField: '_id',
-              as: 'session'
-            }
-          },
-          {
-            $lookup: {
-              from: 'classes',
-              localField: 'classId',
-              foreignField: '_id',
-              as: 'class'
-            }
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'studentId',
-              foreignField: '_id',
-              as: 'student'
-            }
-          },
-          {
-            $match: {
-              schoolId: req.user.schoolId,
-              'session.scheduledStartAt': { $gte: start, $lte: end }
-            }
-          },
-          {
-            $project: {
-              'class.name': 1,
-              'class.subject': 1,
-              'class.direction': 1,
-              'class.schoolBranch': 1,
-              'student.name': 1,
-              'student.email': 1,
-              'session.scheduledStartAt': 1,
-              status: 1,
-              markedAt: 1,
-              note: 1
-            }
-          }
-        ]);
-        break;
+    const matchConditions = {
+      schoolId: new mongoose.Types.ObjectId(req.user.schoolId),
+      active: true
+    };
 
-      case 'class':
-        if (!filterId) {
-          res.status(400);
-          throw new Error('Class ID required for class export');
-        }
-        // Export attendance for specific class
-        attendanceData = await Attendance.aggregate([
-          {
-            $match: {
-              classId: new mongoose.Types.ObjectId(filterId),
-              schoolId: req.user.schoolId
-            }
-          },
-          {
-            $lookup: {
-              from: 'sessions',
-              localField: 'sessionId',
-              foreignField: '_id',
-              as: 'session'
-            }
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'studentId',
-              foreignField: '_id',
-              as: 'student'
-            }
-          },
-          {
-            $match: {
-              'session.scheduledStartAt': { $gte: start, $lte: end }
-            }
-          }
-        ]);
-        break;
-
-      case 'student':
-        if (!filterId) {
-          res.status(400);
-          throw new Error('Student ID required for student export');
-        }
-        // Export attendance for specific student
-        attendanceData = await Attendance.getStudentAttendance(filterId, start, end, {
-          populate: true
-        });
-        break;
-
-      default:
-        res.status(400);
-        throw new Error('Invalid export type');
+    if (type === 'class' && filterId) {
+      matchConditions.classId = new mongoose.Types.ObjectId(filterId);
+    } else if (type === 'student' && filterId) {
+      matchConditions.studentId = new mongoose.Types.ObjectId(filterId);
+    } else if (type !== 'all') {
+      res.status(400);
+      throw new Error(`Invalid export type or missing filterId: ${type}`);
     }
+
+    attendanceData = await Attendance.aggregate([
+      { $match: matchConditions },
+      {
+        $lookup: {
+          from: 'sessions',
+          localField: 'sessionId',
+          foreignField: '_id',
+          as: 'session'
+        }
+      },
+      { $unwind: '$session' },
+      {
+        $match: {
+          'session.scheduledStartAt': { $gte: start, $lte: end }
+        }
+      },
+      {
+        $lookup: {
+          from: 'classes',
+          localField: 'classId',
+          foreignField: '_id',
+          as: 'class'
+        }
+      },
+      { $unwind: '$class' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'studentId',
+          foreignField: '_id',
+          as: 'student'
+        }
+      },
+      { $unwind: '$student' },
+      {
+        $project: {
+          _id: 0,
+          date: '$session.scheduledStartAt',
+          className: '$class.name',
+          subject: '$class.subject',
+          studentName: '$student.name',
+          studentEmail: '$student.email',
+          status: '$status',
+          note: '$note',
+          markedAt: '$markedAt'
+        }
+      },
+      { $sort: { date: -1, className: 1, studentName: 1 } }
+    ]);
 
     // For now, return JSON data (in production, this would generate Excel/CSV)
     res.status(200).json({
