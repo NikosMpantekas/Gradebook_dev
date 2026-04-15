@@ -110,11 +110,14 @@ const CreateAttendanceSession = () => {
         return;
       }
 
+      const startDateTime = new Date(`${formData.date}T${formData.time}:00`);
+      const endDateTime = new Date(startDateTime.getTime() + (parseInt(formData.duration) * 60 * 1000));
+
       const sessionData = {
         title: formData.title,
         classId: formData.classId,
-        date: formData.date,
-        time: formData.time,
+        scheduledStartAt: startDateTime.toISOString(),
+        scheduledEndAt: endDateTime.toISOString(),
         description: formData.description,
         duration: parseInt(formData.duration),
         status: 'scheduled'

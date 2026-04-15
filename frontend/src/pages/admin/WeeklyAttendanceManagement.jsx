@@ -398,14 +398,14 @@ const WeeklyAttendanceManagement = () => {
     const dayName = format(date, 'EEEE');
     const scheduleForDay = classData.schedule?.find(sch => sch.day === dayName);
     const dateStr = format(date, 'yyyy-MM-dd');
-    
+
     // Launch popup immediately
     setSelectedClass(classData);
     setClassDate(date);
     setPopupStudentFilter('');
     setClassPopupOpen(true);
     setPopupLoading(true);
-    
+
     // Reset state first to avoid showing old data
     setClassAttendance({
       wasHeld: true,
@@ -417,7 +417,7 @@ const WeeklyAttendanceManagement = () => {
 
     try {
       const token = user?.token;
-      
+
       // Fetch both in parallel
       const [studentsResponse, attendanceResponse] = await Promise.all([
         axios.get(`${API_URL}/api/classes/${classData._id}/students`, {
@@ -436,7 +436,7 @@ const WeeklyAttendanceManagement = () => {
         // Mark class as processed if data exists
         const classKey = `${classData._id}-${dateStr}`;
         setProcessedClasses(prev => new Set([...prev, classKey]));
-        
+
         setClassAttendance({
           wasHeld: existingData.wasHeld || false,
           startTime: existingData.startTime || scheduleForDay?.startTime || '',
@@ -560,12 +560,16 @@ const WeeklyAttendanceManagement = () => {
       logAction('Saving class attendance', { classId: selectedClass._id, date: classDate });
 
       const token = user?.token;
+      // Handle time mapping to capture local timezone offset
+      const startDateTime = new Date(`${format(classDate, 'yyyy-MM-dd')}T${classAttendance.startTime}:00`);
+      const endDateTime = new Date(`${format(classDate, 'yyyy-MM-dd')}T${classAttendance.endTime}:00`);
+
       const attendanceData = {
         classId: selectedClass._id,
         date: format(classDate, 'yyyy-MM-dd'),
         wasHeld: classAttendance.wasHeld,
-        startTime: classAttendance.startTime,
-        endTime: classAttendance.endTime,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         students: classAttendance.students,
         notes: classAttendance.notes
       };
@@ -597,6 +601,40 @@ const WeeklyAttendanceManagement = () => {
       console.error('Error saving attendance:', error);
       logAction('Error saving attendance', { error: error.message });
       toast.error(t('attendance.failedToSaveAttendance'));
+    }
+  };
+
+  const handleResetAttendance = async () => {
+    if (!window.confirm(t('attendance.confirmReset', 'Are you sure you want to reset the attendance for this class? All marked data and the session record will be permanently deleted.'))) {
+      return;
+    }
+
+    try {
+      const dateStr = format(classDate, 'yyyy-MM-dd');
+      logAction('Resetting class attendance', { classId: selectedClass._id, date: dateStr });
+
+      const token = user?.token;
+      const response = await axios.delete(`${API_URL}/api/attendance/class-session/${selectedClass._id}/${dateStr}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data && response.data.success) {
+        toast.success(t('attendance.attendanceResetSuccess', 'Attendance reset successfully'));
+
+        // Remove from processed classes
+        const classKey = `${selectedClass._id}-${dateStr}`;
+        setProcessedClasses(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(classKey);
+          return newSet;
+        });
+
+        setClassPopupOpen(false);
+        logAction('Class attendance reset successfully');
+      }
+    } catch (error) {
+      console.error('Error resetting attendance:', error);
+      toast.error(t('attendance.failedToResetAttendance', 'Failed to reset attendance'));
     }
   };
 
@@ -702,8 +740,8 @@ const WeeklyAttendanceManagement = () => {
 
       <div className="space-y-6">
         {weeksToShow.map((week) => (
-          <Card 
-            key={week.offset} 
+          <Card
+            key={week.offset}
             className={cn(
               "shadow-sm border",
               week.isCurrent ? "border-primary/50 ring-1 ring-primary/10 bg-primary/[0.02]" : "bg-card hover:border-muted-foreground/20"
@@ -995,24 +1033,39 @@ const WeeklyAttendanceManagement = () => {
             </div>
           )}
 
-          <DialogFooter className="p-4 bg-muted/50 border-t flex items-center justify-end gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="px-6 h-9 font-medium"
-              onClick={() => setClassPopupOpen(false)}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button 
-              size="sm"
-              disabled={popupLoading}
-              className="px-6 h-9 font-medium shadow-md transition-all active:scale-95 shadow-primary/10"
-              onClick={saveClassAttendance}
-            >
-              <Save className="w-3.5 h-3.5 mr-2" />
-              {t('attendance.saveAttendance')}
-            </Button>
+          <DialogFooter className="p-4 bg-muted/50 border-t flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {processedClasses.has(`${selectedClass?._id}-${classDate && format(classDate, 'yyyy-MM-dd')}`) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 font-medium"
+                  onClick={handleResetAttendance}
+                >
+                  <X className="w-3.5 h-3.5 mr-2" />
+                  {t('common.reset')}
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-6 h-9 font-medium"
+                onClick={() => setClassPopupOpen(false)}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                size="sm"
+                disabled={popupLoading}
+                className="px-6 h-9 font-medium shadow-md transition-all active:scale-95 shadow-primary/10"
+                onClick={saveClassAttendance}
+              >
+                <Save className="w-3.5 h-3.5 mr-2" />
+                {t('attendance.saveAttendance')}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

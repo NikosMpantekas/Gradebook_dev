@@ -6,7 +6,8 @@ const {
   getProcessedClasses,
   getStudentAttendanceData,
   searchStudents,
-  exportAttendanceReport
+  exportAttendanceReport,
+  resetClassAttendance
 } = require('../controllers/classAttendanceController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { attachAuditContext } = require('../middleware/auditLogMiddleware');
@@ -20,6 +21,7 @@ router.use(attachAuditContext);
 // Class session attendance routes
 router.post('/class-session', authorize('admin', 'teacher', 'superadmin'), saveClassSessionAttendance);
 router.get('/class-session/:classId/:date', authorize('admin', 'teacher', 'student', 'superadmin'), getClassSessionAttendance);
+router.delete('/class-session/:classId/:date', authorize('admin', 'superadmin'), resetClassAttendance);
 router.get('/class-attendance', authorize('admin', 'teacher', 'superadmin'), getClassAttendanceByDate);
 router.get('/processed-classes', authorize('admin', 'teacher', 'superadmin'), getProcessedClasses);
 
