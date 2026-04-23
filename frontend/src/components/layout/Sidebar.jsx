@@ -20,6 +20,7 @@ import {
   BadgeAlert,
   Wrench,
   UserCheck,
+  FlaskConical,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -32,6 +33,7 @@ import { logout } from '../../features/auth/authSlice';
 
 import { ScrollArea } from '../ui/scroll-area';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
+import { useBeta } from '../../contexts/BetaContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
@@ -42,6 +44,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.ui);
   const { isFeatureEnabled, loading: permissionsLoading } = useFeatureToggles();
+  const { isBetaRoute } = useBeta();
   const { getCurrentThemeData } = useTheme();
 
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -103,6 +106,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         { icon: Wrench, label: t('navigation.maintenanceAnnouncements'), path: '/superadmin/maintenance-announcements' },
         { icon: BadgeAlert, label: t('navigation.maintenance'), path: '/superadmin/system-maintenance' },
         { icon: Megaphone, label: t('navigation.patchNotes'), path: '/superadmin/patch-notes' },
+        { icon: FlaskConical, label: 'Beta Manager', path: '/superadmin/beta-manager' },
       ];
     }
 
@@ -386,6 +390,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
             <LayoutDashboard className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors",
               isPathSelected(getDashboardPath()) ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
             <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('navigation.dashboard')}</span>
+            {isBetaRoute(getDashboardPath()) && (
+              <span className="ml-1 text-[10px] font-bold px-1 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 flex-shrink-0">BETA</span>
+            )}
             {isPathSelected(getDashboardPath()) && (
               <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
             )}
@@ -412,6 +419,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
                 <Icon className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors",
                   isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
                 <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{item.label}</span>
+                {isBetaRoute(item.path) && (
+                  <span className="ml-1 text-[10px] font-bold px-1 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 flex-shrink-0">BETA</span>
+                )}
                 {isSelected && (
                   <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
                 )}

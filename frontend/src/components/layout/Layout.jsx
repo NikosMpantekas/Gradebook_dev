@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { cn } from '../../lib/utils';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useBeta } from '../../contexts/BetaContext';
+import { FlaskConical } from 'lucide-react';
 
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -26,6 +28,8 @@ const Layout = () => {
   const { darkMode } = useSelector((state) => state.ui);
   const { user } = useSelector((state) => state.auth);
   const { getCurrentThemeData } = useTheme();
+  const { isBetaRoute } = useBeta();
+  const isCurrentPageBeta = isBetaRoute(location.pathname);
 
   // Debug logging for layout rendering
   useEffect(() => {
@@ -155,6 +159,12 @@ const Layout = () => {
           style={{ marginTop: `calc(3.5rem + env(safe-area-inset-top, 0px))` }}
         >
           <OfflineDetector>
+            {isCurrentPageBeta && (
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm">
+                <FlaskConical className="h-4 w-4 flex-shrink-0" />
+                <span><strong>Beta Feature</strong> — This page is currently in beta testing. Feedback and bug reports are appreciated.</span>
+              </div>
+            )}
             <Outlet />
           </OfflineDetector>
         </div>

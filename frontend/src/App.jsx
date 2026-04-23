@@ -115,6 +115,8 @@ import { appConfig, initAppConfig } from './config/appConfig';
 
 // Feature toggles context provider
 import { FeatureToggleProvider } from './contexts/FeatureToggleContext';
+import { BetaProvider } from './contexts/BetaContext';
+import BetaManager from './pages/superadmin/BetaManager';
 
 // Custom components
 import HomeScreenPrompt from './components/HomeScreenPrompt';
@@ -340,6 +342,7 @@ function App() {
           <Route path="/superadmin/users/create" element={<SuperAdminRoute><CreateUserErrorWrapper /></SuperAdminRoute>} />
           <Route path="/superadmin/users/:id" element={<SuperAdminRoute><EditUser /></SuperAdminRoute>} />
           <Route path="/superadmin/system-maintenance" element={<SuperAdminRoute><SystemMaintenance /></SuperAdminRoute>} />
+          <Route path="/superadmin/beta-manager" element={<SuperAdminRoute><BetaManager /></SuperAdminRoute>} />
         </Route>
 
         {/* Standalone Pages */}
@@ -356,8 +359,10 @@ function App() {
         <ShadcnThemeProvider>
           <ScrollFix />
           <FeatureToggleProvider>
-            <HomeScreenPrompt />
-            <RouterProvider router={router} />
+            <BetaProvider>
+              <HomeScreenPrompt />
+              <RouterProvider router={router} />
+            </BetaProvider>
           </FeatureToggleProvider>
           <Toaster />
         </ShadcnThemeProvider>
