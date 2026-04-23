@@ -6,7 +6,6 @@ import { Zap, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
-import { Slider } from '../../components/ui/slider';
 
 const WEIGHT_FIELDS = [
   { key: 'preferredDays',    label: 'Preferred days',     desc: 'Reward slots on preferred days' },
@@ -96,11 +95,11 @@ const ScheduleStep3 = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <Slider
-              min={1} max={5} step={1}
-              value={[genOptions.candidateCount]}
-              onValueChange={([v]) => setGenOptions((p) => ({ ...p, candidateCount: v }))}
-              className="flex-1"
+            <input
+              type="range" min={1} max={5} step={1}
+              value={genOptions.candidateCount}
+              onChange={(e) => setGenOptions((p) => ({ ...p, candidateCount: Number(e.target.value) }))}
+              className="flex-1 accent-primary cursor-pointer"
             />
             <span className="text-2xl font-bold text-primary w-8 text-center">
               {genOptions.candidateCount}
@@ -154,10 +153,11 @@ const ScheduleStep3 = ({
                       {(genOptions.weights?.[key] ?? 1.0).toFixed(1)}
                     </span>
                   </div>
-                  <Slider
-                    min={0} max={3} step={0.1}
-                    value={[genOptions.weights?.[key] ?? 1.0]}
-                    onValueChange={([v]) => updateWeight(key, v)}
+                  <input
+                    type="range" min={0} max={3} step={0.1}
+                    value={genOptions.weights?.[key] ?? 1.0}
+                    onChange={(e) => updateWeight(key, Number(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">{desc}</p>
                 </div>
