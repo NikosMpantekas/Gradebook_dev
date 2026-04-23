@@ -347,6 +347,7 @@ app.get('/api/system/maintenance/status', require('./controllers/systemMaintenan
 
 // System maintenance admin routes (protected)
 app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes"));
+app.use("/api/beta-features", require("./routes/betaFeaturesRoutes"));
 
 // User routes - No global middleware for auth checking, each route will handle individually
 app.use("/api/users", require("./routes/userRoutes"));
