@@ -262,6 +262,28 @@ const userSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     }],
+
+    // Scheduling availability — used by the scheduling wizard.
+    // Applies to teacher and student roles.
+    schedulingAvailability: {
+      timezone: { type: String, default: 'Europe/Athens' },
+      weeklyWindows: {
+        Monday:    [{ startTime: String, endTime: String }],
+        Tuesday:   [{ startTime: String, endTime: String }],
+        Wednesday: [{ startTime: String, endTime: String }],
+        Thursday:  [{ startTime: String, endTime: String }],
+        Friday:    [{ startTime: String, endTime: String }],
+        Saturday:  [{ startTime: String, endTime: String }],
+        Sunday:    [{ startTime: String, endTime: String }],
+      },
+      preferences: {
+        earliestStart:    { type: String, default: '08:00' },
+        latestEnd:        { type: String, default: '21:00' },
+        preferredDays:    [{ type: String }],
+        avoidDays:        [{ type: String }],
+        maxSessionsPerDay:{ type: Number, default: 4 },
+      },
+    },
   },
   {
     timestamps: true,
