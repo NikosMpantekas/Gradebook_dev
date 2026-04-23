@@ -35,10 +35,7 @@ export const BetaProvider = ({ children }) => {
   const isBetaRoute = useCallback(
     (pathname) => {
       if (!pathname) return false;
-      if (betaRoutes[pathname] === true) return true;
-      return Object.entries(betaRoutes).some(
-        ([path, isBeta]) => isBeta && path !== '/' && pathname.startsWith(path)
-      );
+      return betaRoutes[pathname] === true;
     },
     [betaRoutes]
   );
