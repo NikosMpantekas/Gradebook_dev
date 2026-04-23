@@ -21,6 +21,7 @@ import {
   Wrench,
   UserCheck,
   FlaskConical,
+  CalendarClock,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -143,7 +144,8 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       }
 
       if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock, label: t('navigation.schedule'), path: '/app/admin/schedule' });
+        items.push({ icon: Clock,         label: t('navigation.schedule'),       path: '/app/admin/schedule' });
+        items.push({ icon: CalendarClock, label: 'Schedule Wizard',              path: '/app/admin/schedule-wizard' });
       }
 
       if (isFeatureEnabled('enablePayments')) {

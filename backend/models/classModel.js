@@ -61,6 +61,25 @@ const classSchema = mongoose.Schema(
         required: true
       }
     }],
+    // Scheduling configuration — used by the scheduling wizard only.
+    // Does NOT replace Class.schedule which remains the published timetable.
+    schedulingConfig: {
+      sessionsPerWeek: { type: Number, default: 1, min: 1, max: 7 },
+      sessionDurationMinutes: { type: Number, default: 60, min: 15 },
+      allowedTeacherIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      minStudents: { type: Number, default: 1 },
+      maxStudents: { type: Number, default: 30 },
+      preferredDays: [{
+        type: String,
+        enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      }],
+      preferredTimeWindows: [{
+        startTime: { type: String }, // "HH:MM"
+        endTime:   { type: String }, // "HH:MM"
+      }],
+      lockedStudentGroups: [[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]],
+      forbiddenStudentPairs: [[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]],
+    },
     // Active status
     active: {
       type: Boolean,

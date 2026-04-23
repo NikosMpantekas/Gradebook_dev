@@ -95,6 +95,7 @@ import SystemMaintenance from './pages/superadmin/SystemMaintenance';
 import AdminPayments from './pages/admin/Payments';
 import WeeklyAttendanceManagement from './pages/admin/WeeklyAttendanceManagement';
 import StudentAttendanceView from './pages/student/StudentAttendanceView';
+import ScheduleWizard from './pages/admin/ScheduleWizard';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // SuperAdmin Pages
@@ -314,6 +315,7 @@ function App() {
           <Route path="/app/admin/schedule" element={<AdminRoute><Schedule /></AdminRoute>} />
           <Route path="/app/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
           <Route path="/app/admin/attendance" element={<AdminRoute><WeeklyAttendanceManagement /></AdminRoute>} />
+          <Route path="/app/admin/schedule-wizard" element={<AdminRoute><ScheduleWizard /></AdminRoute>} />
           
           {/* Parent Routes */}
           <Route path="/app/parent" element={<ParentRoute><ParentDashboard /></ParentRoute>} />
