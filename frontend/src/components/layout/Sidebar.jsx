@@ -269,6 +269,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       return location.pathname.startsWith('/app/admin/grades');
     }
 
+    // Exact match for schedule to prevent /app/admin/schedule matching /app/admin/schedule-wizard
+    if (path === '/app/admin/schedule') {
+      return location.pathname === '/app/admin/schedule';
+    }
+
     // For teacher navigation items, check if we're in a sub-path
     if (path === '/app/teacher/grades/manage') {
       return location.pathname.startsWith('/app/teacher/grades');

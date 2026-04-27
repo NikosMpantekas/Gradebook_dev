@@ -26,6 +26,7 @@ const MANAGED_PAGES = [
   { path: '/app/admin/notifications', label: 'Notifications', group: 'Admin' },
   { path: '/app/admin/ratings', label: 'Rating Manager', group: 'Admin' },
   { path: '/app/admin/payments', label: 'Payments', group: 'Admin' },
+  { path: '/app/admin/schedule-wizard', label: 'Schedule Wizard', group: 'Admin' },
   { path: '/app/teacher', label: 'Teacher Dashboard', group: 'Teacher' },
   { path: '/app/teacher/grades/manage', label: 'Grade Management', group: 'Teacher' },
   { path: '/app/teacher/notifications', label: 'Notifications', group: 'Teacher' },
