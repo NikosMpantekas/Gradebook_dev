@@ -457,8 +457,12 @@ const EditUser = () => {
                   onChange={handleChange}
                   placeholder={t('admin.createUserPage.editUserPage.form.loginEmailPlaceholder')}
                   className={formErrors.email ? 'border-red-500' : ''}
+                  disabled={formData.role === 'admin'}
                   required
                 />
+                {formData.role === 'admin' && (
+                  <p className="text-xs text-muted-foreground">Admin email cannot be changed from this panel.</p>
+                )}
                 {formErrors.email && (
                   <p className="text-sm text-red-500">{formErrors.email}</p>
                 )}

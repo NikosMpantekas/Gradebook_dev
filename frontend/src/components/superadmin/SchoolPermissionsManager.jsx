@@ -272,7 +272,7 @@ const SchoolPermissionsManager = () => {
       enableAnalytics: 'Analytics & Reports',
       enableRatings: 'Rating System (/app/ratings)',
       enableNotifications: 'Notifications',
-      enableSchedule: 'Schedule Management',
+      enableSchedule: 'Schedule Management (/app/admin/schedule + Schedule Wizard)',
       enableSchoolSettings: 'School Settings',
       enableContact: 'Contact System',
       enablePayments: 'Payments'
