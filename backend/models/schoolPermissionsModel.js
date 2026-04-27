@@ -78,6 +78,11 @@ const schoolPermissionsSchema = mongoose.Schema(
         default: true,
         description: 'Allow schedule management'
       },
+      enableScheduleWizard: {
+        type: Boolean,
+        default: true,
+        description: 'Allow the admin schedule wizard (/app/admin/schedule-wizard)'
+      },
       enableRatingSystem: {
         type: Boolean,
         default: true,
@@ -191,6 +196,7 @@ schoolPermissionsSchema.statics.getAvailableFeatures = function() {
     enableContact: 'Contact Messages',
     enableCalendar: 'Calendar',
     enableSchedule: 'Schedule',
+    enableScheduleWizard: 'Schedule Wizard',
     enableRatingSystem: 'Rating System',
     enableRatings: 'Rating System (/app/ratings)',
     enableAttendance: 'Attendance Management',

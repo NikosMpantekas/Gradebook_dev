@@ -258,7 +258,7 @@ const SchoolPermissionsManager = () => {
     'Attendance Management': ['enableAttendance'],
     'Grade Management': ['enableGrades', 'enableAnalytics', 'enableRatings'],
     'Notification Management': ['enableNotifications'],
-    'School Administration': ['enableSchedule', 'enableSchoolSettings'],
+    'School Administration': ['enableSchedule', 'enableScheduleWizard', 'enableSchoolSettings'],
     'Communication': ['enableContact'],
     'Payments': ['enablePayments']
   };
@@ -272,7 +272,8 @@ const SchoolPermissionsManager = () => {
       enableAnalytics: 'Analytics & Reports',
       enableRatings: 'Rating System (/app/ratings)',
       enableNotifications: 'Notifications',
-      enableSchedule: 'Schedule Management (/app/admin/schedule + Schedule Wizard)',
+      enableSchedule: 'Schedule Management (/app/admin/schedule)',
+      enableScheduleWizard: 'Schedule Wizard (/app/admin/schedule-wizard)',
       enableSchoolSettings: 'School Settings',
       enableContact: 'Contact System',
       enablePayments: 'Payments'

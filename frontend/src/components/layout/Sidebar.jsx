@@ -144,8 +144,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       }
 
       if (isFeatureEnabled('enableSchedule')) {
-        items.push({ icon: Clock,         label: t('navigation.schedule'),       path: '/app/admin/schedule' });
-        items.push({ icon: CalendarClock, label: 'Schedule Wizard',              path: '/app/admin/schedule-wizard' });
+        items.push({ icon: Clock, label: t('navigation.schedule'), path: '/app/admin/schedule' });
+      }
+
+      if (isFeatureEnabled('enableScheduleWizard')) {
+        items.push({ icon: CalendarClock, label: 'Schedule Wizard', path: '/app/admin/schedule-wizard' });
       }
 
       if (isFeatureEnabled('enablePayments')) {
