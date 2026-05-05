@@ -50,10 +50,6 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     const semesterStart = new Date(currentDate.getFullYear(), 
       currentDate.getMonth() >= 8 ? 8 : 0, 1); // August for fall, January for spring
     
-    const semesterGrades = grades.filter(grade => 
-      new Date(grade.date) >= semesterStart
-    );
-    
     // For now, pending grades is a placeholder - you might want to implement
     // logic to determine which assignments are pending
     const pendingGrades = 0; // This would need business logic to determine

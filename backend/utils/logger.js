@@ -119,7 +119,7 @@ const cleanupOldBackups = (logDir) => {
       
       files.forEach(file => {
         if (file.includes('.log.') && file.match(/\.log\.\d{4}-\d{2}-\d{2}$/)) {
-          const filePath = path.join(logDir, file);
+          const filePath = path.join(logDir, path.basename(file));
           const stats = fs.statSync(filePath);
           
           if (stats.mtime.getTime() < thirtyDaysAgo) {
@@ -177,8 +177,8 @@ const BUFFER_FLUSH_INTERVAL = 1000; // 1 second
 const flushLogBuffer = async (logPath) => {
   if (logBuffer.length === 0) return;
   
+  const logsToWrite = [...logBuffer];
   try {
-    const logsToWrite = [...logBuffer];
     logBuffer = []; // Clear buffer
     
     const logString = logsToWrite.join('');

@@ -11,7 +11,7 @@ const {
   updateGrade,
   deleteGrade,
 } = require('../controllers/gradeController');
-const { protect, teacher, admin, canManageGrades } = require('../middleware/authMiddleware');
+const { protect, teacher, canManageGrades } = require('../middleware/authMiddleware');
 
 // Public routes for viewing grades (students can view their own)
 router.get('/student', protect, (req, res) => {

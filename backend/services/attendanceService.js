@@ -275,7 +275,7 @@ class AttendanceService {
     };
 
     attendanceRecords.forEach(record => {
-      if (summary.hasOwnProperty(record.status)) {
+      if (Object.prototype.hasOwnProperty.call(summary, record.status)) {
         summary[record.status]++;
       }
     });
@@ -309,7 +309,7 @@ class AttendanceService {
     let recordsWithLateMinutes = 0;
 
     attendanceRecords.forEach(record => {
-      if (stats.hasOwnProperty(record.status)) {
+      if (Object.prototype.hasOwnProperty.call(stats, record.status)) {
         stats[record.status]++;
       }
 

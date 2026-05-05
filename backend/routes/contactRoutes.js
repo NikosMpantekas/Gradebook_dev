@@ -9,7 +9,7 @@ const {
   sendPublicContactMessage,
   deleteContactMessage
 } = require('../controllers/contactController');
-const { protect, admin, superadmin, adminOrSecretary } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 // Public contact message (no authentication required)
 router.post('/public', sendPublicContactMessage);

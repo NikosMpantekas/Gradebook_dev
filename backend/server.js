@@ -3,11 +3,8 @@ const https = require('https');
 const fs = require('fs');
 const express = require("express");
 const dotenv = require("dotenv");
-const colors = require("colors");
+require("colors");
 const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
 const { errorHandler } = require("./middleware/errorMiddleware");
 const { setSchoolContext } = require("./middleware/schoolIdMiddleware");
 const { connectDB } = require("./config/db");
@@ -227,7 +224,7 @@ app.use((req, res, next) => {
 const logger = require("./utils/logger");
 
 // Health check endpoint for Render deployment
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
@@ -375,7 +372,7 @@ app.use(
 // Public patch notes route (no authentication required)
 app.get(
   "/api/patch-notes/public",
-  async (req, res) => {
+  async (_req, res) => {
     try {
       const PatchNote = require('./models/patchNoteModel');
       // Only return active patch notes for public endpoint
@@ -538,7 +535,7 @@ logger.info("SERVER", "Routes configured with proper middleware ordering");
 
 // Add essential middleware AFTER route definitions but BEFORE frontend serving
 // Debug middleware to log all requests
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
@@ -657,7 +654,7 @@ if (process.env.NODE_ENV === "production") {
         files.forEach((file) => {
           console.log(
             `- ${file} ${
-              fs.statSync(path.join(pathToCheck, file)).isDirectory()
+              fs.statSync(path.join(pathToCheck, path.basename(file))).isDirectory()
                 ? "(directory)"
                 : ""
             }`
@@ -681,7 +678,7 @@ if (process.env.NODE_ENV === "production") {
     app.use(express.static(staticPath));
 
     // Add a special debug route to test if the server is serving static files correctly
-    app.get("/appinfo", (req, res) => {
+    app.get("/appinfo", (_req, res) => {
       res.json({
         success: true,
         message: "App info debug endpoint",
@@ -711,7 +708,7 @@ if (process.env.NODE_ENV === "production") {
         // Force HTTPS if behind proxy and not already HTTPS
         if (req.headers['x-forwarded-proto'] === 'http') {
           console.log('[PROXY] Redirecting to HTTPS');
-          return res.redirect(`https://${req.headers.host}${req.url}`);
+          return res.redirect(`https://${req.hostname}${req.url}`);
         }
       }
       next();
@@ -755,14 +752,14 @@ if (process.env.NODE_ENV === "production") {
         const basePattern = pattern.replace("*", "");
         app.get(pattern, (req, res) => {
           const targetUrl = `/app${req.originalUrl}`;
-          console.log(`Redirecting ${basePattern} route to ${targetUrl}`);
-          return res.redirect(targetUrl);
+          console.log(`Redirecting ${basePattern} route to ${encodeURI(targetUrl)}`);
+          return res.redirect(encodeURI(targetUrl));
         });
       }
     });
 
     // Add special route for dashboard
-    app.get("/dashboard", (req, res) => {
+    app.get("/dashboard", (_req, res) => {
       console.log("Redirecting /dashboard to /app/dashboard");
       return res.redirect("/app/dashboard");
     });
@@ -794,7 +791,7 @@ if (process.env.NODE_ENV === "production") {
     console.error(
       "CRITICAL ERROR: Could not find build directory in any location!"
     );
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res
         .status(500)
         .send(
@@ -803,7 +800,7 @@ if (process.env.NODE_ENV === "production") {
     });
   }
 } else {
-  app.get("/", (req, res) => res.send("API is running..."));
+  app.get("/", (_req, res) => res.send("API is running..."));
 }
 
 // Error middleware

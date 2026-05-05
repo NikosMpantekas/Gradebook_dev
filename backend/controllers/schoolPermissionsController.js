@@ -4,7 +4,6 @@
 const asyncHandler = require('express-async-handler');
 const SchoolPermissions = require('../models/schoolPermissionsModel');
 const School = require('../models/schoolModel');
-const User = require('../models/userModel');
 
 // @desc    Get school permissions for a specific school
 // @route   GET /api/school-permissions/:schoolId
@@ -175,7 +174,7 @@ const getCurrentSchoolPermissions = asyncHandler(async (req, res) => {
 // @desc    Get all schools with their permissions (for superadmin)
 // @route   GET /api/school-permissions/all
 // @access  Private/SuperAdmin
-const getAllSchoolPermissions = asyncHandler(async (req, res) => {
+const getAllSchoolPermissions = asyncHandler(async (_req, res) => {
   try {
     console.log('🔍 [SchoolPermissions] Getting all schools with permissions for superadmin...');
     
@@ -303,7 +302,7 @@ const fixSchoolPermissions = asyncHandler(async (req, res) => {
     const schools = await School.find({
       $and: [
         { dbConfig: { $exists: true } },
-        { 'dbConfig.dbName': { $exists: true, $ne: '', $ne: null, $regex: /.+/ } }
+        { 'dbConfig.dbName': { $exists: true, $nin: ['', null], $regex: /.+/ } }
       ]
     });
     
@@ -396,7 +395,7 @@ const fixSchoolPermissions = asyncHandler(async (req, res) => {
 // @desc    Get all available features list
 // @route   GET /api/school-permissions/features
 // @access  Private/SuperAdmin
-const getAvailableFeatures = asyncHandler(async (req, res) => {
+const getAvailableFeatures = asyncHandler(async (_req, res) => {
   try {
     console.log('Getting available features list...');
     

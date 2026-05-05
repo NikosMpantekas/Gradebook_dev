@@ -1,7 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
 const Event = require('../models/eventModel');
-const User = require('../models/userModel');
 const logger = require('../utils/logger');
 
 // @desc    Create a new event

@@ -291,10 +291,10 @@ const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
     // Get school data to map branch IDs to names
     const schoolBranches = [];
     
+    const branchIds = Array.from(schoolBranchIds);
     try {
       // Fetch actual school branch documents to get names
       const School = require('../models/schoolModel');
-      const branchIds = Array.from(schoolBranchIds);
       const branchDocs = await School.find({
         _id: { $in: branchIds.filter(id => mongoose.Types.ObjectId.isValid(id)) }
       }).select('_id name');

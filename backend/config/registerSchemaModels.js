@@ -152,7 +152,7 @@ const registerSchemaModels = (connection) => {
     // 6. Register attendance system models
     // Import and register Session model
     try {
-      const sessionModel = require('../models/sessionModel');
+      require('../models/sessionModel');
       if (!connection.models['Session']) {
         console.log('✅ Session model registered');
       }
@@ -162,7 +162,7 @@ const registerSchemaModels = (connection) => {
 
     // Import and register Attendance model
     try {
-      const attendanceModel = require('../models/attendanceModel');
+      require('../models/attendanceModel');
       if (!connection.models['Attendance']) {
         console.log('✅ Attendance model registered');
       }
@@ -172,7 +172,7 @@ const registerSchemaModels = (connection) => {
 
     // Import and register AuditLog model
     try {
-      const auditLogModel = require('../models/auditLogModel');
+      require('../models/auditLogModel');
       if (!connection.models['AuditLog']) {
         console.log('✅ AuditLog model registered');
       }
@@ -182,7 +182,7 @@ const registerSchemaModels = (connection) => {
 
     // Import and register Attachment model
     try {
-      const attachmentModel = require('../models/attachmentModel');
+      require('../models/attachmentModel');
       if (!connection.models['Attachment']) {
         console.log('✅ Attachment model registered');
       }

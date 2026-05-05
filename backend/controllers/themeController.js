@@ -125,8 +125,9 @@ const createTheme = async (req, res) => {
     });
 
     // Check if theme name already exists
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const existingTheme = await Theme.findOne({ 
-      name: { $regex: new RegExp(`^${name}$`, 'i') },
+      name: { $regex: new RegExp(`^${escapedName}$`, 'i') },
       isActive: true 
     });
 
@@ -228,8 +229,9 @@ const updateTheme = async (req, res) => {
 
     // Check if new name conflicts with existing theme
     if (name && name !== theme.name) {
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const existingTheme = await Theme.findOne({
-        name: { $regex: new RegExp(`^${name}$`, 'i') },
+        name: { $regex: new RegExp(`^${escapedName}$`, 'i') },
         _id: { $ne: id },
         isActive: true
       });

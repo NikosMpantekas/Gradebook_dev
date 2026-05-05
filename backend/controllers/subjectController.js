@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const Subject = require('../models/subjectModel');
-const User = require('../models/userModel');
 
 // @desc    Create a new subject
 // @route   POST /api/subjects

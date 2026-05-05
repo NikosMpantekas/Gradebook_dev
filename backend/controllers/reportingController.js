@@ -145,7 +145,7 @@ const exportReport = asyncHandler(async (req, res) => {
 
     // Generate the appropriate report first
     switch (type) {
-      case 'daily':
+      case 'daily': {
         if (!date) {
           return res.status(400).json({
             success: false,
@@ -155,8 +155,9 @@ const exportReport = asyncHandler(async (req, res) => {
         const dailyResult = await reportingService.getDailyReport(date, classId, auditContext);
         reportData = dailyResult.data;
         break;
+      }
 
-      case 'student':
+      case 'student': {
         if (!studentId || !from || !to) {
           return res.status(400).json({
             success: false,
@@ -175,8 +176,9 @@ const exportReport = asyncHandler(async (req, res) => {
         const studentResult = await reportingService.getStudentReport(studentId, from, to, auditContext);
         reportData = studentResult.data;
         break;
+      }
 
-      case 'class':
+      case 'class': {
         if (!classId || !from || !to) {
           return res.status(400).json({
             success: false,
@@ -186,6 +188,7 @@ const exportReport = asyncHandler(async (req, res) => {
         const classResult = await reportingService.getClassReport(classId, from, to, auditContext);
         reportData = classResult.data;
         break;
+      }
     }
 
     // Export to CSV

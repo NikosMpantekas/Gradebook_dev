@@ -62,6 +62,9 @@ export const safeGet = (obj, path, defaultValue = null) => {
     if (result === undefined || result === null) {
       return defaultValue;
     }
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      return defaultValue;
+    }
     result = result[key];
   }
   

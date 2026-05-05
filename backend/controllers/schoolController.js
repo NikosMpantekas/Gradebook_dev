@@ -1,7 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
 const School = require('../models/schoolModel');
-const logger = require('../utils/logger');
 
 // @desc    Create a new school branch
 // @route   POST /api/schools
