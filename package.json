@@ -40,10 +40,13 @@
     "lucide-react": "0.539.0",
     "mongoose": "7.8.7",
     "morgan": "1.10.1",
-    "nodemailer": "7.0.13",
+    "nodemailer": "8.0.7",
     "tailwind-merge": "3.3.1",
     "tw-animate-css": "1.3.7",
     "web-push": "^3.6.6"
+  },
+  "overrides": {
+    "cookie": "^0.7.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.1",
