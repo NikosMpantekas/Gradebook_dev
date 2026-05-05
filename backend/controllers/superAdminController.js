@@ -695,11 +695,17 @@ const getSystemLogs = asyncHandler(async (req, res) => {
       const files = fs.readdirSync(logDir);
       files.forEach(file => {
         if (file.endsWith('.log')) {
-          logFiles.push({
-            name: file,
-            path: path.join(logDir, path.basename(file)),
-            size: fs.statSync(path.join(logDir, path.basename(file))).size
-          });
+          const safeFileName = path.basename(file);
+          const filePath = path.join(logDir, safeFileName);
+          
+          // Double check the path is still within logDir
+          if (filePath.startsWith(logDir)) {
+            logFiles.push({
+              name: safeFileName,
+              path: filePath,
+              size: fs.statSync(filePath).size
+            });
+          }
         }
       });
     }

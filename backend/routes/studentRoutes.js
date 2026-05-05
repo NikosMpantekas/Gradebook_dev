@@ -11,7 +11,7 @@ const {
   getFilterOptionsForNotifications,
   getFilteredUsersForNotifications
 } = require('../controllers/studentController');
-const { protect, admin, teacher, canManageStudents } = require('../middleware/authMiddleware');
+const { protect, teacher, canManageStudents } = require('../middleware/authMiddleware');
 
 // Route to get all students (admin and teachers)
 router.get('/', protect, canManageStudents, getStudents);

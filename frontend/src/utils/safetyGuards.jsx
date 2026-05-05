@@ -241,16 +241,24 @@ export const safeGet = (obj, path, defaultValue = undefined) => {
         if (result === null || result === undefined) {
           return defaultValue;
         }
+        // SECURITY: Block prototype pollution attempts
         if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+          console.warn(`[Security] Blocked attempt to access sensitive property: ${part}`);
           return defaultValue;
         }
-        result = result[part];
+        
+        result = (result && typeof result === 'object') ? result[part] : undefined;
       }
       
       return result === undefined ? defaultValue : result;
     }
     
-    return obj[path] === undefined ? defaultValue : obj[path];
+    // Direct access safety check
+    if (path === '__proto__' || path === 'constructor' || path === 'prototype') {
+      return defaultValue;
+    }
+    
+    return (obj && typeof obj === 'object' && obj[path] !== undefined) ? obj[path] : defaultValue;
   } catch (error) {
     console.warn(`[SafetyGuard] Error in safeGet for path '${path}':`, error);
     return defaultValue;

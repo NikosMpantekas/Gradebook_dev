@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
  * @returns {function} Express middleware that always allows access
  */
 const checkFeatureEnabled = (featureName) => {
-  return asyncHandler(async (req, res, next) => {
+  return asyncHandler(async (req, _res, next) => {
     // DISABLED: All permission checks removed - always allow access
     logger.info('FEATURE', `Feature toggle checking DISABLED - allowing access to ${featureName}`, {
       userId: req.user?.id,

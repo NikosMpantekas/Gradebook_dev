@@ -6,15 +6,6 @@ const School = require('../models/schoolModel');
 const SystemMaintenance = require('../models/systemMaintenanceModel');
 const logger = require('../utils/logger');
 
-// Helper function to safely parse JSON without crashing
-const safeJsonParse = (str) => {
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    console.error('Failed to parse JSON:', e.message);
-    return null;
-  }
-};
 
 /**
  * Authentication and authorization middleware for the GradeBook application
@@ -407,26 +398,6 @@ const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Middleware to check if user is admin or secretary with specific permission
-const adminOrSecretary = (permissionKey) => {
-  return asyncHandler(async (req, res, next) => {
-    if (
-      req.user && (
-        // CRITICAL FIX: Allow superadmins to access all functionality
-        req.user.role === 'superadmin' ||
-        req.user.role === 'admin' || 
-        (req.user.role === 'secretary' && 
-         req.user.secretaryPermissions && 
-         req.user.secretaryPermissions[permissionKey] === true)
-      )
-    ) {
-      next();
-    } else {
-      res.status(403);
-      throw new Error('Not authorized for this action');
-    }
-  });
-};
 
 // REMOVED DUPLICATE canManageUsers MIDDLEWARE
 

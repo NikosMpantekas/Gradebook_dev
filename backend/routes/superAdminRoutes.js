@@ -14,7 +14,6 @@ const {
   getPM2Status
 } = require('../controllers/superAdminController');
 const { protect, superadmin } = require('../middleware/authMiddleware');
-const asyncHandler = require('express-async-handler');
 
 // Public route for creating the first superadmin (only works if no superadmin exists)
 router.post('/create-first-superadmin', createFirstSuperAdmin);

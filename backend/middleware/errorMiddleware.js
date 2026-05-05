@@ -23,7 +23,7 @@ const notFound = (req, res, next) => {
 /**
  * Global Error Handler - Catches all unhandled errors
  */
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   // If status code is 200, set it to 500 (server error)
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode || 500;
   

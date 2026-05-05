@@ -1,7 +1,6 @@
 const Session = require('../models/sessionModel');
 const Class = require('../models/classModel');
 const AuditLog = require('../models/auditLogModel');
-const { setDocumentAuditContext } = require('../middleware/auditLogMiddleware');
 
 class SessionService {
   /**

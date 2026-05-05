@@ -115,7 +115,7 @@ async function migrateSchoolData(school) {
   try {
     // Connect to the school-specific database
     log(`Connecting to school database...`);
-    const { connection, models } = await connectToSchoolDb(school);
+    const { connection } = await connectToSchoolDb(school);
     
     if (!connection) {
       throw new Error('Failed to connect to school database');

@@ -146,7 +146,7 @@ themeSchema.methods.generateCSSVariables = function() {
   const secondaryHsl = hexToHsl(this.secondaryColor);
 
   // Generate complementary colors for a complete theme
-  const generateComplementaryColors = (primary, secondary) => {
+  const generateComplementaryColors = () => {
     return {
       primary: primaryHsl,
       secondary: secondaryHsl,

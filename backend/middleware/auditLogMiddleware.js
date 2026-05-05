@@ -194,7 +194,7 @@ function normalizeValue(value) {
 /**
  * Middleware to attach audit context to requests
  */
-const attachAuditContext = (req, res, next) => {
+const attachAuditContext = (req, _res, next) => {
   try {
     // Extract audit context from authenticated user
     if (req.user) {

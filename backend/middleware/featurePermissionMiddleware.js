@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const asyncHandler = require('express-async-handler');
 const logger = require('../utils/logger');
 
@@ -10,7 +9,7 @@ const logger = require('../utils/logger');
  * @returns {Function} Express middleware function that always allows access
  */
 const requireFeature = (featureName) => {
-  return asyncHandler(async (req, res, next) => {
+  return asyncHandler(async (req, _res, next) => {
     // DISABLED: All permission checks removed - always allow access
     logger.info('PERMISSIONS', `Feature permission checking DISABLED - allowing access to ${featureName}`, {
       userId: req.user?.id,

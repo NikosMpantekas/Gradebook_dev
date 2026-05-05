@@ -119,12 +119,17 @@ const cleanupOldBackups = (logDir) => {
       
       files.forEach(file => {
         if (file.includes('.log.') && file.match(/\.log\.\d{4}-\d{2}-\d{2}$/)) {
-          const filePath = path.join(logDir, path.basename(file));
-          const stats = fs.statSync(filePath);
+          const safeFileName = path.basename(file);
+          const filePath = path.join(logDir, safeFileName);
           
-          if (stats.mtime.getTime() < thirtyDaysAgo) {
-            fs.unlinkSync(filePath);
-            console.log(`Cleaned up old backup log: ${file}`);
+          // Double check the path is still within logDir to prevent traversal
+          if (filePath.startsWith(logDir)) {
+            const stats = fs.statSync(filePath);
+          
+            if (stats.mtime.getTime() < thirtyDaysAgo) {
+              fs.unlinkSync(filePath);
+              console.log(`Cleaned up old backup log: ${file}`);
+            }
           }
         }
       });

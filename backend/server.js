@@ -652,13 +652,18 @@ if (process.env.NODE_ENV === "production") {
       try {
         const files = fs.readdirSync(pathToCheck);
         files.forEach((file) => {
-          console.log(
-            `- ${file} ${
-              fs.statSync(path.join(pathToCheck, path.basename(file))).isDirectory()
-                ? "(directory)"
-                : ""
-            }`
-          );
+          const safeFileName = path.basename(file);
+          const filePath = path.join(pathToCheck, safeFileName);
+          
+          if (filePath.startsWith(pathToCheck)) {
+            console.log(
+              `- ${safeFileName} ${
+                fs.statSync(filePath).isDirectory()
+                  ? "(directory)"
+                  : ""
+              }`
+            );
+          }
         });
       } catch (err) {
         console.error("Error reading directory:", err);
@@ -751,7 +756,14 @@ if (process.env.NODE_ENV === "production") {
         // Add redirection for routes that should be under /app
         const basePattern = pattern.replace("*", "");
         app.get(pattern, (req, res) => {
-          const targetUrl = `/app${req.originalUrl}`;
+          let url = req.originalUrl;
+          // Security: Prevent protocol-relative redirects (e.g. //google.com) 
+          // by ensuring the target URL starts with a single /app/
+          while (url.startsWith('/')) {
+            url = url.substring(1);
+          }
+          const targetUrl = `/app/${url}`;
+          
           console.log(`Redirecting ${basePattern} route to ${encodeURI(targetUrl)}`);
           return res.redirect(encodeURI(targetUrl));
         });

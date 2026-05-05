@@ -349,7 +349,7 @@ pushSubscriptionSchema.pre('remove', function(next) {
 /**
  * Error handling
  */
-pushSubscriptionSchema.post('save', function(error, doc, next) {
+pushSubscriptionSchema.post('save', function(error, _doc, next) {
   if (error.name === 'MongoServerError' && error.code === 11000) {
     console.error(`[PushSubscription] Duplicate endpoint detected: ${error.keyValue?.endpoint?.substring(0, 50)}...`);
     next(new Error('Push subscription already exists for this endpoint'));

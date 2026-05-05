@@ -387,7 +387,7 @@ const deletePushSubscription = asyncHandler(async (req, res) => {
 const sendTestPush = asyncHandler(async (req, res) => {
   console.log('[PushController] Test push notification request from user:', req.user._id);
   
-  const { title, body, platform } = req.body;
+  const { title, body } = req.body;
 
   try {
     // Get user's subscriptions

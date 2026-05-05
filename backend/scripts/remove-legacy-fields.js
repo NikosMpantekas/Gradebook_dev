@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/userModel');
 const path = require('path');
-const fs = require('fs');
 
 // Load environment variables from .env file
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });

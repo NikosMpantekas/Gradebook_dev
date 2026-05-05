@@ -7,7 +7,7 @@ const {
   updateSchool,
   deleteSchool
 } = require('../controllers/schoolController');
-const { protect, admin, superadmin, canManageSchools } = require('../middleware/authMiddleware');
+const { protect, canManageSchools } = require('../middleware/authMiddleware');
 
 // Protected routes for school branches
 router.get('/', protect, getSchools); // Requires authentication to view schools
