@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const Notification = require('../models/notificationModel');
 const User = require('../models/userModel');
 const PushSubscription = require('../models/pushSubscriptionModel');
-const { pushService } = require('./pushController');
 
 // @desc    Create a new notification
 // @route   POST /api/notifications

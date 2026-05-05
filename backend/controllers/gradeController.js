@@ -3,7 +3,6 @@ const Grade = require('../models/gradeModel');
 const User = require('../models/userModel');
 const Subject = require('../models/subjectModel');
 const Class = require('../models/classModel');
-const { enforceSchoolFilter } = require('../middleware/schoolIdMiddleware');
 
 // @desc    Create a new grade
 // @route   POST /api/grades

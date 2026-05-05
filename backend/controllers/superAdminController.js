@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcryptjs');
-const mongoose = require('mongoose');
 const User = require('../models/userModel');
 const School = require('../models/schoolModel');
 const Notification = require('../models/notificationModel');
@@ -119,7 +118,7 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
 // @desc    Get all school owners (admins)
 // @route   GET /api/superadmin/school-owners
 // @access  Private/SuperAdmin
-const getSchoolOwners = asyncHandler(async (req, res) => {
+const getSchoolOwners = asyncHandler(async (_req, res) => {
   // Find all admin users with their associated schools and pack information
   const schoolOwners = await User.find({ role: 'admin' })
     .select('-password')
@@ -486,7 +485,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
         console.log(`📢 Found ${recipients.length} users in school ${schoolId} to notify`);
         break;
 
-      case 'specific_user':
+      case 'specific_user': {
         if (!userId) {
           res.status(400);
           throw new Error('Please provide userId for specific user notifications');
@@ -502,6 +501,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
         recipients = [specificUser];
         console.log(`📢 Sending notification to specific user: ${specificUser.name} (${specificUser.email})`);
         break;
+      }
 
       default:
         res.status(400);
@@ -570,7 +570,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
 // @desc    Get schools for superadmin notification filtering
 // @route   GET /api/superadmin/schools
 // @access  Private/SuperAdmin
-const getSchoolsForNotifications = asyncHandler(async (req, res) => {
+const getSchoolsForNotifications = asyncHandler(async (_req, res) => {
   try {
     // Only fetch main schools (not branches) - parentCluster should be null
     const schools = await School.find({
@@ -697,8 +697,8 @@ const getSystemLogs = asyncHandler(async (req, res) => {
         if (file.endsWith('.log')) {
           logFiles.push({
             name: file,
-            path: path.join(logDir, file),
-            size: fs.statSync(path.join(logDir, file)).size
+            path: path.join(logDir, path.basename(file)),
+            size: fs.statSync(path.join(logDir, path.basename(file))).size
           });
         }
       });
@@ -825,7 +825,7 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 // @desc    Get PM2 process status and logs
 // @route   GET /api/superadmin/pm2-status
 // @access  Private (SuperAdmin only)
-const getPM2Status = asyncHandler(async (req, res) => {
+const getPM2Status = asyncHandler(async (_req, res) => {
   const { exec } = require('child_process');
   const util = require('util');
   const execAsync = util.promisify(exec);

@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const sessionService = require('../services/sessionService');
-const { attachAuditContext } = require('../middleware/auditLogMiddleware');
 
 /**
  * @desc    Generate sessions for a class

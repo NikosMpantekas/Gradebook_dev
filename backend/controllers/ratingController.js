@@ -153,8 +153,7 @@ const deleteRatingPeriod = asyncHandler(async (req, res) => {
     throw new Error('Rating period not found');
   }
 
-  // Delete all related questions
-  await RatingQuestion.deleteMany({ ratingPeriod: req.params.id });
+  // All related questions are embedded in the RatingPeriod document, so they will be deleted automatically
   
   // Delete all related student ratings
   await StudentRating.deleteMany({ ratingPeriod: req.params.id });
@@ -196,18 +195,19 @@ const createRatingQuestion = asyncHandler(async (req, res) => {
     throw new Error('Rating period not found');
   }
 
-  // Create rating question
-  const ratingQuestion = await RatingQuestion.create({
+  // Add question to the period
+  period.questions.push({
     text,
     questionType,
     targetType,
-    ratingPeriod,
-    order: order || 0,
-    createdBy: req.user._id
+    order: order || 0
   });
-
-  if (ratingQuestion) {
-    res.status(201).json(ratingQuestion);
+  
+  await period.save();
+  const createdQuestion = period.questions[period.questions.length - 1];
+  
+  if (createdQuestion) {
+    res.status(201).json(createdQuestion);
   } else {
     res.status(400);
     throw new Error('Invalid rating question data');
@@ -227,9 +227,8 @@ const getRatingQuestions = asyncHandler(async (req, res) => {
     throw new Error('Rating period not found');
   }
 
-  // Get questions for this period
-  const questions = await RatingQuestion.find({ ratingPeriod: periodId })
-    .sort({ order: 1, createdAt: 1 });
+  // Get questions for this period - they are embedded
+  const questions = (period.questions || []).sort((a, b) => (a.order || 0) - (b.order || 0));
 
   res.status(200).json(questions);
 });
@@ -240,37 +239,47 @@ const getRatingQuestions = asyncHandler(async (req, res) => {
 const updateRatingQuestion = asyncHandler(async (req, res) => {
   const { text, questionType, targetType, order } = req.body;
 
-  const ratingQuestion = await RatingQuestion.findById(req.params.id);
+  // Find the period that contains this question
+  const period = await RatingPeriod.findOne({ 'questions._id': req.params.id });
 
-  if (!ratingQuestion) {
+  if (!period) {
     res.status(404);
     throw new Error('Rating question not found');
   }
 
-  // Update rating question
-  ratingQuestion.text = text || ratingQuestion.text;
-  ratingQuestion.questionType = questionType || ratingQuestion.questionType;
-  ratingQuestion.targetType = targetType || ratingQuestion.targetType;
-  if (order !== undefined) ratingQuestion.order = order;
+  // Find the question in the array
+  const question = period.questions.id(req.params.id);
+  if (!question) {
+    res.status(404);
+    throw new Error('Rating question not found in period');
+  }
 
-  const updatedRatingQuestion = await ratingQuestion.save();
+  // Update fields
+  if (text !== undefined) question.text = text;
+  if (questionType !== undefined) question.questionType = questionType;
+  if (targetType !== undefined) question.targetType = targetType;
+  if (order !== undefined) question.order = order;
 
-  res.status(200).json(updatedRatingQuestion);
+  await period.save();
+
+  res.status(200).json(question);
 });
 
 // @desc    Delete a rating question
 // @route   DELETE /api/ratings/questions/:id
 // @access  Private (Admin only)
 const deleteRatingQuestion = asyncHandler(async (req, res) => {
-  const ratingQuestion = await RatingQuestion.findById(req.params.id);
+  // Find the period that contains this question
+  const period = await RatingPeriod.findOne({ 'questions._id': req.params.id });
 
-  if (!ratingQuestion) {
+  if (!period) {
     res.status(404);
     throw new Error('Rating question not found');
   }
 
-  // Delete the rating question
-  await RatingQuestion.deleteOne({ _id: ratingQuestion._id });
+  // Remove the question from the array
+  period.questions.pull({ _id: req.params.id });
+  await period.save();
 
   res.status(200).json({ message: 'Rating question removed' });
 });

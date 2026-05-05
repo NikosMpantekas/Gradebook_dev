@@ -25,11 +25,6 @@ const registerSubscription = asyncHandler(async (req, res) => {
   logger.info('SUBSCRIPTION', `Processing ${isSuperadmin ? 'superadmin' : 'regular user'} subscription`);
   
   // Check if subscription already exists
-  let subscription = await Subscription.findOne({
-    user: req.user.id,
-    endpoint: endpoint
-  });
-
   try {
     // Prepare subscription data
     const subscriptionData = {
@@ -159,7 +154,7 @@ const deleteSubscriptionByEndpoint = asyncHandler(async (req, res) => {
 // @desc    Get VAPID public key
 // @route   GET /api/subscriptions/vapidPublicKey
 // @access  Public
-const getVapidPublicKey = asyncHandler(async (req, res) => {
+const getVapidPublicKey = asyncHandler(async (_req, res) => {
   if (!process.env.VAPID_PUBLIC_KEY) {
     res.status(500);
     throw new Error('VAPID public key not configured');

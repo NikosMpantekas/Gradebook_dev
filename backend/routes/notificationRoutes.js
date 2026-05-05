@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const Notification = require('../models/notificationModel');
 const {
   createNotification,
@@ -16,7 +15,7 @@ const {
   deletePushSubscription,
   sendTestPush
 } = require('../controllers/notificationController');
-const { protect, admin, teacher, canSendNotifications } = require('../middleware/authMiddleware');
+const { protect, canSendNotifications } = require('../middleware/authMiddleware');
 
 // Modern push notification endpoints
 router.get('/vapid', protect, getVapidPublicKey);

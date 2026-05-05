@@ -1,7 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const User = require('../models/userModel');
 const Contact = require('../models/contactModel');
-const { enforceSchoolFilter } = require('../middleware/schoolIdMiddleware');
 const nodemailer = require('nodemailer');
 
 // Email service function for sending contact message replies
@@ -417,12 +415,14 @@ const sanitizeForMongoDB = (input) => {
 
   // Remove MongoDB operators
   mongoOperators.forEach(operator => {
-    const regex = new RegExp(operator.replace('$', '\\$'), 'gi');
+    // Escape $ for regex and use a safer replacement pattern
+    const escapedOperator = operator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedOperator, 'gi');
     sanitized = sanitized.replace(regex, '');
   });
 
   // Remove null bytes and control characters
-  sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
+  sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, ''); // eslint-disable-line no-control-regex
 
   // Remove HTML tags
   sanitized = sanitized.replace(/<[^>]*>/g, '');

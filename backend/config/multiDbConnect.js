@@ -138,12 +138,12 @@ const connectToSchoolDb = async (school) => {
         // URI has query parameters - need to preserve them
         const [uriBase, queryParams] = mainUri.split('?');
         // Replace the database name in the base part
-        const baseWithNewDb = uriBase.replace(/\/[^\/]*$/, `/${dbName}`);
+        const baseWithNewDb = uriBase.replace(/\/[^/]*$/, `/${dbName}`);
         // Reconstruct URI with query parameters
         connectionUri = `${baseWithNewDb}?${queryParams}`;
       } else {
         // No query parameters, just replace database name
-        connectionUri = mainUri.replace(/\/[^\/]*$/, `/${dbName}`);
+        connectionUri = mainUri.replace(/\/[^/]*$/, `/${dbName}`);
       }
     }
     
@@ -281,7 +281,7 @@ const getSchoolConnection = (schoolId) => {
   
   if (schoolConnections.has(connectionId)) {
     // Get the cached connection data with timestamp and models
-    const { connection, models, timestamp } = schoolConnections.get(connectionId);
+    const { connection, models } = schoolConnections.get(connectionId);
     
     // Check if connection is still valid
     if (connection && connection.readyState === 1) {
