@@ -5,7 +5,7 @@ const {
   getStudentSchedule,
   getTeacherSchedule
 } = require('../controllers/scheduleController');
-const { protect, admin, teacher, canManageStudents } = require('../middleware/authMiddleware');
+const { protect, admin, canManageStudents } = require('../middleware/authMiddleware');
 
 // @route   GET /api/schedule
 // @desc    Get schedule for current user (student, teacher, or admin)

@@ -62,10 +62,14 @@ export const safeGet = (obj, path, defaultValue = null) => {
     if (result === undefined || result === null) {
       return defaultValue;
     }
+    // SECURITY: Block prototype pollution attempts
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      console.warn(`[Security] Blocked attempt to access sensitive property: ${key}`);
       return defaultValue;
     }
-    result = result[key];
+    
+    // Safely access the next level
+    result = (result && typeof result === 'object') ? result[key] : undefined;
   }
   
   return result !== undefined ? result : defaultValue;

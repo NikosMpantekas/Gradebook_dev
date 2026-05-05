@@ -1,7 +1,5 @@
 const Attendance = require('../models/attendanceModel');
-const Session = require('../models/sessionModel');
 const Class = require('../models/classModel');
-const User = require('../models/userModel');
 
 class ReportingService {
   /**
@@ -365,7 +363,7 @@ class ReportingService {
   /**
    * Export report data to CSV format
    */
-  async exportToCSV(reportType, reportData, options = {}) {
+  async exportToCSV(reportType, reportData, _options = {}) {
     try {
       console.log(`[REPORTING_SERVICE] Exporting ${reportType} report to CSV`);
       

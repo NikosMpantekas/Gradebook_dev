@@ -221,10 +221,6 @@ attendanceSchema.statics.getSessionAttendance = async function(sessionId, option
 // Static method to get student attendance history
 attendanceSchema.statics.getStudentAttendance = async function(studentId, startDate, endDate, options = {}) {
   try {
-    console.log(`[ATTENDANCE_QUERY] Getting attendance history for student ${studentId} from ${startDate} to ${endDate}`);
-    
-    const Session = mongoose.model('Session');
-    
     // Build aggregation pipeline
     const pipeline = [
       {

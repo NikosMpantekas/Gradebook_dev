@@ -428,7 +428,6 @@ router.get('/active', protect, asyncHandler(async (req, res) => {
     const now = new Date();
     
     // Get student's school and direction
-    const studentSchool = req.user.school ? req.user.school._id || req.user.school : null;
     const studentDirection = req.user.direction ? req.user.direction._id || req.user.direction : null;
     
     // SECURITY: Find active rating periods with strict school isolation
@@ -779,16 +778,13 @@ router.post('/submit', protect, asyncHandler(async (req, res) => {
     }
     
     // Check if target exists
-    let targetModel;
     if (targetType === 'teacher') {
-      targetModel = 'User';
       const teacher = await User.findById(targetId);
       if (!teacher) {
         res.status(404);
         throw new Error('Teacher not found');
       }
     } else if (targetType === 'subject') {
-      targetModel = 'Subject';
       const subject = await Subject.findById(targetId);
       if (!subject) {
         res.status(404);

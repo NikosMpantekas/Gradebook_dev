@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const Class = require('../models/classModel');
-const Subject = require('../models/subjectModel');
 const mongoose = require('mongoose');
 
 // @desc    Create a new class

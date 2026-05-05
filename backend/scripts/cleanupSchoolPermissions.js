@@ -106,7 +106,7 @@ const cleanupSchoolPermissions = async () => {
     
     // Clean up duplicates by school_id
     for (const duplicate of duplicates1) {
-      const [keepId, ...deleteIds] = duplicate.docs;
+      const [_keepId, ...deleteIds] = duplicate.docs;
       if (deleteIds.length > 0) {
         const deleteResult = await mongoose.connection.db.collection('schoolpermissions').deleteMany({
           _id: { $in: deleteIds }
@@ -117,7 +117,7 @@ const cleanupSchoolPermissions = async () => {
     
     // Clean up duplicates by schoolId
     for (const duplicate of duplicates2) {
-      const [keepId, ...deleteIds] = duplicate.docs;
+      const [_keepId, ...deleteIds] = duplicate.docs;
       if (deleteIds.length > 0) {
         const deleteResult = await mongoose.connection.db.collection('schoolpermissions').deleteMany({
           _id: { $in: deleteIds }

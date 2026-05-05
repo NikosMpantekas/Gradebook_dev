@@ -9,7 +9,7 @@ const {
   getSubjectsByDirection,
   getSubjectsByTeacher
 } = require('../controllers/subjectController');
-const { protect, admin, teacher, canManageSubjects, adminCanManageSubjects } = require('../middleware/authMiddleware');
+const { protect, teacher, canManageSubjects } = require('../middleware/authMiddleware');
 
 // Public routes that don't have parameters
 router.get('/', getSubjects);

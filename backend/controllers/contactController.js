@@ -411,15 +411,9 @@ const sanitizeForMongoDB = (input) => {
     '$geoIntersects', '$near', '$nearSphere', '$maxDistance', '$minDistance'
   ];
 
-  let sanitized = input;
-
-  // Remove MongoDB operators
-  mongoOperators.forEach(operator => {
-    // Escape $ for regex and use a safer replacement pattern
-    const escapedOperator = operator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escapedOperator, 'gi');
-    sanitized = sanitized.replace(regex, '');
-  });
+  // Remove MongoDB operators using a single combined regex for performance and safety
+  const mongoOperatorsRegex = new RegExp(mongoOperators.map(op => op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+  let sanitized = input.replace(mongoOperatorsRegex, '');
 
   // Remove null bytes and control characters
   sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, ''); // eslint-disable-line no-control-regex

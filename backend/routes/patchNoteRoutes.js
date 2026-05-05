@@ -8,7 +8,7 @@ const {
   deletePatchNote,
   getPublicPatchNotes
 } = require('../controllers/patchNoteController');
-const { protect, admin, superadmin } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 // Create middleware for admin or superadmin access
 const adminOrSuperadmin = (req, res, next) => {

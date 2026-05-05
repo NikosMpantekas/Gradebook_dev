@@ -176,7 +176,7 @@ const deletePatchNote = asyncHandler(async (req, res) => {
 // @desc    Get active patch notes (public endpoint for version display)
 // @route   GET /api/patch-notes/public
 // @access  Public (no authentication required)
-const getPublicPatchNotes = asyncHandler(async (req, res) => {
+const getPublicPatchNotes = asyncHandler(async (_req, res) => {
   try {
     // Only return active patch notes for public endpoint
     const patchNotes = await PatchNote.find({ isActive: true })
