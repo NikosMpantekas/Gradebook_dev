@@ -27,7 +27,7 @@ connectDB()
         `Admin permissions migration result: ${migrationResult.updatedCount} users updated`
           .green
       );
-      
+
       // Add pushNotificationEnabled field to users who don't have it
       const pushMigrationResult = await addPushNotificationEnabledField();
       console.log(
@@ -116,7 +116,7 @@ const corsOptions = {
         error.status = 403;
         return callback(error, false);
       }
-      
+
       // Only allow exact frontend domain in production
       if (origin !== process.env.FRONTEND_URL) {
         console.error(`[CORS] BLOCKED: Unauthorized origin: ${origin}`);
@@ -124,7 +124,7 @@ const corsOptions = {
         error.status = 403;
         return callback(error, false);
       }
-      
+
       console.log(`[CORS] AUTHORIZED: ${origin}`);
       return callback(null, true);
     }
@@ -134,7 +134,7 @@ const corsOptions = {
       console.log(`[CORS] Dev mode - allowed: ${origin || 'no-origin'}`);
       return callback(null, true);
     }
-    
+
     // Reject all unauthorized origins
     console.error(`[CORS] BLOCKED: Unauthorized origin: ${origin}`);
     const error = new Error(`CORS policy: Origin ${origin} not authorized`);
@@ -225,7 +225,7 @@ app.use((req, res, next) => {
 const logger = require("./utils/logger");
 
 // Health check endpoint for Render deployment
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", (_, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
@@ -236,22 +236,22 @@ app.use('/api', (req, res, next) => {
   const referer = req.headers.referer;
   const userAgent = req.headers['user-agent'] || '';
   const host = req.headers.host;
-  
+
   logger.info('SECURITY', 'Request validation', {
     ip: req.ip,
     origin: origin || 'NO_ORIGIN',
-    referer: referer || 'NO_REFERER', 
+    referer: referer || 'NO_REFERER',
     userAgent: userAgent,
     host: host,
     path: req.path,
     method: req.method
   });
-  
+
   // Allow health check to pass through
   if (req.path === '/health') {
     return next();
   }
-  
+
   // PRODUCTION: Strict validation - BLOCK ALL external requests
   if (process.env.NODE_ENV === 'production') {
     // Must have origin from authorized frontend
@@ -262,13 +262,13 @@ app.use('/api', (req, res, next) => {
         userAgent: userAgent,
         path: req.path
       });
-      return res.status(403).json({ 
-        error: 'Access denied', 
+      return res.status(403).json({
+        error: 'Access denied',
         code: 'UNAUTHORIZED_ORIGIN',
         message: 'This API only accepts requests from authorized frontend applications'
       });
     }
-    
+
     // Must have referer from authorized frontend 
     if (!referer || !referer.startsWith(process.env.FRONTEND_URL)) {
       logger.warn('SECURITY', 'BLOCKED: Invalid referer in production', {
@@ -277,19 +277,19 @@ app.use('/api', (req, res, next) => {
         userAgent: userAgent,
         path: req.path
       });
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Access denied',
         code: 'INVALID_REFERER',
-        message: 'Invalid request source' 
+        message: 'Invalid request source'
       });
     }
-    
+
     // Block suspicious user agents (curl, postman, wget, etc)
     const suspiciousAgents = ['curl', 'postman', 'wget', 'httpie', 'insomnia', 'rest-client', 'python-requests'];
-    const isSuspicious = suspiciousAgents.some(agent => 
+    const isSuspicious = suspiciousAgents.some(agent =>
       userAgent.toLowerCase().includes(agent.toLowerCase())
     );
-    
+
     if (isSuspicious || !userAgent || userAgent.length < 10) {
       logger.warn('SECURITY', 'BLOCKED: Suspicious user agent', {
         ip: req.ip,
@@ -297,41 +297,41 @@ app.use('/api', (req, res, next) => {
         path: req.path,
         isSuspicious: isSuspicious
       });
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Access denied',
         code: 'SUSPICIOUS_CLIENT',
         message: 'Direct API access not allowed'
       });
     }
   }
-  
+
   // Development mode: Still block obvious external tools
   if (process.env.NODE_ENV !== 'production') {
     const suspiciousAgents = ['curl', 'postman', 'wget', 'httpie'];
-    const isSuspicious = suspiciousAgents.some(agent => 
+    const isSuspicious = suspiciousAgents.some(agent =>
       userAgent.toLowerCase().includes(agent.toLowerCase())
     );
-    
+
     if (isSuspicious) {
       logger.warn('SECURITY', 'BLOCKED: External tool in dev mode', {
         ip: req.ip,
         userAgent: userAgent,
         path: req.path
       });
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Access denied',
         code: 'EXTERNAL_TOOL_BLOCKED',
         message: 'External API tools are blocked. Use the frontend application.'
       });
     }
   }
-  
+
   logger.info('SECURITY', 'Request authorized', {
     ip: req.ip,
     path: req.path,
     userAgent: userAgent.substring(0, 50) + '...'
   });
-  
+
   next();
 });
 
@@ -345,8 +345,8 @@ app.get('/api/system/maintenance/status', require('./controllers/systemMaintenan
 
 // System maintenance admin routes (protected)
 app.use("/api/system/maintenance", require("./routes/systemMaintenanceRoutes"));
-app.use("/api/beta-features",    require("./routes/betaFeaturesRoutes"));
-app.use("/api/schedule-runs",   require("./routes/scheduleRunRoutes"));
+app.use("/api/beta-features", require("./routes/betaFeaturesRoutes"));
+app.use("/api/schedule-runs", require("./routes/scheduleRunRoutes"));
 
 // User routes - No global middleware for auth checking, each route will handle individually
 app.use("/api/users", require("./routes/userRoutes"));
@@ -373,7 +373,7 @@ app.use(
 // Public patch notes route (no authentication required)
 app.get(
   "/api/patch-notes/public",
-  async (_req, res) => {
+  async (_, res) => {
     try {
       const PatchNote = require('./models/patchNoteModel');
       // Only return active patch notes for public endpoint
@@ -381,9 +381,9 @@ app.get(
         .sort({ createdAt: -1 })
         .select('title version type createdAt') // Only return essential fields for security
         .lean();
-      
+
       console.log('Public patch notes requested - returning', patchNotes.length, 'active patch notes');
-      
+
       res.status(200).json(patchNotes);
     } catch (error) {
       console.error('Error retrieving public patch notes:', error);
@@ -536,7 +536,7 @@ logger.info("SERVER", "Routes configured with proper middleware ordering");
 
 // Add essential middleware AFTER route definitions but BEFORE frontend serving
 // Debug middleware to log all requests
-app.use((req, _res, next) => {
+app.use((req, _, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
@@ -546,14 +546,14 @@ if (process.env.NODE_ENV === 'production') {
   app.use('/api', (req, res, next) => {
     const referer = req.headers.referer || '';
     const origin = req.headers.origin || '';
-    
+
     const isValidReferer = referer.includes('grademanager.netlify.app') ||
-                          referer.includes('gradebook.pro') ||
-                          referer.includes('gradebookbeta.netlify.app');
-                          
+      referer.includes('gradebook.pro') ||
+      referer.includes('gradebookbeta.netlify.app');
+
     const isValidOrigin = origin.includes('grademanager.netlify.app') ||
-                         origin.includes('gradebook.pro') ||
-                         origin.includes('gradebookbeta.netlify.app');
+      origin.includes('gradebook.pro') ||
+      origin.includes('gradebookbeta.netlify.app');
 
     console.log(`[API Security] ${req.method} ${req.originalUrl} - Valid: ${isValidReferer || isValidOrigin}`);
 
@@ -564,7 +564,7 @@ if (process.env.NODE_ENV === 'production') {
         message: 'Access denied: Direct API access not permitted'
       });
     }
-    
+
     next();
   });
 }
@@ -607,15 +607,15 @@ app.get("/api/stats/overview", protect, async (req, res) => {
       message: 'Stats endpoint is working but requires implementation',
       timestamp: new Date().toISOString()
     };
-    
+
     console.log('[STATS] Overview requested by user:', req.user?.role, req.user?._id);
     res.json(stats);
   } catch (error) {
     console.error('[STATS] Error fetching overview:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Error fetching stats overview',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -655,15 +655,12 @@ if (process.env.NODE_ENV === "production") {
         files.forEach((file) => {
           const safeFileName = path.basename(file);
           const filePath = path.resolve(staticPath, safeFileName);
-          const rel = path.relative(staticPath, filePath);
 
-          // Ensure the resolved path hasn't escaped the build directory
-          if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+          if (filePath.startsWith(staticPath)) {
             console.log(
-              `- ${safeFileName} ${
-                fs.statSync(filePath).isDirectory()
-                  ? "(directory)"
-                  : ""
+              `- ${safeFileName} ${fs.statSync(filePath).isDirectory()
+                ? "(directory)"
+                : ""
               }`
             );
           }
@@ -686,7 +683,7 @@ if (process.env.NODE_ENV === "production") {
     app.use(express.static(staticPath));
 
     // Add a special debug route to test if the server is serving static files correctly
-    app.get("/appinfo", (_req, res) => {
+    app.get("/appinfo", (_, res) => {
       res.json({
         success: true,
         message: "App info debug endpoint",
@@ -766,7 +763,7 @@ if (process.env.NODE_ENV === "production") {
           // We strip all leading slashes and then ensure it's a valid relative path
           const safeUrl = validator.stripLow(url).replace(/^[/\\]+/, '');
           const targetUrl = `/app/${safeUrl}`;
-          
+
           console.log(`Redirecting ${basePattern} route to ${encodeURI(targetUrl)}`);
           return res.redirect(encodeURI(targetUrl));
         });
@@ -774,7 +771,7 @@ if (process.env.NODE_ENV === "production") {
     });
 
     // Add special route for dashboard
-    app.get("/dashboard", (_req, res) => {
+    app.get("/dashboard", (_, res) => {
       console.log("Redirecting /dashboard to /app/dashboard");
       return res.redirect("/app/dashboard");
     });
@@ -806,7 +803,7 @@ if (process.env.NODE_ENV === "production") {
     console.error(
       "CRITICAL ERROR: Could not find build directory in any location!"
     );
-    app.get("*", (_req, res) => {
+    app.get("*", (_, res) => {
       res
         .status(500)
         .send(
@@ -815,7 +812,7 @@ if (process.env.NODE_ENV === "production") {
     });
   }
 } else {
-  app.get("/", (_req, res) => res.send("API is running..."));
+  app.get("/", (_, res) => res.send("API is running..."));
 }
 
 // Error middleware

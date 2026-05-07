@@ -697,10 +697,9 @@ const getSystemLogs = asyncHandler(async (req, res) => {
         if (file.endsWith('.log')) {
           const safeFileName = path.basename(file);
           const filePath = path.resolve(logDir, safeFileName);
-          const rel = path.relative(logDir, filePath);
 
-          // Ensure the resolved path hasn't escaped the log directory
-          if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
+          // Double check the path is still within logDir
+          if (filePath.startsWith(logDir)) {
             logFiles.push({
               name: safeFileName,
               path: filePath,

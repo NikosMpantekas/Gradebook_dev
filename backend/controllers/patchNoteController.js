@@ -6,7 +6,7 @@ const PatchNote = require('../models/patchNoteModel');
 // @access  Private (superadmin only)
 const createPatchNote = asyncHandler(async (req, res) => {
   const { title, content, version, type } = req.body;
-  
+
   // Validate input
   if (!title || !content || !version) {
     res.status(400);
@@ -29,13 +29,13 @@ const createPatchNote = asyncHandler(async (req, res) => {
       publishedBy: req.user._id,
       isActive: true
     });
-    
+
     console.log('Patch note created:', {
       id: patchNote._id,
       title: patchNote.title,
       version: patchNote.version
     });
-    
+
     res.status(201).json(patchNote);
   } catch (error) {
     console.error('Error creating patch note:', error);
@@ -51,13 +51,13 @@ const getPatchNotes = asyncHandler(async (req, res) => {
   try {
     // Non-superadmins only see active patch notes
     const filter = req.user.role !== 'superadmin' ? { isActive: true } : {};
-    
+
     // Get all patch notes, newest first
     const patchNotes = await PatchNote.find(filter)
       .sort({ createdAt: -1 })
       .populate('publishedBy', 'name')
       .lean();
-    
+
     res.status(200).json(patchNotes);
   } catch (error) {
     console.error('Error retrieving patch notes:', error);
@@ -74,18 +74,18 @@ const getPatchNoteById = asyncHandler(async (req, res) => {
     const patchNote = await PatchNote.findById(req.params.id)
       .populate('publishedBy', 'name')
       .lean();
-    
+
     if (!patchNote) {
       res.status(404);
       throw new Error('Patch note not found');
     }
-    
+
     // Non-superadmins can only see active patch notes
     if (req.user.role !== 'superadmin' && !patchNote.isActive) {
       res.status(404);
       throw new Error('Patch note not found');
     }
-    
+
     res.status(200).json(patchNote);
   } catch (error) {
     console.error('Error retrieving patch note:', error);
@@ -106,32 +106,32 @@ const updatePatchNote = asyncHandler(async (req, res) => {
 
   try {
     const { title, content, version, type, isActive } = req.body;
-    
+
     // Find the patch note first
     const patchNote = await PatchNote.findById(req.params.id);
-    
+
     if (!patchNote) {
       res.status(404);
       throw new Error('Patch note not found');
     }
-    
+
     // Update the fields
     if (title !== undefined) patchNote.title = title;
     if (content !== undefined) patchNote.content = content;
     if (version !== undefined) patchNote.version = version;
     if (type !== undefined) patchNote.type = type;
     if (isActive !== undefined) patchNote.isActive = isActive;
-    
+
     // Save the updated patch note
     await patchNote.save();
-    
+
     console.log('Patch note updated:', {
       id: patchNote._id,
       title: patchNote.title,
       version: patchNote.version,
       isActive: patchNote.isActive
     });
-    
+
     res.status(200).json(patchNote);
   } catch (error) {
     console.error('Error updating patch note:', error);
@@ -153,18 +153,18 @@ const deletePatchNote = asyncHandler(async (req, res) => {
   try {
     // Find and delete the patch note
     const patchNote = await PatchNote.findById(req.params.id);
-    
+
     if (!patchNote) {
       res.status(404);
       throw new Error('Patch note not found');
     }
-    
+
     await patchNote.deleteOne();
-    
+
     console.log('Patch note deleted:', {
       id: req.params.id
     });
-    
+
     res.status(200).json({ success: true, id: req.params.id });
   } catch (error) {
     console.error('Error deleting patch note:', error);
@@ -176,16 +176,16 @@ const deletePatchNote = asyncHandler(async (req, res) => {
 // @desc    Get active patch notes (public endpoint for version display)
 // @route   GET /api/patch-notes/public
 // @access  Public (no authentication required)
-const getPublicPatchNotes = asyncHandler(async (_req, res) => {
+const getPublicPatchNotes = asyncHandler(async (_, res) => {
   try {
     // Only return active patch notes for public endpoint
     const patchNotes = await PatchNote.find({ isActive: true })
       .sort({ createdAt: -1 })
       .select('title version type createdAt') // Only return essential fields for security
       .lean();
-    
+
     console.log('Public patch notes requested - returning', patchNotes.length, 'active patch notes');
-    
+
     res.status(200).json(patchNotes);
   } catch (error) {
     console.error('Error retrieving public patch notes:', error);
