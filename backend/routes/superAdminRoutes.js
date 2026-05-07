@@ -11,7 +11,9 @@ const {
   getSchoolsForNotifications,
   searchUsersForNotifications,
   getSystemLogs,
-  getPM2Status
+  getPM2Status,
+  deleteSchoolOwner,
+  updateSchoolOwnerPermissions,
 } = require('../controllers/superAdminController');
 const { protect, superadmin } = require('../middleware/authMiddleware');
 
@@ -27,6 +29,8 @@ router.get('/school-owners', getSchoolOwners);
 router.get('/school-owners/:id', getSchoolOwnerById);
 router.put('/school-owners/:id/status', updateSchoolOwnerStatus);
 router.put('/school-owners/:id/pack', updateAdminPack);
+router.delete('/school-owners/:id', deleteSchoolOwner);
+router.put('/school-owner/:id/permissions', updateSchoolOwnerPermissions);
 
 // Superadmin notification routes
 router.post('/notifications', sendSuperAdminNotification);

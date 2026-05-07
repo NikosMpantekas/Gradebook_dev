@@ -20,7 +20,9 @@ const {
   unlinkParentFromStudents,
   forgotPasswordRequest,
   getSchoolOwnersWithUserCounts,
-  updateAdminPack
+  updateAdminPack,
+  getUsersByRole,
+  getTeachers,
 } = require('../controllers/userController');
 
 const {
@@ -80,6 +82,8 @@ router.put('/push-notification-preference', protect, async (req, res) => {
 // Admin routes for user management
 router.get('/', protect, admin, getUsers);
 router.post('/admin/create', protect, admin, createUserByAdmin);
+router.get('/teachers', protect, admin, getTeachers);
+router.get('/role/:role', protect, admin, getUsersByRole);
 
 // Route to get students - ADMIN ONLY (all students in school)
 router.get('/students', protect, admin, async (req, res) => {

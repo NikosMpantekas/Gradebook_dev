@@ -22,14 +22,14 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
       student: studentId,
       schoolId: req.user.schoolId
     })
-    .populate('subject', 'name')
-    .populate('teacher', 'name')
-    .sort({ date: -1 });
+      .populate('subject', 'name')
+      .populate('teacher', 'name')
+      .sort({ date: -1 });
 
     // Calculate quick stats
     const gradeCount = grades.length;
     const gradeValues = grades.map(g => g.value);
-    const averageGrade = gradeCount > 0 
+    const averageGrade = gradeCount > 0
       ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
       : 0;
 
@@ -40,14 +40,14 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     // Get recent grades (last 7 days for graph)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const recentGrades = grades.filter(grade => 
+
+    const recentGrades = grades.filter(grade =>
       new Date(grade.date) >= sevenDaysAgo
     );
 
     // Calculate pending grades (this semester - you might want to adjust this logic)
-    const currentDate = new Date();
-    
+    // const currentDate = new Date();
+
     // For now, pending grades is a placeholder - you might want to implement
     // logic to determine which assignments are pending
     const pendingGrades = 0; // This would need business logic to determine
@@ -87,7 +87,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
   try {
     const { search } = req.query;
     console.log(`[StudentStats] Request from ${req.user.role}:`, { search, schoolId: req.user.schoolId, userId: req.user._id });
-    
+
     // Debug log current user details
     console.log('[StudentStats] Current user:', {
       id: req.user._id,
@@ -102,7 +102,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
       role: 'student',
       schoolId: req.user.schoolId
     };
-    
+
     // Log the base query
     console.log('[StudentStats] Base student query:', JSON.stringify(studentQuery));
 
@@ -112,7 +112,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
     }
 
     let students;
-    
+
     if (req.user.role === 'admin') {
       // Admin can see all students in their school
       console.log('[StudentStats] Admin access - fetching all students');
@@ -120,23 +120,23 @@ const getStudentStats = asyncHandler(async (req, res) => {
     } else if (req.user.role === 'teacher') {
       // Teacher can only see students from their assigned classes
       console.log('[StudentStats] Teacher access - fetching students from assigned classes');
-      
+
       // First find all classes where this teacher is assigned
       const teacherClasses = await Class.find({
         teachers: req.user._id,
         schoolId: req.user.schoolId
       }).select('students');
-      
+
       // Extract unique student IDs from all classes
       const studentIds = [...new Set(
         teacherClasses.flatMap(cls => cls.students.map(id => id.toString()))
       )];
-      
+
       console.log(`[StudentStats] Teacher has access to ${studentIds.length} students from classes`);
-      
+
       // Add student ID filter to the query
       studentQuery._id = { $in: studentIds };
-      
+
       students = await User.find(studentQuery).select('_id name email');
     } else {
       res.status(403);
@@ -157,7 +157,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
         // Calculate statistics
         const gradeCount = grades.length;
         const gradeValues = grades.map(g => g.value);
-        const averageGrade = gradeCount > 0 
+        const averageGrade = gradeCount > 0
           ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
           : 0;
 
@@ -260,14 +260,14 @@ const getStudentDetailedStats = asyncHandler(async (req, res) => {
       student: studentId,
       schoolId: req.user.schoolId
     })
-    .populate('subject', 'name')
-    .populate('teacher', 'name')
-    .sort({ date: -1 });
+      .populate('subject', 'name')
+      .populate('teacher', 'name')
+      .sort({ date: -1 });
 
     // Calculate detailed statistics
     const gradeCount = grades.length;
     const gradeValues = grades.map(g => g.value);
-    const averageGrade = gradeCount > 0 
+    const averageGrade = gradeCount > 0
       ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
       : 0;
 

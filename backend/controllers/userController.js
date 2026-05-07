@@ -2162,4 +2162,6 @@ module.exports = {
   forgotPasswordRequest,
   getSchoolOwnersWithUserCounts,
   updateAdminPack,
+  getUsersByRole,
+  getTeachers,
 };

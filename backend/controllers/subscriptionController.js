@@ -23,7 +23,7 @@ const registerSubscription = asyncHandler(async (req, res) => {
   // Check if the user is a superadmin - special handling needed
   const isSuperadmin = req.user.role === 'superadmin';
   logger.info('SUBSCRIPTION', `Processing ${isSuperadmin ? 'superadmin' : 'regular user'} subscription`);
-  
+
   // Check if subscription already exists
   try {
     // Prepare subscription data
@@ -36,12 +36,12 @@ const registerSubscription = asyncHandler(async (req, res) => {
       isSuperadmin, // Set flag for superadmin users
       lastUpdated: new Date()
     };
-    
+
     // Only set schoolId for non-superadmin users
     if (!isSuperadmin && req.user.schoolId) {
       subscriptionData.schoolId = req.user.schoolId;
     }
-    
+
     // Use updateOne with upsert: true to create or update subscription
     // This avoids duplicate key errors by using MongoDB's atomic operations
     const result = await Subscription.updateOne(
@@ -49,7 +49,7 @@ const registerSubscription = asyncHandler(async (req, res) => {
       { $set: subscriptionData }, // Update data
       { upsert: true } // Create if not exists
     );
-    
+
     if (result.upsertedCount > 0) {
       logger.info('SUBSCRIPTION', 'New subscription created successfully', {
         userId: req.user._id,
@@ -80,7 +80,7 @@ const registerSubscription = asyncHandler(async (req, res) => {
         role: req.user.role
       }
     });
-    
+
     // Handle the error more gracefully
     if (error.code === 11000) {
       // This is a duplicate key error - we can safely ignore it
@@ -154,12 +154,12 @@ const deleteSubscriptionByEndpoint = asyncHandler(async (req, res) => {
 // @desc    Get VAPID public key
 // @route   GET /api/subscriptions/vapidPublicKey
 // @access  Public
-const getVapidPublicKey = asyncHandler(async (_req, res) => {
+const getVapidPublicKey = asyncHandler(async (_, res) => {
   if (!process.env.VAPID_PUBLIC_KEY) {
     res.status(500);
     throw new Error('VAPID public key not configured');
   }
-  
+
   res.json({ vapidPublicKey: process.env.VAPID_PUBLIC_KEY });
 });
 

@@ -174,7 +174,7 @@ const getCurrentSchoolPermissions = asyncHandler(async (req, res) => {
 // @desc    Get all schools with their permissions (for superadmin)
 // @route   GET /api/school-permissions/all
 // @access  Private/SuperAdmin
-const getAllSchoolPermissions = asyncHandler(async (_req, res) => {
+const getAllSchoolPermissions = asyncHandler(async (_, res) => {
   try {
     console.log('🔍 [SchoolPermissions] Getting all schools with permissions for superadmin...');
     
@@ -395,7 +395,7 @@ const fixSchoolPermissions = asyncHandler(async (req, res) => {
 // @desc    Get all available features list
 // @route   GET /api/school-permissions/features
 // @access  Private/SuperAdmin
-const getAvailableFeatures = asyncHandler(async (_req, res) => {
+const getAvailableFeatures = asyncHandler(async (_, res) => {
   try {
     console.log('Getting available features list...');
     
