@@ -342,10 +342,14 @@ const registerSchoolModels = (connection) => {
         } catch (createError) {
           console.error(`Failed to create ${modelName} model:`, createError.message);
           
-          // Last resort: Try creating with a different name and then aliasing
+          // Last resort: Register the schema under a temporary name to force
+          // Mongoose to accept the schema, then remove it from the in-memory
+          // model registry (connection.deleteModel only affects Mongoose's
+          // internal cache, NOT actual MongoDB data) and re-register under
+          // the correct model name.
           try {
             const tempName = `${modelName}_${Date.now()}`;
-            const tempModel = connection.model(tempName, schema);
+            connection.model(tempName, schema);
             connection.deleteModel(tempName);
             registeredModels[modelName] = connection.model(modelName, schema);
             console.log(`Created ${modelName} model using alternative method`);
