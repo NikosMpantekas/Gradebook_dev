@@ -32,9 +32,9 @@ const ScheduleSkeleton = () => (
     <Card className="hidden lg:block">
       <CardContent className="p-4">
         <div className="grid grid-cols-8 gap-0">
-          <div className="border-b-2 border-primary border-r border-border h-[50px]" />
+          <div className="border-b-2 border-primary border-r h-[50px]" />
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="border-b-2 border-primary border-r border-border bg-primary/20 h-[50px] p-2">
+            <div key={i} className="border-b-2 border-primary border-r bg-primary/20 h-[50px] p-2">
               <Skeleton className="h-4 w-16 mx-auto" />
             </div>
           ))}
@@ -485,14 +485,14 @@ const Schedule = () => {
               <div className="overflow-x-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-8 gap-0 min-w-[800px]">
                   {/* Corner header */}
-                  <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r border-border dark:border-white/10">
+                  <div className="sticky left-0 bg-background z-20 border-b-2 border-primary border-r dark:border-white/10">
                     <div className="p-2 h-[50px] flex items-center justify-center text-sm font-semibold">
                       {t('schedule.time')}
                     </div>
                   </div>
                   {/* Day headers */}
                   {daysOfWeek.map(day => (
-                    <div key={`header-${day}`} className="border-b-2 border-primary border-r border-border dark:border-white/10 bg-primary text-primary-foreground">
+                    <div key={`header-${day}`} className="border-b-2 border-primary border-r dark:border-white/10 bg-primary text-primary-foreground">
                       <div className="p-2 text-center h-[50px] flex items-center justify-center text-sm font-semibold">{day}</div>
                     </div>
                   ))}
