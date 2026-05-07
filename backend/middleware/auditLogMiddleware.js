@@ -13,7 +13,7 @@ function auditLogPlugin(schema, options = {}) {
   let originalDoc = null;
 
   // Pre-save hook to capture original state
-  schema.pre(['save', 'findOneAndUpdate'], async function() {
+  schema.pre(['save', 'findOneAndUpdate'], async function () {
     try {
       if (this.isNew) {
         originalDoc = null;
@@ -34,7 +34,7 @@ function auditLogPlugin(schema, options = {}) {
   });
 
   // Post-save hook to log the audit trail
-  schema.post('save', async function(doc) {
+  schema.post('save', async function (doc) {
     try {
       await logAuditAction(doc, originalDoc, 'save', entityType, fieldsToTrack, excludeFields);
     } catch (error) {
@@ -43,7 +43,7 @@ function auditLogPlugin(schema, options = {}) {
   });
 
   // Post-findOneAndUpdate hook
-  schema.post('findOneAndUpdate', async function(doc) {
+  schema.post('findOneAndUpdate', async function (doc) {
     try {
       if (doc) {
         await logAuditAction(doc, originalDoc, 'update', entityType, fieldsToTrack, excludeFields);
@@ -54,7 +54,7 @@ function auditLogPlugin(schema, options = {}) {
   });
 
   // Post-remove hook
-  schema.post('remove', async function(doc) {
+  schema.post('remove', async function (doc) {
     try {
       await logAuditAction(doc, doc, 'delete', entityType, fieldsToTrack, excludeFields);
     } catch (error) {
@@ -63,14 +63,14 @@ function auditLogPlugin(schema, options = {}) {
   });
 
   // Add manual audit logging method to schema
-  schema.methods.logAudit = async function(operation, actorUserId, reasonCode, reasonText, clientInfo, metadata) {
+  schema.methods.logAudit = async function (operation, actorUserId, reasonCode, reasonText, clientInfo, metadata) {
     try {
       await logAuditAction(
-        this, 
-        originalDoc, 
-        operation, 
-        entityType, 
-        fieldsToTrack, 
+        this,
+        originalDoc,
+        operation,
+        entityType,
+        fieldsToTrack,
         excludeFields,
         {
           actorUserId,
@@ -95,7 +95,7 @@ async function logAuditAction(currentDoc, originalDoc, operation, entityType, fi
     // Extract audit context from request or provided context
     const actorUserId = auditContext.actorUserId || currentDoc.auditContext?.actorUserId || null;
     const schoolId = currentDoc.schoolId || currentDoc.auditContext?.schoolId || null;
-    
+
     if (!actorUserId || !schoolId) {
       console.warn('[AUDIT_PLUGIN] Missing required audit context (actorUserId or schoolId)');
       return;
@@ -125,7 +125,7 @@ async function logAuditAction(currentDoc, originalDoc, operation, entityType, fi
     };
 
     await AuditLog.logAction(auditData);
-    
+
     console.log(`[AUDIT_PLUGIN] Logged ${auditOperation} action for ${entityType} ${currentDoc._id}`);
   } catch (error) {
     console.error('[AUDIT_PLUGIN] Error in logAuditAction:', error);
@@ -139,7 +139,7 @@ async function logAuditAction(currentDoc, originalDoc, operation, entityType, fi
 function calculateFieldChanges(beforeDoc, afterDoc, fieldsToTrack, excludeFields) {
   try {
     const changes = [];
-    
+
     if (!afterDoc) return changes;
 
     // Get all fields to check
@@ -149,11 +149,11 @@ function calculateFieldChanges(beforeDoc, afterDoc, fieldsToTrack, excludeFields
 
     // Filter fields based on tracking preferences
     let fieldsToCheck = allFields;
-    
+
     if (fieldsToTrack.length > 0) {
       fieldsToCheck = allFields.filter(field => fieldsToTrack.includes(field));
     }
-    
+
     fieldsToCheck = fieldsToCheck.filter(field => !excludeFields.includes(field));
 
     // Compare fields
@@ -194,7 +194,7 @@ function normalizeValue(value) {
 /**
  * Middleware to attach audit context to requests
  */
-const attachAuditContext = (req, _res, next) => {
+const attachAuditContext = (req, _, next) => {
   try {
     // Extract audit context from authenticated user
     if (req.user) {
@@ -207,7 +207,7 @@ const attachAuditContext = (req, _res, next) => {
         }
       };
     }
-    
+
     next();
   } catch (error) {
     console.error('[AUDIT_MIDDLEWARE] Error attaching audit context:', error);

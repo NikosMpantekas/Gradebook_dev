@@ -1,10 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const { RatingPeriod, StudentRating } = require('../models/ratingModel');
-const User = require('../models/userModel');
 const Class = require('../models/classModel');
-const School = require('../models/schoolModel');
 const SchoolPermissions = require('../models/schoolPermissionsModel');
-const mongoose = require('mongoose');
+
 
 // @desc    Create a new rating period
 // @route   POST /api/ratings/periods
@@ -17,18 +15,18 @@ const createRatingPeriod = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Please provide all required fields');
   }
-  
+
   // Check if rating system is enabled for this school
   const schoolPermissions = await SchoolPermissions.findOne({ schoolId: req.user.schoolId });
   if (!schoolPermissions || !schoolPermissions.features.enableRatingSystem) {
     res.status(403);
     throw new Error('Rating system is not enabled for this school');
   }
-  
+
   // Convert dates from strings if needed
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
+
   // Validate date range
   if (start >= end) {
     res.status(400);
@@ -63,7 +61,7 @@ const createRatingPeriod = asyncHandler(async (req, res) => {
 const getRatingPeriods = asyncHandler(async (req, res) => {
   // If admin, get all periods associated with their schools
   const schoolIds = req.user.schools?.map(s => typeof s === 'object' ? s._id : s) || [];
-  
+
   // Find rating periods for this admin's schools or global periods
   const ratingPeriods = await RatingPeriod.find({
     $or: [
@@ -112,7 +110,7 @@ const updateRatingPeriod = asyncHandler(async (req, res) => {
   // Convert dates from strings if needed
   const start = startDate ? new Date(startDate) : ratingPeriod.startDate;
   const end = endDate ? new Date(endDate) : ratingPeriod.endDate;
-  
+
   // Validate date range
   if (start >= end) {
     res.status(400);
@@ -126,7 +124,7 @@ const updateRatingPeriod = asyncHandler(async (req, res) => {
   ratingPeriod.endDate = end;
   ratingPeriod.isActive = isActive !== undefined ? isActive : ratingPeriod.isActive;
   ratingPeriod.targetType = targetType || ratingPeriod.targetType;
-  
+
   // Only update schools and directions if provided
   if (schools) ratingPeriod.schools = schools;
   if (directions) ratingPeriod.directions = directions;
@@ -154,10 +152,10 @@ const deleteRatingPeriod = asyncHandler(async (req, res) => {
   }
 
   // All related questions are embedded in the RatingPeriod document, so they will be deleted automatically
-  
+
   // Delete all related student ratings
   await StudentRating.deleteMany({ ratingPeriod: req.params.id });
-  
+
   // Delete the rating period
   await RatingPeriod.deleteOne({ _id: ratingPeriod._id });
 
@@ -202,10 +200,10 @@ const createRatingQuestion = asyncHandler(async (req, res) => {
     targetType,
     order: order || 0
   });
-  
+
   await period.save();
   const createdQuestion = period.questions[period.questions.length - 1];
-  
+
   if (createdQuestion) {
     res.status(201).json(createdQuestion);
   } else {
@@ -288,21 +286,21 @@ const deleteRatingQuestion = asyncHandler(async (req, res) => {
 // @route   POST /api/ratings/submit
 // @access  Private (Student only)
 const submitRating = asyncHandler(async (req, res) => {
-  const { ratingPeriod, targetType, targetId, answers, school, classId } = req.body;
+  const { ratingPeriod, targetType, targetId, answers, classId } = req.body;
 
   // Validation
   if (!ratingPeriod || !targetType || !targetId || !answers || !Array.isArray(answers)) {
     res.status(400);
     throw new Error('Please provide all required fields');
   }
-  
+
   // Check if rating system is enabled for this school
   const schoolPermissions = await SchoolPermissions.findOne({ schoolId: req.user.schoolId });
   if (!schoolPermissions || !schoolPermissions.features.enableRatingSystem) {
     res.status(403);
     throw new Error('Rating system is not enabled for this school');
   }
-  
+
   // Set the target model based on type
   let targetModel;
   if (targetType === 'teacher') {
@@ -313,15 +311,15 @@ const submitRating = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Invalid target type');
   }
-  
+
   // Check if this rating period exists and is active
   const period = await RatingPeriod.findById(ratingPeriod);
-  
+
   if (!period || !period.isActive) {
     res.status(400);
     throw new Error('Rating period is not active or does not exist');
   }
-  
+
   // Check if student already submitted a rating for this target in this period
   const existingRating = await StudentRating.findOne({
     student: req.user._id,
@@ -329,12 +327,12 @@ const submitRating = asyncHandler(async (req, res) => {
     targetType,
     targetId
   });
-  
+
   if (existingRating) {
     res.status(400);
     throw new Error('You have already rated this target in this period');
   }
-  
+
   // Create the student rating
   const studentRating = await StudentRating.create({
     student: req.user._id,
@@ -346,9 +344,9 @@ const submitRating = asyncHandler(async (req, res) => {
     school: req.user.schoolId,
     class: classId
   });
-  
+
   if (studentRating) {
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Rating submitted successfully',
       id: studentRating._id
     });
@@ -363,21 +361,21 @@ const submitRating = asyncHandler(async (req, res) => {
 // @access  Private (Student only)
 const getActiveRatingPeriods = asyncHandler(async (req, res) => {
   const now = new Date();
-  
+
   // Check if rating system is enabled for this school
   const schoolPermissions = await SchoolPermissions.findOne({ schoolId: req.user.schoolId });
   if (!schoolPermissions || !schoolPermissions.features.enableRatingSystem) {
     return res.status(200).json([]); // Return empty array if rating system is disabled
   }
-  
+
   // Get student's classes
   const classes = await Class.find({
     students: req.user._id,
     schoolId: req.user.schoolId
   });
-  
+
   const classIds = classes.map(cls => cls._id);
-  
+
   // Find active rating periods for the student's school/classes
   const periods = await RatingPeriod.find({
     isActive: true,
@@ -390,7 +388,7 @@ const getActiveRatingPeriods = asyncHandler(async (req, res) => {
       { classes: { $size: 0 } } // Periods with no class restrictions
     ]
   });
-  
+
   res.status(200).json(periods);
 });
 
@@ -399,37 +397,37 @@ const getActiveRatingPeriods = asyncHandler(async (req, res) => {
 // @access  Private (Student only)
 const getRatingTargets = asyncHandler(async (req, res) => {
   const { periodId } = req.query;
-  
+
   if (!periodId) {
     res.status(400);
     throw new Error('Rating period ID is required');
   }
-  
+
   // Check if rating system is enabled for this school
   const schoolPermissions = await SchoolPermissions.findOne({ schoolId: req.user.schoolId });
   if (!schoolPermissions || !schoolPermissions.features.enableRatingSystem) {
     res.status(403);
     throw new Error('Rating system is not enabled for this school');
   }
-  
+
   // Check if rating period exists and is active
   const period = await RatingPeriod.findById(periodId);
-  
+
   if (!period) {
     res.status(404);
     throw new Error('Rating period not found');
   }
-  
+
   // Get student's enrolled classes and teachers
   const classes = await Class.find({
     students: req.user._id,
     schoolId: req.user.schoolId
   }).populate('teachers', 'name email');
-  
+
   // Get available targets
   const teachers = [];
   const classTargets = [];
-  
+
   if (classes && classes.length > 0) {
     // Add classes as targets
     classes.forEach(cls => {
@@ -439,7 +437,7 @@ const getRatingTargets = asyncHandler(async (req, res) => {
         subject: cls.subject,
         direction: cls.direction
       });
-      
+
       // Add teachers as targets
       if (cls.teachers && cls.teachers.length > 0) {
         cls.teachers.forEach(teacher => {
@@ -455,7 +453,7 @@ const getRatingTargets = asyncHandler(async (req, res) => {
       }
     });
   }
-  
+
   res.status(200).json({ teachers, classes: classTargets });
 });
 
@@ -464,13 +462,13 @@ const getRatingTargets = asyncHandler(async (req, res) => {
 // @access  Private (Student only)
 const checkStudentRating = asyncHandler(async (req, res) => {
   const { periodId, targetType, targetId } = req.params;
-  
+
   // Validate parameters
   if (!periodId || !targetType || !targetId) {
     res.status(400);
     throw new Error('All parameters are required');
   }
-  
+
   // Check if rating exists
   const rating = await StudentRating.findOne({
     student: req.user._id,
@@ -478,7 +476,7 @@ const checkStudentRating = asyncHandler(async (req, res) => {
     targetType,
     targetId
   });
-  
+
   res.status(200).json({
     hasRated: !!rating,
     ratingId: rating ? rating._id : null

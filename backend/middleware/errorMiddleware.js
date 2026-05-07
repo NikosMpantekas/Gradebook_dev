@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
  */
 const notFound = (req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
-  
+
   // Log the 404 error with request details
   logger.warn('SERVER', `404 Not Found: ${req.originalUrl}`, {
     method: req.method,
@@ -15,7 +15,7 @@ const notFound = (req, res, next) => {
     params: req.params,
     query: req.query
   });
-  
+
   res.status(404);
   next(error);
 };
@@ -23,18 +23,18 @@ const notFound = (req, res, next) => {
 /**
  * Global Error Handler - Catches all unhandled errors
  */
-const errorHandler = (err, req, res, _next) => {
+const errorHandler = (err, req, res, _) => {
   // If status code is 200, set it to 500 (server error)
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode || 500;
-  
+
   // Set status code on response
   res.status(statusCode);
-  
+
   // Log detailed error information
   const logLevel = statusCode >= 500 ? 'error' : 'warn';
   const category = 'SERVER';
   const message = `${statusCode} Error: ${err.message}`;
-  
+
   // Additional contextual data for debugging
   const logData = {
     statusCode,
@@ -47,20 +47,20 @@ const errorHandler = (err, req, res, _next) => {
     errorName: err.name,
     stack: err.stack
   };
-  
+
   // If authentication related, log additional details
   if (req.path.includes('/login') || req.path.includes('/auth') || statusCode === 401) {
     logger.warn('AUTH', `Authentication error: ${err.message}`, logData);
   }
-  
+
   // If superadmin related, add special logging
   if (req.path.includes('/superadmin')) {
     logger.error('SUPERADMIN', `Error in superadmin route: ${err.message}`, logData);
   }
-  
+
   // Log the error with appropriate level
   logger[logLevel](category, message, logData);
-  
+
   // Send response to client
   res.json({
     message: err.message,

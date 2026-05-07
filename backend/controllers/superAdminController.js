@@ -118,7 +118,7 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
 // @desc    Get all school owners (admins)
 // @route   GET /api/superadmin/school-owners
 // @access  Private/SuperAdmin
-const getSchoolOwners = asyncHandler(async (_req, res) => {
+const getSchoolOwners = asyncHandler(async (_, res) => {
   // Find all admin users with their associated schools and pack information
   const schoolOwners = await User.find({ role: 'admin' })
     .select('-password')
@@ -570,7 +570,7 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
 // @desc    Get schools for superadmin notification filtering
 // @route   GET /api/superadmin/schools
 // @access  Private/SuperAdmin
-const getSchoolsForNotifications = asyncHandler(async (_req, res) => {
+const getSchoolsForNotifications = asyncHandler(async (_, res) => {
   try {
     // Only fetch main schools (not branches) - parentCluster should be null
     const schools = await School.find({
@@ -831,7 +831,7 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 // @desc    Get PM2 process status and logs
 // @route   GET /api/superadmin/pm2-status
 // @access  Private (SuperAdmin only)
-const getPM2Status = asyncHandler(async (_req, res) => {
+const getPM2Status = asyncHandler(async (_, res) => {
   const { exec } = require('child_process');
   const util = require('util');
   const execAsync = util.promisify(exec);
@@ -884,5 +884,7 @@ module.exports = {
   sendSuperAdminNotification,
   getSchoolsForNotifications,
   searchUsersForNotifications,
-  getPM2Status
+  getPM2Status,
+  deleteSchoolOwner,
+  updateSchoolOwnerPermissions,
 };
