@@ -9,7 +9,6 @@
 
 require('dotenv').config();
 const mongoose = require('mongoose');
-const colors = require('colors');
 const fs = require('fs');
 const path = require('path');
 
@@ -61,13 +60,13 @@ const log = (message) => {
 async function startMigration() {
   try {
     log('Starting database migration to single-database architecture'.green.bold);
-    
+
     // Get all schools from the main database
     const schools = await School.find({});
     stats.totalSchools = schools.length;
-    
+
     log(`Found ${schools.length} schools to migrate`);
-    
+
     // Process each school
     for (const school of schools) {
       try {
@@ -79,7 +78,7 @@ async function startMigration() {
         stats.errors.push({ school: school.name, error: error.message });
       }
     }
-    
+
     // Print migration summary
     log('\n' + '='.repeat(50));
     log('MIGRATION SUMMARY'.yellow.bold);
@@ -96,7 +95,7 @@ async function startMigration() {
       });
     }
     log('='.repeat(50) + '\n');
-    
+
     log('Migration complete!'.green.bold);
     process.exit(0);
   } catch (error) {
@@ -111,18 +110,18 @@ async function startMigration() {
 // Migrate data for a specific school
 async function migrateSchoolData(school) {
   log(`\nMigrating data for school: ${school.name} (ID: ${school._id})`.cyan);
-  
+
   try {
     // Connect to the school-specific database
     log(`Connecting to school database...`);
     const { connection } = await connectToSchoolDb(school);
-    
+
     if (!connection) {
       throw new Error('Failed to connect to school database');
     }
-    
+
     log(`Connected to school database: ${connection.db?.databaseName || 'unknown'}`);
-    
+
     // Get models for this school
     const SchoolUser = connection.models.User || connection.model('User');
     const SchoolGrade = connection.models.Grade || connection.model('Grade');
@@ -131,7 +130,7 @@ async function migrateSchoolData(school) {
     const SchoolDirection = connection.models.Direction || connection.model('Direction');
     const SchoolSubscription = connection.models.Subscription || connection.model('Subscription');
     const SchoolContact = connection.models.Contact || connection.model('Contact');
-    
+
     // Migrate each collection
     await migrateCollection(SchoolUser, User, school, 'users');
     await migrateCollection(SchoolGrade, Grade, school, 'grades');
@@ -140,11 +139,11 @@ async function migrateSchoolData(school) {
     await migrateCollection(SchoolDirection, Direction, school, 'directions');
     await migrateCollection(SchoolSubscription, Subscription, school, 'subscriptions');
     await migrateCollection(SchoolContact, Contact, school, 'contacts');
-    
+
     // Close the connection to free resources
     log(`Closing connection to ${school.name} database`);
     await connection.close();
-    
+
     return true;
   } catch (error) {
     log(`Error during migration for school ${school.name}: ${error.message}`.red);
@@ -156,44 +155,44 @@ async function migrateSchoolData(school) {
 async function migrateCollection(sourceModel, targetModel, school, collectionName) {
   try {
     log(`Migrating ${collectionName}...`);
-    
+
     // Get all documents from the source collection
     const documents = await sourceModel.find({}).lean();
-    
+
     if (!documents || documents.length === 0) {
       log(`No ${collectionName} found for school ${school.name}`.yellow);
       return;
     }
-    
+
     log(`Found ${documents.length} ${collectionName} to migrate`);
     stats.totalDocuments += documents.length;
-    
+
     // Add schoolId to each document
     const schoolId = school._id;
     const enhancedDocuments = documents.map(doc => ({
       ...doc,
       schoolId
     }));
-    
+
     // Insert the documents into the target collection
     // Using insertMany with ordered: false to continue even if some documents fail
     try {
-      const result = await targetModel.insertMany(enhancedDocuments, { 
+      const result = await targetModel.insertMany(enhancedDocuments, {
         ordered: false,
         // Skip duplicate key errors
-        skipDuplicates: true 
+        skipDuplicates: true
       });
-      
+
       const migratedCount = result.length;
       stats.migratedDocuments += migratedCount;
-      
+
       log(`Successfully migrated ${migratedCount}/${documents.length} ${collectionName}`.green);
     } catch (bulkError) {
       // Handle partial success case
       if (bulkError.insertedDocs && bulkError.insertedDocs.length > 0) {
         const migratedCount = bulkError.insertedDocs.length;
         stats.migratedDocuments += migratedCount;
-        
+
         log(`Partially migrated ${migratedCount}/${documents.length} ${collectionName}`.yellow);
         log(`Some documents failed to migrate: ${bulkError.message}`.yellow);
       } else {

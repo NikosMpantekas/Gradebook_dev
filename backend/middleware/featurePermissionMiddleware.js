@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
  * @returns {Function} Express middleware function that always allows access
  */
 const requireFeature = (featureName) => {
-  return asyncHandler(async (req, _res, next) => {
+  return asyncHandler(async (req, _, next) => {
     // DISABLED: All permission checks removed - always allow access
     logger.info('PERMISSIONS', `Feature permission checking DISABLED - allowing access to ${featureName}`, {
       userId: req.user?.id,
@@ -19,7 +19,7 @@ const requireFeature = (featureName) => {
       method: req.method,
       note: 'School permissions system has been completely disabled'
     });
-    
+
     // Always proceed to next middleware - no permission checks
     next();
   });

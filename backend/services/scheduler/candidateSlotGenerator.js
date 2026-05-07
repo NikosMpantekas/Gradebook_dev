@@ -52,17 +52,17 @@ const generateValidSlotsForClass = (cls, teacherAvailMap, studentAvailMap) => {
 
   // Gather global earliest/latest from teacher preferences (strictest wins)
   let globalEarliest = 480; // 08:00
-  let globalLatest   = 1260; // 21:00
+  let globalLatest = 1260; // 21:00
 
-  const teacherIds  = (cls.teachers || []).map((t) => (t._id || t).toString());
-  const studentIds  = (cls.students || []).map((s) => (s._id || s).toString());
+  const teacherIds = (cls.teachers || []).map((t) => (t._id || t).toString());
+  const studentIds = (cls.students || []).map((s) => (s._id || s).toString());
 
   teacherIds.forEach((tid) => {
     const avail = teacherAvailMap[tid];
     if (!avail) return;
     const prefs = avail.preferences || {};
     if (prefs.earliestStart) globalEarliest = Math.max(globalEarliest, timeToMinutes(prefs.earliestStart));
-    if (prefs.latestEnd)     globalLatest   = Math.min(globalLatest,   timeToMinutes(prefs.latestEnd));
+    if (prefs.latestEnd) globalLatest = Math.min(globalLatest, timeToMinutes(prefs.latestEnd));
   });
 
   const validSlots = [];
@@ -106,7 +106,7 @@ const generateValidSlotsForClass = (cls, teacherAvailMap, studentAvailMap) => {
  * where each set contains `sessionsPerWeek` slots with no two on the same day.
  * Uses shuffle-based sampling to produce variety.
  */
-const generateSlotSets = (slots, sessionsPerWeek, targetCount = 20, seed = 0) => {
+const generateSlotSets = (slots, sessionsPerWeek, targetCount = 20, _seed = 0) => {
   if (slots.length === 0) return [];
   const sets = [];
   const MAX_ATTEMPTS = targetCount * 10;

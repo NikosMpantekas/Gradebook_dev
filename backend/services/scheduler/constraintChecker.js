@@ -97,7 +97,7 @@ const checkStudentOverlap = (assignments, classStudentMap, studentNameMap = {}) 
  */
 const checkLockedGroups = (classDataMap) => {
   const violations = [];
-  for (const [classId, cls] of Object.entries(classDataMap)) {
+  for (const [_, cls] of Object.entries(classDataMap)) {
     const cfg = cls.schedulingConfig || {};
     const groups = cfg.lockedStudentGroups || [];
     const enrolledIds = new Set((cls.students || []).map((s) => (s._id || s).toString()));

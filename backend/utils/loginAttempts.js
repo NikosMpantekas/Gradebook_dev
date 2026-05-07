@@ -156,7 +156,7 @@ const getStats = () => {
   };
   
   const now = Date.now();
-  for (const [ip, data] of loginAttempts.entries()) {
+  for (const [_, data] of loginAttempts.entries()) {
     stats.totalAttempts += data.attempts;
     if (data.lockoutUntil && now < data.lockoutUntil) {
       stats.lockedIPs += 1;
