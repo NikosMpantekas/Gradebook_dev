@@ -121,9 +121,10 @@ const cleanupOldBackups = (logDir) => {
         if (file.includes('.log.') && file.match(/\.log\.\d{4}-\d{2}-\d{2}$/)) {
           const safeFileName = path.basename(file);
           const filePath = path.resolve(logDir, safeFileName);
+          const rel = path.relative(logDir, filePath);
 
-          // Double check the path is still within logDir to prevent traversal
-          if (filePath.startsWith(logDir)) {
+          // Ensure the resolved path hasn't escaped the log directory
+          if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
             const stats = fs.statSync(filePath);
 
             if (stats.mtime.getTime() < thirtyDaysAgo) {

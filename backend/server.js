@@ -655,8 +655,10 @@ if (process.env.NODE_ENV === "production") {
         files.forEach((file) => {
           const safeFileName = path.basename(file);
           const filePath = path.resolve(staticPath, safeFileName);
-          
-          if (filePath.startsWith(staticPath)) {
+          const rel = path.relative(staticPath, filePath);
+
+          // Ensure the resolved path hasn't escaped the build directory
+          if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
             console.log(
               `- ${safeFileName} ${
                 fs.statSync(filePath).isDirectory()
@@ -762,7 +764,7 @@ if (process.env.NODE_ENV === "production") {
           // by ensuring the target URL starts with a single /app/
           // Security: Use validator to ensure the URL is safe and prevent open redirects
           // We strip all leading slashes and then ensure it's a valid relative path
-          const safeUrl = validator.stripLow(url).replace(/^[\/\\]+/, '');
+          const safeUrl = validator.stripLow(url).replace(/^[/\\]+/, '');
           const targetUrl = `/app/${safeUrl}`;
           
           console.log(`Redirecting ${basePattern} route to ${encodeURI(targetUrl)}`);
