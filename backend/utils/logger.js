@@ -53,7 +53,7 @@ if (config.enableFileLogging) {
  */
 const formatLogEntry = (level, category, message, data = null) => {
   const timestamp = config.includeTimestamps ? new Date().toISOString() : null;
-  
+
   const entry = {
     level,
     levelName: Object.keys(LOG_LEVELS).find(key => LOG_LEVELS[key] === level),
@@ -61,7 +61,7 @@ const formatLogEntry = (level, category, message, data = null) => {
     category,
     message
   };
-  
+
   if (data) {
     // Handle Error objects specially
     if (data instanceof Error) {
@@ -74,7 +74,7 @@ const formatLogEntry = (level, category, message, data = null) => {
       entry.data = data;
     }
   }
-  
+
   return entry;
 };
 
@@ -85,12 +85,12 @@ const formatLogEntry = (level, category, message, data = null) => {
  */
 const formatEntryForOutput = (entry) => {
   const { levelName, timestamp, category, message, error, data } = entry;
-  
+
   let output = `[${levelName}]`;
   if (timestamp) output += ` ${timestamp}`;
   if (category) output += ` [${category}]`;
   output += `: ${message}`;
-  
+
   if (error) {
     output += `\nError: ${error.name}: ${error.message}`;
     if (error.stack) {
@@ -98,12 +98,12 @@ const formatEntryForOutput = (entry) => {
     }
   } else if (data) {
     // For objects, format them nicely with indentation
-    const formattedData = typeof data === 'object' 
-      ? util.inspect(data, { depth: 4, colors: false }) 
+    const formattedData = typeof data === 'object'
+      ? util.inspect(data, { depth: 4, colors: false })
       : data;
     output += `\nData: ${formattedData}`;
   }
-  
+
   return output;
 };
 
@@ -116,16 +116,16 @@ const cleanupOldBackups = (logDir) => {
     if (fs.existsSync(logDir)) {
       const files = fs.readdirSync(logDir);
       const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      
+
       files.forEach(file => {
         if (file.includes('.log.') && file.match(/\.log\.\d{4}-\d{2}-\d{2}$/)) {
           const safeFileName = path.basename(file);
-          const filePath = path.join(logDir, safeFileName);
-          
+          const filePath = path.resolve(logDir, safeFileName);
+
           // Double check the path is still within logDir to prevent traversal
           if (filePath.startsWith(logDir)) {
             const stats = fs.statSync(filePath);
-          
+
             if (stats.mtime.getTime() < thirtyDaysAgo) {
               fs.unlinkSync(filePath);
               console.log(`Cleaned up old backup log: ${file}`);
@@ -149,16 +149,16 @@ const rotateLogFile = (logPath) => {
       const stats = fs.statSync(logPath);
       const fileAge = Date.now() - stats.mtime.getTime();
       const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-      
+
       if (fileAge > sevenDaysInMs) {
         // Create backup with timestamp
         const backupPath = logPath + '.' + new Date().toISOString().split('T')[0];
         fs.renameSync(logPath, backupPath);
-        
+
         // Create new empty log file
         fs.writeFileSync(logPath, '');
         console.log(`Log file rotated: ${logPath} -> ${backupPath}`);
-        
+
         // Clean up old backups
         const logDir = path.dirname(logPath);
         cleanupOldBackups(logDir);
@@ -181,13 +181,13 @@ const BUFFER_FLUSH_INTERVAL = 1000; // 1 second
  */
 const flushLogBuffer = async (logPath) => {
   if (logBuffer.length === 0) return;
-  
+
   const logsToWrite = [...logBuffer];
   try {
     logBuffer = []; // Clear buffer
-    
+
     const logString = logsToWrite.join('');
-    
+
     // Use async file write
     await fs.promises.appendFile(logPath, logString);
   } catch (err) {
@@ -203,24 +203,24 @@ const flushLogBuffer = async (logPath) => {
  */
 const writeToFile = (entry) => {
   if (!config.enableFileLogging) return;
-  
+
   try {
     const logPath = path.resolve(
-      process.cwd(), 
-      config.logDirectory, 
+      process.cwd(),
+      config.logDirectory,
       entry.level >= LOG_LEVELS.ERROR ? config.errorLogFileName : config.logFileName
     );
-    
+
     // Check file rotation periodically (not on every log)
     if (Math.random() < 0.1) { // 10% chance to check rotation
       rotateLogFile(logPath);
     }
-    
+
     const logString = formatEntryForOutput(entry) + '\n';
-    
+
     // Add to buffer
     logBuffer.push(logString);
-    
+
     // Flush buffer if full or set timeout for periodic flush
     if (logBuffer.length >= BUFFER_SIZE) {
       flushLogBuffer(logPath);
@@ -242,17 +242,17 @@ const writeToFile = (entry) => {
  */
 const formatDataWithColors = (data) => {
   if (!data || typeof data !== 'object') return data;
-  
+
   const BLUE = '\x1b[34m';  // ANSI blue color
   const RESET = '\x1b[0m';  // ANSI reset color
-  
+
   const formatted = { ...data };
-  
+
   // Color IP addresses blue
   if (formatted.ip) {
     formatted.ip = `${BLUE}${formatted.ip}${RESET}`;
   }
-  
+
   return formatted;
 };
 
@@ -262,15 +262,15 @@ const formatDataWithColors = (data) => {
  */
 const logToConsole = (entry) => {
   if (!config.enableConsole) return;
-  
+
   const { level, levelName, timestamp, category, message, error, data } = entry;
-  
+
   // Format the prefix with colors
   const prefix = `[${levelName}]${timestamp ? ` ${timestamp}` : ''}${category ? ` [${category}]` : ''}:`;
-  
+
   // Format data with colored IP addresses
   const coloredData = data ? formatDataWithColors(data) : null;
-  
+
   // Use appropriate console method based on level
   switch (level) {
     case LOG_LEVELS.DEBUG:
@@ -312,16 +312,16 @@ const logToConsole = (entry) => {
 const log = (level, category, message, data = null) => {
   // Skip logs below configured minimum level
   if (level < config.minLevel) return null;
-  
+
   // Format the log entry
   const entry = formatLogEntry(level, category, message, data);
-  
+
   // Log to console
   logToConsole(entry);
-  
+
   // Write to file if enabled
   writeToFile(entry);
-  
+
   return entry;
 };
 

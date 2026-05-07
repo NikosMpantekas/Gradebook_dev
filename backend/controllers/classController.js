@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Class = require('../models/classModel');
+const Subject = require('../models/subjectModel');
 const mongoose = require('mongoose');
 
 // @desc    Create a new class
@@ -329,19 +330,19 @@ const getClassCategories = asyncHandler(async (req, res) => {
   const schoolId = req.user.schoolId;
   
   const subjects = await Class.aggregate([
-    { $match: { schoolId: mongoose.Types.ObjectId(schoolId) } },
+    { $match: { schoolId: new mongoose.Types.ObjectId(schoolId) } },
     { $group: { _id: '$subject' } },
     { $sort: { _id: 1 } }
   ]);
   
   const directions = await Class.aggregate([
-    { $match: { schoolId: mongoose.Types.ObjectId(schoolId) } },
+    { $match: { schoolId: new mongoose.Types.ObjectId(schoolId) } },
     { $group: { _id: '$direction' } },
     { $sort: { _id: 1 } }
   ]);
   
   const schoolBranches = await Class.aggregate([
-    { $match: { schoolId: mongoose.Types.ObjectId(schoolId) } },
+    { $match: { schoolId: new mongoose.Types.ObjectId(schoolId) } },
     { $group: { _id: '$schoolBranch' } },
     { $sort: { _id: 1 } }
   ]);

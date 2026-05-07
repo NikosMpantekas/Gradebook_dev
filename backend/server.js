@@ -9,6 +9,7 @@ const { errorHandler } = require("./middleware/errorMiddleware");
 const { setSchoolContext } = require("./middleware/schoolIdMiddleware");
 const { connectDB } = require("./config/db");
 const webpush = require("web-push");
+const validator = require('validator');
 
 // Load environment variables
 dotenv.config();
@@ -644,8 +645,8 @@ if (process.env.NODE_ENV === "production") {
       `${i + 1}. ${pathToCheck} - ${exists ? "EXISTS" : "NOT FOUND"}`
     );
     if (exists && !staticPath) {
-      staticPath = pathToCheck;
-      indexPath = path.join(pathToCheck, "index.html");
+      staticPath = path.resolve(pathToCheck);
+      indexPath = path.join(staticPath, "index.html");
 
       // List files in build directory
       console.log("\nFiles in build directory:");
@@ -653,9 +654,9 @@ if (process.env.NODE_ENV === "production") {
         const files = fs.readdirSync(pathToCheck);
         files.forEach((file) => {
           const safeFileName = path.basename(file);
-          const filePath = path.join(pathToCheck, safeFileName);
+          const filePath = path.resolve(staticPath, safeFileName);
           
-          if (filePath.startsWith(pathToCheck)) {
+          if (filePath.startsWith(staticPath)) {
             console.log(
               `- ${safeFileName} ${
                 fs.statSync(filePath).isDirectory()
@@ -754,15 +755,15 @@ if (process.env.NODE_ENV === "production") {
         });
       } else {
         // Add redirection for routes that should be under /app
-        const basePattern = pattern.replace("*", "");
+        const basePattern = validator.blacklist(pattern, '*');
         app.get(pattern, (req, res) => {
           let url = req.originalUrl;
           // Security: Prevent protocol-relative redirects (e.g. //google.com) 
           // by ensuring the target URL starts with a single /app/
-          while (url.startsWith('/')) {
-            url = url.substring(1);
-          }
-          const targetUrl = `/app/${url}`;
+          // Security: Use validator to ensure the URL is safe and prevent open redirects
+          // We strip all leading slashes and then ensure it's a valid relative path
+          const safeUrl = validator.stripLow(url).replace(/^[\/\\]+/, '');
+          const targetUrl = `/app/${safeUrl}`;
           
           console.log(`Redirecting ${basePattern} route to ${encodeURI(targetUrl)}`);
           return res.redirect(encodeURI(targetUrl));
