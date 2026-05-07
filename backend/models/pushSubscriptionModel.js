@@ -47,7 +47,7 @@ const pushSubscriptionSchema = mongoose.Schema({
     type: String,
     default: ''
   },
-  
+
   // Platform detection for cross-platform optimization
   platform: {
     isIOS: {
@@ -56,7 +56,7 @@ const pushSubscriptionSchema = mongoose.Schema({
     },
     isAndroid: {
       type: Boolean,
-      default: false  
+      default: false
     },
     isWindows: {
       type: Boolean,
@@ -94,7 +94,7 @@ const pushSubscriptionSchema = mongoose.Schema({
     default: true,
     index: true
   },
-  
+
   // Push notification preferences
   preferences: {
     grades: {
@@ -182,7 +182,7 @@ pushSubscriptionSchema.index({ 'platform.isPWA': 1 });
  */
 
 // Update subscription statistics
-pushSubscriptionSchema.methods.updateStats = function(success, error = null) {
+pushSubscriptionSchema.methods.updateStats = function (success, error = null) {
   this.stats.totalPushes = (this.stats.totalPushes || 0) + 1;
   this.stats.lastPushSent = new Date();
   this.lastUsed = new Date();
@@ -205,13 +205,13 @@ pushSubscriptionSchema.methods.updateStats = function(success, error = null) {
 };
 
 // Check if subscription is expired
-pushSubscriptionSchema.methods.isExpired = function() {
+pushSubscriptionSchema.methods.isExpired = function () {
   if (!this.expirationTime) return false;
   return new Date() > this.expirationTime;
 };
 
 // Get platform summary
-pushSubscriptionSchema.methods.getPlatformSummary = function() {
+pushSubscriptionSchema.methods.getPlatformSummary = function () {
   const platform = this.platform || {};
   return {
     os: platform.osName || 'Unknown',
@@ -224,13 +224,13 @@ pushSubscriptionSchema.methods.getPlatformSummary = function() {
 };
 
 // Update subscription keys and metadata
-pushSubscriptionSchema.methods.updateSubscription = function(newKeys, userAgent, platform) {
+pushSubscriptionSchema.methods.updateSubscription = function (newKeys, userAgent, platform) {
   this.keys = newKeys;
   this.userAgent = userAgent || this.userAgent;
   this.platform = { ...this.platform, ...platform };
   this.lastUpdated = new Date();
   this.lastUsed = new Date();
-  
+
   return this.save();
 };
 
@@ -239,37 +239,37 @@ pushSubscriptionSchema.methods.updateSubscription = function(newKeys, userAgent,
  */
 
 // Find active subscriptions for user
-pushSubscriptionSchema.statics.findActiveForUser = function(userId) {
-  return this.find({ 
-    userId: userId, 
-    isActive: true 
+pushSubscriptionSchema.statics.findActiveForUser = function (userId) {
+  return this.find({
+    userId: userId,
+    isActive: true
   }).sort({ createdAt: -1 });
 };
 
 // Find active subscriptions for school
-pushSubscriptionSchema.statics.findActiveForSchool = function(schoolId) {
-  return this.find({ 
-    schoolId: schoolId, 
-    isActive: true 
+pushSubscriptionSchema.statics.findActiveForSchool = function (schoolId) {
+  return this.find({
+    schoolId: schoolId,
+    isActive: true
   }).sort({ createdAt: -1 });
 };
 
 // Find subscriptions by platform
-pushSubscriptionSchema.statics.findByPlatform = function(platformQuery, schoolId = null) {
-  const query = { 
+pushSubscriptionSchema.statics.findByPlatform = function (platformQuery, schoolId = null) {
+  const query = {
     isActive: true,
     ...platformQuery
   };
-  
+
   if (schoolId) {
     query.schoolId = schoolId;
   }
-  
+
   return this.find(query).sort({ createdAt: -1 });
 };
 
 // Clean up expired subscriptions
-pushSubscriptionSchema.statics.cleanupExpired = function() {
+pushSubscriptionSchema.statics.cleanupExpired = function () {
   const now = new Date();
   return this.updateMany(
     {
@@ -284,9 +284,9 @@ pushSubscriptionSchema.statics.cleanupExpired = function() {
 };
 
 // Get subscription statistics
-pushSubscriptionSchema.statics.getStats = async function(schoolId = null) {
+pushSubscriptionSchema.statics.getStats = async function (schoolId = null) {
   const matchQuery = schoolId ? { schoolId } : {};
-  
+
   const stats = await this.aggregate([
     { $match: matchQuery },
     {
@@ -331,7 +331,7 @@ pushSubscriptionSchema.statics.getStats = async function(schoolId = null) {
 /**
  * Pre-save middleware
  */
-pushSubscriptionSchema.pre('save', function(next) {
+pushSubscriptionSchema.pre('save', function (next) {
   if (this.isModified() && !this.isNew) {
     this.lastUpdated = new Date();
   }
@@ -341,7 +341,7 @@ pushSubscriptionSchema.pre('save', function(next) {
 /**
  * Pre-remove middleware to update statistics
  */
-pushSubscriptionSchema.pre('remove', function(next) {
+pushSubscriptionSchema.pre('remove', function (next) {
   console.log(`[PushSubscription] Removing subscription for user ${this.userId}, endpoint: ${this.endpoint.substring(0, 50)}...`);
   next();
 });
@@ -349,7 +349,7 @@ pushSubscriptionSchema.pre('remove', function(next) {
 /**
  * Error handling
  */
-pushSubscriptionSchema.post('save', function(error, _doc, next) {
+pushSubscriptionSchema.post('save', function (error, _, next) {
   if (error.name === 'MongoServerError' && error.code === 11000) {
     console.error(`[PushSubscription] Duplicate endpoint detected: ${error.keyValue?.endpoint?.substring(0, 50)}...`);
     next(new Error('Push subscription already exists for this endpoint'));

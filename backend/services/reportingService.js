@@ -8,10 +8,10 @@ class ReportingService {
   async getDailyReport(date, classId = null, auditContext) {
     try {
       console.log(`[REPORTING_SERVICE] Generating daily report for ${date}`);
-      
+
       const startDate = new Date(date);
       startDate.setHours(0, 0, 0, 0);
-      
+
       const endDate = new Date(date);
       endDate.setHours(23, 59, 59, 999);
 
@@ -132,7 +132,7 @@ class ReportingService {
         overallRemote: report.reduce((sum, session) => sum + session.remote, 0),
       };
 
-      overallStats.attendanceRate = overallStats.totalStudents > 0 
+      overallStats.attendanceRate = overallStats.totalStudents > 0
         ? ((overallStats.overallPresent + overallStats.overallLate + overallStats.overallRemote) / overallStats.totalStudents * 100).toFixed(1)
         : 0;
 
@@ -157,7 +157,7 @@ class ReportingService {
   async getStudentReport(studentId, startDate, endDate, auditContext) {
     try {
       console.log(`[REPORTING_SERVICE] Generating student report for ${studentId} from ${startDate} to ${endDate}`);
-      
+
       const pipeline = [
         {
           $lookup: {
@@ -209,7 +209,7 @@ class ReportingService {
         remote: attendanceRecords.filter(r => r.status === 'remote').length,
       };
 
-      stats.attendanceRate = stats.totalSessions > 0 
+      stats.attendanceRate = stats.totalSessions > 0
         ? ((stats.present + stats.late + stats.remote) / stats.totalSessions * 100).toFixed(1)
         : 0;
 
@@ -232,7 +232,7 @@ class ReportingService {
       // Calculate attendance rate per class
       Object.values(byClass).forEach(classData => {
         const effectivelyPresent = classData.stats.present + classData.stats.late + classData.stats.remote;
-        classData.stats.attendanceRate = classData.stats.total > 0 
+        classData.stats.attendanceRate = classData.stats.total > 0
           ? (effectivelyPresent / classData.stats.total * 100).toFixed(1)
           : 0;
       });
@@ -259,7 +259,7 @@ class ReportingService {
   async getClassReport(classId, startDate, endDate, auditContext) {
     try {
       console.log(`[REPORTING_SERVICE] Generating class report for ${classId} from ${startDate} to ${endDate}`);
-      
+
       const pipeline = [
         {
           $lookup: {
@@ -323,7 +323,7 @@ class ReportingService {
       // Calculate attendance rate per student
       Object.values(byStudent).forEach(studentData => {
         const effectivelyPresent = studentData.stats.present + studentData.stats.late + studentData.stats.remote;
-        studentData.stats.attendanceRate = studentData.stats.total > 0 
+        studentData.stats.attendanceRate = studentData.stats.total > 0
           ? (effectivelyPresent / studentData.stats.total * 100).toFixed(1)
           : 0;
       });
@@ -340,7 +340,7 @@ class ReportingService {
         remote: attendanceRecords.filter(r => r.status === 'remote').length,
       };
 
-      overallStats.averageAttendanceRate = overallStats.totalRecords > 0 
+      overallStats.averageAttendanceRate = overallStats.totalRecords > 0
         ? ((overallStats.present + overallStats.late + overallStats.remote) / overallStats.totalRecords * 100).toFixed(1)
         : 0;
 
@@ -363,22 +363,22 @@ class ReportingService {
   /**
    * Export report data to CSV format
    */
-  async exportToCSV(reportType, reportData, _options = {}) {
+  async exportToCSV(reportType, reportData, _ = {}) {
     try {
       console.log(`[REPORTING_SERVICE] Exporting ${reportType} report to CSV`);
-      
+
       let csvData = [];
       let headers = [];
 
       switch (reportType) {
         case 'daily':
           headers = ['Date', 'Class', 'Session Time', 'Total Students', 'Present', 'Absent', 'Late', 'Excused', 'Remote', 'Attendance Rate %'];
-          
+
           reportData.sessions.forEach(session => {
-            const attendanceRate = session.totalStudents > 0 
+            const attendanceRate = session.totalStudents > 0
               ? ((session.present + session.late + session.remote) / session.totalStudents * 100).toFixed(1)
               : 0;
-              
+
             csvData.push([
               reportData.date,
               session._id.className,
@@ -396,7 +396,7 @@ class ReportingService {
 
         case 'student':
           headers = ['Date', 'Class', 'Subject', 'Status', 'Minutes Present', 'Late Minutes', 'Note'];
-          
+
           reportData.allRecords.forEach(record => {
             csvData.push([
               new Date(record.session.scheduledStartAt).toLocaleDateString(),
@@ -412,7 +412,7 @@ class ReportingService {
 
         case 'class':
           headers = ['Student Name', 'Student Email', 'Total Sessions', 'Present', 'Absent', 'Late', 'Excused', 'Remote', 'Attendance Rate %'];
-          
+
           Object.values(reportData.byStudent).forEach(studentData => {
             csvData.push([
               studentData.studentInfo.name,
@@ -435,10 +435,10 @@ class ReportingService {
       // Convert to CSV string
       const csvString = [
         headers.join(','),
-        ...csvData.map(row => 
-          row.map(cell => 
-            typeof cell === 'string' && cell.includes(',') 
-              ? `"${cell}"` 
+        ...csvData.map(row =>
+          row.map(cell =>
+            typeof cell === 'string' && cell.includes(',')
+              ? `"${cell}"`
               : cell
           ).join(',')
         )
@@ -465,7 +465,7 @@ class ReportingService {
   async getSummaryStats(classId, startDate, endDate, auditContext) {
     try {
       console.log(`[REPORTING_SERVICE] Generating summary stats for class ${classId}`);
-      
+
       const pipeline = [
         {
           $lookup: {
@@ -538,7 +538,7 @@ class ReportingService {
       // Calculate additional metrics
       const totalAttendanceRecords = stats.totalRecords || 0;
       const effectivelyPresent = (stats.present || 0) + (stats.late || 0) + (stats.remote || 0);
-      
+
       const summary = {
         period: { startDate, endDate },
         totalSessions: stats.uniqueSessions ? stats.uniqueSessions.length : 0,
@@ -552,11 +552,11 @@ class ReportingService {
           remote: stats.remote || 0
         },
         attendanceRates: {
-          overall: totalAttendanceRecords > 0 ? 
+          overall: totalAttendanceRecords > 0 ?
             (effectivelyPresent / totalAttendanceRecords * 100).toFixed(1) : 0,
-          present: totalAttendanceRecords > 0 ? 
+          present: totalAttendanceRecords > 0 ?
             ((stats.present || 0) / totalAttendanceRecords * 100).toFixed(1) : 0,
-          absent: totalAttendanceRecords > 0 ? 
+          absent: totalAttendanceRecords > 0 ?
             ((stats.absent || 0) / totalAttendanceRecords * 100).toFixed(1) : 0
         },
         averages: {

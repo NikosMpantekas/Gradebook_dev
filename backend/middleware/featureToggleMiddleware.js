@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
  * @returns {function} Express middleware that always allows access
  */
 const checkFeatureEnabled = (featureName) => {
-  return asyncHandler(async (req, _res, next) => {
+  return asyncHandler(async (req, _, next) => {
     // DISABLED: All permission checks removed - always allow access
     logger.info('FEATURE', `Feature toggle checking DISABLED - allowing access to ${featureName}`, {
       userId: req.user?.id,
@@ -20,7 +20,7 @@ const checkFeatureEnabled = (featureName) => {
       method: req.method,
       note: 'School permissions system has been completely disabled'
     });
-    
+
     // Always set feature as enabled and proceed
     req.featureEnabled = true;
     next();
@@ -40,14 +40,14 @@ const addFeatureFlags = asyncHandler(async (req, res, next) => {
   // Get all available features and enable them by default
   const availableFeatures = SchoolPermissions.getAvailableFeatures();
   const allFeaturesEnabled = {};
-  
+
   Object.keys(availableFeatures).forEach(feature => {
     allFeaturesEnabled[feature] = true;
   });
-  
+
   // Set all features as enabled for now (since permission system is disabled)
   res.locals.features = allFeaturesEnabled;
-  
+
   logger.debug('FEATURE', `Feature flags set for school ${req.user?.schoolId}`, res.locals.features);
   next();
 });
