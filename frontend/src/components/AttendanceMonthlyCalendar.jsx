@@ -6,9 +6,17 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useTranslation } from 'react-i18next';
 import { format, isSameDay } from 'date-fns';
 
-export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
+export function AttendanceMonthlyCalendar({ 
+  attendanceRecords = [],
+  currentDate: propCurrentDate,
+  setCurrentDate: propSetCurrentDate,
+  selectedClass
+}) {
   const { t } = useTranslation();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [localCurrentDate, setLocalCurrentDate] = useState(new Date());
+  
+  const currentDate = propCurrentDate || localCurrentDate;
+  const setCurrentDate = propSetCurrentDate || setLocalCurrentDate;
 
   // Get current month and year
   const currentMonth = currentDate.getMonth();
@@ -159,42 +167,58 @@ export function AttendanceMonthlyCalendar({ attendanceRecords = [] }) {
     }
     return days;
   };
-
   return (
-    <div className="w-full p-4 sm:p-6 bg-card rounded-2xl border shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
+    <div className="w-full">
+      <div className="grid grid-cols-[1fr_auto] gap-y-3 gap-x-4 mb-6 sm:mb-8 border-b pb-4 items-center">
+        {/* 1. Title */}
+        <div className="flex items-center gap-2 order-1">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 text-primary" />
+            <span>{t('attendance.monthlyCalendar')}</span>
+          </h3>
+        </div>
+
+        {/* 2. Today Button */}
+        <div className="order-2 justify-self-end">
           <Button
             variant="outline"
             size="sm"
             onClick={goToToday}
-            className="rounded-2xl font-bold text-[10px] uppercase tracking-wider px-4 h-9 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300 border-primary/20"
+            className="rounded-2xl font-bold text-[10px] uppercase tracking-wider px-3 sm:px-4 h-9 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300 border-primary/20 shrink-0"
           >
             {t('attendance.today')}
           </Button>
-          <h2 className="text-xl font-black text-foreground tracking-tight px-4 py-2 bg-muted/30 rounded-2xl border border-white/5 shadow-inner">
+        </div>
+
+        {/* 3. Month/Year */}
+        <div className="order-3 justify-self-start">
+          <h2 className="text-sm sm:text-base font-black text-foreground tracking-tight px-3 py-1 bg-muted/30 rounded-2xl border border-white/5 shadow-inner">
             {getLocalizedMonthName(currentMonth)} {currentYear}
           </h2>
         </div>
 
-        <div className="flex items-center justify-end gap-1.5 bg-muted/20 p-1 rounded-2xl border border-white/5">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToPreviousMonth}
-            className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToNextMonth}
-            className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+        {/* 4. Arrows */}
+        <div className="order-4 justify-self-end">
+          <div className="flex items-center gap-1.5 bg-muted/20 p-1 rounded-2xl border border-white/5 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToPreviousMonth}
+              className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToNextMonth}
+              className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
+
       </div>
 
       <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4">
