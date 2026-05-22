@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, isWithinInterval, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import {
   Card,
   CardContent,
@@ -30,6 +30,7 @@ import {
 } from '../../components/ui/collapsible';
 import {
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Users,
   Calendar,
@@ -37,62 +38,102 @@ import {
   Search,
   CheckCircle2,
   Save,
-  BookOpen
+  BookOpen,
+  AlertCircle,
+  Activity,
+  Check,
+  CalendarRange,
+  Download,
+  BarChart2
 } from 'lucide-react';
 import { API_URL } from '../../config/apiConfig';
 import axios from 'axios';
 import { Spinner } from '../../components/ui/spinner';
+import { ScrollArea } from '../../components/ui/scroll-area';
 import { cn } from '../../lib/utils';
 
 // Memoized Student Row Component
 const StudentRow = React.memo(({ student, t, onToggle, onNoteChange }) => {
+  const initials = student.name
+    ? student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'ST';
+
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-3 border-b last:border-0 transition-colors cursor-pointer",
+        "flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 border-b last:border-0 transition-colors",
         !student.present
           ? "bg-destructive/5 dark:bg-destructive/10 hover:bg-destructive/10"
-          : "bg-background hover:bg-muted/50"
+          : "bg-background hover:bg-muted/30"
       )}
-      onClick={() => onToggle(student.studentId, !student.present)}
     >
-      <div className="flex items-center space-x-4 flex-1 min-w-0">
-        <Checkbox
-          id={`absent-${student.studentId}`}
-          checked={!student.present}
-          onCheckedChange={(checked) => onToggle(student.studentId, !checked)}
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "h-5 w-5",
-            !student.present && "data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
-          )}
-        />
-
+      {/* Student Info */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
+          student.present ? "bg-primary/10 text-primary" : "bg-destructive/20 text-destructive"
+        )}>
+          {initials}
+        </div>
         <div className="flex flex-col min-w-0">
           <span className={cn(
-            "text-sm font-medium truncate",
-            !student.present ? "text-destructive font-semibold" : "text-foreground"
-          )}
-          >
+            "text-sm font-semibold truncate",
+            !student.present ? "text-destructive font-bold" : "text-foreground"
+          )}>
             {student.name}
           </span>
           <span className={cn(
-            "text-[10px] uppercase tracking-wider font-bold mt-0.5",
-            !student.present ? "text-destructive" : "text-muted-foreground"
+            "text-[10px] font-bold uppercase tracking-wider mt-0.5",
+            student.present ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
           )}>
-            {!student.present ? t('attendance.absent') : t('attendance.present')}
+            {student.present ? t('attendance.present') : t('attendance.absent')}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 note-input ml-4">
-        <Input
-          placeholder={t('attendance.addNote')}
-          value={student.note || ''}
-          onChange={(e) => onNoteChange(student.studentId, e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-          className="h-8 text-xs w-[180px] bg-muted/30 border-none focus:bg-background"
-        />
+      {/* Control Actions (Toggle + Note) */}
+      <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+        {/* Toggle Button Group */}
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/50 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "h-8 px-3 text-xs font-bold rounded-md transition-all duration-200",
+              student.present
+                ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-600/90"
+                : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+            )}
+            onClick={() => onToggle(student.studentId, true)}
+          >
+            <Check className="w-3.5 h-3.5 mr-1" />
+            {t('attendance.present')}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "h-8 px-3 text-xs font-bold rounded-md transition-all duration-200",
+              !student.present
+                ? "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
+                : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+            )}
+            onClick={() => onToggle(student.studentId, false)}
+          >
+            <AlertCircle className="w-3.5 h-3.5 mr-1" />
+            {t('attendance.absent')}
+          </Button>
+        </div>
+
+        {/* Note Input */}
+        <div className="relative flex-1 min-w-[150px] sm:max-w-[200px]">
+          <Input
+            placeholder={t('attendance.addNote')}
+            value={student.note || ''}
+            onChange={(e) => onNoteChange(student.studentId, e.target.value)}
+            className="h-8.5 text-xs bg-muted/30 border-border/60 focus:bg-background focus-visible:ring-1"
+          />
+        </div>
       </div>
     </div>
   );
@@ -118,9 +159,9 @@ const TeacherAttendance = () => {
   const [processedClasses, setProcessedClasses] = useState(new Set());
   const [error, setError] = useState(null);
 
-  // Week/day management
-  const [expandedWeeks, setExpandedWeeks] = useState(new Set([0])); // Current week expanded by default
-  const [expandedDays, setExpandedDays] = useState(new Set([format(new Date(), 'yyyy-MM-dd')])); // Today expanded
+  // Calendar Date Management
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
 
   // Class popup state
   const [selectedClass, setSelectedClass] = useState(null);
@@ -147,33 +188,110 @@ const TeacherAttendance = () => {
     });
   };
 
-  // Generate weeks to display (Matches admin logic)
-  const weeksToShow = useMemo(() => {
+  const getClassesForDay = useCallback((date) => {
+    const dayName = format(date, 'EEEE');
+    return classes.filter(cls => {
+      const hasScheduleForDay = cls.schedule?.some(sch => sch.day === dayName);
+      return hasScheduleForDay && cls.active;
+    });
+  }, [classes]);
+
+  // Scheduled classes for today
+  const todayClasses = useMemo(() => {
     const today = new Date();
-    const semesterStartDate = new Date(semesterStart);
-    const semesterEndDate = new Date(semesterEnd);
+    const dayName = format(today, 'EEEE');
+    const dateStr = format(today, 'yyyy-MM-dd');
 
-    const weeks = [];
+    return classes.filter(cls => {
+      const hasScheduleForDay = cls.schedule?.some(sch => sch.day === dayName);
+      return hasScheduleForDay && cls.active;
+    }).map(cls => {
+      const classKey = `${cls._id}-${dateStr}`;
+      const isProcessed = processedClasses.has(classKey);
+      return {
+        ...cls,
+        isProcessed,
+        date: today
+      };
+    });
+  }, [classes, processedClasses]);
 
-    // Generate range of weeks
-    for (let offset = -3; offset <= 12; offset++) {
-      const weekStart = startOfWeek(addWeeks(today, offset), { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(addWeeks(today, offset), { weekStartsOn: 1 });
 
-      if (isWithinInterval(weekStart, { start: semesterStartDate, end: semesterEndDate }) ||
-        isWithinInterval(weekEnd, { start: semesterStartDate, end: semesterEndDate })) {
-        weeks.push({
-          offset,
-          start: weekStart,
-          end: weekEnd,
-          isCurrent: offset === 0,
-          days: eachDayOfInterval({ start: weekStart, end: weekEnd })
+  // All class instances for the currently viewed month (both processed and pending)
+  const monthlyClassInstances = useMemo(() => {
+    const start = startOfMonth(currentMonthDate);
+    const end = endOfMonth(currentMonthDate);
+    const days = eachDayOfInterval({ start, end });
+    const instances = [];
+
+    days.forEach(day => {
+      const dayClasses = getClassesForDay(day);
+      dayClasses.forEach(cls => {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        const classKey = `${cls._id}-${dateStr}`;
+        const isProcessed = processedClasses.has(classKey);
+        instances.push({
+          ...cls,
+          date: day,
+          dateStr,
+          isProcessed,
+          startTime: cls.schedule?.find(sch => sch.day === format(day, 'EEEE'))?.startTime || '--:--'
         });
-      }
-    }
+      });
+    });
 
-    return weeks;
-  }, [semesterStart, semesterEnd]);
+    // Sort chronologically, latest first
+    return instances.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [currentMonthDate, classes, processedClasses, getClassesForDay]);
+
+  // Calendar Days Grid Calculation
+  const calendarDays = useMemo(() => {
+    const firstDay = startOfMonth(currentMonthDate);
+    const lastDay = endOfMonth(currentMonthDate);
+    const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
+    // Adjust day index to start week on Monday = 0
+    const firstDayIndex = (firstDay.getDay() + 6) % 7;
+    return {
+      days: daysInMonth,
+      firstDayIndex
+    };
+  }, [currentMonthDate]);
+
+  // Scheduled classes for the selected day
+  const selectedDateClasses = useMemo(() => {
+    const dayClasses = getClassesForDay(selectedDate);
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    return dayClasses.map(cls => {
+      const classKey = `${cls._id}-${dateStr}`;
+      const isProcessed = processedClasses.has(classKey);
+      return {
+        ...cls,
+        isProcessed,
+        date: selectedDate
+      };
+    });
+  }, [selectedDate, classes, processedClasses, getClassesForDay]);
+
+  const getLocalizedMonthName = (date) => {
+    const monthIndex = date.getMonth();
+    const monthKeys = [
+      'calendar.months.january', 'calendar.months.february', 'calendar.months.march',
+      'calendar.months.april', 'calendar.months.may', 'calendar.months.june',
+      'calendar.months.july', 'calendar.months.august', 'calendar.months.september',
+      'calendar.months.october', 'calendar.months.november', 'calendar.months.december'
+    ];
+    return t(monthKeys[monthIndex]) || format(date, 'MMMM');
+  };
+
+  const getDayAbbreviations = () => [
+    t('calendar.days.mon') || 'Mo',
+    t('calendar.days.tue') || 'Tu',
+    t('calendar.days.wed') || 'We',
+    t('calendar.days.thu') || 'Th',
+    t('calendar.days.fri') || 'Fr',
+    t('calendar.days.sat') || 'Sa',
+    t('calendar.days.sun') || 'Su'
+  ];
 
   useEffect(() => {
     fetchInitialData();
@@ -231,31 +349,23 @@ const TeacherAttendance = () => {
     }
   };
 
-  const getClassesForDay = (date) => {
-    const dayName = format(date, 'EEEE');
-    return classes.filter(cls => {
-      const hasScheduleForDay = cls.schedule?.some(sch => sch.day === dayName);
-      return hasScheduleForDay && cls.active;
-    });
+  const goToPreviousMonth = () => {
+    setCurrentMonthDate(prev => addMonths(prev, -1));
   };
 
-  const toggleWeek = (weekOffset) => {
-    setExpandedWeeks(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(weekOffset)) newSet.delete(weekOffset);
-      else newSet.add(weekOffset);
-      return newSet;
-    });
+  const goToNextMonth = () => {
+    setCurrentMonthDate(prev => addMonths(prev, 1));
   };
 
-  const toggleDay = (date) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
-    setExpandedDays(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(dateKey)) newSet.delete(dateKey);
-      else newSet.add(dateKey);
-      return newSet;
-    });
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentMonthDate(today);
+    setSelectedDate(today);
+  };
+
+  const handleExportAttendances = () => {
+    toast.info(t('attendance.exportTriggered') || "Export functionality will be wired in a bit!");
+    logAction('Export monthly attendances triggered');
   };
 
   const openClassPopup = async (classData, date) => {
@@ -413,162 +523,361 @@ const TeacherAttendance = () => {
         </div>
       </div>
 
-      <div className="space-y-6">
-        {weeksToShow.map((week) => (
-          <Card
-            key={week.offset}
-            className={cn(
-              "shadow-sm border transition-all duration-300",
-              week.isCurrent ? "border-primary/50 ring-1 ring-primary/10 bg-primary/[0.02]" : "bg-card hover:border-muted-foreground/20"
-            )}
-          >
-            <Collapsible
-              open={expandedWeeks.has(week.offset)}
-              onOpenChange={() => toggleWeek(week.offset)}
-            >
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4 px-6 border-b last:border-b-0">
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "p-1.5 rounded-full",
-                        week.isCurrent ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      )}>
-                        {expandedWeeks.has(week.offset) ?
-                          <ChevronDown className="w-3.5 h-3.5" /> :
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        }
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        {/* Left Sidebar Widgets */}
+        <div className="lg:col-span-1 relative lg:h-full lg:min-h-0">
+          <div className="lg:absolute lg:inset-0 flex flex-col gap-6">
+          {/* Today's Schedule Card */}
+          <Card className="border border-border/80 shadow-sm bg-card hover:shadow-md transition-all duration-300">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 text-primary rounded-lg">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <CardTitle className="text-base font-bold tracking-tight">
+                  {t('teacher.classesToday') + ' - ' + format(new Date(), 'MMM dd')}
+                </CardTitle>
+              </div>
+
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {todayClasses.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/10 rounded-xl border border-dashed border-border/40">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500/70 mb-2" />
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {t('teacher.noClassesScheduled') || "No classes scheduled for today"}
+                  </p>
+                </div>
+              ) : (
+                todayClasses.map(cls => (
+                  <div
+                    key={cls._id}
+                    className={cn(
+                      "p-3.5 rounded-xl border flex flex-col gap-2.5 transition-all duration-200",
+                      cls.isProcessed
+                        ? "bg-emerald-500/[0.02] border-emerald-500/20"
+                        : "bg-background border-border/60"
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-sm text-foreground truncate">{cls.name}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold tracking-tight">
-                          {format(week.start, 'MMMM dd')} - {format(week.end, 'MMMM dd, yyyy')}
-                        </span>
-                        {week.isCurrent && (
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                            {t('attendance.currentWeek')}
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 shrink-0">
+                        <Clock className="w-3 h-3 text-muted-foreground/70" />
+                        {cls.schedule?.find(sch => sch.day === format(new Date(), 'EEEE'))?.startTime || '--:--'}
+                      </span>
                     </div>
-                  </CardTitle>
-                </CardHeader>
-              </CollapsibleTrigger>
 
-              <CollapsibleContent>
-                <CardContent className="p-0">
-                  <div className="divide-y border-t border-border/40">
-                    {week.days.map(day => {
-                      const dateKey = format(day, 'yyyy-MM-dd');
-                      const dayClasses = getClassesForDay(day);
-                      const isToday = isSameDay(day, new Date());
+                    <div className="flex items-center justify-between gap-4 mt-1">
+                      {cls.isProcessed ? (
+                        <Badge className="text-[9px] h-5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-emerald-500/10">
+                          <Check className="w-2.5 h-2.5 mr-0.5 inline" />
+                          {t('attendance.saved')}
+                        </Badge>
+                      ) : (
+                        <Badge className="text-[9px] h-5 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-amber-500/10">
+                          {t('attendance.pending')}
+                        </Badge>
+                      )}
 
+                      <Button
+                        size="sm"
+                        variant={cls.isProcessed ? "outline" : "default"}
+                        className={cn(
+                          "h-7 text-xs font-bold px-3 transition-all",
+                          cls.isProcessed
+                            ? "hover:bg-emerald-500/[0.05] hover:text-emerald-600 hover:border-emerald-500/30"
+                            : "shadow-sm shadow-primary/10 hover:bg-primary/95"
+                        )}
+                        onClick={() => openClassPopup(cls, cls.date)}
+                      >
+                        {cls.isProcessed ? t('common.edit') || "Edit" : t('attendance.markAttendance') || "Check In"}
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Monthly Attendances Card */}
+          <Card className="border border-border/80 shadow-sm bg-card hover:shadow-md transition-all duration-300 flex flex-col lg:flex-1 lg:h-0 lg:min-h-0 overflow-hidden">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0 gap-4 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="p-1.5 bg-primary/10 text-primary rounded-lg shrink-0">
+                  <BarChart2 className="w-4 h-4" />
+                </div>
+                <CardTitle className="text-base font-bold tracking-tight truncate">
+                  {t('attendance.monthlyAttendances') || "Monthly Attendances"}
+                </CardTitle>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleExportAttendances}
+                className="h-8 gap-1.5 font-bold text-xs shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{t('attendance.export') || "Export"}</span>
+              </Button>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
+              {monthlyClassInstances.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center bg-muted/10 rounded-xl border border-dashed border-border/40 m-4 flex-1">
+                  <CalendarRange className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {t('attendance.noClassesScheduled') || "No classes scheduled for this month"}
+                  </p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[350px] lg:flex-1 lg:h-0 lg:min-h-0 w-full px-6 pb-6">
+                  <div className="space-y-2.5 pr-3">
+                    {monthlyClassInstances.map((inst, index) => {
+                      const itemKey = `${inst._id}-${inst.dateStr}-${index}`;
                       return (
-                        <div key={dateKey} className="group transition-all duration-200">
-                          <Collapsible
-                            open={expandedDays.has(dateKey)}
-                            onOpenChange={() => toggleDay(day)}
-                          >
-                            <CollapsibleTrigger asChild>
-                              <div className={cn(
-                                "flex items-center justify-between py-3.5 px-8 cursor-pointer hover:bg-muted/40 transition-colors border-l-4 group/day",
-                                isToday ? "border-primary bg-primary/[0.04]" : "border-transparent"
-                              )}>
-                                <div className="flex items-center gap-4">
-                                  <div className={cn(
-                                    "p-1 rounded-md transition-colors",
-                                    isToday ? "bg-primary/10 text-primary" : "text-muted-foreground group-hover/day:bg-muted"
-                                  )}>
-                                    {expandedDays.has(dateKey) ?
-                                      <ChevronDown className="w-4 h-4" /> :
-                                      <ChevronRight className="w-4 h-4" />
-                                    }
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className={cn(
-                                      "text-sm font-semibold tracking-tight",
-                                      isToday ? "text-primary font-bold" : "text-foreground"
-                                    )}>
-                                      {format(day, 'EEEE, MMM dd')}
-                                    </span>
-                                    {isToday && (
-                                      <span className="text-[9px] font-black uppercase tracking-widest text-primary leading-none mt-0.5">
-                                        {t('attendance.today')}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <Badge variant="secondary" className="font-mono text-[10px] uppercase font-bold tracking-wider px-2 py-0.5">
-                                  {dayClasses.length} {t('attendance.classes')}
+                        <div
+                          key={itemKey}
+                          onClick={() => openClassPopup(inst, inst.date)}
+                          className={cn(
+                            "p-2.5 rounded-xl border flex flex-col gap-2 transition-all duration-200 cursor-pointer select-none",
+                            inst.isProcessed
+                              ? "bg-emerald-500/[0.01] border-emerald-500/10 hover:border-emerald-500/20 hover:bg-emerald-500/[0.03]"
+                              : "bg-background border-border/60 hover:border-primary/20 hover:bg-muted/40"
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex flex-col">
+                              <span className="font-bold text-xs text-foreground truncate">{inst.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1.5 mt-0.5">
+                                <Calendar className="w-3 h-3 text-muted-foreground/70" />
+                                {format(inst.date, 'MMM dd')}
+                                <span className="text-muted-foreground/40">•</span>
+                                <Clock className="w-3 h-3 text-muted-foreground/70" />
+                                {inst.startTime}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {inst.isProcessed ? (
+                                <Badge className="text-[8px] h-4.5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-1.5 pointer-events-none hover:bg-emerald-500/10">
+                                  <Check className="w-2.5 h-2.5 inline" />
                                 </Badge>
-                              </div>
-                            </CollapsibleTrigger>
+                              ) : (
+                                <Badge className="text-[8px] h-4.5 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider px-1.5 pointer-events-none hover:bg-amber-500/10">
+                                  {t('attendance.pending')}
+                                </Badge>
+                              )}
 
-                            <CollapsibleContent>
-                              <div className="bg-muted/5 p-6 px-12 border-t border-border/10">
-                                {dayClasses.length === 0 ? (
-                                  <p className="text-sm text-muted-foreground italic text-center py-4 bg-muted/20 rounded-xl border border-dashed border-border/40">
-                                    {t('attendance.noClassesScheduled')}
-                                  </p>
-                                ) : (
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {dayClasses.map(cls => {
-                                      const classKey = `${cls._id}-${format(day, 'yyyy-MM-dd')}`;
-                                      const isProcessed = processedClasses.has(classKey);
-
-                                      return (
-                                        <Button
-                                          key={cls._id}
-                                          variant="outline"
-                                          className={cn(
-                                            "h-auto flex flex-col items-start p-4 text-left transition-all duration-300 border rounded-2xl group relative hover:shadow-lg hover:-translate-y-1 active:scale-95",
-                                            isProcessed
-                                              ? "bg-primary/[0.05] border-primary/20 hover:bg-primary/[0.08] hover:border-primary/40 ring-1 ring-primary/5"
-                                              : "bg-background border-border/40 hover:border-primary/50"
-                                          )}
-                                          onClick={() => openClassPopup(cls, day)}
-                                        >
-                                          <div className="flex items-center justify-between w-full mb-3">
-                                            <div className="flex items-center gap-2.5">
-                                              {isProcessed ? (
-                                                <div className="p-1 bg-primary/20 text-primary rounded-full">
-                                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                                </div>
-                                              ) : (
-                                                <div className="p-1 bg-muted text-muted-foreground rounded-full">
-                                                  <BookOpen className="w-3.5 h-3.5" />
-                                                </div>
-                                              )}
-                                              <span className="font-bold text-sm tracking-tight">{cls.name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
-                                              <Clock className="w-3 h-3" />
-                                              {cls.schedule?.find(sch => sch.day === format(day, 'EEEE'))?.startTime || '--:--'}
-                                            </div>
-                                          </div>
-                                          <div className="flex flex-wrap gap-1.5 mt-auto">
-                                            {isProcessed && (
-                                              <Badge className="text-[9px] h-4 font-black bg-primary text-primary-foreground border-none uppercase tracking-widest px-2 leading-none">
-                                                {t('attendance.saved')}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </Button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
+                              {inst.isProcessed ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              ) : (
+                                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              )}
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
+                </ScrollArea>
+              )}
+            </CardContent>
           </Card>
-        ))}
+          </div>
+        </div>
+
+        {/* Right Schedule Column */}
+        <div className="lg:col-span-2 flex flex-col lg:h-full">
+          <Card className="shadow-sm border bg-card p-6 flex-1 flex flex-col">
+            {/* Header controls (arranged in a row on mobile and desktop without wrapping/stacking) */}
+            <div className="flex flex-row items-center justify-between gap-2 mb-6 border-b pb-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToToday}
+                  className="rounded-2xl font-bold text-[10px] uppercase tracking-wider px-3 h-9 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300 border-primary/20 shrink-0"
+                >
+                  {t('attendance.today') || "Today"}
+                </Button>
+                <h2 className="text-xs sm:text-base font-black text-foreground tracking-tight px-3 py-1.5 bg-muted/30 rounded-2xl border border-white/5 shadow-inner shrink-0">
+                  {getLocalizedMonthName(currentMonthDate)} {currentMonthDate.getFullYear()}
+                </h2>
+              </div>
+              <div className="flex items-center gap-1.5 bg-muted/20 p-1 rounded-2xl border border-white/5 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={goToPreviousMonth}
+                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={goToNextMonth}
+                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Weekday Labels */}
+            <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4">
+              {getDayAbbreviations().map((day, index) => (
+                <div
+                  key={index}
+                  className="h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold text-muted-foreground/60 uppercase tracking-[0.2em]"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-2 sm:gap-4">
+              {/* Spacers for start of month offset */}
+              {Array.from({ length: calendarDays.firstDayIndex }).map((_, i) => (
+                <div key={`empty-${i}`} className="h-12 sm:h-16" />
+              ))}
+
+              {/* Day cells */}
+              {calendarDays.days.map((day) => {
+                const isToday = isSameDay(day, new Date());
+                const isSelected = isSameDay(day, selectedDate);
+                const dayClasses = getClassesForDay(day);
+                const dateStr = format(day, 'yyyy-MM-dd');
+
+                return (
+                  <button
+                    key={dateStr}
+                    type="button"
+                    onClick={() => setSelectedDate(day)}
+                    className={cn(
+                      "h-12 sm:h-16 flex flex-col items-center justify-center text-sm rounded-xl cursor-pointer transition-all duration-200 border relative overflow-hidden group",
+                      isSelected
+                        ? "bg-primary text-primary-foreground font-semibold border-primary shadow-lg ring-2 ring-primary/20 scale-105 z-10"
+                        : isToday
+                          ? "bg-accent/50 text-accent-foreground font-semibold border-accent hover:bg-accent/70 hover:scale-105"
+                          : "bg-background hover:bg-accent hover:text-accent-foreground border-border/50 hover:border-primary/40 hover:scale-105"
+                    )}
+                  >
+                    {/* Background decorative gradient on hover */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity bg-gradient-to-br from-primary to-transparent" />
+
+                    <span className={cn(
+                      "text-xs sm:text-sm mb-1 z-10",
+                      isSelected ? "font-bold text-primary-foreground" : isToday ? "font-bold text-accent-foreground" : "font-medium opacity-80 text-foreground"
+                    )}>
+                      {format(day, 'd')}
+                    </span>
+
+                    {/* Class Dots */}
+                    <div className="flex gap-1 justify-center z-10">
+                      {dayClasses.map((cls) => {
+                        const classKey = `${cls._id}-${dateStr}`;
+                        const isProcessed = processedClasses.has(classKey);
+                        return (
+                          <div
+                            key={cls._id}
+                            className={cn(
+                              "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ring-1",
+                              isSelected ? "ring-primary-foreground/20" : "ring-white/20",
+                              isProcessed ? "bg-emerald-500" : "bg-amber-500"
+                            )}
+                          />
+                        );
+                      })}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Date Classes Details (Line List Format) */}
+            <div className="mt-6 pt-6 border-t border-border/60">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span>
+                  {t('attendance.classesForDate') || "Classes for"} {format(selectedDate, 'MMMM dd, yyyy')}
+                </span>
+              </h3>
+
+              {selectedDateClasses.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/10 rounded-xl border border-dashed border-border/40">
+                  <CalendarRange className="w-6 h-6 text-muted-foreground/50 mb-2 opacity-55" />
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {t('attendance.noClassesForDate') || "No classes scheduled for this date"}
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/60 border rounded-xl overflow-hidden bg-background">
+                  {selectedDateClasses.map((cls) => (
+                    <div
+                      key={cls._id}
+                      className={cn(
+                        "flex flex-row items-center justify-between p-4 gap-4 transition-colors hover:bg-muted/10",
+                        cls.isProcessed ? "bg-emerald-500/[0.01]" : "bg-background"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {cls.isProcessed ? (
+                          <div className="p-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full shrink-0">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                        ) : (
+                          <div className="p-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-full shrink-0">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-sm text-foreground truncate">{cls.name}</span>
+                          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
+                            <Clock className="w-3.5 h-3.5 text-muted-foreground/70" />
+                            {cls.schedule?.find(sch => sch.day === format(selectedDate, 'EEEE'))?.startTime || '--:--'}
+                            <span className="text-muted-foreground/40">•</span>
+                            <Users className="w-3.5 h-3.5" />
+                            {cls.studentsCount || cls.students?.length || 0} {t('attendance.students')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {cls.isProcessed ? (
+                          <Badge className="hidden sm:inline-flex text-[9px] h-5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-emerald-500/10">
+                            <Check className="w-2.5 h-2.5 mr-0.5 inline" />
+                            {t('attendance.saved')}
+                          </Badge>
+                        ) : (
+                          <Badge className="hidden sm:inline-flex text-[9px] h-5 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-amber-500/10">
+                            {t('attendance.pending')}
+                          </Badge>
+                        )}
+
+                        <Button
+                          size="sm"
+                          variant={cls.isProcessed ? "outline" : "default"}
+                          className={cn(
+                            "h-8 text-xs font-bold px-3 transition-all",
+                            cls.isProcessed
+                              ? "hover:bg-emerald-500/[0.05] hover:text-emerald-600 hover:border-emerald-500/30"
+                              : "shadow-sm shadow-primary/10 hover:bg-primary/95"
+                          )}
+                          onClick={() => openClassPopup(cls, selectedDate)}
+                        >
+                          {cls.isProcessed ? t('common.edit') || "Edit" : t('attendance.markAttendance') || "Check In"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* Class Attendance Popup */}

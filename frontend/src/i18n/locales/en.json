@@ -249,7 +249,15 @@
     "saved": "Saved",
     "noResults": "No students found matching your search",
     "markAbsent": "Mark Absent",
-    "markPresent": "Mark Present"
+    "markPresent": "Mark Present",
+    "weeklyProgress": "Weekly Progress",
+    "completionRate": "Completion Rate",
+    "pending": "Pending",
+    "monthlyProgress": "Monthly Progress",
+    "classesForDate": "Classes for",
+    "noClassesForDate": "No classes scheduled for this day",
+    "monthlyAttendances": "Monthly Attendances",
+    "export": "Export"
   },
   "ratings": {
     "answerRequiredQuestions": "Please answer all required questions",
