@@ -1,20 +1,31 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'react-toastify';
-import { format, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isSameDay, isWithinInterval, startOfMonth, endOfMonth, addMonths } from 'date-fns';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  addWeeks,
+  eachDayOfInterval,
+  isSameDay,
+  isWithinInterval,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+} from "date-fns";
 import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle
-} from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import { Checkbox } from '../../components/ui/checkbox';
+  CardTitle,
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Badge } from "../../components/ui/badge";
+import { Checkbox } from "../../components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,12 +33,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
+} from "../../components/ui/dialog";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '../../components/ui/collapsible';
+} from "../../components/ui/collapsible";
 import {
   ChevronDown,
   ChevronLeft,
@@ -44,19 +55,24 @@ import {
   Check,
   CalendarRange,
   Download,
-  BarChart2
-} from 'lucide-react';
-import { API_URL } from '../../config/apiConfig';
-import axios from 'axios';
-import { Spinner } from '../../components/ui/spinner';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { cn } from '../../lib/utils';
+  BarChart2,
+} from "lucide-react";
+import { API_URL } from "../../config/apiConfig";
+import axios from "axios";
+import { Spinner } from "../../components/ui/spinner";
+import { ScrollArea } from "../../components/ui/scroll-area";
+import { cn } from "../../lib/utils";
 
 // Memoized Student Row Component
 const StudentRow = React.memo(({ student, t, onToggle, onNoteChange }) => {
   const initials = student.name
-    ? student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : 'ST';
+    ? student.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "ST";
 
   return (
     <div
@@ -64,29 +80,41 @@ const StudentRow = React.memo(({ student, t, onToggle, onNoteChange }) => {
         "flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 border-b last:border-0 transition-colors",
         !student.present
           ? "bg-destructive/5 dark:bg-destructive/10 hover:bg-destructive/10"
-          : "bg-background hover:bg-muted/30"
+          : "bg-background hover:bg-muted/30",
       )}
     >
       {/* Student Info */}
       <div className="flex items-center gap-3 min-w-0">
-        <div className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
-          student.present ? "bg-primary/10 text-primary" : "bg-destructive/20 text-destructive"
-        )}>
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
+            student.present
+              ? "bg-primary/10 text-primary"
+              : "bg-destructive/20 text-destructive",
+          )}
+        >
           {initials}
         </div>
         <div className="flex flex-col min-w-0">
-          <span className={cn(
-            "text-sm font-semibold truncate",
-            !student.present ? "text-destructive font-bold" : "text-foreground"
-          )}>
+          <span
+            className={cn(
+              "text-sm font-semibold truncate",
+              !student.present
+                ? "text-destructive font-bold"
+                : "text-foreground",
+            )}
+          >
             {student.name}
           </span>
-          <span className={cn(
-            "text-[10px] font-bold uppercase tracking-wider mt-0.5",
-            student.present ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
-          )}>
-            {student.present ? t('attendance.present') : t('attendance.absent')}
+          <span
+            className={cn(
+              "text-[10px] font-bold uppercase tracking-wider mt-0.5",
+              student.present
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-destructive",
+            )}
+          >
+            {student.present ? t("attendance.present") : t("attendance.absent")}
           </span>
         </div>
       </div>
@@ -102,12 +130,12 @@ const StudentRow = React.memo(({ student, t, onToggle, onNoteChange }) => {
               "h-8 px-3 text-xs font-bold rounded-md transition-all duration-200",
               student.present
                 ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-600/90"
-                : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                : "text-muted-foreground hover:text-foreground hover:bg-transparent",
             )}
             onClick={() => onToggle(student.studentId, true)}
           >
             <Check className="w-3.5 h-3.5 mr-1" />
-            {t('attendance.present')}
+            {t("attendance.present")}
           </Button>
           <Button
             size="sm"
@@ -116,20 +144,20 @@ const StudentRow = React.memo(({ student, t, onToggle, onNoteChange }) => {
               "h-8 px-3 text-xs font-bold rounded-md transition-all duration-200",
               !student.present
                 ? "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
-                : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+                : "text-muted-foreground hover:text-foreground hover:bg-transparent",
             )}
             onClick={() => onToggle(student.studentId, false)}
           >
             <AlertCircle className="w-3.5 h-3.5 mr-1" />
-            {t('attendance.absent')}
+            {t("attendance.absent")}
           </Button>
         </div>
 
         {/* Note Input */}
         <div className="relative flex-1 min-w-[150px] sm:max-w-[200px]">
           <Input
-            placeholder={t('attendance.addNote')}
-            value={student.note || ''}
+            placeholder={t("attendance.addNote")}
+            value={student.note || ""}
             onChange={(e) => onNoteChange(student.studentId, e.target.value)}
             className="h-8.5 text-xs bg-muted/30 border-border/60 focus:bg-background focus-visible:ring-1"
           />
@@ -150,10 +178,16 @@ const TeacherAttendance = () => {
 
   // Semester boundaries (Read-only for teachers, uses defaults or localStorage if present)
   const [semesterStart] = useState(() => {
-    return localStorage.getItem('attendance_semester_start') || format(new Date(), 'yyyy-MM-dd');
+    return (
+      localStorage.getItem("attendance_semester_start") ||
+      format(new Date(), "yyyy-MM-dd")
+    );
   });
   const [semesterEnd] = useState(() => {
-    return localStorage.getItem('attendance_semester_end') || format(new Date(new Date().getFullYear(), 11, 31), 'yyyy-MM-dd');
+    return (
+      localStorage.getItem("attendance_semester_end") ||
+      format(new Date(new Date().getFullYear(), 11, 31), "yyyy-MM-dd")
+    );
   });
 
   const [processedClasses, setProcessedClasses] = useState(new Set());
@@ -169,13 +203,13 @@ const TeacherAttendance = () => {
   const [classDate, setClassDate] = useState(null);
   const [classAttendance, setClassAttendance] = useState({
     wasHeld: false,
-    startTime: '',
-    endTime: '',
+    startTime: "",
+    endTime: "",
     students: [],
-    notes: ''
+    notes: "",
   });
 
-  const [popupStudentFilter, setPopupStudentFilter] = useState('');
+  const [popupStudentFilter, setPopupStudentFilter] = useState("");
   const [popupLoading, setPopupLoading] = useState(false);
 
   // Logging function
@@ -184,38 +218,22 @@ const TeacherAttendance = () => {
       userId: user?._id,
       userRole: user?.role,
       timestamp: new Date().toISOString(),
-      ...data
+      ...data,
     });
   };
 
-  const getClassesForDay = useCallback((date) => {
-    const dayName = format(date, 'EEEE');
-    return classes.filter(cls => {
-      const hasScheduleForDay = cls.schedule?.some(sch => sch.day === dayName);
-      return hasScheduleForDay && cls.active;
-    });
-  }, [classes]);
-
-  // Scheduled classes for today
-  const todayClasses = useMemo(() => {
-    const today = new Date();
-    const dayName = format(today, 'EEEE');
-    const dateStr = format(today, 'yyyy-MM-dd');
-
-    return classes.filter(cls => {
-      const hasScheduleForDay = cls.schedule?.some(sch => sch.day === dayName);
-      return hasScheduleForDay && cls.active;
-    }).map(cls => {
-      const classKey = `${cls._id}-${dateStr}`;
-      const isProcessed = processedClasses.has(classKey);
-      return {
-        ...cls,
-        isProcessed,
-        date: today
-      };
-    });
-  }, [classes, processedClasses]);
-
+  const getClassesForDay = useCallback(
+    (date) => {
+      const dayName = format(date, "EEEE");
+      return classes.filter((cls) => {
+        const hasScheduleForDay = cls.schedule?.some(
+          (sch) => sch.day === dayName,
+        );
+        return hasScheduleForDay && cls.active;
+      });
+    },
+    [classes],
+  );
 
   // All class instances for the currently viewed month (both processed and pending)
   const monthlyClassInstances = useMemo(() => {
@@ -224,10 +242,10 @@ const TeacherAttendance = () => {
     const days = eachDayOfInterval({ start, end });
     const instances = [];
 
-    days.forEach(day => {
+    days.forEach((day) => {
       const dayClasses = getClassesForDay(day);
-      dayClasses.forEach(cls => {
-        const dateStr = format(day, 'yyyy-MM-dd');
+      dayClasses.forEach((cls) => {
+        const dateStr = format(day, "yyyy-MM-dd");
         const classKey = `${cls._id}-${dateStr}`;
         const isProcessed = processedClasses.has(classKey);
         instances.push({
@@ -235,7 +253,9 @@ const TeacherAttendance = () => {
           date: day,
           dateStr,
           isProcessed,
-          startTime: cls.schedule?.find(sch => sch.day === format(day, 'EEEE'))?.startTime || '--:--'
+          startTime:
+            cls.schedule?.find((sch) => sch.day === format(day, "EEEE"))
+              ?.startTime || "--:--",
         });
       });
     });
@@ -253,21 +273,21 @@ const TeacherAttendance = () => {
     const firstDayIndex = (firstDay.getDay() + 6) % 7;
     return {
       days: daysInMonth,
-      firstDayIndex
+      firstDayIndex,
     };
   }, [currentMonthDate]);
 
   // Scheduled classes for the selected day
   const selectedDateClasses = useMemo(() => {
     const dayClasses = getClassesForDay(selectedDate);
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    return dayClasses.map(cls => {
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    return dayClasses.map((cls) => {
       const classKey = `${cls._id}-${dateStr}`;
       const isProcessed = processedClasses.has(classKey);
       return {
         ...cls,
         isProcessed,
-        date: selectedDate
+        date: selectedDate,
       };
     });
   }, [selectedDate, classes, processedClasses, getClassesForDay]);
@@ -275,22 +295,30 @@ const TeacherAttendance = () => {
   const getLocalizedMonthName = (date) => {
     const monthIndex = date.getMonth();
     const monthKeys = [
-      'calendar.months.january', 'calendar.months.february', 'calendar.months.march',
-      'calendar.months.april', 'calendar.months.may', 'calendar.months.june',
-      'calendar.months.july', 'calendar.months.august', 'calendar.months.september',
-      'calendar.months.october', 'calendar.months.november', 'calendar.months.december'
+      "calendar.months.january",
+      "calendar.months.february",
+      "calendar.months.march",
+      "calendar.months.april",
+      "calendar.months.may",
+      "calendar.months.june",
+      "calendar.months.july",
+      "calendar.months.august",
+      "calendar.months.september",
+      "calendar.months.october",
+      "calendar.months.november",
+      "calendar.months.december",
     ];
-    return t(monthKeys[monthIndex]) || format(date, 'MMMM');
+    return t(monthKeys[monthIndex]) || format(date, "MMMM");
   };
 
   const getDayAbbreviations = () => [
-    t('calendar.days.mon') || 'Mo',
-    t('calendar.days.tue') || 'Tu',
-    t('calendar.days.wed') || 'We',
-    t('calendar.days.thu') || 'Th',
-    t('calendar.days.fri') || 'Fr',
-    t('calendar.days.sat') || 'Sa',
-    t('calendar.days.sun') || 'Su'
+    t("calendar.days.mon") || "Mo",
+    t("calendar.days.tue") || "Tu",
+    t("calendar.days.wed") || "We",
+    t("calendar.days.thu") || "Th",
+    t("calendar.days.fri") || "Fr",
+    t("calendar.days.sat") || "Sa",
+    t("calendar.days.sun") || "Su",
   ];
 
   useEffect(() => {
@@ -300,13 +328,10 @@ const TeacherAttendance = () => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      await Promise.all([
-        fetchTeacherClasses(),
-        loadProcessedClasses()
-      ]);
+      await Promise.all([fetchTeacherClasses(), loadProcessedClasses()]);
     } catch (error) {
-      console.error('Error fetching initial data:', error);
-      setError(t('navigation.failedToLoad'));
+      console.error("Error fetching initial data:", error);
+      setError(t("navigation.failedToLoad"));
     } finally {
       setLoading(false);
     }
@@ -316,45 +341,53 @@ const TeacherAttendance = () => {
     try {
       const token = user?.token;
       // Fetch statuses for a broad range around current date
-      const startDate = format(addWeeks(new Date(), -4), 'yyyy-MM-dd');
-      const endDate = format(addWeeks(new Date(), 8), 'yyyy-MM-dd');
+      const startDate = format(addWeeks(new Date(), -4), "yyyy-MM-dd");
+      const endDate = format(addWeeks(new Date(), 8), "yyyy-MM-dd");
 
-      const response = await axios.get(`${API_URL}/api/attendance/processed-classes`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { startDate, endDate }
-      });
+      const response = await axios.get(
+        `${API_URL}/api/attendance/processed-classes`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { startDate, endDate },
+        },
+      );
 
       if (response.data && response.data.success && response.data.data) {
-        const processedKeys = response.data.data.map(item => `${item.classId}-${item.date}`);
+        const processedKeys = response.data.data.map(
+          (item) => `${item.classId}-${item.date}`,
+        );
         setProcessedClasses(new Set(processedKeys));
       }
     } catch (error) {
-      console.error('Error loading processed classes:', error);
+      console.error("Error loading processed classes:", error);
     }
   };
 
   const fetchTeacherClasses = async () => {
     try {
       const token = user?.token;
-      const response = await axios.get(`${API_URL}/api/classes/my-teaching-classes`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(
+        `${API_URL}/api/classes/my-teaching-classes`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (response.data) {
         setClasses(Array.isArray(response.data) ? response.data : []);
       }
     } catch (error) {
-      console.error('Error fetching teacher classes:', error);
-      toast.error(t('attendance.failedToLoadClasses'));
+      console.error("Error fetching teacher classes:", error);
+      toast.error(t("attendance.failedToLoadClasses"));
     }
   };
 
   const goToPreviousMonth = () => {
-    setCurrentMonthDate(prev => addMonths(prev, -1));
+    setCurrentMonthDate((prev) => addMonths(prev, -1));
   };
 
   const goToNextMonth = () => {
-    setCurrentMonthDate(prev => addMonths(prev, 1));
+    setCurrentMonthDate((prev) => addMonths(prev, 1));
   };
 
   const goToToday = () => {
@@ -364,141 +397,169 @@ const TeacherAttendance = () => {
   };
 
   const handleExportAttendances = () => {
-    toast.info(t('attendance.exportTriggered') || "Export functionality will be wired in a bit!");
-    logAction('Export monthly attendances triggered');
+    toast.info(
+      t("attendance.exportTriggered") ||
+        "Export functionality will be wired in a bit!",
+    );
+    logAction("Export monthly attendances triggered");
   };
 
   const openClassPopup = async (classData, date) => {
-    const dayName = format(date, 'EEEE');
-    const scheduleForDay = classData.schedule?.find(sch => sch.day === dayName);
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayName = format(date, "EEEE");
+    const scheduleForDay = classData.schedule?.find(
+      (sch) => sch.day === dayName,
+    );
+    const dateStr = format(date, "yyyy-MM-dd");
 
     setSelectedClass(classData);
     setClassDate(date);
-    setPopupStudentFilter('');
+    setPopupStudentFilter("");
     setClassPopupOpen(true);
     setPopupLoading(true);
 
     setClassAttendance({
       wasHeld: true,
-      startTime: scheduleForDay?.startTime || '',
-      endTime: scheduleForDay?.endTime || '',
+      startTime: scheduleForDay?.startTime || "",
+      endTime: scheduleForDay?.endTime || "",
       students: [],
-      notes: ''
+      notes: "",
     });
 
     try {
       const token = user?.token;
       const [studentsResponse, attendanceResponse] = await Promise.all([
-        axios.get(`${API_URL}/api/classes/${classData._id}/students`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/api/attendance/class-attendance`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { classId: classData._id, date: dateStr }
-        }).catch(() => ({ data: { success: false } }))
+        axios
+          .get(`${API_URL}/api/classes/${classData._id}/students`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .catch(() => ({ data: [] })),
+        axios
+          .get(`${API_URL}/api/attendance/class-attendance`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { classId: classData._id, date: dateStr },
+          })
+          .catch(() => ({ data: { success: false } })),
       ]);
 
       const classStudents = studentsResponse.data || [];
-      const existingData = attendanceResponse.data?.success ? attendanceResponse.data.data : null;
+      const existingData = attendanceResponse.data?.success
+        ? attendanceResponse.data.data
+        : null;
 
       if (existingData) {
         const classKey = `${classData._id}-${dateStr}`;
-        setProcessedClasses(prev => new Set([...prev, classKey]));
+        setProcessedClasses((prev) => new Set([...prev, classKey]));
 
         setClassAttendance({
           wasHeld: existingData.wasHeld || false,
-          startTime: existingData.startTime || scheduleForDay?.startTime || '',
-          endTime: existingData.endTime || scheduleForDay?.endTime || '',
-          students: classStudents.map(s => {
-            const existingStudent = existingData.students?.find(es => es.studentId === s._id || es.studentId?._id === s._id);
+          startTime: existingData.startTime || scheduleForDay?.startTime || "",
+          endTime: existingData.endTime || scheduleForDay?.endTime || "",
+          students: classStudents.map((s) => {
+            const existingStudent = existingData.students?.find(
+              (es) => es.studentId === s._id || es.studentId?._id === s._id,
+            );
             return {
               studentId: s._id,
               name: s.name,
               present: existingStudent ? existingStudent.present : true,
-              note: existingStudent ? existingStudent.note : ''
+              note: existingStudent ? existingStudent.note : "",
             };
           }),
-          notes: existingData.notes || ''
+          notes: existingData.notes || "",
         });
       } else {
-        setClassAttendance(prev => ({
+        setClassAttendance((prev) => ({
           ...prev,
-          students: classStudents.map(s => ({
+          students: classStudents.map((s) => ({
             studentId: s._id,
             name: s.name,
             present: true,
-            note: ''
-          }))
+            note: "",
+          })),
         }));
       }
     } catch (error) {
-      console.error('Error opening class popup:', error);
-      toast.error(t('attendance.failedToLoadAttendance'));
+      console.error("Error opening class popup:", error);
+      toast.error(t("attendance.failedToLoadAttendance"));
     } finally {
       setPopupLoading(false);
     }
   };
 
   const updateStudentAttendance = useCallback((studentId, field, value) => {
-    setClassAttendance(prev => ({
+    setClassAttendance((prev) => ({
       ...prev,
-      students: prev.students.map(student =>
+      students: prev.students.map((student) =>
         student.studentId === studentId
           ? { ...student, [field]: value }
-          : student
-      )
+          : student,
+      ),
     }));
   }, []);
 
-  const handleToggleAttendance = useCallback((studentId, shouldBePresent) => {
-    updateStudentAttendance(studentId, 'present', shouldBePresent);
-  }, [updateStudentAttendance]);
+  const handleToggleAttendance = useCallback(
+    (studentId, shouldBePresent) => {
+      updateStudentAttendance(studentId, "present", shouldBePresent);
+    },
+    [updateStudentAttendance],
+  );
 
-  const handleNoteChange = useCallback((studentId, note) => {
-    updateStudentAttendance(studentId, 'note', note);
-  }, [updateStudentAttendance]);
+  const handleNoteChange = useCallback(
+    (studentId, note) => {
+      updateStudentAttendance(studentId, "note", note);
+    },
+    [updateStudentAttendance],
+  );
 
   const filteredPopupStudents = useMemo(() => {
-    return classAttendance.students.filter(s =>
-      !popupStudentFilter ||
-      s.name?.toLowerCase().includes(popupStudentFilter.toLowerCase())
+    return classAttendance.students.filter(
+      (s) =>
+        !popupStudentFilter ||
+        s.name?.toLowerCase().includes(popupStudentFilter.toLowerCase()),
     );
   }, [classAttendance.students, popupStudentFilter]);
 
   const saveClassAttendance = async () => {
     try {
       const token = user?.token;
-      const startDateTime = new Date(`${format(classDate, 'yyyy-MM-dd')}T${classAttendance.startTime}:00`);
-      const endDateTime = new Date(`${format(classDate, 'yyyy-MM-dd')}T${classAttendance.endTime}:00`);
+      const startDateTime = new Date(
+        `${format(classDate, "yyyy-MM-dd")}T${classAttendance.startTime}:00`,
+      );
+      const endDateTime = new Date(
+        `${format(classDate, "yyyy-MM-dd")}T${classAttendance.endTime}:00`,
+      );
 
       const attendanceData = {
         classId: selectedClass._id,
-        date: format(classDate, 'yyyy-MM-dd'),
+        date: format(classDate, "yyyy-MM-dd"),
         wasHeld: classAttendance.wasHeld,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         students: classAttendance.students,
-        notes: classAttendance.notes
+        notes: classAttendance.notes,
       };
 
-      const response = await axios.post(`${API_URL}/api/attendance/class-session`, attendanceData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.post(
+        `${API_URL}/api/attendance/class-session`,
+        attendanceData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
       if (response.data && response.data.success) {
-        toast.success(t('attendance.attendanceSaved'));
-        const classKey = `${selectedClass._id}-${format(classDate, 'yyyy-MM-dd')}`;
-        setProcessedClasses(prev => new Set([...prev, classKey]));
+        toast.success(t("attendance.attendanceSaved"));
+        const classKey = `${selectedClass._id}-${format(classDate, "yyyy-MM-dd")}`;
+        setProcessedClasses((prev) => new Set([...prev, classKey]));
         setClassPopupOpen(false);
-        logAction('Attendance saved successfully');
+        logAction("Attendance saved successfully");
       }
     } catch (error) {
-      console.error('Error saving attendance:', error);
-      toast.error(t('attendance.failedToSaveAttendance'));
+      console.error("Error saving attendance:", error);
+      toast.error(t("attendance.failedToSaveAttendance"));
     }
   };
 
@@ -515,124 +576,49 @@ const TeacherAttendance = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {t('attendance.managementTitle')}
+            {t("attendance.managementTitle")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {t('attendance.managementDescription')}
+            {t("attendance.managementDescription")}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-        {/* Left Sidebar Widgets */}
-        <div className="lg:col-span-1 relative lg:h-full lg:min-h-0">
-          <div className="lg:absolute lg:inset-0 flex flex-col gap-6">
-          {/* Today's Schedule Card */}
-          <Card className="border border-border/80 shadow-sm bg-card hover:shadow-md transition-all duration-300">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/10 text-primary rounded-lg">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <CardTitle className="text-base font-bold tracking-tight">
-                  {t('teacher.classesToday') + ' - ' + format(new Date(), 'MMM dd')}
-                </CardTitle>
-              </div>
-
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {todayClasses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/10 rounded-xl border border-dashed border-border/40">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500/70 mb-2" />
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    {t('teacher.noClassesScheduled') || "No classes scheduled for today"}
-                  </p>
-                </div>
-              ) : (
-                todayClasses.map(cls => (
-                  <div
-                    key={cls._id}
-                    className={cn(
-                      "p-3.5 rounded-xl border flex flex-col gap-2.5 transition-all duration-200",
-                      cls.isProcessed
-                        ? "bg-emerald-500/[0.02] border-emerald-500/20"
-                        : "bg-background border-border/60"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold text-sm text-foreground truncate">{cls.name}</span>
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 shrink-0">
-                        <Clock className="w-3 h-3 text-muted-foreground/70" />
-                        {cls.schedule?.find(sch => sch.day === format(new Date(), 'EEEE'))?.startTime || '--:--'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 mt-1">
-                      {cls.isProcessed ? (
-                        <Badge className="text-[9px] h-5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-emerald-500/10">
-                          <Check className="w-2.5 h-2.5 mr-0.5 inline" />
-                          {t('attendance.saved')}
-                        </Badge>
-                      ) : (
-                        <Badge className="text-[9px] h-5 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-amber-500/10">
-                          {t('attendance.pending')}
-                        </Badge>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant={cls.isProcessed ? "outline" : "default"}
-                        className={cn(
-                          "h-7 text-xs font-bold px-3 transition-all",
-                          cls.isProcessed
-                            ? "hover:bg-emerald-500/[0.05] hover:text-emerald-600 hover:border-emerald-500/30"
-                            : "shadow-sm shadow-primary/10 hover:bg-primary/95"
-                        )}
-                        onClick={() => openClassPopup(cls, cls.date)}
-                      >
-                        {cls.isProcessed ? t('common.edit') || "Edit" : t('attendance.markAttendance') || "Check In"}
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Monthly Attendances Card */}
-          <Card className="border border-border/80 shadow-sm bg-card hover:shadow-md transition-all duration-300 flex flex-col lg:flex-1 lg:h-0 lg:min-h-0 overflow-hidden">
+        {/* Monthly Attendances Card Wrapper */}
+        <div className="lg:col-span-1 relative lg:h-full lg:min-h-0 order-2 lg:order-1">
+          <Card className="border border-border/80 shadow-sm bg-card hover:shadow-md transition-all duration-300 flex flex-col lg:absolute lg:inset-0 overflow-hidden">
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0 gap-4 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="p-1.5 bg-primary/10 text-primary rounded-lg shrink-0">
                   <BarChart2 className="w-4 h-4" />
                 </div>
                 <CardTitle className="text-base font-bold tracking-tight truncate">
-                  {t('attendance.monthlyAttendances') || "Monthly Attendances"}
+                  {t("attendance.monthlyAttendances") || "Monthly Attendances"}
                 </CardTitle>
               </div>
-              <Button
+              {/* <Button
                 size="sm"
                 variant="outline"
                 onClick={handleExportAttendances}
                 className="h-8 gap-1.5 font-bold text-xs shrink-0"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>{t('attendance.export') || "Export"}</span>
-              </Button>
+                <span>{t("attendance.export") || "Export"}</span>
+              </Button> */}
             </CardHeader>
             <CardContent className="flex-1 min-h-0 p-0 flex flex-col">
               {monthlyClassInstances.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-6 text-center bg-muted/10 rounded-xl border border-dashed border-border/40 m-4 flex-1">
                   <CalendarRange className="w-8 h-8 text-muted-foreground/50 mb-2" />
                   <p className="text-xs font-semibold text-muted-foreground">
-                    {t('attendance.noClassesScheduled') || "No classes scheduled for this month"}
+                    {t("attendance.noClassesScheduled") ||
+                      "No classes scheduled for this month"}
                   </p>
                 </div>
               ) : (
                 <ScrollArea className="h-[350px] lg:flex-1 lg:h-0 lg:min-h-0 w-full px-6 pb-6">
-                  <div className="space-y-2.5 pr-3">
+                  <div className="space-y-2.5 px-3">
                     {monthlyClassInstances.map((inst, index) => {
                       const itemKey = `${inst._id}-${inst.dateStr}-${index}`;
                       return (
@@ -643,34 +629,38 @@ const TeacherAttendance = () => {
                             "p-2.5 rounded-xl border flex flex-col gap-2 transition-all duration-200 cursor-pointer select-none",
                             inst.isProcessed
                               ? "bg-emerald-500/[0.01] border-emerald-500/10 hover:border-emerald-500/20 hover:bg-emerald-500/[0.03]"
-                              : "bg-background border-border/60 hover:border-primary/20 hover:bg-muted/40"
+                              : "bg-background border-border/60 hover:border-primary/20 hover:bg-muted/40",
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0 flex flex-col">
-                              <span className="font-bold text-xs text-foreground truncate">{inst.name}</span>
+                              <span className="font-bold text-xs text-foreground truncate">
+                                {inst.name}
+                              </span>
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1.5 mt-0.5">
                                 <Calendar className="w-3 h-3 text-muted-foreground/70" />
-                                {format(inst.date, 'MMM dd')}
-                                <span className="text-muted-foreground/40">•</span>
+                                {format(inst.date, "MMM dd")}
+                                <span className="text-muted-foreground/40">
+                                  •
+                                </span>
                                 <Clock className="w-3 h-3 text-muted-foreground/70" />
                                 {inst.startTime}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center gap-1.5 shrink-0">
                               {inst.isProcessed ? (
-                                <Badge className="text-[8px] h-4.5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-1.5 pointer-events-none hover:bg-emerald-500/10">
-                                  <Check className="w-2.5 h-2.5 inline" />
+                                <Badge className="text-[9px] h-5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-emerald-500/10">
+                                  {t("attendance.saved")}
                                 </Badge>
                               ) : (
                                 <Badge className="text-[8px] h-4.5 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider px-1.5 pointer-events-none hover:bg-amber-500/10">
-                                  {t('attendance.pending')}
+                                  {t("attendance.pending")}
                                 </Badge>
                               )}
 
                               {inst.isProcessed ? (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <Check className="w-2.5 h-2.5 inline text-emerald-500 dark:text-emerald-400" />
                               ) : (
                                 <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                               )}
@@ -684,27 +674,25 @@ const TeacherAttendance = () => {
               )}
             </CardContent>
           </Card>
-          </div>
         </div>
 
         {/* Right Schedule Column */}
-        <div className="lg:col-span-2 flex flex-col lg:h-full">
+        <div className="lg:col-span-2 flex flex-col lg:h-full order-1 lg:order-2">
           <Card className="shadow-sm border bg-card p-6 flex-1 flex flex-col">
             {/* Header controls (arranged in a row on mobile and desktop without wrapping/stacking) */}
-            <div className="flex flex-row items-center justify-between gap-2 mb-6 border-b pb-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToToday}
-                  className="rounded-2xl font-bold text-[10px] uppercase tracking-wider px-3 h-9 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300 border-primary/20 shrink-0"
-                >
-                  {t('attendance.today') || "Today"}
-                </Button>
-                <h2 className="text-xs sm:text-base font-black text-foreground tracking-tight px-3 py-1.5 bg-muted/30 rounded-2xl border border-white/5 shadow-inner shrink-0">
-                  {getLocalizedMonthName(currentMonthDate)} {currentMonthDate.getFullYear()}
-                </h2>
-              </div>
+            <div className="flex flex-row items-center justify-between gap-2 mb-6 border-b pb-4 relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToToday}
+                className="rounded-2xl font-bold text-[10px] uppercase tracking-wider px-3 h-9 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all duration-300 border-primary/20 shrink-0"
+              >
+                {t("attendance.today") || "Today"}
+              </Button>
+              <h2 className="text-sm sm:text-base font-bold text-foreground tracking-tight absolute left-1/2 -translate-x-1/2 shrink-0">
+                {getLocalizedMonthName(currentMonthDate)}{" "}
+                {currentMonthDate.getFullYear()}
+              </h2>
               <div className="flex items-center gap-1.5 bg-muted/20 p-1 rounded-2xl border border-white/5 shrink-0">
                 <Button
                   variant="ghost"
@@ -740,16 +728,18 @@ const TeacherAttendance = () => {
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-2 sm:gap-4">
               {/* Spacers for start of month offset */}
-              {Array.from({ length: calendarDays.firstDayIndex }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-12 sm:h-16" />
-              ))}
+              {Array.from({ length: calendarDays.firstDayIndex }).map(
+                (_, i) => (
+                  <div key={`empty-${i}`} className="h-12 sm:h-16" />
+                ),
+              )}
 
               {/* Day cells */}
               {calendarDays.days.map((day) => {
                 const isToday = isSameDay(day, new Date());
                 const isSelected = isSameDay(day, selectedDate);
                 const dayClasses = getClassesForDay(day);
-                const dateStr = format(day, 'yyyy-MM-dd');
+                const dateStr = format(day, "yyyy-MM-dd");
 
                 return (
                   <button
@@ -762,17 +752,23 @@ const TeacherAttendance = () => {
                         ? "bg-primary text-primary-foreground font-semibold border-primary shadow-lg ring-2 ring-primary/20 scale-105 z-10"
                         : isToday
                           ? "bg-accent/50 text-accent-foreground font-semibold border-accent hover:bg-accent/70 hover:scale-105"
-                          : "bg-background hover:bg-accent hover:text-accent-foreground border-border/50 hover:border-primary/40 hover:scale-105"
+                          : "bg-background hover:bg-accent hover:text-accent-foreground border-border/50 hover:border-primary/40 hover:scale-105",
                     )}
                   >
                     {/* Background decorative gradient on hover */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity bg-gradient-to-br from-primary to-transparent" />
 
-                    <span className={cn(
-                      "text-xs sm:text-sm mb-1 z-10",
-                      isSelected ? "font-bold text-primary-foreground" : isToday ? "font-bold text-accent-foreground" : "font-medium opacity-80 text-foreground"
-                    )}>
-                      {format(day, 'd')}
+                    <span
+                      className={cn(
+                        "text-xs sm:text-sm mb-1 z-10",
+                        isSelected
+                          ? "font-bold text-primary-foreground"
+                          : isToday
+                            ? "font-bold text-accent-foreground"
+                            : "font-medium opacity-80 text-foreground",
+                      )}
+                    >
+                      {format(day, "d")}
                     </span>
 
                     {/* Class Dots */}
@@ -785,8 +781,10 @@ const TeacherAttendance = () => {
                             key={cls._id}
                             className={cn(
                               "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-sm ring-1",
-                              isSelected ? "ring-primary-foreground/20" : "ring-white/20",
-                              isProcessed ? "bg-emerald-500" : "bg-amber-500"
+                              isSelected
+                                ? "ring-primary-foreground/20"
+                                : "ring-white/20",
+                              isProcessed ? "bg-emerald-500" : "bg-amber-500",
                             )}
                           />
                         );
@@ -802,7 +800,8 @@ const TeacherAttendance = () => {
               <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-primary" />
                 <span>
-                  {t('attendance.classesForDate') || "Classes for"} {format(selectedDate, 'MMMM dd, yyyy')}
+                  {t("attendance.classesForDate") || "Classes for"}{" "}
+                  {format(selectedDate, "MMMM dd, yyyy")}
                 </span>
               </h3>
 
@@ -810,7 +809,8 @@ const TeacherAttendance = () => {
                 <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/10 rounded-xl border border-dashed border-border/40">
                   <CalendarRange className="w-6 h-6 text-muted-foreground/50 mb-2 opacity-55" />
                   <p className="text-xs font-semibold text-muted-foreground">
-                    {t('attendance.noClassesForDate') || "No classes scheduled for this date"}
+                    {t("attendance.noClassesForDate") ||
+                      "No classes scheduled for this date"}
                   </p>
                 </div>
               ) : (
@@ -820,7 +820,9 @@ const TeacherAttendance = () => {
                       key={cls._id}
                       className={cn(
                         "flex flex-row items-center justify-between p-4 gap-4 transition-colors hover:bg-muted/10",
-                        cls.isProcessed ? "bg-emerald-500/[0.01]" : "bg-background"
+                        cls.isProcessed
+                          ? "bg-emerald-500/[0.01]"
+                          : "bg-background",
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -834,13 +836,20 @@ const TeacherAttendance = () => {
                           </div>
                         )}
                         <div className="flex flex-col min-w-0">
-                          <span className="font-bold text-sm text-foreground truncate">{cls.name}</span>
+                          <span className="font-bold text-sm text-foreground truncate">
+                            {cls.name}
+                          </span>
                           <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
                             <Clock className="w-3.5 h-3.5 text-muted-foreground/70" />
-                            {cls.schedule?.find(sch => sch.day === format(selectedDate, 'EEEE'))?.startTime || '--:--'}
+                            {cls.schedule?.find(
+                              (sch) => sch.day === format(selectedDate, "EEEE"),
+                            )?.startTime || "--:--"}
                             <span className="text-muted-foreground/40">•</span>
                             <Users className="w-3.5 h-3.5" />
-                            {cls.studentsCount || cls.students?.length || 0} {t('attendance.students')}
+                            {cls.studentsCount ||
+                              cls.students?.length ||
+                              0}{" "}
+                            {t("attendance.students")}
                           </span>
                         </div>
                       </div>
@@ -849,11 +858,11 @@ const TeacherAttendance = () => {
                         {cls.isProcessed ? (
                           <Badge className="hidden sm:inline-flex text-[9px] h-5 font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-emerald-500/10">
                             <Check className="w-2.5 h-2.5 mr-0.5 inline" />
-                            {t('attendance.saved')}
+                            {t("attendance.saved")}
                           </Badge>
                         ) : (
                           <Badge className="hidden sm:inline-flex text-[9px] h-5 font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider px-2 pointer-events-none hover:bg-amber-500/10">
-                            {t('attendance.pending')}
+                            {t("attendance.pending")}
                           </Badge>
                         )}
 
@@ -864,11 +873,13 @@ const TeacherAttendance = () => {
                             "h-8 text-xs font-bold px-3 transition-all",
                             cls.isProcessed
                               ? "hover:bg-emerald-500/[0.05] hover:text-emerald-600 hover:border-emerald-500/30"
-                              : "shadow-sm shadow-primary/10 hover:bg-primary/95"
+                              : "shadow-sm shadow-primary/10 hover:bg-primary/95",
                           )}
                           onClick={() => openClassPopup(cls, selectedDate)}
                         >
-                          {cls.isProcessed ? t('common.edit') || "Edit" : t('attendance.markAttendance') || "Check In"}
+                          {cls.isProcessed
+                            ? t("common.edit") || "Edit"
+                            : t("attendance.markAttendance") || "Check In"}
                         </Button>
                       </div>
                     </div>
@@ -894,16 +905,24 @@ const TeacherAttendance = () => {
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground mt-1.5 flex items-center gap-1.5 font-medium">
                   <Calendar className="w-3.5 h-3.5" />
-                  {classDate && format(classDate, 'EEEE, MMM dd, yyyy')}
+                  {classDate && format(classDate, "EEEE, MMM dd, yyyy")}
                 </DialogDescription>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-4 pr-10">
               <Badge variant="secondary" className="font-mono">
-                {classAttendance.students.length} {t('attendance.total')}
+                {classAttendance.students.length} {t("attendance.total")}
               </Badge>
-              <Badge variant={classAttendance.students.some(s => !s.present) ? "destructive" : "outline"} className="font-mono">
-                {classAttendance.students.filter(s => !s.present).length} {t('attendance.absent')}
+              <Badge
+                variant={
+                  classAttendance.students.some((s) => !s.present)
+                    ? "destructive"
+                    : "outline"
+                }
+                className="font-mono"
+              >
+                {classAttendance.students.filter((s) => !s.present).length}{" "}
+                {t("attendance.absent")}
               </Badge>
             </div>
           </DialogHeader>
@@ -912,7 +931,7 @@ const TeacherAttendance = () => {
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Spinner size="lg" className="text-primary" />
               <p className="text-sm text-muted-foreground font-medium">
-                {t('common.loading')}
+                {t("common.loading")}
               </p>
             </div>
           ) : (
@@ -925,17 +944,25 @@ const TeacherAttendance = () => {
                       id="wasHeld"
                       checked={classAttendance.wasHeld}
                       onCheckedChange={(checked) =>
-                        setClassAttendance(prev => ({ ...prev, wasHeld: checked }))
+                        setClassAttendance((prev) => ({
+                          ...prev,
+                          wasHeld: checked,
+                        }))
                       }
                     />
-                    <Label htmlFor="wasHeld" className="text-sm font-semibold cursor-pointer">
-                      {t('attendance.classWasHeld')}
+                    <Label
+                      htmlFor="wasHeld"
+                      className="text-sm font-semibold cursor-pointer"
+                    >
+                      {t("attendance.classWasHeld")}
                     </Label>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('attendance.startTime')}</Label>
+                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                        {t("attendance.startTime")}
+                      </Label>
                       <div className="relative">
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -943,13 +970,18 @@ const TeacherAttendance = () => {
                           value={classAttendance.startTime}
                           className="pl-9 h-10 font-mono"
                           onChange={(e) =>
-                            setClassAttendance(prev => ({ ...prev, startTime: e.target.value }))
+                            setClassAttendance((prev) => ({
+                              ...prev,
+                              startTime: e.target.value,
+                            }))
                           }
                         />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('attendance.endTime')}</Label>
+                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                        {t("attendance.endTime")}
+                      </Label>
                       <div className="relative">
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -957,7 +989,10 @@ const TeacherAttendance = () => {
                           value={classAttendance.endTime}
                           className="pl-9 h-10 font-mono"
                           onChange={(e) =>
-                            setClassAttendance(prev => ({ ...prev, endTime: e.target.value }))
+                            setClassAttendance((prev) => ({
+                              ...prev,
+                              endTime: e.target.value,
+                            }))
                           }
                         />
                       </div>
@@ -969,11 +1004,13 @@ const TeacherAttendance = () => {
               {/* Student List Section */}
               <div className="space-y-4 pt-2 border-t">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h3 className="text-base font-semibold text-foreground">{t('attendance.students')}</h3>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {t("attendance.students")}
+                  </h3>
                   <div className="relative w-full sm:w-[320px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      placeholder={t('attendance.searchByName')}
+                      placeholder={t("attendance.searchByName")}
                       value={popupStudentFilter}
                       onChange={(e) => setPopupStudentFilter(e.target.value)}
                       className="pl-9 h-9 text-sm"
@@ -995,7 +1032,9 @@ const TeacherAttendance = () => {
                   {popupStudentFilter && filteredPopupStudents.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
                       <Search className="w-8 h-8 mb-2 opacity-20" />
-                      <p className="text-sm font-medium">{t('attendance.noResults')}</p>
+                      <p className="text-sm font-medium">
+                        {t("attendance.noResults")}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1010,7 +1049,7 @@ const TeacherAttendance = () => {
               className="px-6 h-9 font-medium"
               onClick={() => setClassPopupOpen(false)}
             >
-              {t('common.cancel')}
+              {t("common.cancel")}
             </Button>
             <Button
               size="sm"
@@ -1019,7 +1058,7 @@ const TeacherAttendance = () => {
               onClick={saveClassAttendance}
             >
               <Save className="w-3.5 h-3.5 mr-2" />
-              {t('attendance.saveAttendance')}
+              {t("attendance.saveAttendance")}
             </Button>
           </DialogFooter>
         </DialogContent>
