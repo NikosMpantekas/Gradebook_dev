@@ -193,15 +193,6 @@ const WeeklyAttendanceManagement = () => {
   const [classes, setClasses] = useState([]);
   const [schoolBranches, setSchoolBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
-
-  // Semester dates – synced from the backend so all users share the same range
-  const [semesterStart, setSemesterStart] = useState('');
-  const [semesterEnd, setSemesterEnd] = useState('');
-  const [semesterLoading, setSemesterLoading] = useState(true);
-  // Staged values held locally until the user hits "Save Dates"
-  const [stagedStart, setStagedStart] = useState('');
-  const [stagedEnd, setStagedEnd] = useState('');
-  const [showSemesterConfirm, setShowSemesterConfirm] = useState(false);
   const [processedClasses, setProcessedClasses] = useState(new Set());
   const [error, setError] = useState(null);
 
@@ -214,7 +205,7 @@ const WeeklyAttendanceManagement = () => {
   const [exportConfig, setExportConfig] = useState({
     type: 'all',
     filterId: '',
-    dateRange: 'semester',
+    dateRange: 'month',
     customStartDate: '',
     customEndDate: ''
   });
@@ -250,21 +241,6 @@ const WeeklyAttendanceManagement = () => {
 
   const getClassesForDay = useCallback(
     (date) => {
-      // Parse semester boundaries
-      const semStart = new Date(semesterStart);
-      semStart.setHours(0, 0, 0, 0);
-      const semEnd = new Date(semesterEnd);
-      semEnd.setHours(23, 59, 59, 999);
-
-      // Compare target date (set to noon to avoid timezone shift checks)
-      const target = new Date(date);
-      target.setHours(12, 0, 0, 0);
-
-      // Check if target date is within semester bounds
-      if (target < semStart || target > semEnd) {
-        return [];
-      }
-
       const dayName = format(date, 'EEEE'); // Monday, Tuesday, etc.
 
       return classes.filter(cls => {
@@ -277,7 +253,7 @@ const WeeklyAttendanceManagement = () => {
         return hasScheduleForDay && matchesBranch && cls.active;
       });
     },
-    [classes, selectedBranch, semesterStart, semesterEnd]
+    [classes, selectedBranch]
   );
 
   // All class instances for the currently viewed month (both processed and pending)
@@ -366,87 +342,6 @@ const WeeklyAttendanceManagement = () => {
     t("calendar.days.sun") || "Su",
   ];
 
-  // Load semester settings from API (shared across all users)
-  const loadSemesterSettings = async () => {
-    try {
-      setSemesterLoading(true);
-      const token = user?.token;
-      const response = await axios.get(`${API_URL}/api/semester-settings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.data?.success) {
-        setSemesterStart(response.data.data.semesterStart);
-        setSemesterEnd(response.data.data.semesterEnd);
-        // Sync staged values too
-        setStagedStart(response.data.data.semesterStart);
-        setStagedEnd(response.data.data.semesterEnd);
-      }
-    } catch (error) {
-      console.error('Error loading semester settings:', error);
-      // Fall back to a wide window so the calendar is never empty
-      const now = new Date();
-      const fallbackStart = `${now.getFullYear()}-09-01`;
-      const fallbackEnd = `${now.getFullYear() + 1}-06-30`;
-      setSemesterStart(fallbackStart);
-      setSemesterEnd(fallbackEnd);
-      setStagedStart(fallbackStart);
-      setStagedEnd(fallbackEnd);
-    } finally {
-      setSemesterLoading(false);
-    }
-  };
-
-  // Semester configuration handlers
-  // Changes are staged locally until the user presses "Save Dates",
-  // so the calendar popover doesn't dismiss mid-pick.
-  const handleSemesterStartChange = (value) => {
-    if (value) setStagedStart(value);
-  };
-
-  const handleSemesterEndChange = (value) => {
-    if (value) setStagedEnd(value);
-  };
-
-  // Called when the user explicitly presses "Save Dates"
-  const requestSemesterSave = () => {
-    if (!stagedStart || !stagedEnd) return;
-    if (stagedStart === semesterStart && stagedEnd === semesterEnd) return;
-    setShowSemesterConfirm(true);
-  };
-
-  const confirmSemesterChange = async () => {
-    if (stagedStart >= stagedEnd) {
-      toast.error(t('attendance.semesterStartMustBeBeforeEnd', 'Start date must be before end date'));
-      setShowSemesterConfirm(false);
-      return;
-    }
-
-    try {
-      const token = user?.token;
-      await axios.put(
-        `${API_URL}/api/semester-settings`,
-        { semesterStart: stagedStart, semesterEnd: stagedEnd },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setSemesterStart(stagedStart);
-      setSemesterEnd(stagedEnd);
-      toast.success(t('attendance.semesterConfigSaved'));
-    } catch (error) {
-      console.error('Error saving semester settings:', error);
-      toast.error(t('attendance.failedToSaveSemesterSettings', 'Failed to save semester settings'));
-    }
-
-    setShowSemesterConfirm(false);
-  };
-
-  const cancelSemesterChange = () => {
-    // Revert staged values back to last saved values
-    setStagedStart(semesterStart);
-    setStagedEnd(semesterEnd);
-    setShowSemesterConfirm(false);
-  };
-
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -458,17 +353,14 @@ const WeeklyAttendanceManagement = () => {
   }, [classes]);
 
   useEffect(() => {
-    if (classes.length > 0 && semesterStart && semesterEnd) {
+    if (classes.length > 0) {
       loadProcessedClasses();
     }
-  }, [semesterStart, semesterEnd, classes.length]);
+  }, [currentMonthDate, classes.length]);
 
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      // Load semester settings first so the calendar boundaries are correct
-      // before we try to render class schedules
-      await loadSemesterSettings();
       await fetchClasses();
     } catch (error) {
       console.error('Error fetching initial data:', error);
@@ -481,9 +373,12 @@ const WeeklyAttendanceManagement = () => {
   const loadProcessedClasses = async () => {
     try {
       const token = user?.token;
+      const start = format(startOfMonth(currentMonthDate), "yyyy-MM-dd");
+      const end = format(endOfMonth(currentMonthDate), "yyyy-MM-dd");
+
       const response = await axios.get(`${API_URL}/api/attendance/processed-classes`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { startDate: semesterStart, endDate: semesterEnd }
+        params: { startDate: start, endDate: end }
       });
 
       if (response.data && response.data.success && response.data.data) {
@@ -762,17 +657,13 @@ const WeeklyAttendanceManagement = () => {
           start = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
           end = format(new Date(today.getFullYear(), today.getMonth() + 1, 0), 'yyyy-MM-dd');
           break;
-        case 'semester':
-          start = semesterStart;
-          end = semesterEnd;
-          break;
         case 'custom':
           start = exportConfig.customStartDate;
           end = exportConfig.customEndDate;
           break;
         default:
-          start = semesterStart;
-          end = semesterEnd;
+          start = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
+          end = format(new Date(today.getFullYear(), today.getMonth() + 1, 0), 'yyyy-MM-dd');
       }
 
       const params = {
@@ -910,10 +801,26 @@ const WeeklyAttendanceManagement = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-[180px]">
+            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+              <SelectTrigger className="h-10 bg-background shadow-sm hover:shadow-sm">
+                <SelectValue placeholder={t('attendance.selectBranch', 'Select Branch')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('attendance.allBranches', 'All Branches')}</SelectItem>
+                {schoolBranches.map(branch => (
+                  <SelectItem key={branch.id || branch} value={branch.id || branch}>
+                    {branch.name || branch}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 shadow-sm hover:shadow-md bg-background">
+              <Button variant="outline" className="h-10 gap-2 shadow-sm hover:shadow-md bg-background">
                 <Download className="w-4 h-4 text-primary" />
                 <span className="font-semibold">{t('attendance.exportReports', 'Export Reports')}</span>
               </Button>
@@ -1031,7 +938,6 @@ const WeeklyAttendanceManagement = () => {
                     <SelectContent>
                       <SelectItem value="week">{t('attendance.currentWeek')}</SelectItem>
                       <SelectItem value="month">{t('attendance.currentMonth', 'Current Month')}</SelectItem>
-                      <SelectItem value="semester">{t('attendance.fullSemester', 'Full Semester')}</SelectItem>
                       <SelectItem value="custom">{t('attendance.customRange', 'Custom Range')}</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1089,72 +995,6 @@ const WeeklyAttendanceManagement = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-        {/* Semester Configuration Card */}
-        <Card className="lg:col-span-12 shadow-sm border bg-card/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              {t('attendance.semesterDates')}
-            </CardTitle>
-            <CardDescription>
-              {t('attendance.semesterConfigDescription', 'Set the active dates for the current academic semester')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div className="space-y-2">
-                <Label>{t('attendance.semesterStart')}</Label>
-                <DatePicker
-                  value={stagedStart}
-                  onChange={handleSemesterStartChange}
-                  placeholder={t('attendance.semesterStart')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t('attendance.semesterEnd')}</Label>
-                <DatePicker
-                  value={stagedEnd}
-                  onChange={handleSemesterEndChange}
-                  placeholder={t('attendance.semesterEnd')}
-                  min={stagedStart}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="branchFilter">{t('attendance.schoolBranch')}</Label>
-                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder={t('attendance.selectBranch')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('attendance.allBranches')}</SelectItem>
-                    {schoolBranches.map(branch => (
-                      <SelectItem key={branch.id || branch} value={branch.id || branch}>
-                        {branch.name || branch}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* Save button — only visible when staged values differ from saved */}
-              <div className="flex items-end">
-                <Button
-                  onClick={requestSemesterSave}
-                  disabled={
-                    !stagedStart ||
-                    !stagedEnd ||
-                    (stagedStart === semesterStart && stagedEnd === semesterEnd)
-                  }
-                  className="w-full h-10 gap-2 font-semibold shadow-sm shadow-primary/10"
-                >
-                  <Save className="w-4 h-4" />
-                  {t('attendance.saveDates', 'Save Dates')}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
@@ -1455,24 +1295,7 @@ const WeeklyAttendanceManagement = () => {
         </div>
       </div>
 
-      <AlertDialog open={showSemesterConfirm} onOpenChange={setShowSemesterConfirm}>
-        <AlertDialogContent className="fixed inset-0 m-auto translate-x-0 translate-y-0 w-[90vw] sm:max-w-md h-fit p-6 shadow-2xl border rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-bold">{t('attendance.confirmSemesterChange')}</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground mt-2">
-              {t(
-                'attendance.confirmSemesterBothChange',
-                'This will update the active semester to {{start}} – {{end}}. All users will see this change.',
-                { start: stagedStart, end: stagedEnd }
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-3">
-            <AlertDialogCancel onClick={cancelSemesterChange} className="h-9 px-4 text-xs font-semibold">{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSemesterChange} className="h-9 px-4 text-xs font-bold">{t('common.confirm')}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       {/* Class Attendance Popup */}
       <Dialog open={classPopupOpen} onOpenChange={setClassPopupOpen}>

@@ -176,19 +176,7 @@ const TeacherAttendance = () => {
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
 
-  // Semester boundaries (Read-only for teachers, uses defaults or localStorage if present)
-  const [semesterStart] = useState(() => {
-    return (
-      localStorage.getItem("attendance_semester_start") ||
-      format(new Date(), "yyyy-MM-dd")
-    );
-  });
-  const [semesterEnd] = useState(() => {
-    return (
-      localStorage.getItem("attendance_semester_end") ||
-      format(new Date(new Date().getFullYear(), 11, 31), "yyyy-MM-dd")
-    );
-  });
+
 
   const [processedClasses, setProcessedClasses] = useState(new Set());
   const [error, setError] = useState(null);
