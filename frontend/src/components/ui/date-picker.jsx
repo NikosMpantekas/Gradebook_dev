@@ -18,6 +18,7 @@ const DatePicker = React.forwardRef(({
   ...props 
 }, ref) => {
   const [date, setDate] = React.useState(value ? new Date(value) : undefined)
+  const [open, setOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (value) {
@@ -29,13 +30,14 @@ const DatePicker = React.forwardRef(({
 
   const handleSelect = (selectedDate) => {
     setDate(selectedDate)
+    setOpen(false) // close the popover right after picking
     if (onChange) {
       onChange(selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '')
     }
   }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           ref={ref}
