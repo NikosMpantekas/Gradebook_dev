@@ -148,6 +148,17 @@ const StudentDashboard = () => {
     }
   });
 
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const handleScroll = (e) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+    if (clientWidth > 0) {
+      const index = Math.round(scrollLeft / clientWidth);
+      setActiveCardIdx(index);
+    }
+  };
+
   // Calculate stats from redux data for instant display
   const reduxStats = React.useMemo(() => {
     if (uiCache?.studentStats) return uiCache.studentStats;
@@ -390,19 +401,11 @@ const StudentDashboard = () => {
         <>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="flex flex-col justify-center flex-1 pt-0">
-            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalSubjects || reduxStats?.totalSubjects || 0}</div>
-            <p className="text-xs text-muted-foreground">{t('student.enrolledSubjects')}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+      <div 
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-x-visible md:snap-none md:pb-0"
+      >
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.averageGrade')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -416,7 +419,18 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col w-full shrink-0 snap-center md:w-full md:shrink">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('student.totalSubjects')}</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="flex flex-col justify-center flex-1 pt-0">
+            <div className="text-2xl font-bold mb-1">{dashboardData.stats.totalSubjects || reduxStats?.totalSubjects || 0}</div>
+            <p className="text-xs text-muted-foreground">{t('student.enrolledSubjects')}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.gradesReceived')}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
@@ -427,7 +441,7 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 flex flex-col w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('student.classesToday', 'Classes Today')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -444,6 +458,18 @@ const StudentDashboard = () => {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Pagination Dots */}
+      <div className="flex justify-center space-x-2 mt-2 md:hidden">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              activeCardIdx === idx ? 'bg-primary w-4' : 'bg-muted-foreground/30 w-2'
+            }`}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

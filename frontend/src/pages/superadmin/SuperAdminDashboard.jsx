@@ -46,6 +46,17 @@ function SuperAdminDashboard() {
     inactiveOwners: 0,
     totalUsers: 0
   });
+
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const handleScroll = (e) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+    if (clientWidth > 0) {
+      const index = Math.round(scrollLeft / clientWidth);
+      setActiveCardIdx(index);
+    }
+  };
   
   const [packDialog, setPackDialog] = useState({
     open: false,
@@ -134,8 +145,11 @@ function SuperAdminDashboard() {
       <MaintenanceNotifications />
       
       {/* School Owner Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <Card>
+      <div 
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-4 -mx-4 px-4 mb-6 md:mx-0 md:px-0 md:grid md:grid-cols-2 xl:grid-cols-4 md:overflow-x-visible md:snap-none md:pb-0"
+      >
+        <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
           <CardContent className="flex items-center p-6">
             <div className="p-2 bg-blue-100 rounded-lg mr-4">
               <School className="h-6 w-6 text-blue-600" />
@@ -146,7 +160,7 @@ function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
           <CardContent className="flex items-center p-6">
             <div className="p-2 bg-green-100 rounded-lg mr-4">
               <CheckIcon className="h-6 w-6 text-green-600" />
@@ -157,7 +171,7 @@ function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
           <CardContent className="flex items-center p-6">
             <div className="p-2 bg-red-100 rounded-lg mr-4">
               <BlockIcon className="h-6 w-6 text-red-600" />
@@ -168,7 +182,7 @@ function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
           <CardContent className="flex items-center p-6">
             <div className="p-2 bg-blue-100 rounded-lg mr-4">
               <PeopleIcon className="h-6 w-6 text-blue-600" />
@@ -179,6 +193,18 @@ function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Pagination Dots */}
+      <div className="flex justify-center space-x-2 mt-2 mb-6 md:hidden">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              activeCardIdx === idx ? 'bg-primary w-4' : 'bg-muted-foreground/30 w-2'
+            }`}
+          />
+        ))}
       </div>
 
       <Card className="flex flex-col">

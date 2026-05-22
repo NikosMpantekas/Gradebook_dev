@@ -33,6 +33,17 @@ const ParentDashboard = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const handleScroll = (e) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+    if (clientWidth > 0) {
+      const index = Math.round(scrollLeft / clientWidth);
+      setActiveCardIdx(index);
+    }
+  };
+
   const { user } = useSelector((state) => state.auth);
   const token = user?.token; // CRITICAL FIX: Extract token from user object
   const navigate = useNavigate();
@@ -175,8 +186,11 @@ const ParentDashboard = () => {
 
         <TabsContent value="overview" className="space-y-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+          <div 
+            onScroll={handleScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-6 pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-x-visible md:snap-none md:pb-0"
+          >
+            <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -189,7 +203,7 @@ const ParentDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Recent Grades</CardTitle>
                 <Award className="h-4 w-4 text-muted-foreground" />
@@ -202,7 +216,7 @@ const ParentDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Unread Notifications</CardTitle>
                 <Bell className="h-4 w-4 text-muted-foreground" />
@@ -217,7 +231,7 @@ const ParentDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-full shrink-0 snap-center md:w-full md:shrink">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -234,6 +248,18 @@ const ParentDashboard = () => {
                 </p>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Pagination Dots */}
+          <div className="flex justify-center space-x-2 mt-2 md:hidden">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  activeCardIdx === idx ? 'bg-primary w-4' : 'bg-muted-foreground/30 w-2'
+                }`}
+              />
+            ))}
           </div>
 
           {/* Quick Actions */}

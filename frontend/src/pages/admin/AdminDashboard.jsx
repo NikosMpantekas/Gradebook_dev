@@ -120,6 +120,17 @@ const AdminDashboard = () => {
     classes: false
   });
 
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const handleScroll = (e) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+    if (clientWidth > 0) {
+      const index = Math.round(scrollLeft / clientWidth);
+      setActiveCardIdx(index);
+    }
+  };
+
   // Check authentication and role
   useEffect(() => {
     if (!user) {
@@ -334,8 +345,11 @@ const AdminDashboard = () => {
         <AdminDashboardSkeleton />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
+          <div 
+            onScroll={handleScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-x-visible md:snap-none md:pb-0"
+          >
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -346,7 +360,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.students')}</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -357,7 +371,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.teachers')}</CardTitle>
             <UserCog className="h-4 w-4 text-muted-foreground" />
@@ -368,7 +382,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20">
+        <Card className="transition-[box-shadow] hover:shadow-lg hover:shadow-primary/20 w-full shrink-0 snap-center md:w-full md:shrink">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('admin.classes')}</CardTitle>
             <Building className="h-4 w-4 text-muted-foreground" />
@@ -378,6 +392,18 @@ const AdminDashboard = () => {
             <p className="text-xs text-muted-foreground">{t('admin.activeClasses')}</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Pagination Dots */}
+      <div className="flex justify-center space-x-2 mt-2 md:hidden">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div
+            key={idx}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              activeCardIdx === idx ? 'bg-primary w-4' : 'bg-muted-foreground/30 w-2'
+            }`}
+          />
+        ))}
       </div>
 
       {/* Quick Actions */}
