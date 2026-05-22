@@ -273,7 +273,15 @@
     "markPresent": "Σήμανση ως Παρουσία",
     "allAttendance": "Όλες οι Παρουσίες",
     "comprehensiveView": "Συνολική Εικόνα",
-    "sessions": "Μαθήματα"
+    "sessions": "Μαθήματα",
+    "weeklyProgress": "Εβδομαδιαία Πρόοδος",
+    "completionRate": "Ποσοστό Ολοκλήρωσης",
+    "pending": "Εκκρεμεί",
+    "monthlyProgress": "Μηνιαία Πρόοδος",
+    "classesForDate": "Μαθήματα για",
+    "noClassesForDate": "Δεν υπάρχουν προγραμματισμένα μαθήματα για αυτή την ημέρα",
+    "monthlyAttendances": "Μηνιαίες Παρουσίες",
+    "export": "Εξαγωγή"
   },
   "ratings": {
     "answerRequiredQuestions": "Παρακαλώ απαντήστε σε όλες τις υποχρεωτικές ερωτήσεις",
