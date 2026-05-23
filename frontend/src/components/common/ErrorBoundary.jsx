@@ -1,19 +1,23 @@
-import React from 'react';
-import { 
-  AlertTriangle, 
-  Home, 
-  RefreshCw, 
+import React from "react";
+import {
+  AlertTriangle,
+  Home,
+  RefreshCw,
   ArrowRight,
   GraduationCap,
   Bug,
   ChevronDown,
-  Terminal
-} from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { cn } from '../../lib/utils';
+  Terminal,
+} from "lucide-react";
+import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
+import { Badge } from "../ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
+import { cn } from "../../lib/utils";
 
 /**
  * REFINED ERROR BOUNDARY
@@ -22,11 +26,11 @@ import { cn } from '../../lib/utils';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
+    this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
-      isExploded: false
+      isExploded: false,
     };
   }
 
@@ -35,7 +39,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('🚨 ERROR BOUNDARY:', { error, errorInfo });
+    console.error("🚨 ERROR BOUNDARY:", { error, errorInfo });
     this.setState({ error, errorInfo });
     setTimeout(() => this.setState({ isExploded: true }), 100);
   }
@@ -45,23 +49,22 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="min-h-screen flex flex-col font-sans bg-zinc-950 text-zinc-100 relative overflow-hidden transition-colors duration-300">
           {/* Background dot grid */}
-          <div className="absolute inset-0 z-0 pointer-events-none"
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
             style={{
               backgroundImage: `radial-gradient(#27272a 1px, transparent 1px)`,
-              backgroundSize: '32px 32px'
+              backgroundSize: "32px 32px",
             }}
           />
-
-          {/* Ambient glow */}
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-500 rounded-full opacity-10 blur-[120px] z-0" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-500 rounded-full opacity-10 blur-[120px] z-0" />
 
           {/* Header */}
           <header className="relative z-10 w-full p-6 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center">
-                <GraduationCap className="w-6 h-6" />
-              </div>
+              <img
+                src="/logo-transparent.png"
+                alt="GradeBook Logo"
+                className="w-9 h-9 object-contain"
+              />
               <span className="text-2xl font-serif font-bold tracking-tight text-white">
                 GradeBook
               </span>
@@ -69,37 +72,32 @@ class ErrorBoundary extends React.Component {
           </header>
 
           <main className="flex-1 flex items-center justify-center p-4 relative z-10">
-            <div className={cn(
-              "w-full max-w-2xl transition-all duration-700 transform",
-              this.state.isExploded ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-8"
-            )}>
-              <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm shadow-2xl overflow-hidden">
-                <div className="h-1.5 bg-gradient-to-r from-red-500 via-red-400 to-orange-500" />
-                
+            <div className="w-full max-w-2xl">
+              <Card className="bg-transparent border-none shadow-none overflow-hidden">
                 <CardContent className="p-8 md:p-12 text-center space-y-8">
                   {/* Icon */}
                   <div className="flex justify-center">
-                    <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center animate-pulse">
+                    <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center">
                       <Bug className="w-10 h-10" />
                     </div>
                   </div>
 
                   {/* Message */}
                   <div className="space-y-3">
-                    <Badge variant="outline" className="px-3 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold border-red-500/50 text-red-400 bg-red-500/5">
-                      Σφάλμα Συστήματος
-                    </Badge>
-
                     <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight text-white leading-tight">
                       Παρουσιάστηκε πρόβλημα
                     </h1>
 
                     <p className="text-base md:text-lg max-w-lg mx-auto leading-relaxed text-zinc-400 italic">
-                      "{this.state.error?.message || 'Η εφαρμογή αντιμετώπισε ένα πρόβλημα κατά την εμφάνιση αυτού του στοιχείου.'}"
+                      "
+                      {this.state.error?.message ||
+                        "Η εφαρμογή αντιμετώπισε ένα πρόβλημα κατά την εμφάνιση αυτού του στοιχείου."}
+                      "
                     </p>
 
                     <p className="text-sm text-zinc-500 max-w-md mx-auto">
-                      Η ομάδα μας πιθανότατα ήδη δουλεύει για την επίλυση αυτού του προβλήματος
+                      Η ομάδα μας ήδη δουλεύει για την επίλυση αυτού του
+                      προβλήματος
                     </p>
                   </div>
 
@@ -108,16 +106,16 @@ class ErrorBoundary extends React.Component {
                     <Button
                       size="lg"
                       onClick={() => window.location.reload()}
-                      className="rounded-full px-8 h-12 text-base font-semibold group"
+                      className="rounded-full px-8 h-12 text-base font-semibold bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
                     >
-                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-700" />
+                      <RefreshCw className="w-4 h-4 mr-2" />
                       Δοκιμάστε Ξανά
                     </Button>
                     <Button
                       variant="outline"
                       size="lg"
-                      onClick={() => window.location.href = '/'}
-                      className="rounded-full px-8 h-12 text-base font-semibold border-zinc-700 hover:bg-zinc-800"
+                      onClick={() => (window.location.href = "/")}
+                      className="rounded-full px-8 h-12 text-base font-semibold border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 bg-transparent"
                     >
                       Αρχική Σελίδα
                       <ArrowRight className="w-4 h-4 ml-2" />

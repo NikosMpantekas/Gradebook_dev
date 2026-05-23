@@ -69,7 +69,8 @@ const OfflineDetector = ({ children }) => {
       setIsChecking(false);
       
       if (isConnected) {
-        console.log('Connectivity confirmed, going online');
+        console.log('Connectivity confirmed, reloading page...');
+        window.location.reload();
       }
     };
 
@@ -95,7 +96,8 @@ const OfflineDetector = ({ children }) => {
     try {
       const isConnected = await checkConnectivity();
       if (isConnected) {
-        console.log('Manual retry successful');
+        console.log('Manual retry successful, reloading page...');
+        window.location.reload();
       }
     } catch (error) {
       console.error('Manual retry failed:', error);
@@ -111,68 +113,40 @@ const OfflineDetector = ({ children }) => {
 
   // Offline state UI
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center relative overflow-hidden">
-        {/* Watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-          <span className="text-8xl font-bold text-muted-foreground/5">
-            &lt;/&gt;
-          </span>
-        </div>
+    <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+      <WifiOff className="h-16 w-16 text-destructive mb-4" />
+      <h2 className="text-2xl font-semibold mb-4">You're Offline</h2>
+      
+      <p className="text-muted-foreground mb-8 max-w-md">
+        It looks like you've lost your internet connection. 
+        Some features may not work properly.
+      </p>
+      
+      <div className="space-y-2 w-full max-w-xs">
+        <Button
+          onClick={handleRetry}
+          disabled={isChecking}
+          className="w-full"
+        >
+          {isChecking ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Checking Connection...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Try Again
+            </>
+          )}
+        </Button>
         
-        <CardHeader className="relative z-10">
-          <div className="flex justify-center mb-4">
-            <WifiOff className="h-16 w-16 text-destructive" />
-          </div>
-          <CardTitle className="text-2xl">You're Offline</CardTitle>
-        </CardHeader>
-        
-        <CardContent className="relative z-10 space-y-4">
-          <p className="text-muted-foreground">
-            It looks like you've lost your internet connection. 
-            Some features may not work properly.
+        {retryCount > 0 && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Attempt {retryCount} - Still offline
           </p>
-          
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Wifi className="h-4 w-4" />
-              <span>Check your internet connection and try again</span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Button
-              onClick={handleRetry}
-              disabled={isChecking}
-              className="w-full"
-            >
-              {isChecking ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Checking Connection...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Try Again
-                </>
-              )}
-            </Button>
-            
-            {retryCount > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Attempt {retryCount} - Still offline
-              </p>
-            )}
-          </div>
-          
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>• You can still view cached content</p>
-            <p>• Changes will sync when you're back online</p>
-            <p>• Try refreshing the page if the issue persists</p>
-          </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
     </div>
   );
 };

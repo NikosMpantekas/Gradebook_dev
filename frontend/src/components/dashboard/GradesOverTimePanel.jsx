@@ -147,7 +147,7 @@ export const GradesOverTimePanel = ({ grades = [], loading = false, onViewAll, a
           color: 'text.secondary'
         }}>
           <Typography variant="body2">
-            📊 No grade data available for the chart
+            No grade data available for the chart
           </Typography>
         </Box>
       );

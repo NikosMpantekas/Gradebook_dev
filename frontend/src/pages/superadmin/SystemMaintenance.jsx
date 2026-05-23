@@ -164,7 +164,7 @@ const SystemMaintenance = () => {
     try {
       const payload = buildPayload(enabling);
       const response = await api.put('/api/system/maintenance', payload);
-      toast({ title: enabling ? '🔴 Maintenance Enabled' : '✅ System Online', description: response.data.message });
+      toast({ title: enabling ? 'Maintenance Enabled' : 'System Online', description: response.data.message });
       await fetchMaintenanceData();
       await fetchMaintenanceHistory();
     } catch (error) {
