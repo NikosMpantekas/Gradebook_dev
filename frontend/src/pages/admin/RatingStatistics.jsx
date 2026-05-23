@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { updateRatingPeriod } from '../../services/ratingService';
 import { 
   Box, 
   Container, 
@@ -216,31 +215,35 @@ const RatingStatistics = () => {
     }
   }, [navigate, createAxiosInstance]);
   
-  // Update a rating period - using the service implementation for better CORS handling
+  // Update a rating period
   const handleRatingPeriodUpdate = useCallback(async (periodId, updateData) => {
     if (!periodId || !updateData) return false;
     
-    // Get the token for the service call
-    const token = getAuthToken();
-    if (!token) {
+    setLoading(true);
+    setError(null);
+    
+    const api = createAxiosInstance();
+    if (!api) {
       setError('Authentication required. Please log in to continue.');
+      setLoading(false);
       return false;
     }
     
     console.log(`🔄 Updating rating period ${periodId}...`);
     console.log('Update data:', updateData);
     
-    // Call the service implementation which has comprehensive error handling
-    // including specific handling for CORS issues and Network Errors
-    return await updateRatingPeriod(
-      token,
-      periodId,
-      updateData,
-      navigate,
-      setError,
-      setLoading
-    );
-  }, [navigate, getAuthToken]);
+    try {
+      await api.put(`/api/ratings/periods/${periodId}`, updateData);
+      console.log('✅ Rating period updated successfully');
+      return true;
+    } catch (err) {
+      console.error('Error updating rating period:', err);
+      setError(`Failed to update rating period: ${err.response?.data?.message || err.message}`);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [createAxiosInstance]);
   
   // Handle period selection
   const handlePeriodChange = (event) => {
