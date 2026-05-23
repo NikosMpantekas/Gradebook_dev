@@ -17,9 +17,8 @@ import './globals.css';
 // Initialize i18n
 import './i18n/i18n';
 
-// CRITICAL FIX: Import error handling and safety guard systems
+// CRITICAL FIX: Import error handling system
 import { initGlobalErrorHandlers, trackError } from './utils/errorHandler';
-import { applyGlobalSafetyGuards } from './utils/safetyGuards';
 
 // Layout Components
 import Layout from './components/layout/Layout';
@@ -29,7 +28,6 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import SuperAdminRoute from './components/SuperAdminRoute';
 import TeacherRoute from './components/TeacherRoute';
-import StudentProgressRoute from './components/StudentProgressRoute';
 import ParentRoute from './components/ParentRoute';
 
 // Public Pages
@@ -166,7 +164,6 @@ function App() {
   useEffect(() => {
     try {
       initGlobalErrorHandlers();
-      applyGlobalSafetyGuards();
       const initResult = initAppConfig();
       setConfigInitialized(initResult);
     } catch (error) {
@@ -268,20 +265,8 @@ function App() {
           <Route path="/app/student/notifications" element={<Notifications />} />
           <Route path="/app/student/notifications/:id" element={<NotificationDetail />} />
           <Route path="/app/student/schedule" element={<Schedule />} />
-          
-          <Route path="/app/student/users" element={<StudentProgressRoute><ManageUsers /></StudentProgressRoute>} />
-          <Route path="/app/student/users/create" element={<StudentProgressRoute><CreateUserErrorWrapper /></StudentProgressRoute>} />
-          <Route path="/app/student/users/:id" element={<StudentProgressRoute><EditUser /></StudentProgressRoute>} />
-          <Route path="/app/student/classes" element={<StudentProgressRoute><ManageClasses /></StudentProgressRoute>} />
-          <Route path="/app/student/students" element={<StudentProgressRoute><ManageUsers /></StudentProgressRoute>} />
-          <Route path="/app/student/teachers" element={<StudentProgressRoute><ManageUsers /></StudentProgressRoute>} />
-          <Route path="/app/student/grades/create" element={<StudentProgressRoute><CreateGradeSimple /></StudentProgressRoute>} />
-          <Route path="/app/student/grades/manage" element={<StudentProgressRoute><ManageGrades /></StudentProgressRoute>} />
-          <Route path="/app/student/student-stats" element={<StudentProgressRoute><StudentStats /></StudentProgressRoute>} />
-          <Route path="/app/student/notifications/create" element={<StudentProgressRoute><CreateNotification /></StudentProgressRoute>} />
-          <Route path="/app/student/notifications/manage" element={<StudentProgressRoute><NotificationsManager /></StudentProgressRoute>} />
-          <Route path="/app/student/schools" element={<StudentProgressRoute><SchoolBranchManager /></StudentProgressRoute>} />
-          <Route path="/app/student/attendance" element={<StudentProgressRoute><StudentAttendanceView /></StudentProgressRoute>} />
+          <Route path="/app/student/ratings" element={<RatingSubmission />} />
+          <Route path="/app/student/attendance" element={<StudentAttendanceView />} />
 
           {/* Teacher Routes */}
           <Route path="/app/teacher/grades/manage" element={<TeacherRoute><ManageGrades /></TeacherRoute>} />

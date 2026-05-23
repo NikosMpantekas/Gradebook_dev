@@ -10,7 +10,7 @@ export default defineConfig({
     svgr(),
     VitePWA({
       injectRegister: 'auto',
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',

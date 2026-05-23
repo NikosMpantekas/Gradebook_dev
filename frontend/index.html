@@ -19,7 +19,6 @@
       content="GradeBook - A Progressive Web App for managing student grades and notifications"
     />
 
-    <!-- App Icons -->
     <link rel="icon" href="/favicon.ico" />
     <link
       rel="apple-touch-icon"
@@ -37,16 +36,5 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/index.jsx"></script>
-    <script>
-      // Check for existing authentication data
-      try {
-        const localUser = localStorage.getItem("user");
-        const sessionUser = sessionStorage.getItem("user");
-        console.log("DEBUG: localStorage user:", !!localUser);
-        console.log("DEBUG: sessionStorage user:", !!sessionUser);
-      } catch (error) {
-        console.error("Storage access error:", error);
-      }
-    </script>
   </body>
 </html>
