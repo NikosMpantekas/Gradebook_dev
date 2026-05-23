@@ -166,7 +166,7 @@ const Maintenance = () => {
       />
 
       {/* Header */}
-      <header className="relative z-10 w-full p-6 flex justify-between items-center">
+      <header className="relative z-10 w-full px-6 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))] flex justify-between items-center">
         <a
           href="/home"
           className="flex items-center gap-2 group no-underline hover:no-underline"
