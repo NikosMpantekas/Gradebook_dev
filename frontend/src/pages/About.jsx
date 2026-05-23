@@ -258,6 +258,9 @@ export default function About() {
           </div>
           <div className="w-px h-4 mx-6 bg-slate-200/20 hidden md:block" />
           <div className="flex items-center gap-2">
+            <span className="md:hidden">
+              <MaintenanceIndicator darkMode={darkMode} />
+            </span>
             <Button
               variant="ghost"
               size="icon"
