@@ -26,6 +26,7 @@ import {
 } from "phosphor-react";
 import axios from "axios";
 import { API_URL } from "../config/appConfig";
+import MaintenanceIndicator from "../components/MaintenanceIndicator";
 
 // Security utilities
 const SECURITY_CONFIG = {
@@ -498,6 +499,7 @@ const Contact = () => {
           <Logo darkMode={darkMode} currentPath={currentPath} />
           <div className="flex-1" />
           <div className="hidden md:flex items-center gap-6">
+            <MaintenanceIndicator darkMode={darkMode} />
             {navLinks.map((link) => {
               const isActive = currentPath === link.match;
               const resolvedHref =

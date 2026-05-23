@@ -87,11 +87,12 @@ const Maintenance = () => {
 
       // More than a day — show full date + time
       return date.toLocaleString("el-GR", {
-        weekday: "short",
+        weekday: "long",
         day: "numeric",
-        month: "short",
+        month: "long",
         hour: "2-digit",
         minute: "2-digit",
+        hour12: false,
       });
     } catch {
       return null;
@@ -265,7 +266,7 @@ const Maintenance = () => {
                         darkMode ? "text-zinc-400" : "text-slate-500",
                       )}
                     >
-                      Εκτιμώμενη ημερομηνία αποκατάστασης:&nbsp;
+                      Εκτιμώμενη αποκατάσταση:&nbsp;
                       <span
                         className={cn(
                           "font-semibold",

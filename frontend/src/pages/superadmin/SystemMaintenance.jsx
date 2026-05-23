@@ -141,7 +141,15 @@ const SystemMaintenance = () => {
     let estimatedCompletion = null;
     if (formData.hasEstimatedCompletion && formData.estimatedDate) {
       const time = formData.estimatedTime || '00:00';
-      estimatedCompletion = `${formData.estimatedDate}T${time}`;
+      // Build a local datetime string and attach the browser's UTC offset so the
+      // backend stores the correct absolute moment instead of treating it as UTC.
+      const localDate = new Date(`${formData.estimatedDate}T${time}`);
+      const offsetMins = -localDate.getTimezoneOffset(); // e.g. +180 for UTC+3
+      const sign = offsetMins >= 0 ? '+' : '-';
+      const absOff = Math.abs(offsetMins);
+      const hh = String(Math.floor(absOff / 60)).padStart(2, '0');
+      const mm = String(absOff % 60).padStart(2, '0');
+      estimatedCompletion = `${formData.estimatedDate}T${time}:00${sign}${hh}:${mm}`;
     }
     return {
       isMaintenanceMode: isEnabled,

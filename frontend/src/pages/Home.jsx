@@ -24,6 +24,7 @@ import {
   ChatCircleDots,
   CircleWavyCheck,
 } from "phosphor-react";
+import MaintenanceIndicator from "../components/MaintenanceIndicator";
 
 const Logo = ({ darkMode, currentPath }) => {
   const isHome = currentPath === "/home" || currentPath === "/";
@@ -398,6 +399,7 @@ export default function Home() {
           <Logo darkMode={darkMode} currentPath={currentPath} />
           <div className="flex-1" />
           <div className="hidden md:flex items-center gap-6">
+            <MaintenanceIndicator darkMode={darkMode} />
             {navLinks.map((link) => {
               const isActive = currentPath === link.match;
               const resolvedHref =
