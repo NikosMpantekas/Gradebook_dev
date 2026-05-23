@@ -475,7 +475,7 @@ const Schedule = () => {
         <ScheduleSkeleton />
       ) : errorMessage ? (
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
-          ⚠️ {errorMessage}
+          {errorMessage}
         </div>
       ) : (
         <>

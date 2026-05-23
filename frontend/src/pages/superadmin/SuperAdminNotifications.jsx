@@ -192,7 +192,7 @@ const SuperAdminNotifications = () => {
 
       const response = await axiosInstance.post(`${API_URL}/api/superadmin/notifications`, requestPayload);
       
-      toast.success(`✅ Notification sent successfully!`);
+      toast.success(`Notification sent successfully!`);
       
       setFormData({
         title: '',

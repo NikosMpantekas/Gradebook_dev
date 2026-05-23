@@ -12,7 +12,10 @@ import {
   Users,
   User,
   School,
-  Shield
+  Shield,
+  AlertTriangle,
+  ClipboardList,
+  TrendingDown
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -244,7 +247,8 @@ const StudentStats = () => {
       {error && (
         <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
           <div className="flex items-center space-x-2">
-            <span>⚠️ {error}</span>
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <span>{error}</span>
           </div>
         </div>
       )}
@@ -280,8 +284,9 @@ const StudentStats = () => {
             Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData]) => (
               <Card key={subjectName} className="mb-6">
                 <CardContent className="p-6">
-                  <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">
-                    📚 {subjectName}
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                    {subjectName}
                   </h3>
                   
                   {/* Summary Cards */}
@@ -328,8 +333,9 @@ const StudentStats = () => {
                   {/* Progress Graph for multiple grades */}
                   {subjectData.grades && subjectData.grades.length > 1 && (
                     <div className="mb-6">
-                      <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
-                        📈 {t('student.gradeProgressOverTime')}
+                      <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        {t('student.gradeProgressOverTime')}
                       </h4>
                       <div className="w-full h-[250px] sm:h-[300px]">
                         <ResponsiveContainer>
@@ -363,8 +369,9 @@ const StudentStats = () => {
                   )}
 
                   {/* Grades Table */}
-                  <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
-                    📋 {t('student.allGrades')}
+                  <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                    {t('student.allGrades')}
                   </h4>
                   <div className="overflow-x-auto">
                     <Table>
@@ -405,9 +412,19 @@ const StudentStats = () => {
                             <TableCell className="min-w-[100px]">
                               <Badge 
                                 variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
-                                className="text-xs"
+                                className="text-xs flex items-center w-fit gap-1"
                               >
-                                {grade.value >= subjectData.classAverage ? `↗️ ${t('student.above')}` : `↘️ ${t('student.below')}`}
+                                {grade.value >= subjectData.classAverage ? (
+                                  <>
+                                    <TrendingUp className="h-3 w-3 text-green-600" />
+                                    <span>{t('student.above')}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <TrendingDown className="h-3 w-3 text-red-600" />
+                                    <span>{t('student.below')}</span>
+                                  </>
+                                )}
                               </Badge>
                             </TableCell>
                           </TableRow>

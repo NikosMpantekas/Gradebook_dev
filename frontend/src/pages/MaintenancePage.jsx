@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { AlertTriangle, Clock, Wrench, RefreshCw } from 'lucide-react';
-import { API_URL } from '../config/appConfig';
-import Maintenance from './Maintenance';
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { AlertTriangle, Clock, Wrench, RefreshCw } from "lucide-react";
+import { API_URL } from "../config/appConfig";
+import Maintenance from "./Maintenance";
 
 const MaintenancePage = () => {
   const [maintenanceData, setMaintenanceData] = useState({
     isMaintenanceMode: true,
-    maintenanceMessage: 'The system is currently under maintenance. Please be patient while we work to improve your experience.',
+    maintenanceMessage:
+      "The system is currently under maintenance. Please be patient while we work to improve your experience.",
     estimatedCompletion: null,
     allowedRoles: [],
-    canBypass: false
+    canBypass: false,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,23 +23,26 @@ const MaintenancePage = () => {
 
   const fetchMaintenanceStatus = async () => {
     try {
-      console.log('[MAINTENANCE PAGE] Fetching maintenance status');
+      console.log("[MAINTENANCE PAGE] Fetching maintenance status");
       const response = await fetch(`${API_URL}/api/system/maintenance/status`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON');
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Response is not JSON");
       }
 
       const data = await response.json();
-      console.log('[MAINTENANCE PAGE] Maintenance status:', data);
+      console.log("[MAINTENANCE PAGE] Maintenance status:", data);
       setMaintenanceData(data);
     } catch (error) {
-      console.error('[MAINTENANCE PAGE] Error fetching maintenance status:', error);
+      console.error(
+        "[MAINTENANCE PAGE] Error fetching maintenance status:",
+        error,
+      );
       // Use default maintenance message on error
     } finally {
       setIsLoading(false);
@@ -59,20 +63,20 @@ const MaintenancePage = () => {
       const date = new Date(dateString);
       const now = new Date();
 
-      if (date <= now) return 'Soon';
+      if (date <= now) return "Soon";
 
       const diffMs = date - now;
       const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
 
-      if (diffHours < 1) return 'Less than 1 hour';
-      if (diffHours === 1) return '1 hour';
+      if (diffHours < 1) return "Less than 1 hour";
+      if (diffHours === 1) return "1 hour";
       if (diffHours < 24) return `${diffHours} hours`;
 
       const diffDays = Math.ceil(diffHours / 24);
-      if (diffDays === 1) return '1 day';
+      if (diffDays === 1) return "1 day";
       return `${diffDays} days`;
     } catch (error) {
-      return 'Soon';
+      return "Soon";
     }
   };
 
@@ -107,7 +111,8 @@ const MaintenancePage = () => {
                   System Under Maintenance
                 </h1>
                 <p className="text-gray-600 leading-relaxed">
-                  {maintenanceData.maintenanceMessage || 'We are currently performing scheduled maintenance to improve your experience. Please check back shortly.'}
+                  {maintenanceData.maintenanceMessage ||
+                    "We are currently performing scheduled maintenance to improve your experience. Please check back shortly."}
                 </p>
               </div>
 
@@ -115,7 +120,8 @@ const MaintenancePage = () => {
                 <div className="inline-flex items-center bg-blue-50 rounded-lg px-4 py-2 text-blue-800 border border-blue-200">
                   <Clock className="h-4 w-4 mr-2" />
                   <span className="text-sm font-medium">
-                    Expected completion: {formatEstimatedTime(maintenanceData.estimatedCompletion)}
+                    Expected completion:{" "}
+                    {formatEstimatedTime(maintenanceData.estimatedCompletion)}
                   </span>
                 </div>
               )}
@@ -127,7 +133,8 @@ const MaintenancePage = () => {
                     ✓ Your account has been granted access during maintenance
                   </p>
                   <p className="text-green-600 text-sm mt-1">
-                    You may continue using the system with limited functionality.
+                    You may continue using the system with limited
+                    functionality.
                   </p>
                 </div>
               )}
@@ -160,8 +167,6 @@ const MaintenancePage = () => {
   );
 };
 
-
-
 // Auto-refresh component to periodically check maintenance status
 export const MaintenanceStatusChecker = ({ children }) => {
   const location = useLocation();
@@ -169,7 +174,7 @@ export const MaintenanceStatusChecker = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Get user from Redux to check if superadmin
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   useEffect(() => {
     checkMaintenanceStatus();
@@ -182,20 +187,27 @@ export const MaintenanceStatusChecker = ({ children }) => {
 
   const checkMaintenanceStatus = async () => {
     try {
-      console.log('[MAINTENANCE CHECKER] Checking maintenance status');
-      console.log('[MAINTENANCE CHECKER] Current user:', user?.role || 'Not logged in');
+      console.log("[MAINTENANCE CHECKER] Checking maintenance status");
+      console.log(
+        "[MAINTENANCE CHECKER] Current user:",
+        user?.role || "Not logged in",
+      );
 
       // POST-LOGIN CHECK: Only check maintenance for logged-in users
       if (!user) {
-        console.log('[MAINTENANCE CHECKER] No user logged in - allowing access to /home and /login');
+        console.log(
+          "[MAINTENANCE CHECKER] No user logged in - allowing access to /home and /login",
+        );
         setIsMaintenanceMode(false);
         setIsLoading(false);
         return;
       }
 
       // SUPERADMIN BYPASS: Always allow superadmin users to access the system
-      if (user?.role === 'superadmin') {
-        console.log('[MAINTENANCE CHECKER] Superadmin detected - bypassing maintenance mode');
+      if (user?.role === "superadmin") {
+        console.log(
+          "[MAINTENANCE CHECKER] Superadmin detected - bypassing maintenance mode",
+        );
         setIsMaintenanceMode(false);
         setIsLoading(false);
         return;
@@ -204,28 +216,38 @@ export const MaintenanceStatusChecker = ({ children }) => {
       const response = await fetch(`${API_URL}/api/system/maintenance/status`);
 
       if (!response.ok) {
-        console.log('[MAINTENANCE CHECKER] HTTP error:', response.status, response.statusText);
+        console.log(
+          "[MAINTENANCE CHECKER] HTTP error:",
+          response.status,
+          response.statusText,
+        );
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.log('[MAINTENANCE CHECKER] Response is not JSON, content-type:', contentType);
-        throw new Error('Response is not JSON');
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.log(
+          "[MAINTENANCE CHECKER] Response is not JSON, content-type:",
+          contentType,
+        );
+        throw new Error("Response is not JSON");
       }
 
       const data = await response.json();
 
-      console.log('[MAINTENANCE CHECKER] Status response:', {
+      console.log("[MAINTENANCE CHECKER] Status response:", {
         isMaintenanceMode: data.isMaintenanceMode,
         canBypass: data.canBypass,
-        userRole: user?.role
+        userRole: user?.role,
       });
 
       // Show maintenance page if maintenance is enabled and user cannot bypass
       setIsMaintenanceMode(data.isMaintenanceMode && !data.canBypass);
     } catch (error) {
-      console.error('[MAINTENANCE CHECKER] Error checking maintenance status:', error);
+      console.error(
+        "[MAINTENANCE CHECKER] Error checking maintenance status:",
+        error,
+      );
       // Don't show maintenance page on API errors - fail safely
       setIsMaintenanceMode(false);
     } finally {
@@ -235,23 +257,23 @@ export const MaintenanceStatusChecker = ({ children }) => {
 
   // Check if current path is a public route that should be accessible during maintenance
   const publicRoutes = [
-    '/home',
-    '/about',
-    '/contact',
-    '/login',
-    '/register',
-    '/maintenance',
-    '/diagnostics',
-    '/change-password'
+    "/home",
+    "/about",
+    "/contact",
+    "/login",
+    "/register",
+    "/maintenance",
+    "/diagnostics",
+    "/change-password",
   ];
   const isPublicRoute = publicRoutes.includes(location.pathname);
 
-  console.log('[MAINTENANCE CHECKER] Render decision:', {
+  console.log("[MAINTENANCE CHECKER] Render decision:", {
     pathname: location.pathname,
     isPublicRoute,
     isMaintenanceMode,
     isLoading,
-    willShowMaintenance: isMaintenanceMode && !isLoading && !isPublicRoute
+    willShowMaintenance: isMaintenanceMode && !isLoading && !isPublicRoute,
   });
 
   if (isMaintenanceMode && !isLoading && !isPublicRoute) {

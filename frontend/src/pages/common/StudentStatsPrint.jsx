@@ -246,7 +246,7 @@ const StudentStatsPrint = () => {
                 {subjectData.grades && subjectData.grades.length > 1 && (
                   <div className="mb-4">
                     <h3 className="text-base font-semibold mb-2 text-foreground print:text-black">
-                      📈 Grade Progress Over Time
+                      Grade Progress Over Time
                     </h3>
                     <div className="w-full h-64 mb-3">
                       <ResponsiveContainer>
