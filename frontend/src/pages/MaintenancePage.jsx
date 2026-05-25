@@ -97,7 +97,6 @@ export const MaintenanceStatusChecker = ({ children }) => {
     "/login",
     "/register",
     "/maintenance",
-    "/diagnostics",
     "/change-password",
   ];
   const isPublicRoute = publicRoutes.includes(location.pathname);

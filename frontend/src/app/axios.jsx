@@ -191,7 +191,7 @@ axiosInstance.interceptors.response.use(
       const responseData = error.response.data;
       if (responseData && responseData.isMaintenanceMode) {
         // Don't redirect if user is on a public route — let them browse freely
-        const publicRoutes = ['/home', '/about', '/contact', '/login', '/register', '/maintenance', '/diagnostics', '/change-password'];
+        const publicRoutes = ['/home', '/about', '/contact', '/login', '/register', '/maintenance', '/change-password'];
         const currentPath = window.location.pathname;
         const isOnPublicRoute = publicRoutes.includes(currentPath);
 

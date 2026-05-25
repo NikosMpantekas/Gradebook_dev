@@ -43,7 +43,6 @@ import Maintenance from "./pages/Maintenance";
 
 // Common Pages
 import StandaloneDashboard from "./pages/StandaloneDashboard";
-import DiagnosticPage from "./pages/DiagnosticPage";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import NotificationDetail from "./pages/NotificationDetail";
@@ -211,7 +210,6 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/change-password" element={<PasswordChange />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/diagnostics" element={<DiagnosticPage />} />
             <Route path="/maintenance" element={<Maintenance />} />
 
             {/* Root redirect based on role */}
@@ -785,7 +783,6 @@ function App() {
 
   return (
     <ErrorBoundary
-      fallback={<DiagnosticPage />}
       componentName="Application Root"
     >
       <ThemeProvider>
