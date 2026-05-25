@@ -404,6 +404,8 @@ const Login = () => {
                       id="saveCredentials"
                       name="saveCredentials"
                       checked={saveCredentials}
+                      className="rounded-full"
+                      disabled={isLoading || animationStep !== 'idle'}
                       onCheckedChange={(checked) =>
                         onChange({ target: { name: 'saveCredentials', value: checked } })
                       }
