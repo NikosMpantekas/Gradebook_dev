@@ -185,7 +185,13 @@ const corsOptions = {
   maxAge: 86400 // 24 hours
 };
 
-app.use(cors(corsOptions));
+const globalCors = cors(corsOptions);
+app.use((req, res, next) => {
+  if (req.path === '/api/system/maintenance/status' || req.path === '/api/health') {
+    return next();
+  }
+  globalCors(req, res, next);
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -265,8 +271,8 @@ app.use('/api', (req, res, next) => {
     method: req.method
   });
 
-  // Allow health check to pass through
-  if (req.path === '/health') {
+  // Allow health check and maintenance status to pass through
+  if (req.path === '/health' || req.path === '/system/maintenance/status') {
     return next();
   }
 
@@ -381,9 +387,7 @@ const {
 // Add the feature flags middleware to all routes so they have access to feature information
 app.use(
   "/api/contacts",
-  protect,
   checkMaintenanceMode,
-  setSchoolContext,
   addFeatureFlags,
   require("./routes/contactRoutes")
 ); // Contact form
@@ -597,7 +601,7 @@ app.use(
   require("./routes/schoolPermissionsRoutes")
 ); // School permissions management
 app.use("/api/branches", protect, checkMaintenanceMode, require("./routes/branchRoutes")); // School branch name lookups
-app.use("/api/contact", protect, checkMaintenanceMode, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
+app.use("/api/contact", checkMaintenanceMode, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes")); // Push notification subscriptions (includes VAPID public key)
 app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering
 app.use("/api/maintenance-announcements", protect, require("./routes/maintenanceAnnouncementRoutes")); // Maintenance announcements
