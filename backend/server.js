@@ -11,6 +11,7 @@ const { connectDB } = require("./config/db");
 const webpush = require("web-push");
 const validator = require('validator');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
@@ -64,6 +65,19 @@ const app = express();
 
 // Set security headers
 app.use(helmet());
+
+// Rate limiting for sensitive authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Limit each IP to 15 requests per windowMs
+  message: { message: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/forgot-password', authLimiter);
+app.use('/api/users/change-password', authLimiter);
 
 // Configure Express to trust proxy headers to fix rate-limit warnings
 // This is required when running behind reverse proxies (Cloudflare, Netlify, etc.)
