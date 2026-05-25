@@ -20,6 +20,7 @@ const Maintenance = () => {
     return saved ? JSON.parse(saved) : true;
   });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHoveringButton, setIsHoveringButton] = useState(false);
 
   const fetchStatus = async () => {
     try {
@@ -146,22 +147,16 @@ const Maintenance = () => {
         }}
       />
 
-      {/* Ambient glow — changes colour with maintenance type */}
       <div
         className={cn(
-          "absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full opacity-10 blur-[120px] z-0 transition-colors duration-700",
+          "absolute w-[40%] h-[40%] rounded-full blur-[120px] z-0 pointer-events-none transition-all duration-500 ease-out will-change-transform transform-gpu",
           accent.glow,
-        )}
-      />
-      <div
-        className={cn(
-          "absolute w-[40%] h-[40%] rounded-full opacity-10 blur-[120px] z-0 pointer-events-none transition-colors duration-700",
-          accent.glow,
+          isHoveringButton ? "opacity-0 scale-75" : "opacity-10 scale-100"
         )}
         style={{
           left: `${mousePos.x}px`,
           top: `${mousePos.y}px`,
-          transform: "translate(-50%, -50%)",
+          transform: "translate3d(-50%, -50%, 0)",
         }}
       />
 
@@ -285,6 +280,8 @@ const Maintenance = () => {
                 <Button
                   size="lg"
                   onClick={() => window.location.reload()}
+                  onMouseEnter={() => setIsHoveringButton(true)}
+                  onMouseLeave={() => setIsHoveringButton(false)}
                   className={cn(
                     "rounded-full px-8 h-12 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]",
                     accent.button,
@@ -299,6 +296,8 @@ const Maintenance = () => {
                   variant="outline"
                   size="lg"
                   asChild
+                  onMouseEnter={() => setIsHoveringButton(true)}
+                  onMouseLeave={() => setIsHoveringButton(false)}
                   className="rounded-full px-8 h-12 text-base font-semibold border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 bg-transparent transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <a
