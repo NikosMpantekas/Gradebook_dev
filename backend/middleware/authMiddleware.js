@@ -66,6 +66,18 @@ const protect = asyncHandler(async (req, res, next) => {
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Reject refresh tokens used as access tokens
+      if (decoded.type === 'refresh') {
+        logger.warn('AUTH', 'Refresh token used as access token', {
+          userId: decoded.id,
+          path: req.originalUrl,
+          ip: req.ip
+        });
+        res.status(401);
+        throw new Error('Invalid token type - access token required');
+      }
+
       logger.info('AUTH', `JWT Token decoded successfully for user ID: ${decoded.id}`);
       
       // CRITICAL FIX: First check if this is a superadmin user
