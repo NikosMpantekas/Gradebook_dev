@@ -10,6 +10,7 @@ const { setSchoolContext } = require("./middleware/schoolIdMiddleware");
 const { connectDB } = require("./config/db");
 const webpush = require("web-push");
 const validator = require('validator');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config();
@@ -60,6 +61,9 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 }
 
 const app = express();
+
+// Set security headers
+app.use(helmet());
 
 // Configure Express to trust proxy headers to fix rate-limit warnings
 // This is required when running behind reverse proxies (Cloudflare, Netlify, etc.)
