@@ -227,6 +227,16 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: false, limit: '16kb' }));
 
+// Set Cache-Control: no-store for all API routes to prevent caching sensitive data
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 // Add request tracking to help debug duplicate requests
 app.use((req, res, next) => {
   // Generate unique ID for this request
@@ -733,8 +743,26 @@ if (process.env.NODE_ENV === "production") {
       fs.existsSync(indexPath) ? "YES" : "NO"
     );
 
-    // First serve static files (important: this must come BEFORE the catch-all route)
-    app.use(express.static(staticPath));
+    // First serve static files with appropriate caching rules
+    app.use(express.static(staticPath, {
+      maxAge: '1y',
+      setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        } else if (
+          path.includes('/assets/') || 
+          path.endsWith('.js') || 
+          path.endsWith('.css') || 
+          path.endsWith('.woff') || 
+          path.endsWith('.woff2') || 
+          path.endsWith('.png') || 
+          path.endsWith('.jpg') || 
+          path.endsWith('.svg')
+        ) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      }
+    }));
 
     // Add a special debug route to test if the server is serving static files correctly
     app.get("/appinfo", (_, res) => {

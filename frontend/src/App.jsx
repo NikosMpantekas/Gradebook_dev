@@ -11,6 +11,7 @@ import {
 import { ThemeProvider as ShadcnThemeProvider } from "./components/theme-provider";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
 import { useSelector, useDispatch } from "react-redux";
 import "./globals.css";
 
@@ -193,6 +194,66 @@ function App() {
       initializePushNotifications();
     }
   }, [user, configInitialized]);
+
+  // Version checker to auto-update stale client bundles in production
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") return;
+
+    let checkTimeout;
+
+    const checkVersion = async () => {
+      try {
+        const response = await fetch("/version.json?t=" + new Date().getTime());
+        if (response.ok) {
+          const data = await response.json();
+          // Check if build_id exists and is different from the compiled __BUILD_ID__
+          if (
+            data &&
+            data.build_id &&
+            typeof __BUILD_ID__ !== "undefined" &&
+            data.build_id !== __BUILD_ID__
+          ) {
+            console.log(`[Version Management] New build detected: ${data.build_id} (current: ${__BUILD_ID__})`);
+
+            // Show alert toast with a reload action using sonner
+            toast.warning("New version available!", {
+              description: "Please reload the app to get the latest updates.",
+              action: {
+                label: "Reload",
+                onClick: () => window.location.reload(true)
+              },
+              duration: Infinity, // Keep it visible until reloaded
+            });
+
+            // Stop polling once we know there's a new version
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[Version Management] Error checking version:", err);
+      }
+
+      // Schedule next check in 15 minutes
+      checkTimeout = setTimeout(checkVersion, 15 * 60 * 1000);
+    };
+
+    // Trigger check when user returns to the tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkVersion();
+      }
+    };
+
+    // Run first check after a short delay
+    const initialDelay = setTimeout(checkVersion, 10000);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearTimeout(initialDelay);
+      clearTimeout(checkTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [configInitialized]);
 
   // Define the router with modern Data Router API
   const router = useMemo(
