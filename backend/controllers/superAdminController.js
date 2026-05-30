@@ -1,57 +1,75 @@
-const asyncHandler = require('express-async-handler');
-const bcrypt = require('bcryptjs');
-const User = require('../models/userModel');
-const School = require('../models/schoolModel');
-const Notification = require('../models/notificationModel');
-const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-const logger = require('../utils/logger');
+const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcryptjs");
+const User = require("../models/userModel");
+const School = require("../models/schoolModel");
+const Notification = require("../models/notificationModel");
+const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
+const logger = require("../utils/logger");
 
 // @desc    Create a new school owner (admin)
 // @route   POST /api/superadmin/create-school-owner
 // @access  Private/SuperAdmin
 const createSchoolOwner = asyncHandler(async (req, res) => {
-  const { name, email, password, schoolName, schoolAddress, schoolEmail, emailDomain } = req.body;
+  const {
+    name,
+    email,
+    password,
+    schoolName,
+    schoolAddress,
+    schoolEmail,
+    emailDomain,
+  } = req.body;
 
-  if (!name || !email || !password || !schoolName || !schoolAddress || !emailDomain) {
+  if (
+    !name ||
+    !email ||
+    !password ||
+    !schoolName ||
+    !schoolAddress ||
+    !emailDomain
+  ) {
     res.status(400);
-    throw new Error('Please provide all required fields');
+    throw new Error("Please provide all required fields");
   }
 
   // Check if domain is valid format
-  const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+  const domainRegex =
+    /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
   if (!domainRegex.test(emailDomain)) {
     res.status(400);
-    throw new Error('Please provide a valid email domain (e.g., school.com)');
+    throw new Error("Please provide a valid email domain (e.g., school.com)");
   }
 
   // Check if school with email domain already exists
   const schoolExists = await School.findOne({ emailDomain });
   if (schoolExists) {
     res.status(400);
-    throw new Error('School with this email domain already exists');
+    throw new Error("School with this email domain already exists");
   }
 
   // Check if user with email already exists
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
-    throw new Error('User with this email already exists');
+    throw new Error("User with this email already exists");
   }
 
   try {
     // CRITICAL FIX: Extract database name from email domain (schoolclustername.com -> schoolclustername)
     // This ensures users with @schoolclustername.com emails connect to the correct database
-    const domainParts = emailDomain.split('.');
-    const dbName = domainParts[0].toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const domainParts = emailDomain.split(".");
+    const dbName = domainParts[0].toLowerCase().replace(/[^a-z0-9]/g, "_");
 
-    console.log(`Creating database with name derived from domain: ${emailDomain} -> ${dbName}`);
+    console.log(
+      `Creating database with name derived from domain: ${emailDomain} -> ${dbName}`,
+    );
 
     // Create database configuration using the domain name as the database name
     const dbConfig = {
       // Use the domain prefix as the database name
-      dbName: dbName
+      dbName: dbName,
     };
 
     // Create school first
@@ -73,7 +91,7 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: 'admin', // School owner is an admin
+      role: "admin", // School owner is an admin
       schoolDomain: emailDomain,
       active: true,
       school: school._id, // Legacy field - keeping for compatibility
@@ -84,13 +102,17 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
       // In single-database architecture, we don't need to set up a separate database
       // Just log that the school and user were created successfully
       console.log(`Created school ${schoolName} with ID ${school._id}`);
-      console.log(`Created school admin user with email ${email} and schoolId ${school._id}`);
+      console.log(
+        `Created school admin user with email ${email} and schoolId ${school._id}`,
+      );
 
       // Note about the migration
-      console.log(`IMPORTANT: No additional database setup required with new single-database architecture`)
+      console.log(
+        `IMPORTANT: No additional database setup required with new single-database architecture`,
+      );
 
       res.status(201).json({
-        message: 'School owner created successfully',
+        message: "School owner created successfully",
         user: {
           _id: user.id,
           name: user.name,
@@ -107,7 +129,7 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
       // If user creation failed, delete the school to maintain consistency
       await School.findByIdAndDelete(school._id);
       res.status(400);
-      throw new Error('Invalid user data');
+      throw new Error("Invalid user data");
     }
   } catch (error) {
     res.status(400);
@@ -120,25 +142,25 @@ const createSchoolOwner = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const getSchoolOwners = asyncHandler(async (_, res) => {
   // Find all admin users with their associated schools and pack information
-  const schoolOwners = await User.find({ role: 'admin' })
-    .select('-password')
-    .populate('school', 'name address email emailDomain active');
+  const schoolOwners = await User.find({ role: "admin" })
+    .select("-password")
+    .populate("school", "name address email emailDomain active");
 
   // Get user counts for each school
   const ownersWithUserCounts = await Promise.all(
     schoolOwners.map(async (owner) => {
       const userCount = await User.countDocuments({
-        schoolId: owner.schoolId || owner.school?._id
+        schoolId: owner.schoolId || owner.school?._id,
       });
 
       return {
         ...owner.toObject(),
         userCount,
-        schoolName: owner.school?.name || 'No School',
-        packType: owner.packType || 'lite',
-        monthlyPrice: owner.monthlyPrice || 0
+        schoolName: owner.school?.name || "No School",
+        packType: owner.packType || "lite",
+        monthlyPrice: owner.monthlyPrice || 0,
       };
-    })
+    }),
   );
 
   res.status(200).json(ownersWithUserCounts);
@@ -149,12 +171,12 @@ const getSchoolOwners = asyncHandler(async (_, res) => {
 // @access  Private/SuperAdmin
 const getSchoolOwnerById = asyncHandler(async (req, res) => {
   const schoolOwner = await User.findById(req.params.id)
-    .select('-password')
-    .populate('school', 'name address email emailDomain active dbConfig');
+    .select("-password")
+    .populate("school", "name address email emailDomain active dbConfig");
 
   if (!schoolOwner) {
     res.status(404);
-    throw new Error('School owner not found');
+    throw new Error("School owner not found");
   }
 
   res.status(200).json(schoolOwner);
@@ -168,14 +190,14 @@ const updateSchoolOwnerStatus = asyncHandler(async (req, res) => {
 
   if (active === undefined) {
     res.status(400);
-    throw new Error('Please provide active status');
+    throw new Error("Please provide active status");
   }
 
   const user = await User.findById(req.params.id);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== "admin") {
     res.status(404);
-    throw new Error('School owner not found');
+    throw new Error("School owner not found");
   }
 
   // Update user active status
@@ -192,7 +214,7 @@ const updateSchoolOwnerStatus = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json({
-    message: `School owner ${active ? 'enabled' : 'disabled'} successfully`,
+    message: `School owner ${active ? "enabled" : "disabled"} successfully`,
     _id: user.id,
     name: user.name,
     active: user.active,
@@ -207,14 +229,14 @@ const updateAdminPack = asyncHandler(async (req, res) => {
 
   if (!packType || monthlyPrice === undefined) {
     res.status(400);
-    throw new Error('Please provide packType and monthlyPrice');
+    throw new Error("Please provide packType and monthlyPrice");
   }
 
   const user = await User.findById(req.params.id);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== "admin") {
     res.status(404);
-    throw new Error('Admin user not found');
+    throw new Error("Admin user not found");
   }
 
   // Update pack information
@@ -223,7 +245,7 @@ const updateAdminPack = asyncHandler(async (req, res) => {
   await user.save();
 
   res.status(200).json({
-    message: 'Pack updated successfully',
+    message: "Pack updated successfully",
     _id: user.id,
     name: user.name,
     packType: user.packType,
@@ -236,18 +258,18 @@ const updateAdminPack = asyncHandler(async (req, res) => {
 // @access  Public (but checks for existing superadmins)
 const createFirstSuperAdmin = asyncHandler(async (req, res) => {
   // Check if any superadmin already exists
-  const superAdminExists = await User.findOne({ role: 'superadmin' });
+  const superAdminExists = await User.findOne({ role: "superadmin" });
 
   if (superAdminExists) {
     res.status(400);
-    throw new Error('A superadmin account already exists');
+    throw new Error("A superadmin account already exists");
   }
 
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error('Please add all fields');
+    throw new Error("Please add all fields");
   }
 
   // Check if user exists with this email
@@ -255,7 +277,7 @@ const createFirstSuperAdmin = asyncHandler(async (req, res) => {
 
   if (userExists) {
     res.status(400);
-    throw new Error('User already exists');
+    throw new Error("User already exists");
   }
 
   // Hash password
@@ -267,7 +289,7 @@ const createFirstSuperAdmin = asyncHandler(async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    role: 'superadmin',
+    role: "superadmin",
     active: true,
   });
 
@@ -281,14 +303,14 @@ const createFirstSuperAdmin = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error('Invalid superadmin data');
+    throw new Error("Invalid superadmin data");
   }
 });
 
 // Generate JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: "30d",
   });
 };
 
@@ -302,24 +324,26 @@ const deleteSchoolOwner = asyncHandler(async (req, res) => {
 
     if (!schoolOwner) {
       res.status(404);
-      throw new Error('School owner not found');
+      throw new Error("School owner not found");
     }
 
     // Verify that the user is an admin (school owner)
-    if (schoolOwner.role !== 'admin') {
+    if (schoolOwner.role !== "admin") {
       res.status(400);
-      throw new Error('User is not a school owner');
+      throw new Error("User is not a school owner");
     }
 
     // Find the associated school
     const school = await School.findById(schoolOwner.school);
 
     if (!school) {
-      console.log('Warning: School not found for this owner, proceeding with deletion anyway');
+      console.log(
+        "Warning: School not found for this owner, proceeding with deletion anyway",
+      );
     } else {
       console.log(`Found associated school: ${school.name}`);
 
-      // We could optionally disable the school here but we'll keep it 
+      // We could optionally disable the school here but we'll keep it
       // in case there are other admins or it needs to be reassigned
       console.log(`School ${school.name} will remain in the system`);
     }
@@ -328,13 +352,13 @@ const deleteSchoolOwner = asyncHandler(async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
-      message: 'School owner deleted successfully',
-      id: req.params.id
+      message: "School owner deleted successfully",
+      id: req.params.id,
     });
   } catch (error) {
-    console.error('Error deleting school owner:', error.message);
+    console.error("Error deleting school owner:", error.message);
     res.status(500);
-    throw new Error('Failed to delete school owner: ' + error.message);
+    throw new Error("Failed to delete school owner: " + error.message);
   }
 });
 
@@ -346,20 +370,23 @@ const updateSchoolOwnerPermissions = asyncHandler(async (req, res) => {
 
   if (!permissions) {
     res.status(400);
-    throw new Error('Please provide permissions to update');
+    throw new Error("Please provide permissions to update");
   }
 
   const user = await User.findById(req.params.id);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== "admin") {
     res.status(404);
-    throw new Error('School owner not found');
+    throw new Error("School owner not found");
   }
 
-  console.log(`PERMISSIONS: Updating school owner ${user.name} (${user._id}) permissions:`, {
-    current: user.adminPermissions || 'none',
-    requested: permissions
-  });
+  console.log(
+    `PERMISSIONS: Updating school owner ${user.name} (${user._id}) permissions:`,
+    {
+      current: user.adminPermissions || "none",
+      requested: permissions,
+    },
+  );
 
   // Initialize adminPermissions if it doesn't exist
   if (!user.adminPermissions) {
@@ -371,18 +398,21 @@ const updateSchoolOwnerPermissions = asyncHandler(async (req, res) => {
       canManageDirections: true,
       canManageSubjects: true,
       canAccessReports: true,
-      canManageEvents: true
+      canManageEvents: true,
     };
   }
 
   // Update admin permissions
   user.adminPermissions = {
     ...user.adminPermissions,
-    ...permissions
+    ...permissions,
   };
 
   await user.save();
-  console.log(`PERMISSIONS: Updated school owner ${user.name} permissions:`, user.adminPermissions);
+  console.log(
+    `PERMISSIONS: Updated school owner ${user.name} permissions:`,
+    user.adminPermissions,
+  );
 
   // Update all other admin users with the same school to have matching permissions
   if (user.schoolId || user.school) {
@@ -392,15 +422,14 @@ const updateSchoolOwnerPermissions = asyncHandler(async (req, res) => {
       // Find other admin users with the same school
       const otherAdmins = await User.find({
         _id: { $ne: user._id }, // Exclude the current user
-        role: 'admin',
-        $or: [
-          { schoolId: schoolId },
-          { school: schoolId }
-        ]
+        role: "admin",
+        $or: [{ schoolId: schoolId }, { school: schoolId }],
       });
 
       if (otherAdmins.length > 0) {
-        console.log(`PERMISSIONS: Found ${otherAdmins.length} other admins to sync permissions with`);
+        console.log(
+          `PERMISSIONS: Found ${otherAdmins.length} other admins to sync permissions with`,
+        );
 
         // Update each admin's permissions
         for (const admin of otherAdmins) {
@@ -413,16 +442,22 @@ const updateSchoolOwnerPermissions = asyncHandler(async (req, res) => {
           }
 
           await admin.save();
-          console.log(`PERMISSIONS: Synced permissions for admin ${admin.name} (${admin._id})`);
+          console.log(
+            `PERMISSIONS: Synced permissions for admin ${admin.name} (${admin._id})`,
+          );
         }
       }
     } catch (error) {
-      console.error(`PERMISSIONS: Error syncing other admins' permissions:`, error.message);
+      console.error(
+        `PERMISSIONS: Error syncing other admins' permissions:`,
+        error.message,
+      );
     }
   }
 
   res.status(200).json({
-    message: 'School owner permissions updated successfully. These permissions will apply to all users in the school.',
+    message:
+      "School owner permissions updated successfully. These permissions will apply to all users in the school.",
     _id: user.id,
     name: user.name,
     adminPermissions: user.adminPermissions,
@@ -437,90 +472,107 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
 
   if (!title || !message || !recipientType) {
     res.status(400);
-    throw new Error('Please provide title, message, and recipient type');
+    throw new Error("Please provide title, message, and recipient type");
   }
 
-  console.log(`📢 SUPERADMIN NOTIFICATION: Sending notification titled "${title}" to ${recipientType}`);
+  console.log(
+    `📢 SUPERADMIN NOTIFICATION: Sending notification titled "${title}" to ${recipientType}`,
+  );
 
   try {
     let recipients = [];
 
     // Get superadmin user details for notification metadata
-    const superAdminUser = await User.findById(req.user._id).select('name email');
+    const superAdminUser = await User.findById(req.user._id).select(
+      "name email",
+    );
     if (!superAdminUser) {
       res.status(404);
-      throw new Error('SuperAdmin user not found');
+      throw new Error("SuperAdmin user not found");
     }
 
     // Filter recipients based on type
     switch (recipientType) {
-      case 'all_admins':
-        recipients = await User.find({ role: 'admin', active: true })
-          .select('_id name email schoolId school')
-          .populate('schoolId', '_id name')
-          .populate('school', '_id name');
+      case "all_admins":
+        recipients = await User.find({ role: "admin", active: true })
+          .select("_id name email schoolId school")
+          .populate("schoolId", "_id name")
+          .populate("school", "_id name");
         console.log(`📢 Found ${recipients.length} admin users to notify`);
         break;
 
-      case 'all_users':
+      case "all_users":
         recipients = await User.find({ active: true })
-          .select('_id name email role schoolId school')
-          .populate('schoolId', '_id name')
-          .populate('school', '_id name');
+          .select("_id name email role schoolId school")
+          .populate("schoolId", "_id name")
+          .populate("school", "_id name");
         console.log(`📢 Found ${recipients.length} total users to notify`);
         break;
 
-      case 'specific_school':
+      case "specific_school":
         if (!schoolId) {
           res.status(400);
-          throw new Error('Please provide schoolId for specific school notifications');
+          throw new Error(
+            "Please provide schoolId for specific school notifications",
+          );
         }
         recipients = await User.find({
           $or: [{ schoolId: schoolId }, { school: schoolId }],
-          active: true
+          active: true,
         })
-          .select('_id name email role schoolId school')
-          .populate('schoolId', '_id name')
-          .populate('school', '_id name');
-        console.log(`📢 Found ${recipients.length} users in school ${schoolId} to notify`);
+          .select("_id name email role schoolId school")
+          .populate("schoolId", "_id name")
+          .populate("school", "_id name");
+        console.log(
+          `📢 Found ${recipients.length} users in school ${schoolId} to notify`,
+        );
         break;
 
-      case 'specific_user': {
+      case "specific_user": {
         if (!userId) {
           res.status(400);
-          throw new Error('Please provide userId for specific user notifications');
+          throw new Error(
+            "Please provide userId for specific user notifications",
+          );
         }
         const specificUser = await User.findById(userId)
-          .select('_id name email role schoolId school')
-          .populate('schoolId', '_id name')
-          .populate('school', '_id name');
+          .select("_id name email role schoolId school")
+          .populate("schoolId", "_id name")
+          .populate("school", "_id name");
         if (!specificUser) {
           res.status(404);
-          throw new Error('User not found');
+          throw new Error("User not found");
         }
         recipients = [specificUser];
-        console.log(`📢 Sending notification to specific user: ${specificUser.name} (${specificUser.email})`);
+        console.log(
+          `📢 Sending notification to specific user: ${specificUser.name} (${specificUser.email})`,
+        );
         break;
       }
 
       default:
         res.status(400);
-        throw new Error('Invalid recipient type. Use: all_admins, all_users, specific_school, or specific_user');
+        throw new Error(
+          "Invalid recipient type. Use: all_admins, all_users, specific_school, or specific_user",
+        );
     }
 
     if (recipients.length === 0) {
       res.status(404);
-      throw new Error('No recipients found for the specified filter');
+      throw new Error("No recipients found for the specified filter");
     }
 
     // Create notifications for each recipient
     const notifications = [];
     for (const recipient of recipients) {
       // Determine the schoolId for this notification
-      const recipientSchoolId = recipient.schoolId?._id || recipient.school?._id;
+      const recipientSchoolId =
+        recipient.schoolId?._id || recipient.school?._id;
 
       if (!recipientSchoolId) {
-        console.warn(`⚠️ Warning: Recipient ${recipient.name} has no associated school, skipping notification`);
+        console.warn(
+          `⚠️ Warning: Recipient ${recipient.name} has no associated school, skipping notification`,
+        );
         continue;
       }
 
@@ -530,38 +582,49 @@ const sendSuperAdminNotification = asyncHandler(async (req, res) => {
         message,
         sender: req.user._id,
         senderName: superAdminUser.name,
-        senderRole: 'admin', // Use 'admin' instead of 'superadmin' as it's not in enum
+        senderRole: "admin", // Use 'admin' instead of 'superadmin' as it's not in enum
         schoolId: recipientSchoolId, // Required field
         recipients: [{ user: recipient._id }], // Correct format: array of objects with 'user' field
-        targetRole: 'all', // Default target role
+        targetRole: "all", // Default target role
         sendToAll: false,
-        status: 'sent',
+        status: "sent",
         deliveryStats: {
           totalRecipients: 1,
           delivered: 1,
-          read: 0
-        }
+          read: 0,
+        },
       };
 
-      console.log(`📢 Creating notification for ${recipient.name} in school ${recipientSchoolId}`);
-      console.log(`📢 Notification data being sent to database:`, JSON.stringify(notificationData, null, 2));
+      console.log(
+        `📢 Creating notification for ${recipient.name} in school ${recipientSchoolId}`,
+      );
+      console.log(
+        `📢 Notification data being sent to database:`,
+        JSON.stringify(notificationData, null, 2),
+      );
 
       const notification = await Notification.create(notificationData);
       notifications.push(notification);
     }
 
-    console.log(`📢 SUPERADMIN NOTIFICATION: Successfully created ${notifications.length} notifications`);
+    console.log(
+      `📢 SUPERADMIN NOTIFICATION: Successfully created ${notifications.length} notifications`,
+    );
 
     res.status(201).json({
       message: `Notification sent successfully to ${recipients.length} recipient(s)`,
       recipientCount: recipients.length,
       recipientType,
       notificationId: notifications[0]?._id, // Return first notification ID for reference
-      recipients: recipients.map(r => ({ id: r._id, name: r.name, email: r.email, role: r.role }))
+      recipients: recipients.map((r) => ({
+        id: r._id,
+        name: r.name,
+        email: r.email,
+        role: r.role,
+      })),
     });
-
   } catch (error) {
-    console.error('❌ SUPERADMIN NOTIFICATION ERROR:', error.message);
+    console.error("❌ SUPERADMIN NOTIFICATION ERROR:", error.message);
     res.status(500);
     throw new Error(`Failed to send notification: ${error.message}`);
   }
@@ -575,24 +638,25 @@ const getSchoolsForNotifications = asyncHandler(async (_, res) => {
     // Only fetch main schools (not branches) - parentCluster should be null
     const schools = await School.find({
       active: true,
-      $or: [
-        { parentCluster: null },
-        { parentCluster: { $exists: false } }
-      ]
+      $or: [{ parentCluster: null }, { parentCluster: { $exists: false } }],
     })
-      .select('_id name emailDomain isClusterSchool')
+      .select("_id name emailDomain isClusterSchool")
       .sort({ name: 1 });
 
-    console.log(`📚 SUPERADMIN: Found ${schools.length} main schools (excluding branches) for notifications`);
+    console.log(
+      `📚 SUPERADMIN: Found ${schools.length} main schools (excluding branches) for notifications`,
+    );
 
     // Log which schools are being returned for debugging
-    schools.forEach(school => {
-      console.log(`  - ${school.name} (${school.emailDomain}) - isCluster: ${school.isClusterSchool || false}`);
+    schools.forEach((school) => {
+      console.log(
+        `  - ${school.name} (${school.emailDomain}) - isCluster: ${school.isClusterSchool || false}`,
+      );
     });
 
     res.status(200).json(schools);
   } catch (error) {
-    console.error('❌ SUPERADMIN SCHOOLS ERROR:', error.message);
+    console.error("❌ SUPERADMIN SCHOOLS ERROR:", error.message);
     res.status(500);
     throw new Error(`Failed to fetch schools: ${error.message}`);
   }
@@ -605,7 +669,11 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
   try {
     const { query, role, schoolId } = req.query;
 
-    console.log(`🔍 SUPERADMIN USER SEARCH: Starting search with params:`, { query, role, schoolId });
+    console.log(`🔍 SUPERADMIN USER SEARCH: Starting search with params:`, {
+      query,
+      role,
+      schoolId,
+    });
 
     let searchFilter = { active: true };
     let andConditions = [];
@@ -614,15 +682,15 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
     if (query && query.trim()) {
       andConditions.push({
         $or: [
-          { name: { $regex: query.trim(), $options: 'i' } },
-          { email: { $regex: query.trim(), $options: 'i' } }
-        ]
+          { name: { $regex: query.trim(), $options: "i" } },
+          { email: { $regex: query.trim(), $options: "i" } },
+        ],
       });
       console.log(`  - Added text search for: "${query.trim()}"`);
     }
 
     // Filter by role if provided
-    if (role && role !== 'all') {
+    if (role && role !== "all") {
       searchFilter.role = role;
       console.log(`  - Added role filter: ${role}`);
     }
@@ -630,10 +698,7 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
     // Filter by school if provided (fixed - no longer overwrites $or)
     if (schoolId && schoolId.trim()) {
       andConditions.push({
-        $or: [
-          { schoolId: schoolId },
-          { school: schoolId }
-        ]
+        $or: [{ schoolId: schoolId }, { school: schoolId }],
       });
       console.log(`  - Added school filter: ${schoolId}`);
     }
@@ -643,23 +708,31 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
       searchFilter.$and = andConditions;
     }
 
-    console.log(`  - Final search filter:`, JSON.stringify(searchFilter, null, 2));
+    console.log(
+      `  - Final search filter:`,
+      JSON.stringify(searchFilter, null, 2),
+    );
 
     const users = await User.find(searchFilter)
-      .select('_id name email role schoolId school')
-      .populate('schoolId', 'name emailDomain')
-      .populate('school', 'name emailDomain') // Also populate legacy school field
+      .select("_id name email role schoolId school")
+      .populate("schoolId", "name emailDomain")
+      .populate("school", "name emailDomain") // Also populate legacy school field
       .sort({ name: 1 })
       .limit(50); // Limit results for performance
 
-    console.log(`🔍 SUPERADMIN USER SEARCH: Found ${users.length} users matching criteria`);
+    console.log(
+      `🔍 SUPERADMIN USER SEARCH: Found ${users.length} users matching criteria`,
+    );
 
     // Log sample results for debugging
     if (users.length > 0) {
       console.log(`  - Sample results:`);
-      users.slice(0, 3).forEach(user => {
-        const schoolName = user.schoolId?.name || user.school?.name || 'No school';
-        console.log(`    * ${user.name} (${user.email}) - ${user.role} - ${schoolName}`);
+      users.slice(0, 3).forEach((user) => {
+        const schoolName =
+          user.schoolId?.name || user.school?.name || "No school";
+        console.log(
+          `    * ${user.name} (${user.email}) - ${user.role} - ${schoolName}`,
+        );
       });
     } else {
       console.log(`  - No users found with current filters`);
@@ -667,34 +740,28 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
 
     res.status(200).json(users);
   } catch (error) {
-    console.error('❌ SUPERADMIN USER SEARCH ERROR:', error.message);
-    console.error('❌ Full error:', error);
+    console.error("❌ SUPERADMIN USER SEARCH ERROR:", error.message);
+    console.error("❌ Full error:", error);
     res.status(500);
     throw new Error(`Failed to search users: ${error.message}`);
   }
 });
 
-// REMOVED: Legacy school feature permission functions
-// - updateSchoolFeaturePermissionsFromAdmin: Helper function that synced admin permissions with school.featurePermissions
-// - updateSchoolFeaturePermissions: API endpoint that managed school.featurePermissions
-// The broken school function permission toggle system has been completely removed.
-// Features are now controlled by a new superadmin-only toggle system that will be implemented separately.
-
 // @desc    Get system logs for superadmin
 // @route   GET /api/superadmin/logs
 // @access  Private (SuperAdmin only)
 const getSystemLogs = asyncHandler(async (req, res) => {
-  const { level = 'all', category = 'all' } = req.query;
+  const { level = "all", category = "all" } = req.query;
 
   try {
-    const logDir = path.resolve(process.cwd(), 'logs');
+    const logDir = path.resolve(process.cwd(), "logs");
     const logFiles = [];
 
     // Get available log files
     if (fs.existsSync(logDir)) {
       const files = fs.readdirSync(logDir);
-      files.forEach(file => {
-        if (file.endsWith('.log')) {
+      files.forEach((file) => {
+        if (file.endsWith(".log")) {
           const safeFileName = path.basename(file);
           const filePath = path.resolve(logDir, safeFileName);
 
@@ -703,7 +770,7 @@ const getSystemLogs = asyncHandler(async (req, res) => {
             logFiles.push({
               name: safeFileName,
               path: filePath,
-              size: fs.statSync(filePath).size
+              size: fs.statSync(filePath).size,
             });
           }
         }
@@ -717,8 +784,8 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 
     for (const file of logFiles) {
       try {
-        const content = fs.readFileSync(file.path, 'utf8');
-        const lines = content.split('\n').filter(line => line.trim());
+        const content = fs.readFileSync(file.path, "utf8");
+        const lines = content.split("\n").filter((line) => line.trim());
 
         // Parse and format log entries
         const parsedLines = [];
@@ -728,12 +795,17 @@ const getSystemLogs = asyncHandler(async (req, res) => {
           const line = lines[i];
           try {
             // Parse log format: [LEVEL] timestamp [CATEGORY]: message
-            const match = line.match(/^\[(\w+)\]\s+([^\s]+)\s+\[([^\]]+)\]:\s+(.+)$/);
+            const match = line.match(
+              /^\[(\w+)\]\s+([^\s]+)\s+\[([^\]]+)\]:\s+(.+)$/,
+            );
 
             if (match) {
               // We found a new log entry header. Push the previous one if it exists.
               if (currentLog) {
-                if (!currentLog.parsedTimestamp || currentLog.parsedTimestamp >= oneDayAgo) {
+                if (
+                  !currentLog.parsedTimestamp ||
+                  currentLog.parsedTimestamp >= oneDayAgo
+                ) {
                   parsedLines.push(currentLog);
                 }
               }
@@ -746,26 +818,31 @@ const getSystemLogs = asyncHandler(async (req, res) => {
                 category: match[3].trim(),
                 message: match[4],
                 source: file.name,
-                parsedTimestamp: timestamp
+                parsedTimestamp: timestamp,
               };
             } else {
               // This line doesn't match the header format, it's likely part of a multiline log.
               if (currentLog) {
                 // Append to the existing log's message
-                currentLog.message += '\n' + line;
+                currentLog.message += "\n" + line;
               } else {
                 // If there's no current log (e.g., at the very start of the file), try to parse it as raw
                 const rawLine = { raw: line, source: file.name, message: line };
 
                 // Try to find ISO timestamp in the line
-                const timestampMatch = line.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/);
+                const timestampMatch = line.match(
+                  /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/,
+                );
                 if (timestampMatch) {
                   const timestamp = new Date(timestampMatch[1]);
                   rawLine.timestamp = timestampMatch[1];
                   rawLine.parsedTimestamp = timestamp;
                 }
 
-                if (!rawLine.parsedTimestamp || rawLine.parsedTimestamp >= oneDayAgo) {
+                if (
+                  !rawLine.parsedTimestamp ||
+                  rawLine.parsedTimestamp >= oneDayAgo
+                ) {
                   parsedLines.push(rawLine);
                 }
               }
@@ -773,7 +850,7 @@ const getSystemLogs = asyncHandler(async (req, res) => {
           } catch (err) {
             // Fallback for line error
             if (currentLog) {
-              currentLog.message += '\n' + line;
+              currentLog.message += "\n" + line;
             } else {
               parsedLines.push({ raw: line, source: file.name, message: line });
             }
@@ -782,14 +859,21 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 
         // Push the last log if it exists after the loop finishes
         if (currentLog) {
-          if (!currentLog.parsedTimestamp || currentLog.parsedTimestamp >= oneDayAgo) {
+          if (
+            !currentLog.parsedTimestamp ||
+            currentLog.parsedTimestamp >= oneDayAgo
+          ) {
             parsedLines.push(currentLog);
           }
         }
 
         logs.push(...parsedLines);
       } catch (err) {
-        logger.error('SUPERADMIN', `Failed to read log file: ${file.name}`, err);
+        logger.error(
+          "SUPERADMIN",
+          `Failed to read log file: ${file.name}`,
+          err,
+        );
       }
     }
 
@@ -802,11 +886,13 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 
     // Filter by level and category if specified
     let filteredLogs = logs;
-    if (level !== 'all') {
-      filteredLogs = filteredLogs.filter(log => log.level === level.toUpperCase());
+    if (level !== "all") {
+      filteredLogs = filteredLogs.filter(
+        (log) => log.level === level.toUpperCase(),
+      );
     }
-    if (category !== 'all') {
-      filteredLogs = filteredLogs.filter(log => log.category === category);
+    if (category !== "all") {
+      filteredLogs = filteredLogs.filter((log) => log.category === category);
     }
 
     res.json({
@@ -816,15 +902,16 @@ const getSystemLogs = asyncHandler(async (req, res) => {
         totalFiles: logFiles.length,
         totalLines: logs.length,
         filteredLines: filteredLogs.length,
-        availableLevels: ['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
-        availableCategories: [...new Set(logs.map(log => log.category?.trim()).filter(Boolean))]
-      }
+        availableLevels: ["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
+        availableCategories: [
+          ...new Set(logs.map((log) => log.category?.trim()).filter(Boolean)),
+        ],
+      },
     });
-
   } catch (error) {
-    logger.error('SUPERADMIN', 'Failed to retrieve system logs', error);
+    logger.error("SUPERADMIN", "Failed to retrieve system logs", error);
     res.status(500);
-    throw new Error('Failed to retrieve system logs');
+    throw new Error("Failed to retrieve system logs");
   }
 });
 
@@ -832,28 +919,30 @@ const getSystemLogs = asyncHandler(async (req, res) => {
 // @route   GET /api/superadmin/pm2-status
 // @access  Private (SuperAdmin only)
 const getPM2Status = asyncHandler(async (_, res) => {
-  const { exec } = require('child_process');
-  const util = require('util');
+  const { exec } = require("child_process");
+  const util = require("util");
   const execAsync = util.promisify(exec);
 
   try {
     // Get PM2 process list
-    const { stdout: pm2List } = await execAsync('pm2 list --json');
+    const { stdout: pm2List } = await execAsync("pm2 list --json");
     const processes = JSON.parse(pm2List);
 
     // Get PM2 logs for each process
     const processesWithLogs = [];
     for (const process of processes) {
       try {
-        const { stdout: logs } = await execAsync(`pm2 logs ${process.name} --lines 50 --nostream`);
+        const { stdout: logs } = await execAsync(
+          `pm2 logs ${process.name} --lines 50 --nostream`,
+        );
         processesWithLogs.push({
           ...process,
-          logs: logs.split('\n').filter(line => line.trim())
+          logs: logs.split("\n").filter((line) => line.trim()),
         });
       } catch (err) {
         processesWithLogs.push({
           ...process,
-          logs: [`Error reading logs: ${err.message}`]
+          logs: [`Error reading logs: ${err.message}`],
         });
       }
     }
@@ -862,14 +951,13 @@ const getPM2Status = asyncHandler(async (_, res) => {
       success: true,
       data: {
         processes: processesWithLogs,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
-    logger.error('SUPERADMIN', 'Failed to retrieve PM2 status', error);
+    logger.error("SUPERADMIN", "Failed to retrieve PM2 status", error);
     res.status(500);
-    throw new Error('Failed to retrieve PM2 status');
+    throw new Error("Failed to retrieve PM2 status");
   }
 });
 

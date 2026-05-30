@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   createSchoolOwner,
@@ -14,38 +14,31 @@ const {
   getPM2Status,
   deleteSchoolOwner,
   updateSchoolOwnerPermissions,
-} = require('../controllers/superAdminController');
-const { protect, superadmin } = require('../middleware/authMiddleware');
+} = require("../controllers/superAdminController");
+const { protect, superadmin } = require("../middleware/authMiddleware");
 
 // Public route for creating the first superadmin (only works if no superadmin exists)
-router.post('/create-first-superadmin', createFirstSuperAdmin);
+router.post("/create-first-superadmin", createFirstSuperAdmin);
 
 // Protected routes
 router.use(protect);
 router.use(superadmin);
 
-router.post('/create-school-owner', createSchoolOwner);
-router.get('/school-owners', getSchoolOwners);
-router.get('/school-owners/:id', getSchoolOwnerById);
-router.put('/school-owners/:id/status', updateSchoolOwnerStatus);
-router.put('/school-owners/:id/pack', updateAdminPack);
-router.delete('/school-owners/:id', deleteSchoolOwner);
-router.put('/school-owner/:id/permissions', updateSchoolOwnerPermissions);
+router.post("/create-school-owner", createSchoolOwner);
+router.get("/school-owners", getSchoolOwners);
+router.get("/school-owners/:id", getSchoolOwnerById);
+router.put("/school-owners/:id/status", updateSchoolOwnerStatus);
+router.put("/school-owners/:id/pack", updateAdminPack);
+router.delete("/school-owners/:id", deleteSchoolOwner);
+router.put("/school-owner/:id/permissions", updateSchoolOwnerPermissions);
 
 // Superadmin notification routes
-router.post('/notifications', sendSuperAdminNotification);
-router.get('/schools', getSchoolsForNotifications);
-router.get('/users/search', searchUsersForNotifications);
+router.post("/notifications", sendSuperAdminNotification);
+router.get("/schools", getSchoolsForNotifications);
+router.get("/users/search", searchUsersForNotifications);
 
 // System logs routes
-router.get('/logs', getSystemLogs);
-router.get('/pm2-status', getPM2Status);
-
-// REMOVED: Legacy school function permission toggle routes
-// - PUT /schools/:id/features: updateSchoolFeaturePermissions endpoint
-// - POST /migrate/school-features: Legacy migration for school.featurePermissions
-// - GET /schools/features: Endpoint that returned school.featurePermissions
-// The broken school function permission toggle system has been completely removed.
-// Features will be controlled by a new superadmin-only toggle system to be implemented separately.
+router.get("/logs", getSystemLogs);
+router.get("/pm2-status", getPM2Status);
 
 module.exports = router;
