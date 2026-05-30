@@ -47,3 +47,7 @@ yarn-error.log*
 
 # Large pack files that exceed GitHub limits
 *.pack
+
+# Local environment and audit files
+backend/.env
+.commitshow/

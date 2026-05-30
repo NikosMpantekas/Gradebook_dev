@@ -81,6 +81,11 @@ const getStudentPayments = asyncHandler(async (req, res) => {
   };
 
   if (year) {
+    // Validate year is a 4-digit number to prevent regex injection / ReDoS
+    if (!/^\d{4}$/.test(year)) {
+      res.status(400);
+      throw new Error('Invalid year format. Must be a 4-digit number.');
+    }
     query.paymentPeriod = { $regex: `^${year}-` };
   }
 

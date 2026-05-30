@@ -64,7 +64,29 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 const app = express();
 
 // Set security headers
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year in seconds
+    includeSubDomains: true,
+    preload: true,
+  },
+  permittedCrossDomainPolicies: {
+    permittedPolicies: 'none',
+  },
+}));
 
 // Rate limiting for sensitive authentication endpoints
 const authLimiter = rateLimit({
@@ -78,6 +100,16 @@ const authLimiter = rateLimit({
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/forgot-password', authLimiter);
 app.use('/api/users/change-password', authLimiter);
+
+// Global rate limiting for all API endpoints to protect against DoS
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 requests per windowMs
+  message: { message: 'Too many requests from this IP. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', globalLimiter);
 
 // Configure Express to trust proxy headers to fix rate-limit warnings
 // This is required when running behind reverse proxies (Cloudflare, Netlify, etc.)
@@ -192,8 +224,8 @@ app.use((req, res, next) => {
   }
   globalCors(req, res, next);
 });
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '16kb' }));
+app.use(express.urlencoded({ extended: false, limit: '16kb' }));
 
 // Add request tracking to help debug duplicate requests
 app.use((req, res, next) => {
@@ -871,7 +903,7 @@ try {
         cert: fs.readFileSync(certPath),
         minVersion: 'TLSv1.2',
         ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA',
-        secureOptions: require('constants').SSL_OP_NO_SSLv2 | require('constants').SSL_OP_NO_SSLv3,
+        secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 | require('crypto').constants.SSL_OP_NO_SSLv3,
         honorCipherOrder: true
       };
 

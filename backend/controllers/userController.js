@@ -184,43 +184,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
   console.log(`User registration request for ${email} with domain ${emailDomain}`);
 
-  // Special case for superadmin registration - always in main database
+  // Block registration of superadmin accounts via public registration
   if (role === 'superadmin') {
-    console.log('Superadmin registration detected - using main database');
-
-    // Check if user exists in main database
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      res.status(400);
-      throw new Error('User already exists');
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create superadmin in main database
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: 'superadmin',
-    });
-
-    if (user) {
-      res.status(201).json({
-        _id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(400);
-      throw new Error('Invalid user data');
-    }
-
-    return;
+    res.status(400);
+    throw new Error('Self-registration as superadmin is not allowed');
   }
 
   // For regular users, find the school based on email domain
@@ -1066,19 +1033,40 @@ const updateUser = asyncHandler(async (req, res) => {
   console.log('Update data:', req.body);
 
   try {
-    // Find the user by ID
-    const user = await User.findById(req.params.id);
+    // Find the user with multi-tenancy filtering for regular admins
+    // Superadmins can update any user
+    const query = { _id: req.params.id };
+
+    if (req.user.role !== 'superadmin') {
+      query.schoolId = req.user.schoolId;
+    }
+
+    const user = await User.findOne(query);
 
     if (!user) {
-      console.error(`User with ID ${req.params.id} not found`);
+      console.error(`User with ID ${req.params.id} not found under active scope`);
       res.status(404);
       throw new Error('User not found');
+    }
+
+    // Prevent updating of superadmin users by non-superadmins
+    if (user.role === 'superadmin' && req.user.role !== 'superadmin') {
+      console.error(`Non-superadmin ${req.user.name} attempted to update superadmin user`);
+      res.status(403);
+      throw new Error('Cannot update superadmin users');
     }
 
     // Update user fields if provided in the request
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
-    if (req.body.role) user.role = req.body.role;
+    if (req.body.role) {
+      // Prevent non-superadmins from assigning or changing to/from the superadmin role
+      if (req.body.role === 'superadmin' && req.user.role !== 'superadmin') {
+        res.status(403);
+        throw new Error('Not authorized to assign the superadmin role');
+      }
+      user.role = req.body.role;
+    }
     if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
     if (req.body.mobilePhone !== undefined) user.mobilePhone = req.body.mobilePhone;
     if (req.body.personalEmail !== undefined) user.personalEmail = req.body.personalEmail;
