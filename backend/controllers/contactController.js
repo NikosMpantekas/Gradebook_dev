@@ -225,6 +225,14 @@ const updateContactMessage = asyncHandler(async (req, res) => {
       throw new Error('Message not found');
     }
 
+    // Apply school filtering if user is not superadmin
+    if (req.user.role !== 'superadmin' && req.user.schoolId) {
+      if (existingMessage.schoolId && existingMessage.schoolId.toString() !== req.user.schoolId.toString()) {
+        res.status(403);
+        throw new Error('Not authorized to update this message');
+      }
+    }
+
     // Build update object with guaranteed defaults
     const updateData = {
       // Set defaults in case fields are missing

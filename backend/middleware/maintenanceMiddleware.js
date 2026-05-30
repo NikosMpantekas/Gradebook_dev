@@ -43,8 +43,12 @@ const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
       error: "Service temporarily unavailable"
     });
   } catch (error) {
-    console.error("[MAINTENANCE] Error checking maintenance mode:", error);
-    next();
+    console.error("[MAINTENANCE] Error checking maintenance status - failing closed:", error);
+    res.status(503).json({
+      success: false,
+      message: "Unable to verify system status",
+      error: "Service temporarily unavailable"
+    });
   }
 });
 
