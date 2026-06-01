@@ -102,14 +102,14 @@ app.use('/api/users/forgot-password', authLimiter);
 app.use('/api/users/change-password', authLimiter);
 
 // Global rate limiting for all API endpoints to protect against DoS
-const globalLimiter = rateLimit({
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // Limit each IP to 200 requests per windowMs
   message: { message: 'Too many requests from this IP. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/', globalLimiter);
+app.use('/api', limiter);
 
 // Configure Express to trust proxy headers to fix rate-limit warnings
 // This is required when running behind reverse proxies (Cloudflare, Netlify, etc.)
