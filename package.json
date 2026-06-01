@@ -1,6 +1,7 @@
 {
   "name": "gradebook",
   "version": "1.0.0",
+  "homepage": "https://gradebookbeta.netlify.app",
   "description": "A Progressive Web App for managing student grades and notifications",
   "main": "server.js",
   "scripts": {
