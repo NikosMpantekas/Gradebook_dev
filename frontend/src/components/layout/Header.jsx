@@ -328,10 +328,9 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     <TooltipProvider>
       <header
         className={cn(
-          "fixed top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-100", // Enhanced frosted glass
-          "lg:ml-64 lg:w-[calc(100%-256px)]", // Fixed: 256px = 64 * 4 (lg:w-64 from sidebar)
-          "pt-[env(safe-area-inset-top)]", // iOS notch safe area
-          "shadow-sm", // Subtle shadow
+          "fixed top-0 z-40 w-full border-b backdrop-blur-xl transition-all duration-100",
+          "pt-[env(safe-area-inset-top)]",
+          "shadow-sm",
           darkMode
             ? "border-[#2a3441]/30"
             : "border-border/30"
@@ -354,22 +353,31 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
             </Button>
           )}
 
-          {/* Logo */}
+          {/* Logo + Brand */}
           <div className="flex flex-1 items-center">
             <RouterLink
               to="/"
               className={cn(
-                "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
-                "no-underline text-foreground hover:text-primary transition-colors",
-                "relative inline-block"
+                "flex items-center gap-2",
+                "no-underline text-foreground hover:text-primary transition-colors"
               )}
             >
-              GradeBook
-              {isBetaVersion && (
-                <span className="relative -bottom-1 -right-0.5 text-primary text-xs font-light italic leading-none">
-                  β
-                </span>
-              )}
+              <img
+                src="/logo-transparent.png"
+                alt="GradeBook Logo"
+                className="h-8 w-8 object-contain"
+              />
+              <span className={cn(
+                "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
+                "relative inline-block"
+              )}>
+                GradeBook
+                {isBetaVersion && (
+                  <span className="relative -bottom-1 -right-0.5 text-primary text-xs font-light italic leading-none">
+                    β
+                  </span>
+                )}
+              </span>
             </RouterLink>
           </div>
 
