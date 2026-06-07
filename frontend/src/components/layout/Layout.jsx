@@ -130,7 +130,7 @@ const Layout = () => {
   return (
     <div
       className={cn(
-        "flex min-h-screen layout-stable transition-all duration-100",
+        "flex min-h-screen layout-stable transition-colors duration-150",
         "text-foreground"
       )}
       style={{

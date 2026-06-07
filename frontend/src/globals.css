@@ -830,10 +830,14 @@ html.font-size-xl header>div {
 /* Sidebar width stays at 256px */
 @media (min-width: 1024px) {
 
+  .w-64.fixed,
+  .w-64[class*="lg\:flex"],
   html.font-size-sm .w-64.fixed,
+  html.font-size-md .w-64.fixed,
   html.font-size-lg .w-64.fixed,
   html.font-size-xl .w-64.fixed,
   html.font-size-sm .w-64[class*="lg\:flex"],
+  html.font-size-md .w-64[class*="lg\:flex"],
   html.font-size-lg .w-64[class*="lg\:flex"],
   html.font-size-xl .w-64[class*="lg\:flex"] {
     width: 256px !important;
@@ -841,13 +845,17 @@ html.font-size-xl header>div {
   }
 
   /* Header + main content: sidebar offset */
+  [class*="lg\:ml-64"],
   html.font-size-sm [class*="lg\:ml-64"],
+  html.font-size-md [class*="lg\:ml-64"],
   html.font-size-lg [class*="lg\:ml-64"],
   html.font-size-xl [class*="lg\:ml-64"] {
     margin-left: 256px !important;
   }
 
+  header[class*="lg\:ml-64"],
   html.font-size-sm header[class*="lg\:ml-64"],
+  html.font-size-md header[class*="lg\:ml-64"],
   html.font-size-lg header[class*="lg\:ml-64"],
   html.font-size-xl header[class*="lg\:ml-64"] {
     width: calc(100% - 256px) !important;
@@ -855,7 +863,9 @@ html.font-size-xl header>div {
 }
 
 /* Content top margin stays at 56px / 64px (header height) */
+[class*="mt-14"],
 html.font-size-sm [class*="mt-14"],
+html.font-size-md [class*="mt-14"],
 html.font-size-lg [class*="mt-14"],
 html.font-size-xl [class*="mt-14"] {
   margin-top: 56px !important;
@@ -863,7 +873,9 @@ html.font-size-xl [class*="mt-14"] {
 
 @media (min-width: 640px) {
 
+  [class*="sm\:mt-16"],
   html.font-size-sm [class*="sm\:mt-16"],
+  html.font-size-md [class*="sm\:mt-16"],
   html.font-size-lg [class*="sm\:mt-16"],
   html.font-size-xl [class*="sm\:mt-16"] {
     margin-top: 64px !important;
