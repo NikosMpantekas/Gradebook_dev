@@ -328,7 +328,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     <TooltipProvider>
       <header
         className={cn(
-          "fixed top-0 z-40 w-full border-b backdrop-blur-xl transition-all duration-100",
+          "fixed top-0 z-40 w-full border-b backdrop-blur-xl transition-colors duration-150",
           "pt-[env(safe-area-inset-top)]",
           "shadow-sm",
           darkMode
@@ -339,7 +339,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
           backgroundColor: typeof themedHeaderBg === 'string' && themedHeaderBg.startsWith('rgba') ? themedHeaderBg : undefined
         }}
       >
-        <div className="flex h-14 items-center px-4 w-full">
+        <div className="flex h-14 items-center px-4 lg:pl-0 lg:pr-6 w-full">
           {/* Sidebar toggle button - shown on mobile, tablet, and small desktop screens */}
           {isMobile && (
             <Button
@@ -353,20 +353,15 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
             </Button>
           )}
 
-          {/* Logo + Brand */}
-          <div className="flex flex-1 items-center">
+          {/* Brand - Centered relative to the sidebar width (256px) on desktop */}
+          <div className="flex flex-1 lg:flex-none lg:w-64 items-center justify-start lg:justify-center">
             <RouterLink
               to="/"
               className={cn(
-                "flex items-center gap-2",
+                "flex items-center justify-start lg:justify-center",
                 "no-underline text-foreground hover:text-primary transition-colors"
               )}
             >
-              <img
-                src="/logo-transparent.png"
-                alt="GradeBook Logo"
-                className="h-8 w-8 object-contain"
-              />
               <span className={cn(
                 "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
                 "relative inline-block"
@@ -380,6 +375,9 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
               </span>
             </RouterLink>
           </div>
+
+          {/* Spacer to push user actions to the right on desktop */}
+          <div className="hidden lg:block flex-1" />
 
           {/* User actions */}
           {user && (

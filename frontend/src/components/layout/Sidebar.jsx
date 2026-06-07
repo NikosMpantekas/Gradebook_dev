@@ -361,7 +361,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
   // Sidebar content
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       {/* Top breathing room */}
       <div className="pt-6" />
 
@@ -536,7 +536,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Desktop Sidebar - Below header */}
       <aside
-        className="hidden lg:flex fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
+        className="hidden lg:flex fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-colors duration-150 border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
         style={{
           backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
         }}

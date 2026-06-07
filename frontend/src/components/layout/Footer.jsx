@@ -100,7 +100,7 @@ const Footer = () => {
   return (
     <footer
       className={cn(
-        "w-full border-t border-border transition-all duration-200",
+        "w-full border-t border-border transition-colors duration-200",
         !themedFooterBg && "bg-background"
       )}
       style={{
