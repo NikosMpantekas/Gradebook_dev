@@ -749,8 +749,7 @@
     "logout": "Logout",
     "logoutConfirmTitle": "Confirm Logout",
     "logoutConfirmDescription": "Are you sure you want to log out? ",
-    "logoutConfirmText": "You will be redirected to the login page.",
-    "switchAccount": "Switch account"
+    "logoutConfirmText": "You will be redirected to the login page."
   },
   "teacher": {
     "accessDenied": "Access denied. Teacher privileges required.",

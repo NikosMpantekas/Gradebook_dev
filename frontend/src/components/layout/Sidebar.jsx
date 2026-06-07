@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Bell,
-  ChevronsUpDown,
+  User,
   Users,
   Building,
   BarChart3,
@@ -47,11 +47,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { isFeatureEnabled, loading: permissionsLoading } = useFeatureToggles();
   const { isBetaRoute } = useBeta();
   const { getCurrentThemeData } = useTheme();
-
-  // Derive school name from user object
-  const schoolName = user?.schoolName
-    || (user?.school && typeof user.school === 'object' ? user.school.name : '')
-    || '';
 
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [, setLogoutAnimating] = useState(false);
@@ -362,8 +357,30 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   // Sidebar content
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Top breathing room */}
-      <div className="pt-6" />
+      {/* User Profile Section */}
+      <div className="p-4">
+        <div className="flex flex-col items-center space-y-3">
+          <Avatar className="h-16 w-16 hover:scale-105 transition-transform duration-200 bg-primary/10">
+            <AvatarFallback className="text-lg font-semibold bg-primary/20 text-primary">
+              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-center">
+            <h3 className="font-semibold text-sm text-foreground">{user?.name || 'User'}</h3>
+            <p className="text-xs text-primary/80 capitalize font-medium">
+              {user?.role === 'admin' ? t('sidebar.administrator') : user?.role === 'teacher' ? t('sidebar.teacher') : user?.role === 'student' ? t('sidebar.student') : user?.role === 'parent' ? t('sidebar.parent') : t('sidebar.user')}
+            </p>
+            <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+              {user?.email}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Divider */}
+      <div className="px-4 py-2">
+        <div className="h-px bg-border/50"></div>
+      </div>
 
       {/* Navigation Menu */}
       <ScrollArea className="flex-1 px-3 py-4 space-y-1">
@@ -429,43 +446,27 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         <div className="h-px bg-border/50"></div>
       </div>
 
-      {/* Profile Switcher + Logout */}
+      {/* Profile and Logout Section */}
       <div className="p-3 space-y-2">
-        {/* Profile Switcher */}
-        <div className={cn(
-          "flex items-center rounded-lg transition-colors duration-150 ease-out",
-          isPathSelected('/app/profile')
-            ? "bg-primary/10"
-            : "hover:bg-primary/5"
-        )}>
-          <button
-            onClick={() => handleNavigation('/app/profile')}
-            className="flex items-center gap-3 flex-1 min-w-0 py-2.5 px-3 rounded-l-lg cursor-pointer bg-transparent border-0 text-left"
-          >
-            <Avatar className="h-8 w-8 shrink-0 bg-primary/10">
-              <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate text-foreground">
-                {user?.name || 'User'}
-              </span>
-              {schoolName && (
-                <span className="text-xs text-muted-foreground truncate">
-                  {schoolName}
-                </span>
-              )}
-            </div>
-          </button>
-          <button
-            className="p-2 rounded-r-lg shrink-0 cursor-pointer bg-transparent border-0 text-muted-foreground hover:text-foreground transition-colors duration-150"
-            aria-label={t('sidebar.switchAccount')}
-            tabIndex={0}
-          >
-            <ChevronsUpDown className="h-4 w-4" />
-          </button>
-        </div>
+        {/* Profile Button - Always available */}
+        <Button
+          variant={isPathSelected('/app/profile') ? "secondary" : "ghost"}
+          className={cn(
+            "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden",
+            "transition-colors duration-150 ease-out",
+            isPathSelected('/app/profile')
+              ? "bg-primary/15 text-primary"
+              : "hover:bg-primary/5 hover:text-foreground"
+          )}
+          onClick={() => handleNavigation('/app/profile')}
+        >
+          <User className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+            isPathSelected('/app/profile') ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
+          <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('navigation.profile')}</span>
+          {isPathSelected('/app/profile') && (
+            <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
+          )}
+        </Button>
 
         {/* Logout Button */}
         <Button
@@ -534,9 +535,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         </SheetContent>
       </Sheet>
 
-      {/* Desktop Sidebar - Below header */}
+      {/* Desktop Sidebar - No animations */}
       <aside
-        className="hidden lg:flex fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
+        className="hidden lg:flex fixed left-0 top-0 z-50 h-screen w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-all duration-100 border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
         style={{
           backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
         }}
