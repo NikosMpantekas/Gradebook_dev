@@ -642,7 +642,8 @@ app.use(
   checkMaintenanceMode,
   require("./routes/schoolPermissionsRoutes")
 ); // School permissions management
-app.use("/api/branches", protect, checkMaintenanceMode, require("./routes/branchRoutes")); // School branch name lookups
+app.use("/api/branches", protect, checkMaintenanceMode, require("./routes/schoolRoutes")); // School branch name lookups
+
 app.use("/api/contact", checkMaintenanceMode, require("./routes/contactRoutes")); // Contact messages for admin/superadmin
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes")); // Push notification subscriptions (includes VAPID public key)
 app.use("/api/superadmin", require("./routes/superAdminRoutes")); // Superadmin routes bypass schoolId filtering

@@ -1,5 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const School = require("../models/schoolModel");
+const mongoose = require("mongoose");
+
 
 // @desc    Create a new school branch
 // @route   POST /api/schools
@@ -246,10 +248,54 @@ const deleteSchool = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "School branch removed" });
 });
 
+// @desc    Get multiple school branches/schools by IDs (consolidated batch route)
+// @route   POST /api/schools/batch or /api/branches/batch
+// @access  Private
+const getSchoolsByIds = asyncHandler(async (req, res) => {
+  try {
+    const { branchIds, schoolIds } = req.body;
+    const ids = branchIds || schoolIds;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No IDs provided" });
+    }
+    
+    const validIds = ids.filter(id => mongoose.Types.ObjectId.isValid(id));
+    
+    if (validIds.length === 0) {
+      return res.json({ branches: [], schools: [] });
+    }
+    
+    const schools = await School.find({
+      _id: { $in: validIds }
+    }).select("_id name");
+    
+    const branchMap = {};
+    schools.forEach(school => {
+      branchMap[school._id.toString()] = {
+        _id: school._id,
+        name: school.name
+      };
+    });
+    
+    // Return both formats for compatibility
+    res.json({
+      branches: schools.map(s => ({ _id: s._id, name: s.name })),
+      schools: schools.map(s => ({ _id: s._id, name: s.name })),
+      branchMap,
+      schoolMap: branchMap
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = {
   createSchool,
   getSchools,
   getSchoolById,
   updateSchool,
   deleteSchool,
+  getSchoolsByIds,
 };
+

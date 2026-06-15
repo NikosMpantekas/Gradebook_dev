@@ -6,12 +6,15 @@ const {
   getSchoolById,
   updateSchool,
   deleteSchool,
+  getSchoolsByIds,
 } = require("../controllers/schoolController");
 const { protect, canManageSchools } = require("../middleware/authMiddleware");
 
 // Protected routes for school branches
 router.get("/", protect, getSchools); // Requires authentication to view schools
+router.post("/batch", protect, getSchoolsByIds); // Batch lookup for schools/branches
 router.get("/:id", protect, getSchoolById); // Requires authentication to view school details
+
 
 // Admin routes (with secretary support where appropriate)
 router.post("/", protect, canManageSchools, createSchool); // Only admins with school management permission can create schools
