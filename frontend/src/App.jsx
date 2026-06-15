@@ -142,12 +142,11 @@ const RootWrapper = () => {
       path === '/print-grades' ||
       path === '/student-stats/print';
 
-    if (isPublic && !authUser?.token) {
+    if (isPublic) {
       applyPublicPageCSS(darkMode);
     } else if (authUser?.token) {
       applyTheme(currentTheme, darkMode);
     }
-
   }, [location.pathname, darkMode, authUser, currentTheme, applyPublicPageCSS, applyTheme]);
 
   return (
