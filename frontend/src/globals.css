@@ -84,8 +84,9 @@
     --chart-5: 270 70% 60%;
   }
 
-  .dark {
+  :root.dark, html.dark {
     --background: 220 13% 11%;
+
     --foreground: 0 0% 100%;
 
     --card: 220 13% 18%;
