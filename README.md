@@ -1,4 +1,5 @@
 # GradeBook - Progressive Web App - Beta (Dev) Channel
+[![Netlify Status](https://api.netlify.com/api/v1/badges/0e7aa32e-58a7-4bd1-83ce-8cf88e23c4b0/deploy-status)](https://app.netlify.com/projects/gradebookbeta/deploys)
 
 A comprehensive Progressive Web App (PWA) for managing student grades and notifications across multiple platforms.
 
