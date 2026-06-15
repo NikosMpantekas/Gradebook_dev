@@ -1,5 +1,14 @@
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
+import {
+  saveAccount,
+  setActiveAccount,
+  getAccountById,
+  removeAccount,
+  getSavedAccounts,
+  clearAllAccounts,
+  updateAccountTokens
+} from '../../services/accountStore';
 
 // API base URL
 console.log('[authService] Using API_URL from environment:', API_URL);
@@ -21,13 +30,20 @@ const register = async (userData) => {
   const response = await axios.post(url, userData);
 
   if (response.data) {
+    const dataToStore = {
+      ...response.data,
+      saveCredentials: Boolean(userData.saveCredentials)
+    };
     // If the user wants to save credentials, store in localStorage
     if (userData.saveCredentials) {
-      localStorage.setItem('user', JSON.stringify(response.data));
+      localStorage.setItem('user', JSON.stringify(dataToStore));
     } else {
       // Store in sessionStorage if they don't want to save credentials
-      sessionStorage.setItem('user', JSON.stringify(response.data));
+      sessionStorage.setItem('user', JSON.stringify(dataToStore));
     }
+    // Also save in multi-account store
+    saveAccount(dataToStore);
+    setActiveAccount(dataToStore._id || dataToStore.id, dataToStore.schoolId);
   }
 
   return response.data;
@@ -69,7 +85,7 @@ const login = async (userData) => {
       // Make sure the saveCredentials flag is included in the stored data
       const dataToStore = {
         ...response.data,
-        saveCredentials: userData.saveCredentials // Ensure this preference is stored with user data
+        saveCredentials: Boolean(userData.saveCredentials) // Ensure this preference is stored with user data
       };
       
       // If the user wants to save credentials, store in localStorage (persists after browser close)
@@ -85,6 +101,10 @@ const login = async (userData) => {
         // Clean up any local storage to avoid conflicts
         localStorage.removeItem('user');
       }
+      
+      // Also save in multi-account store
+      saveAccount(dataToStore);
+      setActiveAccount(dataToStore._id || dataToStore.id, dataToStore.schoolId);
       
       // Double-check that storage worked
       const storedData = userData.saveCredentials 
@@ -121,22 +141,33 @@ const forgotPasswordRequest = async (email) => {
   }
 };
 
-// Logout user - completely clears ALL application state with token revocation
-const logout = async () => {
-  console.log('[SECURITY] Performing secure logout with token revocation');
-  
-  // Get user data to retrieve refresh token for revocation
-  const localUser = localStorage.getItem('user');
-  const sessionUser = sessionStorage.getItem('user');
-  
-  let refreshToken = null;
-  try {
-    const userData = localUser ? JSON.parse(localUser) : sessionUser ? JSON.parse(sessionUser) : null;
-    refreshToken = userData?.refreshToken;
-  } catch (error) {
-    console.error('[SECURITY] Error parsing stored user data during logout:', error);
+// Logout user - removes this account from saved accounts and switches to next most recent, or fully logs out if none left.
+const logout = async (id = null, schoolId = null) => {
+  console.log('[SECURITY] Performing account-specific logout');
+
+  let targetId = id;
+  let targetSchoolId = schoolId;
+
+  // If not explicitly passed, try to extract from current active session
+  if (!targetId) {
+    const localUser = localStorage.getItem('user');
+    const sessionUser = sessionStorage.getItem('user');
+    try {
+      const userData = localUser ? JSON.parse(localUser) : sessionUser ? JSON.parse(sessionUser) : null;
+      targetId = userData?._id || userData?.id;
+      targetSchoolId = userData?.schoolId ?? null;
+    } catch (error) {
+      console.error('[SECURITY] Error parsing stored user data during logout:', error);
+    }
   }
-  
+
+  // Find the specific account to logout to revoke its token
+  let refreshToken = null;
+  if (targetId) {
+    const account = getAccountById(targetId, targetSchoolId);
+    refreshToken = account?.refreshToken;
+  }
+
   // Call backend logout endpoint to revoke refresh token
   if (refreshToken) {
     try {
@@ -151,29 +182,67 @@ const logout = async () => {
       });
       console.log('[SECURITY] ✅ Refresh token successfully revoked on server');
     } catch (error) {
-      console.error('[SECURITY] ❌ Failed to revoke refresh token (continuing with local logout):', error.response?.data || error.message);
-      // Continue with local logout even if server revocation fails
+      console.error('[SECURITY] ❌ Failed to revoke refresh token:', error.response?.data || error.message);
     }
-  } else {
-    console.log('[SECURITY] No refresh token found for revocation');
   }
-  
-  // Clear auth data
+
+  // Remove the account from the saved list
+  if (targetId) {
+    removeAccount(targetId, targetSchoolId);
+  }
+
+  // See if there are remaining accounts
+  const remaining = getSavedAccounts();
+  if (remaining.length === 1) {
+    const nextAccount = remaining[0];
+    console.log('[SECURITY] Switching to single remaining saved account:', nextAccount.name);
+    
+    // Set next account as active
+    setActiveAccount(nextAccount.id, nextAccount.schoolId);
+    
+    const dataToStore = {
+      ...nextAccount,
+      _id: nextAccount.id
+    };
+
+    if (nextAccount.saveCredentials) {
+      localStorage.setItem('user', JSON.stringify(dataToStore));
+      sessionStorage.removeItem('user');
+    } else {
+      sessionStorage.setItem('user', JSON.stringify(dataToStore));
+      localStorage.removeItem('user');
+    }
+
+    // Force page reload to clear store state & switch
+    const rolePaths = {
+      superadmin: '/superadmin/dashboard',
+      admin: '/app/admin',
+      teacher: '/app/teacher',
+      student: '/app/student',
+      parent: '/app/parent',
+    };
+    const targetPath = rolePaths[nextAccount.role] || '/app/dashboard';
+    const cacheBuster = Date.now();
+    window.location.replace(`${targetPath}?v=${cacheBuster}`);
+    return;
+  } else if (remaining.length > 1) {
+    console.log('[SECURITY] Multiple remaining accounts, redirecting to login account chooser');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('gb_active_account');
+    window.location.replace('/login');
+    return;
+  }
+
+  // No accounts remain: clear all auth/cached data
   localStorage.removeItem('user');
   sessionStorage.removeItem('user');
-  
-  // Clear sidebar state
   localStorage.removeItem('sidebarOpen');
   localStorage.removeItem('currentSection');
-  
-  // Clear app version data
   localStorage.removeItem('app_version');
   localStorage.removeItem('app_version_updated_at');
   
-  // Thorough clearing of ALL localStorage items except critical system settings
-  const keysToKeep = ['installPromptDismissed']; // Keep minimal PWA settings for UX
-  
-  // Clear all localStorage
+  const keysToKeep = ['installPromptDismissed'];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!keysToKeep.includes(key)) {
@@ -181,10 +250,8 @@ const logout = async () => {
     }
   }
   
-  // Clear all sessionStorage
   sessionStorage.clear();
   
-  // Clear any cookies that might be used by the app
   document.cookie.split(';').forEach(cookie => {
     const [name] = cookie.trim().split('=');
     if (name) {
@@ -192,12 +259,87 @@ const logout = async () => {
     }
   });
   
-  // Force reload to clear React component state and Redux store
-  // Using location.replace prevents back-button navigation to the post-login state
-  // Use a random cache busting parameter to prevent browser cache issues
-  console.log('[SECURITY] Secure logout completed - redirecting to login page');
-  const cacheBuster = new Date().getTime();
+  console.log('[SECURITY] No saved accounts remain. Redirecting to login page');
+  const cacheBuster = Date.now();
   window.location.replace(`/login?logout=secure&cache=${cacheBuster}`);
+};
+
+// Logout all accounts - completely clears ALL application state and revokes all refresh tokens
+const logoutAllAccounts = async () => {
+  console.log('[SECURITY] Performing secure logout of all accounts');
+  
+  const saved = getSavedAccounts();
+  const revocationPromises = saved
+    .filter(acc => acc.refreshToken)
+    .map(acc => {
+      return axios.post(`${API_USERS}/logout`, {
+        refreshToken: acc.refreshToken
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 5000
+      }).catch(err => {
+        console.error(`[SECURITY] Failed to revoke token for account ${acc.id}:`, err.message);
+      });
+    });
+    
+  await Promise.all(revocationPromises);
+  
+  clearAllAccounts();
+  
+  localStorage.removeItem('user');
+  sessionStorage.removeItem('user');
+  localStorage.removeItem('sidebarOpen');
+  localStorage.removeItem('currentSection');
+  localStorage.removeItem('app_version');
+  localStorage.removeItem('app_version_updated_at');
+  
+  const keysToKeep = ['installPromptDismissed'];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!keysToKeep.includes(key)) {
+      localStorage.removeItem(key);
+    }
+  }
+  
+  sessionStorage.clear();
+  
+  document.cookie.split(';').forEach(cookie => {
+    const [name] = cookie.trim().split('=');
+    if (name) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    }
+  });
+  
+  const cacheBuster = Date.now();
+  window.location.replace(`/login?logout=all&cache=${cacheBuster}`);
+};
+
+// Switch active account locally
+const switchAccount = async (id, schoolId) => {
+  const account = getAccountById(id, schoolId);
+  if (!account) {
+    throw new Error('Account not found in storage');
+  }
+
+  setActiveAccount(id, schoolId);
+
+  const dataToStore = {
+    ...account,
+    _id: account.id
+  };
+
+  if (account.saveCredentials) {
+    localStorage.setItem('user', JSON.stringify(dataToStore));
+    sessionStorage.removeItem('user');
+  } else {
+    sessionStorage.setItem('user', JSON.stringify(dataToStore));
+    localStorage.removeItem('user');
+  }
+
+  // Update lastActiveAt in storage
+  saveAccount(dataToStore);
+
+  return dataToStore;
 };
 
 // Get user data for current user (to refresh user details)
@@ -372,6 +514,14 @@ axios.interceptors.response.use(
             } else if (storageType === 'sessionStorage') {
               sessionStorage.setItem('user', JSON.stringify(updatedUser));
             }
+            
+            // Also update the multi-account store so switching works with fresh tokens
+            updateAccountTokens(
+              updatedUser._id || updatedUser.id,
+              updatedUser.schoolId,
+              refreshResponse.token,
+              refreshResponse.refreshToken
+            );
             
             console.log('[PWA Token Refresh] ✅ Tokens refreshed successfully, retrying original request');
             
@@ -549,9 +699,12 @@ const authService = {
   login,
   forgotPasswordRequest,
   logout,
+  logoutAllAccounts,
+  switchAccount,
   refreshToken: refreshTokenFunction,
   updateProfile,
   getProfile,
+  getUserData,
   changePassword: updateProfile, // Using updateProfile for profile changes including password
   updatePushNotificationPreference,
 };

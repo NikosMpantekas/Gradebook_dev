@@ -94,9 +94,33 @@ export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
 });
 
 // Logout user
-export const logout = createAsyncThunk('auth/logout', async () => {
-  await authService.logout();
+export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
+  const currentUser = thunkAPI.getState().auth.user;
+  const id = currentUser?._id || currentUser?.id;
+  const schoolId = currentUser?.schoolId;
+  await authService.logout(id, schoolId);
 });
+
+// Switch active account thunk
+export const switchAccount = createAsyncThunk(
+  'auth/switchAccount',
+  async ({ id, schoolId }, thunkAPI) => {
+    try {
+      return await authService.switchAccount(id, schoolId);
+    } catch (error) {
+      const message = error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// Logout all saved accounts thunk
+export const logoutAllAccounts = createAsyncThunk(
+  'auth/logoutAllAccounts',
+  async () => {
+    await authService.logoutAllAccounts();
+  }
+);
 
 // Update user profile
 export const updateProfile = createAsyncThunk(
@@ -224,6 +248,21 @@ export const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
+
+        // Ensure we respect saveCredentials
+        if (state.user) {
+          try {
+            if (state.user.saveCredentials) {
+              localStorage.setItem('user', JSON.stringify(state.user));
+              sessionStorage.removeItem('user');
+            } else {
+              sessionStorage.setItem('user', JSON.stringify(state.user));
+              localStorage.removeItem('user');
+            }
+          } catch (error) {
+            console.error('Failed to update storage in register:', error);
+          }
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -315,19 +354,18 @@ export const authSlice = createSlice({
 
         // Force storage update to ensure persistence
         if (state.user) {
-          console.log('Updating localStorage with user data...');
           try {
-            localStorage.setItem('user', JSON.stringify(state.user));
-            console.log('localStorage updated successfully');
-          } catch (error) {
-            console.error('Failed to update localStorage:', error);
-            // Fallback to sessionStorage
-            try {
+            if (state.user.saveCredentials) {
+              localStorage.setItem('user', JSON.stringify(state.user));
+              sessionStorage.removeItem('user');
+              console.log('localStorage updated successfully');
+            } else {
               sessionStorage.setItem('user', JSON.stringify(state.user));
-              console.log('sessionStorage updated as fallback');
-            } catch (sessionError) {
-              console.error('Failed to update sessionStorage:', sessionError);
+              localStorage.removeItem('user');
+              console.log('sessionStorage updated successfully');
             }
+          } catch (error) {
+            console.error('Failed to update storage:', error);
           }
         }
       })
@@ -355,6 +393,64 @@ export const authSlice = createSlice({
         state.isLoading = false;
         state.message = '';
       })
+      .addCase(switchAccount.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = '';
+      })
+      .addCase(switchAccount.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        if (action.payload?.role === 'superadmin') {
+          state.user = {
+            ...action.payload,
+            school: action.payload.school || null,
+            schoolId: action.payload.schoolId || null,
+            schoolName: action.payload.schoolName || null,
+            schools: action.payload.schools || [],
+            directions: action.payload.directions || [],
+            subjects: action.payload.subjects || [],
+            darkMode: action.payload.darkMode || false,
+            schoolFeatures: action.payload.schoolFeatures || action.payload.features || {},
+            _id: action.payload._id || action.payload.id,
+            name: action.payload.name || 'Superadmin',
+            email: action.payload.email || 'admin@system.com'
+          };
+        } else {
+          state.user = {
+            ...action.payload,
+            schoolFeatures: action.payload.schoolFeatures || action.payload.features || {}
+          };
+        }
+
+        // Ensure we respect saveCredentials
+        if (state.user) {
+          try {
+            if (state.user.saveCredentials) {
+              localStorage.setItem('user', JSON.stringify(state.user));
+              sessionStorage.removeItem('user');
+            } else {
+              sessionStorage.setItem('user', JSON.stringify(state.user));
+              localStorage.removeItem('user');
+            }
+          } catch (error) {
+            console.error('Failed to update storage in switchAccount:', error);
+          }
+        }
+      })
+      .addCase(switchAccount.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload || 'Failed to switch account';
+      })
+      .addCase(logoutAllAccounts.fulfilled, (state) => {
+        state.user = null;
+        state.isError = false;
+        state.isSuccess = false;
+        state.isLoading = false;
+        state.message = '';
+      })
       .addCase(updateProfile.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -369,16 +465,19 @@ export const authSlice = createSlice({
           ...state.user,
           ...action.payload
         };
-        // Update storage to persist the changes
-        try {
-          if (localStorage.getItem('user')) {
-            localStorage.setItem('user', JSON.stringify(state.user));
+        // Ensure we respect saveCredentials
+        if (state.user) {
+          try {
+            if (state.user.saveCredentials) {
+              localStorage.setItem('user', JSON.stringify(state.user));
+              sessionStorage.removeItem('user');
+            } else {
+              sessionStorage.setItem('user', JSON.stringify(state.user));
+              localStorage.removeItem('user');
+            }
+          } catch (error) {
+            console.error('Failed to update storage in updateProfile:', error);
           }
-          if (sessionStorage.getItem('user')) {
-            sessionStorage.setItem('user', JSON.stringify(state.user));
-          }
-        } catch (error) {
-          console.error('Failed to update storage:', error);
         }
       })
       .addCase(updateProfile.rejected, (state, action) => {
@@ -396,6 +495,21 @@ export const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
+
+        // Ensure we respect saveCredentials
+        if (state.user) {
+          try {
+            if (state.user.saveCredentials) {
+              localStorage.setItem('user', JSON.stringify(state.user));
+              sessionStorage.removeItem('user');
+            } else {
+              sessionStorage.setItem('user', JSON.stringify(state.user));
+              localStorage.removeItem('user');
+            }
+          } catch (error) {
+            console.error('Failed to update storage in getUserData:', error);
+          }
+        }
       })
       .addCase(getUserData.rejected, (state, action) => {
         state.isLoading = false;

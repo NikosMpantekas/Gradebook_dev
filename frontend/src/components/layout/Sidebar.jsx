@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Bell,
-  ChevronsUpDown,
+  ChevronUp,
   Users,
   Building,
   BarChart3,
@@ -31,6 +31,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { cn } from '../../lib/utils';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
+import AccountSwitcher from '../AccountSwitcher';
 
 import { ScrollArea } from '../ui/scroll-area';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
@@ -54,6 +55,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     || '';
 
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const [, setLogoutAnimating] = useState(false);
 
   const handleLogoutClick = () => setLogoutDialogOpen(true);
@@ -432,39 +434,43 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       {/* Profile Switcher + Logout */}
       <div className="p-3 space-y-2">
         {/* Profile Switcher */}
-        <div className={cn(
-          "flex items-center rounded-lg transition-colors duration-150 ease-out",
-          isPathSelected('/app/profile')
-            ? "bg-primary/10"
-            : "hover:bg-primary/5"
-        )}>
-          <button
-            onClick={() => handleNavigation('/app/profile')}
-            className="flex items-center gap-3 flex-1 min-w-0 py-2.5 px-3 rounded-l-lg cursor-pointer bg-transparent border-0 text-left"
-          >
-            <Avatar className="h-8 w-8 shrink-0 bg-primary/10">
-              <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate text-foreground">
-                {user?.name || 'User'}
-              </span>
-              {schoolName && (
-                <span className="text-xs text-muted-foreground truncate">
-                  {schoolName}
+        <div className="flex flex-col rounded-lg transition-colors duration-150 ease-out bg-transparent">
+          <div className={cn(
+            "flex items-center rounded-lg transition-colors duration-150 ease-out w-full",
+            isPathSelected('/app/profile')
+              ? "bg-primary/10"
+              : "hover:bg-primary/5"
+          )}>
+            <button
+              onClick={() => handleNavigation('/app/profile')}
+              className="flex items-center gap-3 flex-1 min-w-0 py-2.5 px-3 rounded-l-lg cursor-pointer bg-transparent border-0 text-left"
+            >
+              <Avatar className="h-8 w-8 shrink-0 bg-primary/10">
+                <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium truncate text-foreground">
+                  {user?.name || 'User'}
                 </span>
-              )}
-            </div>
-          </button>
-          <button
-            className="p-2 rounded-r-lg shrink-0 cursor-pointer bg-transparent border-0 text-muted-foreground hover:text-foreground transition-colors duration-150"
-            aria-label={t('sidebar.switchAccount')}
-            tabIndex={0}
-          >
-            <ChevronsUpDown className="h-4 w-4" />
-          </button>
+                {schoolName && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {schoolName}
+                  </span>
+                )}
+              </div>
+            </button>
+            <button
+              className="p-2 rounded-r-lg shrink-0 cursor-pointer bg-transparent border-0 text-muted-foreground hover:text-foreground transition-colors duration-150"
+              aria-label={t('sidebar.switchAccount')}
+              onClick={() => setAccountSwitcherOpen(!accountSwitcherOpen)}
+              tabIndex={0}
+            >
+              <ChevronUp className={cn("h-4 w-4 transition-transform duration-200", accountSwitcherOpen && "rotate-180")} />
+            </button>
+          </div>
+          <AccountSwitcher isOpen={accountSwitcherOpen} onClose={() => setAccountSwitcherOpen(false)} />
         </div>
 
         {/* Logout Button */}
@@ -562,7 +568,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             {t('sidebar.logoutConfirmDescription')}
-            {t('sidebar.logoutConfirmText')}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={handleLogoutCancel}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { getSavedAccounts } from "../services/accountStore";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import {
@@ -83,7 +84,7 @@ export default function About() {
     }
   })();
 
-  const dashboardPath = loggedInUser
+  const dashboardPath = (loggedInUser && getSavedAccounts().length <= 1)
     ? loggedInUser.role === "superadmin"
       ? "/superadmin/dashboard"
       : loggedInUser.role === "admin"

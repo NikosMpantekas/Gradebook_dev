@@ -1,34 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { toast } from 'sonner';
-import { ArrowLeft, Check, Eye, EyeOff, XCircle } from 'lucide-react';
-import { Spinner } from '../components/ui/spinner';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Checkbox } from '../components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/dialog';
-import { cn } from '../lib/utils';
-import { login, reset } from '../features/auth/authSlice';
-import authService from '../features/auth/authService';
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Check,
+  Eye,
+  EyeOff,
+  XCircle,
+  Trash2,
+  Plus,
+  Loader2,
+  LogOut,
+} from "lucide-react";
+import { Spinner } from "../components/ui/spinner";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Checkbox } from "../components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "../components/ui/dialog";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { cn } from "../lib/utils";
+import {
+  login,
+  reset,
+  switchAccount,
+  logout,
+  logoutAllAccounts,
+} from "../features/auth/authSlice";
+import { getSavedAccounts, removeAccount } from "../services/accountStore";
+import authService from "../features/auth/authService";
 
 const Login = () => {
+  const [savedAccounts, setSavedAccounts] = useState(() => getSavedAccounts());
+  const [showLoginForm, setShowLoginForm] = useState(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const isAddAccountFlow = queryParams.get("addAccount") === "true";
+    return isAddAccountFlow || getSavedAccounts().length === 0;
+  });
+  const [switchingTo, setSwitchingTo] = useState(null);
+  const [hasRemovedAccount, setHasRemovedAccount] = useState(false);
+
+  const handleRemoveAccount = (e, account) => {
+    e.stopPropagation();
+    setHasRemovedAccount(true);
+
+    const userId = user?._id || user?.id;
+    if (user && userId === account.id && user.schoolId === account.schoolId) {
+      dispatch(logout());
+    }
+
+    removeAccount(account.id, account.schoolId);
+    const updated = getSavedAccounts();
+    setSavedAccounts(updated);
+    if (updated.length === 0) {
+      setShowLoginForm(true);
+    }
+  };
+
+  const handleLogoutAll = () => {
+    dispatch(logoutAllAccounts());
+    setSavedAccounts([]);
+    setShowLoginForm(true);
+  };
+
+  const handleSavedAccountClick = async (account) => {
+    const key = `${account.id}_${account.schoolId ?? "none"}`;
+    setSwitchingTo(key);
+    dispatch(reset());
+    try {
+      const result = await dispatch(
+        switchAccount({ id: account.id, schoolId: account.schoolId }),
+      ).unwrap();
+
+      // Navigate to the appropriate dashboard based on role
+      const rolePaths = {
+        superadmin: "/superadmin/dashboard",
+        admin: "/app/admin",
+        teacher: "/app/teacher",
+        student: "/app/student",
+        parent: "/app/parent",
+      };
+      const targetPath = rolePaths[result.role] || "/app/dashboard";
+      const cacheBuster = Date.now();
+      window.location.replace(`${targetPath}?v=${cacheBuster}`);
+    } catch (err) {
+      toast.error(err || "Failed to switch account. Please try again.");
+      setSwitchingTo(null);
+    }
+  };
+
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
     saveCredentials: false,
   });
 
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotEmail, setForgotEmail] = useState("");
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Animation states
-  const [animationStep, setAnimationStep] = useState('idle'); // 'idle', 'transitioning', 'error'
+  const [animationStep, setAnimationStep] = useState("idle"); // 'idle', 'transitioning', 'error'
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [dashboardPreloaded, setDashboardPreloaded] = useState(false);
 
   const { email, password, saveCredentials } = formData;
@@ -37,49 +126,68 @@ const Login = () => {
   const dispatch = useDispatch();
 
   const { user, isLoading, isError, isSuccess, message } = useSelector(
-    (state) => state.auth
+    (state) => state.auth,
   );
   // Sync theme with homepage's publicPageTheme preference
   const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('publicPageTheme');
+    const saved = localStorage.getItem("publicPageTheme");
     return saved ? JSON.parse(saved) : true;
   });
 
   useEffect(() => {
     setIsLoaded(true);
-  }, []);
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get("addAccount") === "true") {
+      dispatch(reset());
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     // Debug the login state
-    console.log('=== LOGIN COMPONENT AUTH STATE CHECK ===');
-    console.log('Login component - Auth state:', {
+    console.log("=== LOGIN COMPONENT AUTH STATE CHECK ===");
+    console.log("Login component - Auth state:", {
       isSuccess,
       isError,
       user: !!user,
       userRole: user?.role,
-      hasToken: !!user?.token
+      hasToken: !!user?.token,
     });
-    console.log('Current URL:', window.location.href);
+    console.log("Current URL:", window.location.href);
 
     if (isError) {
-      console.error('Login error:', message);
+      console.error("Login error:", message);
       toast.error(message);
-      setAnimationStep('error');
+      setAnimationStep("error");
+      setHasSubmitted(false);
       // Reset after 3 seconds
       const timer = setTimeout(() => {
-        setAnimationStep('idle');
+        setAnimationStep("idle");
       }, 3000);
       return () => clearTimeout(timer);
     }
 
-    if (isSuccess || user) {
-      console.log('=== LOGIN SUCCESSFUL - STARTING ANIMATION SEQUENCE ===');
-      console.log('User role:', user?.role);
-      console.log('Password change required:', user?.requirePasswordChange);
-      console.log('Is first login:', user?.isFirstLogin);
+    const queryParams = new URLSearchParams(window.location.search);
+    const isAddAccountFlow = queryParams.get("addAccount") === "true";
+
+    // Only redirect automatically if:
+    // 1. A login attempt was explicitly submitted during this component's lifecycle and succeeded, OR
+    // 2. A user is already loaded in state, we are NOT in the "add account" flow, AND we have at most 1 saved account
+    if (
+      (isSuccess && hasSubmitted) ||
+      (user &&
+        !isAddAccountFlow &&
+        !hasRemovedAccount &&
+        getSavedAccounts().length <= 1)
+    ) {
+      console.log(
+        "=== LOGIN SUCCESSFUL OR USER EXISTS - STARTING ANIMATION SEQUENCE ===",
+      );
+      console.log("User role:", user?.role);
+      console.log("Password change required:", user?.requirePasswordChange);
+      console.log("Is first login:", user?.isFirstLogin);
 
       // Start the success animation sequence
-      if (animationStep === 'idle') {
+      if (animationStep === "idle") {
         startFadeAnimation(user);
       }
     }
@@ -90,12 +198,13 @@ const Login = () => {
         dispatch(reset());
       }
     };
-  }, [user, isError, isSuccess, message, navigate, dispatch]);
+  }, [user, isError, isSuccess, message, navigate, dispatch, hasSubmitted]);
 
   const onChange = (e) => {
     setFormData((prevState) => ({
       ...prevState,
-      [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+      [e.target.name]:
+        e.target.type === "checkbox" ? e.target.checked : e.target.value,
     }));
   };
 
@@ -103,30 +212,29 @@ const Login = () => {
     setShowPassword(!showPassword);
   };
 
-
   // Pre-load dashboard data to avoid loading screen
   const preloadDashboard = async (user) => {
     if (dashboardPreloaded) return;
 
     try {
-      console.log('Pre-loading dashboard data...');
+      console.log("Pre-loading dashboard data...");
       // Pre-fetch essential dashboard data based on user role
       // This runs during animation to have data ready when dashboard loads
       setDashboardPreloaded(true);
     } catch (error) {
-      console.warn('Dashboard preload failed:', error);
+      console.warn("Dashboard preload failed:", error);
     }
   };
 
   // Simple fade-out login animation
   const startFadeAnimation = async (user) => {
-    console.log('Starting fade login animation');
+    console.log("Starting fade login animation");
 
     // Start preloading dashboard data immediately
     preloadDashboard(user);
 
     // Fade out phase
-    setAnimationStep('transitioning');
+    setAnimationStep("transitioning");
 
     // Navigate after fade completes
     setTimeout(() => {
@@ -137,42 +245,44 @@ const Login = () => {
   const performNavigation = (user) => {
     // Clear form fields and blur all inputs before navigating
     setFormData({
-      email: '',
-      password: '',
+      email: "",
+      password: "",
       saveCredentials: false,
     });
     document.activeElement?.blur();
-    const inputs = document.querySelectorAll('#email, #password');
-    inputs.forEach(input => input.blur());
+    const inputs = document.querySelectorAll("#email, #password");
+    inputs.forEach((input) => input.blur());
 
     let redirectPath;
     if (user?.requirePasswordChange || user?.isFirstLogin) {
-      console.log('PASSWORD CHANGE REQUIRED - Redirecting to password change page');
-      redirectPath = '/change-password';
+      console.log(
+        "PASSWORD CHANGE REQUIRED - Redirecting to password change page",
+      );
+      redirectPath = "/change-password";
     } else {
       switch (user?.role) {
-        case 'superadmin':
-          redirectPath = '/superadmin/dashboard';
+        case "superadmin":
+          redirectPath = "/superadmin/dashboard";
           break;
-        case 'admin':
-          redirectPath = '/app/admin';
+        case "admin":
+          redirectPath = "/app/admin";
           break;
-        case 'teacher':
-          redirectPath = '/app/teacher';
+        case "teacher":
+          redirectPath = "/app/teacher";
           break;
-        case 'student':
-          redirectPath = '/app/student';
+        case "student":
+          redirectPath = "/app/student";
           break;
-        case 'parent':
-          redirectPath = '/app/parent';
+        case "parent":
+          redirectPath = "/app/parent";
           break;
         default:
-          console.error('Unknown user role:', user?.role);
-          redirectPath = '/app/dashboard';
+          console.error("Unknown user role:", user?.role);
+          redirectPath = "/app/dashboard";
       }
     }
 
-    console.log('LOGIN REDIRECT: Navigating to', redirectPath);
+    console.log("LOGIN REDIRECT: Navigating to", redirectPath);
     // Use window.location.replace() instead of React Router's navigate() to force a full
     // page reload. This clears all extension-injected DOM (e.g. Bitwarden iframe) that
     // would otherwise persist across client-side navigation and get stuck on screen.
@@ -189,6 +299,7 @@ const Login = () => {
       saveCredentials,
     };
 
+    setHasSubmitted(true);
     dispatch(reset());
     dispatch(login(userData));
   };
@@ -196,20 +307,24 @@ const Login = () => {
   const handleForgot = async (e) => {
     e.preventDefault();
     if (!forgotEmail) {
-      toast.error('Παρακαλώ εισάγετε το email σας');
+      toast.error("Παρακαλώ εισάγετε το email σας");
       return;
     }
     setIsSubmittingForgot(true);
     try {
       await authService.forgotPasswordRequest(forgotEmail);
-      toast.success('Αν αυτό το email είναι εγγεγραμμένο, ειδοποιήσαμε τον αρμόδιο διαχειριστή.');
+      toast.success(
+        "Αν αυτό το email είναι εγγεγραμμένο, ειδοποιήσαμε τον αρμόδιο διαχειριστή.",
+      );
       setForgotOpen(false);
-      setForgotEmail('');
+      setForgotEmail("");
     } catch (err) {
       // Backend responds generically; we also show generic success
-      toast.success('Αν αυτό το email είναι εγγεγραμμένο, ειδοποιήσαμε τον αρμόδιο διαχειριστή.');
+      toast.success(
+        "Αν αυτό το email είναι εγγεγραμμένο, ειδοποιήσαμε τον αρμόδιο διαχειριστή.",
+      );
       setForgotOpen(false);
-      setForgotEmail('');
+      setForgotEmail("");
     } finally {
       setIsSubmittingForgot(false);
     }
@@ -226,38 +341,61 @@ const Login = () => {
     <div
       className={cn(
         "min-h-screen flex font-sans transition-colors duration-300",
-        darkMode ? "bg-zinc-900 text-zinc-100" : "bg-gray-50 text-slate-900"
+        darkMode ? "bg-zinc-900 text-zinc-100" : "bg-gray-50 text-slate-900",
       )}
       style={{
-        backgroundImage: `radial-gradient(${darkMode ? '#3f3f46' : '#cbd5e1'} 1px, transparent 1px)`,
-        backgroundSize: '32px 32px'
+        backgroundImage: `radial-gradient(${darkMode ? "#3f3f46" : "#cbd5e1"} 1px, transparent 1px)`,
+        backgroundSize: "32px 32px",
       }}
     >
       {/* ===== Left Branded Panel (hidden on mobile) ===== */}
-      <div className={cn(
-        "hidden lg:flex lg:w-[55%] relative overflow-hidden items-center justify-center border-r",
-        darkMode ? "border-zinc-800" : "border-slate-200"
-      )}>
-        {/* Subtle blue glow accent */}
+      <div
+        className={cn(
+          "hidden lg:flex lg:w-[55%] relative overflow-hidden items-center justify-center border-r",
+          darkMode ? "border-zinc-800" : "border-slate-200",
+        )}
+      >
+        {/* Subtle theme-based glow accent */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/3 -left-1/4 w-[70%] h-[70%] rounded-full opacity-[0.07] blur-[100px]"
-            style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)' }} />
-          <div className="absolute -bottom-1/4 right-0 w-[50%] h-[50%] rounded-full opacity-[0.05] blur-[80px]"
-            style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)' }} />
+          <div
+            className="absolute -top-1/3 -left-1/4 w-[70%] h-[70%] rounded-full opacity-[0.07] blur-[100px]"
+            style={{
+              background:
+                `radial-gradient(circle, ${darkMode ? "#3b82f6" : "#2563eb"} 0%, transparent 70%)`,
+            }}
+          />
+          <div
+            className="absolute -bottom-1/4 right-0 w-[50%] h-[50%] rounded-full opacity-[0.05] blur-[80px]"
+            style={{
+              background:
+                `radial-gradient(circle, ${darkMode ? "#3b82f6" : "#2563eb"} 0%, transparent 70%)`,
+            }}
+          />
         </div>
 
         {/* Centered logo + name in a row */}
-        <RouterLink to="/home" className={cn(
-          "relative z-10 flex flex-row items-center gap-6 no-underline group transition-all duration-700",
-          !isLoaded ? "opacity-0 -translate-x-4" : "opacity-100 translate-x-0"
-        )}>
+        <RouterLink
+          to="/home"
+          className={cn(
+            "relative z-10 flex flex-row items-center gap-6 no-underline group transition-all duration-700",
+            !isLoaded
+              ? "opacity-0 -translate-x-4"
+              : "opacity-100 translate-x-0",
+          )}
+        >
           <div className="w-24 h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-            <img src="/logo-transparent.png" alt="GradeBook Logo" className="w-24 h-24 object-contain" />
+            <img
+              src="/logo-transparent.png"
+              alt="GradeBook Logo"
+              className="w-24 h-24 object-contain"
+            />
           </div>
-          <span className={cn(
-            "text-6xl font-serif font-bold tracking-tight",
-            darkMode ? "text-white" : "text-slate-900"
-          )}>
+          <span
+            className={cn(
+              "text-6xl font-serif font-bold tracking-tight",
+              darkMode ? "text-white" : "text-slate-900",
+            )}
+          >
             GradeBook
           </span>
         </RouterLink>
@@ -265,13 +403,15 @@ const Login = () => {
 
       {/* ===== Right Form Panel ===== */}
       <div className="flex-1 flex flex-col min-h-screen relative pb-[env(safe-area-inset-bottom)]">
-
         {/* Mobile: Compact branded header (shown only on mobile) */}
         <div className="lg:hidden relative z-10 pt-[max(env(safe-area-inset-top),2rem)] pb-4 px-6 text-center">
-          <RouterLink to="/home" className={cn(
-            "text-xl font-bold font-serif py-1 no-underline",
-            darkMode ? "text-white" : "text-slate-900"
-          )}>
+          <RouterLink
+            to="/home"
+            className={cn(
+              "text-xl font-bold font-serif py-1 no-underline",
+              darkMode ? "text-white" : "text-slate-900",
+            )}
+          >
             GradeBook
           </RouterLink>
         </div>
@@ -280,7 +420,7 @@ const Login = () => {
         <div
           className={cn(
             "flex-1 flex items-center justify-center p-4 sm:p-8 relative z-10 transition-all duration-700",
-            "opacity-100"
+            "opacity-100",
           )}
         >
           <div className="w-full max-w-sm">
@@ -290,198 +430,394 @@ const Login = () => {
                 "w-full border shadow-xl transition-all duration-300",
                 darkMode
                   ? "bg-zinc-900 border-zinc-800 shadow-black/40"
-                  : "bg-white border-slate-200 shadow-slate-200/60"
+                  : "bg-white border-slate-200 shadow-slate-200/60",
               )}
             >
-              <CardHeader className="flex flex-col items-center space-y-3 pb-2">
-                {/* Icon */}
-                <div className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center transition-all ease-out duration-700",
-                  animationStep === 'transitioning'
-                    ? "bg-emerald-500/20 scale-110 text-emerald-400"
-                    : animationStep === 'error'
-                      ? "bg-red-500/20 scale-110 text-red-500"
-                      : darkMode
-                        ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 text-blue-400"
-                        : "bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600"
-                )}>
-                  {animationStep === 'error' ? (
-                    <XCircle className="h-7 w-7 animate-in zoom-in-50 duration-300" />
-                  ) : animationStep === 'transitioning' ? (
-                    <Check className="h-8 w-8 animate-in zoom-in-50 duration-500 stroke-[3px]" />
-                  ) : (
-                    <img 
-                      src="/logo-transparent.png" 
-                      alt="Logo" 
-                      className="h-12 w-12 object-contain" 
-                    />
-                  )}
-                </div>
+              <CardHeader className="flex flex-col items-center space-y-3 pb-2 pt-6">
                 <div className="text-center">
-                  <CardTitle className={cn(
-                    "text-2xl font-serif font-bold tracking-tight transition-all ease-out duration-700",
-                    animationStep === 'transitioning' ? "text-emerald-500" :
-                      animationStep === 'error' ? "text-red-500" :
-                        darkMode ? "text-white" : "text-slate-900"
-                  )}>
-                    {animationStep === 'transitioning' ? 'Καλώς ήρθατε!' :
-                      animationStep === 'error' ? 'Αποτυχία σύνδεσης' :
-                        'Σύνδεση στο GradeBook'}
+                  <CardTitle
+                    className={cn(
+                      "text-2xl font-serif font-bold tracking-tight transition-all ease-out duration-700",
+                      darkMode ? "text-white" : "text-slate-900",
+                    )}
+                  >
+                    {animationStep === "transitioning"
+                      ? "Καλώς ήρθατε!"
+                      : animationStep === "error"
+                        ? "Αποτυχία σύνδεσης"
+                        : showLoginForm
+                          ? "Σύνδεση στο GradeBook"
+                          : "Καλώς ορίσατε"}
                   </CardTitle>
                 </div>
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={onSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className={cn(
-                      "text-xs font-medium uppercase tracking-wider",
-                      darkMode ? "text-zinc-400" : "text-slate-500"
-                    )}>
-                      ΔΙΕΥΘΥΝΣΗ EMAIL
-                    </Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      autoFocus
-                      value={email}
-                      onChange={onChange}
-                      className={cn(
-                        "transition-colors duration-150",
-                        darkMode
-                          ? "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                          : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className={cn(
-                      "text-xs font-medium uppercase tracking-wider",
-                      darkMode ? "text-zinc-400" : "text-slate-500"
-                    )}>
-                      ΚΩΔΙΚΟΣ ΠΡΟΣΒΑΣΗΣ
-                    </Label>
-                    <div className="relative">
+                {showLoginForm ? (
+                  <form onSubmit={onSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="email"
+                        className={cn(
+                          "text-xs font-medium uppercase tracking-wider",
+                          darkMode ? "text-zinc-400" : "text-slate-500",
+                        )}
+                      >
+                        ΔΙΕΥΘΥΝΣΗ EMAIL
+                      </Label>
                       <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="password"
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
                         required
-                        value={password}
+                        autoFocus
+                        value={email}
                         onChange={onChange}
                         className={cn(
-                          "transition-colors duration-150 pr-10",
+                          "transition-colors duration-150",
                           darkMode
                             ? "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                            : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+                            : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20",
                         )}
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="password"
+                        className={cn(
+                          "text-xs font-medium uppercase tracking-wider",
+                          darkMode ? "text-zinc-400" : "text-slate-500",
+                        )}
+                      >
+                        ΚΩΔΙΚΟΣ ΠΡΟΣΒΑΣΗΣ
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="password"
+                          required
+                          value={password}
+                          onChange={onChange}
+                          className={cn(
+                            "transition-colors duration-150 pr-10",
+                            darkMode
+                              ? "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+                              : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20",
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent",
+                            darkMode
+                              ? "text-zinc-500 hover:text-zinc-300"
+                              : "text-slate-400 hover:text-slate-600",
+                          )}
+                          onClick={togglePasswordVisibility}
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                          <span className="sr-only">
+                            {showPassword
+                              ? "Απόκρυψη κωδικού"
+                              : "Εμφάνιση κωδικού"}
+                          </span>
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="saveCredentials"
+                        name="saveCredentials"
+                        checked={saveCredentials}
+                        className={cn(
+                          "rounded-full transition-colors duration-150 border-muted-foreground/45",
+                          darkMode
+                            ? "data-[state=checked]:text-zinc-900 focus-visible:ring-zinc-400"
+                            : "data-[state=checked]:text-white focus-visible:ring-slate-900",
+                        )}
+                        disabled={isLoading || animationStep !== "idle"}
+                        onCheckedChange={(checked) =>
+                          onChange({
+                            target: { name: "saveCredentials", value: checked },
+                          })
+                        }
+                      />
+                      <Label
+                        htmlFor="saveCredentials"
+                        className={cn(
+                          "text-sm font-normal",
+                          darkMode ? "text-zinc-400" : "text-slate-500",
+                        )}
+                      >
+                        Απομνημόνευση στοιχείων
+                      </Label>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className={cn(
+                        "w-full h-12 rounded-full font-semibold text-base transition-all hover:scale-[1.02] flex items-center justify-center",
+                        darkMode
+                          ? "bg-white text-zinc-900 hover:bg-zinc-200"
+                          : "bg-slate-900 text-white hover:bg-slate-800",
+                        animationStep === "transitioning" &&
+                          "scale-105 shadow-lg",
+                      )}
+                      disabled={isLoading || animationStep !== "idle"}
+                    >
+                      {animationStep === "transitioning" ? (
+                        <Check className="h-5 w-5 animate-in zoom-in-50 duration-500 stroke-[3px]" />
+                      ) : animationStep === "error" ? (
+                        <XCircle className="h-5 w-5 animate-in zoom-in-50 duration-300" />
+                      ) : isLoading ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        "Είσοδος"
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className={cn(
+                        "w-full transition-colors text-sm",
+                        darkMode
+                          ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+                          : "text-slate-500 hover:text-slate-700 hover:bg-slate-100",
+                      )}
+                      onClick={handleForgotOpen}
+                    >
+                      Ξεχάσατε τον κωδικό σας;
+                    </Button>
+
+                    {savedAccounts.length > 0 && (
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
                         className={cn(
-                          "absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent",
-                          darkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
+                          "w-full transition-colors text-sm",
+                          darkMode
+                            ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-100",
                         )}
-                        onClick={togglePasswordVisibility}
-                        tabIndex={-1}
+                        onClick={() => setShowLoginForm(false)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        <span className="sr-only">{showPassword ? "Απόκρυψη κωδικού" : "Εμφάνιση κωδικού"}</span>
+                        Επιλογή συνδεδεμένου λογαριασμού
                       </Button>
+                    )}
+
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className={cn(
+                        "w-full transition-colors text-sm",
+                        darkMode
+                          ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800"
+                          : "text-slate-400 hover:text-slate-600 hover:bg-slate-100",
+                      )}
+                    >
+                      <RouterLink
+                        to="/home"
+                        className="flex items-center justify-center space-x-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span>Επιστροφή στην Αρχική</span>
+                      </RouterLink>
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div
+                      className={cn(
+                        "text-xs font-medium uppercase tracking-wider text-center mb-2",
+                        darkMode ? "text-zinc-400" : "text-slate-500",
+                      )}
+                    >
+                      Επιλέξτε λογαριασμό για σύνδεση
                     </div>
+
+                    <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                      {savedAccounts.map((account) => {
+                        const key = `${account.id}_${account.schoolId ?? "none"}`;
+                        const isSwitching = switchingTo === key;
+
+                        return (
+                          <div
+                            key={key}
+                            onClick={() =>
+                              !isSwitching && handleSavedAccountClick(account)
+                            }
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left cursor-pointer transition-all duration-150 group",
+                              darkMode
+                                ? "bg-zinc-900/60 border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600 text-zinc-100"
+                                : "bg-white border-slate-300 shadow-sm hover:bg-slate-50 hover:border-slate-400 text-slate-900",
+                              isSwitching && "opacity-60 pointer-events-none",
+                            )}
+                          >
+                            <Avatar
+                              className={cn(
+                                "h-9 w-9 shrink-0",
+                                darkMode ? "bg-zinc-800" : "bg-slate-200",
+                              )}
+                            >
+                              <AvatarFallback
+                                className={cn(
+                                  "text-xs font-semibold flex items-center justify-center w-full h-full rounded-full",
+                                  darkMode
+                                    ? "bg-zinc-700 text-zinc-100"
+                                    : "bg-slate-300 text-slate-800",
+                                )}
+                              >
+                                {account.avatarInitials ||
+                                  (
+                                    account.name ||
+                                    (account.role === "superadmin"
+                                      ? "ΔΣ"
+                                      : account.role === "admin"
+                                        ? "Δ"
+                                        : account.role === "teacher"
+                                          ? "Κ"
+                                          : account.role === "student"
+                                            ? "Μ"
+                                            : account.role === "parent"
+                                              ? "Γ"
+                                              : "Λ")
+                                  )
+                                    .charAt(0)
+                                    .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div className="flex-1 min-w-0 flex flex-col">
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold truncate",
+                                  darkMode ? "text-white" : "text-slate-900",
+                                )}
+                              >
+                                {account.name ||
+                                  (account.role === "superadmin"
+                                    ? "Διαχειριστής Συστήματος"
+                                    : account.role === "admin"
+                                      ? "Διαχειριστής"
+                                      : account.role === "teacher"
+                                        ? "Καθηγητής"
+                                        : account.role === "student"
+                                          ? "Μαθητής"
+                                          : account.role === "parent"
+                                            ? "Γονέας"
+                                            : "Λογαριασμός")}
+                              </span>
+                              <span
+                                className={cn(
+                                  "text-xs truncate",
+                                  darkMode
+                                    ? "text-zinc-400"
+                                    : "text-slate-500 font-medium",
+                                )}
+                              >
+                                {account.schoolName ||
+                                  (account.role === "superadmin"
+                                    ? "Σύστημα"
+                                    : "GradeBook")}
+                              </span>
+                            </div>
+
+                            {isSwitching ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
+                            ) : (
+                              <button
+                                onClick={(e) => handleRemoveAccount(e, account)}
+                                className={cn(
+                                  "p-1.5 rounded-md shrink-0 opacity-0 group-hover:opacity-100 transition-all cursor-pointer",
+                                  darkMode
+                                    ? "hover:bg-zinc-850 hover:text-red-450 text-zinc-500"
+                                    : "hover:bg-slate-200 hover:text-red-500 text-slate-400",
+                                )}
+                                aria-label="Αφαίρεση λογαριασμού"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-2 space-y-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowLoginForm(true)}
+                        className={cn(
+                          "w-full h-11 rounded-full font-semibold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2",
+                          darkMode
+                            ? "bg-zinc-800 text-white hover:bg-zinc-700"
+                            : "bg-slate-100 text-slate-800 hover:bg-slate-200",
+                        )}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Σύνδεση με άλλο λογαριασμό</span>
+                      </Button>
+
+                      {savedAccounts.length > 1 && (
+                        <Button
+                          type="button"
+                          onClick={handleLogoutAll}
+                          variant="ghost"
+                          className={cn(
+                            "w-full h-11 rounded-full font-semibold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2 text-red-500 hover:text-red-650 hover:bg-red-500/10",
+                          )}
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Αποσύνδεση όλων</span>
+                        </Button>
+                      )}
+                    </div>
+
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className={cn(
+                        "w-full transition-colors text-sm",
+                        darkMode
+                          ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800"
+                          : "text-slate-400 hover:text-slate-600 hover:bg-slate-100",
+                      )}
+                    >
+                      <RouterLink
+                        to="/home"
+                        className="flex items-center justify-center space-x-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span>Επιστροφή στην Αρχική</span>
+                      </RouterLink>
+                    </Button>
                   </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="saveCredentials"
-                      name="saveCredentials"
-                      checked={saveCredentials}
-                      className="rounded-full"
-                      disabled={isLoading || animationStep !== 'idle'}
-                      onCheckedChange={(checked) =>
-                        onChange({ target: { name: 'saveCredentials', value: checked } })
-                      }
-                    />
-                    <Label htmlFor="saveCredentials" className={cn(
-                      "text-sm font-normal",
-                      darkMode ? "text-zinc-400" : "text-slate-500"
-                    )}>
-                      Απομνημόνευση στοιχείων
-                    </Label>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className={cn(
-                      "w-full h-12 rounded-full font-semibold text-base transition-all hover:scale-[1.02]",
-                      darkMode
-                        ? "bg-white text-zinc-900 hover:bg-zinc-200"
-                        : "bg-slate-900 text-white hover:bg-slate-800",
-                      animationStep === 'transitioning' && "scale-105 shadow-lg"
-                    )}
-                    disabled={isLoading || animationStep !== 'idle'}
-                  >
-                    {animationStep === 'transitioning' ? (
-                      <div className="flex items-center space-x-2">
-                        <Check className="h-4 w-4 animate-pulse" />
-                        <span>Καλώς ήρθατε!</span>
-                      </div>
-                    ) : isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <Spinner size="sm" />
-                        <span>Σύνδεση...</span>
-                      </div>
-                    ) : (
-                      'Είσοδος'
-                    )}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className={cn(
-                      "w-full transition-colors text-sm",
-                      darkMode
-                        ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                    )}
-                    onClick={handleForgotOpen}
-                  >
-                    Ξεχάσατε τον κωδικό σας;
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className={cn(
-                      "w-full transition-colors text-sm",
-                      darkMode
-                        ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800"
-                        : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                    )}
-                  >
-                    <RouterLink to="/home" className="flex items-center justify-center space-x-2">
-                      <ArrowLeft className="h-4 w-4" />
-                      <span>Επιστροφή στην Αρχική</span>
-                    </RouterLink>
-                  </Button>
-                </form>
+                )}
               </CardContent>
             </Card>
 
             {/* Mobile-only footer */}
             <div className="lg:hidden mt-8 text-center">
-              <p className={cn(
-                "text-xs",
-                darkMode ? "text-zinc-600" : "text-slate-400"
-              )}>
+              <p
+                className={cn(
+                  "text-xs",
+                  darkMode ? "text-zinc-600" : "text-slate-400",
+                )}
+              >
                 © {new Date().getFullYear()} GradeBook
               </p>
             </div>
@@ -491,25 +827,47 @@ const Login = () => {
 
       {/* Forgot password dialog */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent className={cn(
-          "sm:max-w-md fade-in transition-colors",
-          darkMode
-            ? "bg-zinc-900 border-zinc-800 text-zinc-100"
-            : "bg-white border-slate-200 text-slate-900"
-        )}>
+        <DialogContent
+          className={cn(
+            "sm:max-w-md fade-in transition-colors",
+            darkMode
+              ? "bg-zinc-900 border-zinc-800 text-zinc-100"
+              : "bg-white border-slate-200 text-slate-900",
+          )}
+        >
           <DialogHeader>
-            <DialogTitle className="font-serif">Ξεχάσατε τον κωδικό σας;</DialogTitle>
-            <DialogDescription className={darkMode ? "text-zinc-500" : "text-slate-500"}>
-              Εισαγάγετε το email σας και θα στείλουμε αίτημα για την επαναφορά του κωδικού σας.
+            <DialogTitle className="font-serif">
+              Ξεχάσατε τον κωδικό σας;
+            </DialogTitle>
+            <DialogDescription
+              className={darkMode ? "text-zinc-500" : "text-slate-500"}
+            >
+              Εισαγάγετε το email σας και θα στείλουμε αίτημα για την επαναφορά
+              του κωδικού σας.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className={cn("text-sm", darkMode ? "text-zinc-400" : "text-slate-600")}>
-              Εισαγάγετε το email που χρησιμοποιείτε. Θα ειδοποιήσουμε τον διαχειριστή για να σας βοηθήσει.
+            <p
+              className={cn(
+                "text-sm",
+                darkMode ? "text-zinc-400" : "text-slate-600",
+              )}
+            >
+              Εισαγάγετε το email που χρησιμοποιείτε. Θα ειδοποιήσουμε τον
+              διαχειριστή για να σας βοηθήσει.
             </p>
-            <form onSubmit={handleForgot} className="space-y-4" autoComplete="off">
+            <form
+              onSubmit={handleForgot}
+              className="space-y-4"
+              autoComplete="off"
+            >
               <div className="space-y-2">
-                <Label htmlFor="forgot-email" className={darkMode ? "text-zinc-400" : "text-slate-600"}>Email</Label>
+                <Label
+                  htmlFor="forgot-email"
+                  className={darkMode ? "text-zinc-400" : "text-slate-600"}
+                >
+                  Email
+                </Label>
                 <Input
                   id="forgot-email"
                   name="forgot-email"
@@ -522,29 +880,40 @@ const Login = () => {
                     "transition-colors",
                     darkMode
                       ? "bg-zinc-950 border-zinc-700 text-white focus:border-blue-500/50"
-                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
+                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500",
                   )}
                 />
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setForgotOpen(false)} disabled={isSubmittingForgot}
+                <Button
+                  variant="outline"
+                  onClick={() => setForgotOpen(false)}
+                  disabled={isSubmittingForgot}
                   className={cn(
-                    darkMode ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800" : "border-slate-200 text-slate-600 hover:bg-slate-100"
-                  )}>
+                    darkMode
+                      ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-100",
+                  )}
+                >
                   Ακύρωση
                 </Button>
-                <Button type="submit" disabled={isSubmittingForgot}
+                <Button
+                  type="submit"
+                  disabled={isSubmittingForgot}
                   className={cn(
                     "rounded-full font-semibold",
-                    darkMode ? "bg-white text-zinc-900 hover:bg-zinc-200" : "bg-slate-900 text-white hover:bg-slate-800"
-                  )}>
+                    darkMode
+                      ? "bg-white text-zinc-900 hover:bg-zinc-200"
+                      : "bg-slate-900 text-white hover:bg-slate-800",
+                  )}
+                >
                   {isSubmittingForgot ? (
                     <div className="flex items-center space-x-2">
                       <Spinner size="sm" />
                       <span>Αποστολή...</span>
                     </div>
                   ) : (
-                    'Αποστολή αιτήματος'
+                    "Αποστολή αιτήματος"
                   )}
                 </Button>
               </DialogFooter>

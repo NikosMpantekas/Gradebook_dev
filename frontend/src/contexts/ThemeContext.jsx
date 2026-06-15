@@ -278,7 +278,7 @@ export const fallbackThemes = {
       primary: '#CA8A04',
       secondary: '#F5F5F5',
       accent: '#EAB308',
-      background: '#FFFFFF',
+      background: '#F9FAFB',
       foreground: '#000000',
       card: '#FFFFFF',
       'card-foreground': '#000000',
@@ -380,7 +380,8 @@ export const ThemeProvider = ({ children }) => {
       // Immediately apply the saved theme using fallback themes
       // so the user sees the correct colors right away (API fetch will
       // update later if there are custom API themes).
-      const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+      const themeStorageKey = authUser?._id ? `selectedTheme_${authUser._id}` : 'selectedTheme';
+      const savedTheme = localStorage.getItem(themeStorageKey) || localStorage.getItem('selectedTheme') || 'default';
       const themeToApply = themes[savedTheme] ? savedTheme : 'default';
       setCurrentTheme(themeToApply);
       if (themes[themeToApply]) {
@@ -391,12 +392,13 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     if (!loading) {
-      const savedTheme = localStorage.getItem('selectedTheme');
+      const themeStorageKey = authUser?._id ? `selectedTheme_${authUser._id}` : 'selectedTheme';
+      const savedTheme = localStorage.getItem(themeStorageKey) || localStorage.getItem('selectedTheme');
       if (savedTheme && themes[savedTheme]) {
         setCurrentTheme(savedTheme);
       }
     }
-  }, [loading, themes]);
+  }, [loading, themes, authUser]);
 
   // Apply theme-specific notification colors
   const applyThemeSpecificNotificationColors = (themeId, colors, isDark, root) => {
@@ -553,8 +555,9 @@ export const ThemeProvider = ({ children }) => {
     // Toggle high-contrast class for CSS overrides
     root.classList.toggle('theme-high-contrast', themeId === 'high-contrast');
 
-    // Save to localStorage  
-    localStorage.setItem('selectedTheme', themeId);
+    // Save to localStorage
+    const themeStorageKey = authUser?._id ? `selectedTheme_${authUser._id}` : 'selectedTheme';
+    localStorage.setItem(themeStorageKey, themeId);
   };
 
   // Fetch themes from API
@@ -585,7 +588,8 @@ export const ThemeProvider = ({ children }) => {
         // Set default theme if one exists in API
         const defaultTheme = apiData.find(theme => theme.isDefault);
         if (defaultTheme) {
-          const savedTheme = localStorage.getItem('selectedTheme');
+          const themeStorageKey = authUser?._id ? `selectedTheme_${authUser._id}` : 'selectedTheme';
+          const savedTheme = localStorage.getItem(themeStorageKey) || localStorage.getItem('selectedTheme');
           if (!savedTheme) {
             setCurrentTheme(defaultTheme._id);
           }
@@ -661,7 +665,7 @@ export const ThemeProvider = ({ children }) => {
     // Define independent public page colors (not user theme colors)
     const publicColors = {
       light: {
-        background: '#FFFFFF',
+        background: '#F9FAFB',
         foreground: '#1F2937',
         card: '#F9FAFB',
         'card-foreground': '#1F2937',
@@ -674,7 +678,7 @@ export const ThemeProvider = ({ children }) => {
         'secondary-foreground': '#0F172A'
       },
       dark: {
-        background: '#111827',
+        background: '#18181B',
         foreground: '#F9FAFB',
         card: '#1F2937',
         'card-foreground': '#F9FAFB',
@@ -710,12 +714,36 @@ export const ThemeProvider = ({ children }) => {
     // Set dark class appropriately
     root.classList.toggle('dark', Boolean(isDark));
 
+    // Update <meta name="theme-color"> so iOS status bar area matches the background
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', colors.background);
+    }
+
     console.log(`🎨 Applied ${isDark ? 'dark' : 'light'} mode CSS for public pages`);
+  };
+
+  const isPublicPath = () => {
+    const path = window.location.pathname.toLowerCase();
+    return (
+      path === '/' ||
+      path === '/login' ||
+      path === '/register' ||
+      path === '/home' ||
+      path === '/about' ||
+      path === '/contact' ||
+      path === '/maintenance' ||
+      path === '/print-grades' ||
+      path === '/student-stats/print'
+    );
   };
 
   // Apply theme whenever current theme, dark mode, or auth state changes
   useEffect(() => {
-    if (!loading && themes[currentTheme] && authUser?.token) {
+    if (isPublicPath()) {
+      console.log('🎨 Public page detected, applying public page CSS with dark mode:', darkMode);
+      applyPublicPageCSS(darkMode);
+    } else if (!loading && themes[currentTheme] && authUser?.token) {
       console.log('🎨 Applying theme for authenticated user:', currentTheme);
       applyTheme(currentTheme, darkMode);
     } else if (!authUser?.token) {
@@ -732,7 +760,8 @@ export const ThemeProvider = ({ children }) => {
     switchTheme: (themeId) => {
       if (themes[themeId]) {
         setCurrentTheme(themeId);
-        localStorage.setItem('selectedTheme', themeId);
+        const themeStorageKey = authUser?._id ? `selectedTheme_${authUser._id}` : 'selectedTheme';
+        localStorage.setItem(themeStorageKey, themeId);
       }
     },
     applyPublicPageCSS, // Expose this method for logout handling

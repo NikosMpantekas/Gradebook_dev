@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { getSavedAccounts } from "../services/accountStore";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -152,7 +153,7 @@ const Contact = () => {
     }
   })();
 
-  const dashboardPath = loggedInUser
+  const dashboardPath = (loggedInUser && getSavedAccounts().length <= 1)
     ? loggedInUser.role === "superadmin"
       ? "/superadmin/dashboard"
       : loggedInUser.role === "admin"

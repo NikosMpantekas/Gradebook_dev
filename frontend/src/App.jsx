@@ -7,9 +7,10 @@ import {
   Navigate,
   ScrollRestoration,
   Outlet,
+  useLocation,
 } from "react-router-dom";
 import { ThemeProvider as ShadcnThemeProvider } from "./components/theme-provider";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { useSelector, useDispatch } from "react-redux";
@@ -125,6 +126,29 @@ import HomeScreenPrompt from "./components/HomeScreenPrompt";
  * in the data router context.
  */
 const RootWrapper = () => {
+  const location = useLocation();
+  const { applyPublicPageCSS, applyTheme, currentTheme, darkMode, authUser } = useTheme();
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    const isPublic =
+      path === '/' ||
+      path === '/login' ||
+      path === '/register' ||
+      path === '/home' ||
+      path === '/about' ||
+      path === '/contact' ||
+      path === '/maintenance' ||
+      path === '/print-grades' ||
+      path === '/student-stats/print';
+
+    if (isPublic) {
+      applyPublicPageCSS(darkMode);
+    } else if (authUser?.token) {
+      applyTheme(currentTheme, darkMode);
+    }
+  }, [location.pathname, darkMode, authUser, currentTheme, applyPublicPageCSS, applyTheme]);
+
   return (
     <MaintenanceStatusChecker>
       <ScrollRestoration />
