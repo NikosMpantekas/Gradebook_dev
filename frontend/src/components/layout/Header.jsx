@@ -88,6 +88,16 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { notifications } = useSelector((state) => state.notifications);
   const { getCurrentThemeData } = useTheme();
 
+  const getDashboardPath = () => {
+    if (user?.role === 'superadmin') return '/superadmin/dashboard';
+    if (user?.role === 'admin') return '/app/admin';
+    if (user?.role === 'teacher') return '/app/teacher';
+    if (user?.role === 'student') return '/app/student';
+    if (user?.role === 'parent') return '/app/parent';
+    return '/app/dashboard';
+  };
+
+
   // Use the mobile detection hook instead of Tailwind breakpoints
   const isMobile = useIsMobile();
 
@@ -356,8 +366,9 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
           {/* Brand - Centered relative to the sidebar width (256px) on desktop */}
           <div className="flex flex-1 lg:flex-none lg:w-64 items-center justify-start lg:justify-center">
             <RouterLink
-              to="/"
+              to={user ? getDashboardPath() : "/"}
               className={cn(
+
                 "flex items-center justify-start lg:justify-center",
                 "no-underline text-foreground hover:text-primary transition-colors"
               )}
