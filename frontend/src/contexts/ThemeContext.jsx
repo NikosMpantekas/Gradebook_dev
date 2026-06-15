@@ -554,10 +554,6 @@ export const ThemeProvider = ({ children }) => {
 
     // Toggle high-contrast class for CSS overrides
     root.classList.toggle('theme-high-contrast', themeId === 'high-contrast');
-
-    // Save to localStorage
-    const themeStorageKey = authUser?._id ? `selectedTheme_${authUser._id}` : 'selectedTheme';
-    localStorage.setItem(themeStorageKey, themeId);
   };
 
   // Fetch themes from API
