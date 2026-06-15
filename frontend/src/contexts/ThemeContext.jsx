@@ -765,10 +765,13 @@ export const ThemeProvider = ({ children }) => {
       }
     },
     applyPublicPageCSS, // Expose this method for logout handling
+    applyTheme,
+    authUser,
     darkMode,
     fetchThemesFromAPI,
     getCurrentThemeData: () => themes[currentTheme]
   };
+
 
   return (
     <ThemeContext.Provider value={value}>
