@@ -42,6 +42,7 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import PasswordChange from "./components/PasswordChange";
 import Maintenance from "./pages/Maintenance";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 // Common Pages
 import StandaloneDashboard from "./pages/StandaloneDashboard";
@@ -296,6 +297,7 @@ function App() {
             <Route path="/change-password" element={<PasswordChange />} />
             <Route path="/register" element={<Register />} />
             <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
 
             {/* Root redirect based on role */}
             <Route

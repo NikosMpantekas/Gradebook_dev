@@ -129,11 +129,7 @@ const Login = () => {
     (state) => state.auth,
   );
   // Sync theme with homepage's publicPageTheme preference
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem("publicPageTheme");
-    return saved ? JSON.parse(saved) : true;
-  });
-
+  
   useEffect(() => {
     setIsLoaded(true);
     const queryParams = new URLSearchParams(window.location.search);
@@ -341,10 +337,10 @@ const Login = () => {
     <div
       className={cn(
         "min-h-screen flex font-sans transition-colors duration-300",
-        darkMode ? "bg-zinc-900 text-zinc-100" : "bg-gray-50 text-slate-900",
+        "bg-zinc-900 text-zinc-100",
       )}
       style={{
-        backgroundImage: `radial-gradient(${darkMode ? "#3f3f46" : "#cbd5e1"} 1px, transparent 1px)`,
+        backgroundImage: `radial-gradient(${"#3f3f46"} 1px, transparent 1px)`,
         backgroundSize: "32px 32px",
       }}
     >
@@ -352,7 +348,7 @@ const Login = () => {
       <div
         className={cn(
           "hidden lg:flex lg:w-[55%] relative overflow-hidden items-center justify-center border-r",
-          darkMode ? "border-zinc-800" : "border-slate-200",
+          "border-zinc-800",
         )}
       >
         {/* Subtle theme-based glow accent */}
@@ -361,14 +357,14 @@ const Login = () => {
             className="absolute -top-1/3 -left-1/4 w-[70%] h-[70%] rounded-full opacity-[0.07] blur-[100px]"
             style={{
               background:
-                `radial-gradient(circle, ${darkMode ? "#3b82f6" : "#2563eb"} 0%, transparent 70%)`,
+                `radial-gradient(circle, ${"#3b82f6"} 0%, transparent 70%)`,
             }}
           />
           <div
             className="absolute -bottom-1/4 right-0 w-[50%] h-[50%] rounded-full opacity-[0.05] blur-[80px]"
             style={{
               background:
-                `radial-gradient(circle, ${darkMode ? "#3b82f6" : "#2563eb"} 0%, transparent 70%)`,
+                `radial-gradient(circle, ${"#3b82f6"} 0%, transparent 70%)`,
             }}
           />
         </div>
@@ -393,7 +389,7 @@ const Login = () => {
           <span
             className={cn(
               "text-6xl font-serif font-bold tracking-tight",
-              darkMode ? "text-white" : "text-slate-900",
+              "text-white",
             )}
           >
             GradeBook
@@ -409,7 +405,7 @@ const Login = () => {
             to="/home"
             className={cn(
               "text-xl font-bold font-serif py-1 no-underline",
-              darkMode ? "text-white" : "text-slate-900",
+              "text-white",
             )}
           >
             GradeBook
@@ -428,9 +424,7 @@ const Login = () => {
             <Card
               className={cn(
                 "w-full border shadow-xl transition-all duration-300",
-                darkMode
-                  ? "bg-zinc-900 border-zinc-800 shadow-black/40"
-                  : "bg-white border-slate-200 shadow-slate-200/60",
+                "bg-zinc-900 border-zinc-800 shadow-black/40",
               )}
             >
               <CardHeader className="flex flex-col items-center space-y-3 pb-2 pt-6">
@@ -438,7 +432,7 @@ const Login = () => {
                   <CardTitle
                     className={cn(
                       "text-2xl font-serif font-bold tracking-tight transition-all ease-out duration-700",
-                      darkMode ? "text-white" : "text-slate-900",
+                      "text-white",
                     )}
                   >
                     {animationStep === "transitioning"
@@ -460,7 +454,7 @@ const Login = () => {
                         htmlFor="email"
                         className={cn(
                           "text-xs font-medium uppercase tracking-wider",
-                          darkMode ? "text-zinc-400" : "text-slate-500",
+                          "text-zinc-400",
                         )}
                       >
                         ΔΙΕΥΘΥΝΣΗ EMAIL
@@ -476,9 +470,7 @@ const Login = () => {
                         onChange={onChange}
                         className={cn(
                           "transition-colors duration-150",
-                          darkMode
-                            ? "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                            : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20",
+                          "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20",
                         )}
                       />
                     </div>
@@ -488,7 +480,7 @@ const Login = () => {
                         htmlFor="password"
                         className={cn(
                           "text-xs font-medium uppercase tracking-wider",
-                          darkMode ? "text-zinc-400" : "text-slate-500",
+                          "text-zinc-400",
                         )}
                       >
                         ΚΩΔΙΚΟΣ ΠΡΟΣΒΑΣΗΣ
@@ -504,9 +496,7 @@ const Login = () => {
                           onChange={onChange}
                           className={cn(
                             "transition-colors duration-150 pr-10",
-                            darkMode
-                              ? "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
-                              : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20",
+                            "bg-zinc-950 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20",
                           )}
                         />
                         <Button
@@ -515,9 +505,7 @@ const Login = () => {
                           size="sm"
                           className={cn(
                             "absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent",
-                            darkMode
-                              ? "text-zinc-500 hover:text-zinc-300"
-                              : "text-slate-400 hover:text-slate-600",
+                            "text-zinc-500 hover:text-zinc-300",
                           )}
                           onClick={togglePasswordVisibility}
                           tabIndex={-1}
@@ -543,9 +531,7 @@ const Login = () => {
                         checked={saveCredentials}
                         className={cn(
                           "rounded-full transition-colors duration-150 border-muted-foreground/45",
-                          darkMode
-                            ? "data-[state=checked]:text-zinc-900 focus-visible:ring-zinc-400"
-                            : "data-[state=checked]:text-white focus-visible:ring-slate-900",
+                          "data-[state=checked]:text-zinc-900 focus-visible:ring-zinc-400",
                         )}
                         disabled={isLoading || animationStep !== "idle"}
                         onCheckedChange={(checked) =>
@@ -558,7 +544,7 @@ const Login = () => {
                         htmlFor="saveCredentials"
                         className={cn(
                           "text-sm font-normal",
-                          darkMode ? "text-zinc-400" : "text-slate-500",
+                          "text-zinc-400",
                         )}
                       >
                         Απομνημόνευση στοιχείων
@@ -569,9 +555,7 @@ const Login = () => {
                       type="submit"
                       className={cn(
                         "w-full h-12 rounded-full font-semibold text-base transition-all hover:scale-[1.02] flex items-center justify-center",
-                        darkMode
-                          ? "bg-white text-zinc-900 hover:bg-zinc-200"
-                          : "bg-slate-900 text-white hover:bg-slate-800",
+                        "bg-white text-zinc-900 hover:bg-zinc-200",
                         animationStep === "transitioning" &&
                           "scale-105 shadow-lg",
                       )}
@@ -593,9 +577,7 @@ const Login = () => {
                       variant="ghost"
                       className={cn(
                         "w-full transition-colors text-sm",
-                        darkMode
-                          ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-                          : "text-slate-500 hover:text-slate-700 hover:bg-slate-100",
+                        "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800",
                       )}
                       onClick={handleForgotOpen}
                     >
@@ -608,9 +590,7 @@ const Login = () => {
                         variant="ghost"
                         className={cn(
                           "w-full transition-colors text-sm",
-                          darkMode
-                            ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-100",
+                          "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800",
                         )}
                         onClick={() => setShowLoginForm(false)}
                       >
@@ -623,9 +603,7 @@ const Login = () => {
                       variant="ghost"
                       className={cn(
                         "w-full transition-colors text-sm",
-                        darkMode
-                          ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800"
-                          : "text-slate-400 hover:text-slate-600 hover:bg-slate-100",
+                        "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800",
                       )}
                     >
                       <RouterLink
@@ -642,7 +620,7 @@ const Login = () => {
                     <div
                       className={cn(
                         "text-xs font-medium uppercase tracking-wider text-center mb-2",
-                        darkMode ? "text-zinc-400" : "text-slate-500",
+                        "text-zinc-400",
                       )}
                     >
                       Επιλέξτε λογαριασμό για σύνδεση
@@ -661,24 +639,20 @@ const Login = () => {
                             }
                             className={cn(
                               "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left cursor-pointer transition-all duration-150 group",
-                              darkMode
-                                ? "bg-zinc-900/60 border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600 text-zinc-100"
-                                : "bg-white border-slate-300 shadow-sm hover:bg-slate-50 hover:border-slate-400 text-slate-900",
+                              "bg-zinc-900/60 border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600 text-zinc-100",
                               isSwitching && "opacity-60 pointer-events-none",
                             )}
                           >
                             <Avatar
                               className={cn(
                                 "h-9 w-9 shrink-0",
-                                darkMode ? "bg-zinc-800" : "bg-slate-200",
+                                "bg-zinc-800",
                               )}
                             >
                               <AvatarFallback
                                 className={cn(
                                   "text-xs font-semibold flex items-center justify-center w-full h-full rounded-full",
-                                  darkMode
-                                    ? "bg-zinc-700 text-zinc-100"
-                                    : "bg-slate-300 text-slate-800",
+                                  "bg-zinc-700 text-zinc-100",
                                 )}
                               >
                                 {account.avatarInitials ||
@@ -705,7 +679,7 @@ const Login = () => {
                               <span
                                 className={cn(
                                   "text-sm font-semibold truncate",
-                                  darkMode ? "text-white" : "text-slate-900",
+                                  "text-white",
                                 )}
                               >
                                 {account.name ||
@@ -724,9 +698,7 @@ const Login = () => {
                               <span
                                 className={cn(
                                   "text-xs truncate",
-                                  darkMode
-                                    ? "text-zinc-400"
-                                    : "text-slate-500 font-medium",
+                                  "text-zinc-400",
                                 )}
                               >
                                 {account.schoolName ||
@@ -743,9 +715,7 @@ const Login = () => {
                                 onClick={(e) => handleRemoveAccount(e, account)}
                                 className={cn(
                                   "p-1.5 rounded-md shrink-0 opacity-0 group-hover:opacity-100 transition-all cursor-pointer",
-                                  darkMode
-                                    ? "hover:bg-zinc-850 hover:text-red-450 text-zinc-500"
-                                    : "hover:bg-slate-200 hover:text-red-500 text-slate-400",
+                                  "hover:bg-zinc-850 hover:text-red-450 text-zinc-500",
                                 )}
                                 aria-label="Αφαίρεση λογαριασμού"
                               >
@@ -763,9 +733,7 @@ const Login = () => {
                         onClick={() => setShowLoginForm(true)}
                         className={cn(
                           "w-full h-11 rounded-full font-semibold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2",
-                          darkMode
-                            ? "bg-zinc-800 text-white hover:bg-zinc-700"
-                            : "bg-slate-100 text-slate-800 hover:bg-slate-200",
+                          "bg-zinc-800 text-white hover:bg-zinc-700",
                         )}
                       >
                         <Plus className="h-4 w-4" />
@@ -792,9 +760,7 @@ const Login = () => {
                       variant="ghost"
                       className={cn(
                         "w-full transition-colors text-sm",
-                        darkMode
-                          ? "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800"
-                          : "text-slate-400 hover:text-slate-600 hover:bg-slate-100",
+                        "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800",
                       )}
                     >
                       <RouterLink
@@ -815,7 +781,7 @@ const Login = () => {
               <p
                 className={cn(
                   "text-xs",
-                  darkMode ? "text-zinc-600" : "text-slate-400",
+                  "text-zinc-600",
                 )}
               >
                 © {new Date().getFullYear()} GradeBook
@@ -830,9 +796,7 @@ const Login = () => {
         <DialogContent
           className={cn(
             "sm:max-w-md fade-in transition-colors",
-            darkMode
-              ? "bg-zinc-900 border-zinc-800 text-zinc-100"
-              : "bg-white border-slate-200 text-slate-900",
+            "bg-zinc-900 border-zinc-800 text-zinc-100",
           )}
         >
           <DialogHeader>
@@ -840,7 +804,7 @@ const Login = () => {
               Ξεχάσατε τον κωδικό σας;
             </DialogTitle>
             <DialogDescription
-              className={darkMode ? "text-zinc-500" : "text-slate-500"}
+              className={"text-zinc-500"}
             >
               Εισαγάγετε το email σας και θα στείλουμε αίτημα για την επαναφορά
               του κωδικού σας.
@@ -850,7 +814,7 @@ const Login = () => {
             <p
               className={cn(
                 "text-sm",
-                darkMode ? "text-zinc-400" : "text-slate-600",
+                "text-zinc-400",
               )}
             >
               Εισαγάγετε το email που χρησιμοποιείτε. Θα ειδοποιήσουμε τον
@@ -864,7 +828,7 @@ const Login = () => {
               <div className="space-y-2">
                 <Label
                   htmlFor="forgot-email"
-                  className={darkMode ? "text-zinc-400" : "text-slate-600"}
+                  className={"text-zinc-400"}
                 >
                   Email
                 </Label>
@@ -878,9 +842,7 @@ const Login = () => {
                   autoFocus
                   className={cn(
                     "transition-colors",
-                    darkMode
-                      ? "bg-zinc-950 border-zinc-700 text-white focus:border-blue-500/50"
-                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500",
+                    "bg-zinc-950 border-zinc-700 text-white focus:border-blue-500/50",
                   )}
                 />
               </div>
@@ -890,9 +852,7 @@ const Login = () => {
                   onClick={() => setForgotOpen(false)}
                   disabled={isSubmittingForgot}
                   className={cn(
-                    darkMode
-                      ? "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-100",
+                    "border-zinc-700 text-zinc-400 hover:bg-zinc-800",
                   )}
                 >
                   Ακύρωση
@@ -902,9 +862,7 @@ const Login = () => {
                   disabled={isSubmittingForgot}
                   className={cn(
                     "rounded-full font-semibold",
-                    darkMode
-                      ? "bg-white text-zinc-900 hover:bg-zinc-200"
-                      : "bg-slate-900 text-white hover:bg-slate-800",
+                    "bg-white text-zinc-900 hover:bg-zinc-200",
                   )}
                 >
                   {isSubmittingForgot ? (
