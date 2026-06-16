@@ -97,7 +97,7 @@ const Logo = () => {
       to="/home"
       className={cn(
         "relative flex items-center gap-3 text-xl font-bold tracking-tight font-serif py-1 group",
-        "no-underline transition-all duration-300 text-white"
+        "no-underline transition-all duration-300 text-white",
       )}
     >
       <img
@@ -122,7 +122,6 @@ const Contact = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  
   // Check if user is already logged in
   const loggedInUser = (() => {
     try {
@@ -134,19 +133,20 @@ const Contact = () => {
     }
   })();
 
-  const dashboardPath = (loggedInUser && getSavedAccounts().length <= 1)
-    ? loggedInUser.role === "superadmin"
-      ? "/superadmin/dashboard"
-      : loggedInUser.role === "admin"
-        ? "/app/admin"
-        : loggedInUser.role === "teacher"
-          ? "/app/teacher"
-          : loggedInUser.role === "student"
-            ? "/app/student"
-            : loggedInUser.role === "parent"
-              ? "/app/parent"
-              : "/login"
-    : "/login";
+  const dashboardPath =
+    loggedInUser && getSavedAccounts().length <= 1
+      ? loggedInUser.role === "superadmin"
+        ? "/superadmin/dashboard"
+        : loggedInUser.role === "admin"
+          ? "/app/admin"
+          : loggedInUser.role === "teacher"
+            ? "/app/teacher"
+            : loggedInUser.role === "student"
+              ? "/app/student"
+              : loggedInUser.role === "parent"
+                ? "/app/parent"
+                : "/login"
+      : "/login";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -172,7 +172,6 @@ const Contact = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  
   const validateField = (name, value) => {
     const errors = {};
 
@@ -480,9 +479,7 @@ const Contact = () => {
                   to={link.href}
                   className={cn(
                     "relative text-sm font-medium transition-colors duration-300 py-1 group",
-                    isActive
-                      ? "text-white"
-                      : "text-zinc-400 hover:text-white",
+                    isActive ? "text-white" : "text-zinc-400 hover:text-white",
                   )}
                 >
                   {link.label}
@@ -534,8 +531,9 @@ const Contact = () => {
                     "text-zinc-400",
                   )}
                 >
-                  Έχετε κάποια ερώτηση ή πρόταση; Συμπληρώστε τη φόρμα και η
-                  ομάδα μας θα επικοινωνήσει μαζί σας το συντομότερο δυνατό.
+                  Έχετε κάποια ερώτηση; Θέλετε το GradeBook και στο δικό σας
+                  φροντηστήριο; Συμπληρώστε τη φόρμα και η ομάδα μας θα
+                  επικοινωνήσει μαζί σας το συντομότερο δυνατό.
                 </p>
               </div>
 
@@ -574,12 +572,7 @@ const Contact = () => {
                       >
                         {info.value}
                       </p>
-                      <p
-                        className={cn(
-                          "text-xs",
-                          "text-zinc-500",
-                        )}
-                      >
+                      <p className={cn("text-xs", "text-zinc-500")}>
                         {info.description}
                       </p>
                     </div>
@@ -608,10 +601,7 @@ const Contact = () => {
                       <div className="space-y-2">
                         <Label
                           htmlFor="name"
-                          className={cn(
-                            "text-sm font-medium",
-                            "text-zinc-300",
-                          )}
+                          className={cn("text-sm font-medium", "text-zinc-300")}
                         >
                           Όνομα
                         </Label>
@@ -638,10 +628,7 @@ const Contact = () => {
                       <div className="space-y-2">
                         <Label
                           htmlFor="email"
-                          className={cn(
-                            "text-sm font-medium",
-                            "text-zinc-300",
-                          )}
+                          className={cn("text-sm font-medium", "text-zinc-300")}
                         >
                           Email
                         </Label>
@@ -670,10 +657,7 @@ const Contact = () => {
                     <div className="space-y-2">
                       <Label
                         htmlFor="subject"
-                        className={cn(
-                          "text-sm font-medium",
-                          "text-zinc-300",
-                        )}
+                        className={cn("text-sm font-medium", "text-zinc-300")}
                       >
                         Θέμα
                       </Label>
@@ -700,10 +684,7 @@ const Contact = () => {
                     <div className="space-y-2">
                       <Label
                         htmlFor="message"
-                        className={cn(
-                          "text-sm font-medium",
-                          "text-zinc-300",
-                        )}
+                        className={cn("text-sm font-medium", "text-zinc-300")}
                       >
                         Μήνυμα
                       </Label>
@@ -766,15 +747,13 @@ const Contact = () => {
 
       <footer className="py-8 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center md:justify-between gap-4">
-          <p
-            className={cn(
-              "text-sm",
-              "text-zinc-600",
-            )}
-          >
+          <p className={cn("text-sm", "text-zinc-600")}>
             © {new Date().getFullYear()} The GradeBook Team
           </p>
-          <Link to="/privacy" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+          <Link
+            to="/privacy"
+            className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+          >
             Πολιτική Απορρήτου
           </Link>
         </div>

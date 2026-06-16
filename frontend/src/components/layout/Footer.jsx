@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux';
 import { Separator } from '../ui/separator';
 import { useTheme } from '../../contexts/ThemeContext';
 import { cn } from '../../lib/utils';
-import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const { darkMode } = useSelector((state) => state.ui);
@@ -108,21 +107,20 @@ const Footer = () => {
         backgroundColor: themedFooterBg || undefined
       }}
     >
-      <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row items-center md:justify-between gap-4">
-        <div className="text-center md:text-left space-y-2 md:space-y-1">
+      <div className="container mx-auto px-4 h-28 flex items-center justify-center">
+        <div className="text-center space-y-2">
           <p className="text-sm" style={{ color: darkMode ? '#9CA3AF' : '#6B7280' }}>
             © {new Date().getFullYear()} GradeBook - Progressive Web App created by the GradeBook Team.
           </p>
+
           {showVersion && (
-            <p className="text-xs mt-1" style={{ color: darkMode ? '#6B7280' : '#9CA3AF' }}>
-              Version: {version}
-            </p>
+            <>
+              <Separator className="w-20 mx-auto" style={{ backgroundColor: darkMode ? '#4B5563' : '#D1D5DB' }} />
+              <p className="text-xs" style={{ color: darkMode ? '#6B7280' : '#9CA3AF' }}>
+                Version: {version}
+              </p>
+            </>
           )}
-        </div>
-        <div className="flex items-center gap-4">
-          <Link to="/privacy" className="text-sm hover:underline" style={{ color: darkMode ? '#6B7280' : '#9CA3AF' }}>
-            Πολιτική Απορρήτου
-          </Link>
         </div>
       </div>
     </footer>

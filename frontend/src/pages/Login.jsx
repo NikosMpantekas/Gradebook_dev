@@ -100,6 +100,9 @@ const Login = () => {
     } catch (err) {
       toast.error(err || "Failed to switch account. Please try again.");
       setSwitchingTo(null);
+      // ponytail: refresh list in case the stale account was removed
+      setSavedAccounts(getSavedAccounts());
+      if (getSavedAccounts().length === 0) setShowLoginForm(true);
     }
   };
 
