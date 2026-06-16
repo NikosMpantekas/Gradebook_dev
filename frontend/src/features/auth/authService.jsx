@@ -314,11 +314,45 @@ const logoutAllAccounts = async () => {
   window.location.replace(`/login?logout=all&cache=${cacheBuster}`);
 };
 
-// Switch active account locally
+// Switch active account locally — validates token before switching
+// ponytail: single /me call to gate stale tokens, refresh if needed
 const switchAccount = async (id, schoolId) => {
   const account = getAccountById(id, schoolId);
   if (!account) {
     throw new Error('Account not found in storage');
+  }
+
+  // Validate the stored token is still alive
+  // ponytail: bare instance so global 401 interceptor doesn't hijack this
+  const bare = axios.create();
+  try {
+    await bare.get(`${API_USERS}/me`, {
+      headers: { Authorization: `Bearer ${account.token}` },
+      timeout: 8000,
+    });
+  } catch (err) {
+    const status = err.response?.status;
+    const msg = err.response?.data?.message || '';
+
+    if (status === 401 && (msg.includes('expired') || msg.includes('Token expired'))) {
+      // Access token dead — try refresh
+      if (account.refreshToken) {
+        try {
+          const refreshed = await refreshTokenFunction(account.refreshToken);
+          account.token = refreshed.token;
+          account.refreshToken = refreshed.refreshToken;
+          updateAccountTokens(id, schoolId, refreshed.token, refreshed.refreshToken);
+        } catch {
+          // Both tokens dead — remove stale account
+          removeAccount(id, schoolId);
+          throw new Error('Η συνεδρία έληξε. Παρακαλώ συνδεθείτε ξανά.');
+        }
+      } else {
+        removeAccount(id, schoolId);
+        throw new Error('Η συνεδρία έληξε. Παρακαλώ συνδεθείτε ξανά.');
+      }
+    }
+    // Non-401 errors (network etc.) — let it through, dashboard will handle
   }
 
   setActiveAccount(id, schoolId);

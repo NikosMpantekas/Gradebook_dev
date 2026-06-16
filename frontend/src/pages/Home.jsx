@@ -33,7 +33,7 @@ const Logo = () => {
       to="/home"
       className={cn(
         "relative flex items-center gap-3 text-xl font-bold tracking-tight font-serif py-1 group",
-        "no-underline transition-all duration-300 text-white"
+        "no-underline transition-all duration-300 text-white",
       )}
     >
       <img
@@ -52,7 +52,6 @@ const navLinks = [
   { label: "Επικοινωνία", href: "/contact", match: "/contact" },
 ];
 
-
 export default function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -64,7 +63,7 @@ export default function Home() {
   // Persistent theme state
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   // Check if user is already logged in
   const loggedInUser = (() => {
     try {
@@ -76,19 +75,20 @@ export default function Home() {
     }
   })();
 
-  const dashboardPath = (loggedInUser && getSavedAccounts().length <= 1)
-    ? loggedInUser.role === "superadmin"
-      ? "/superadmin/dashboard"
-      : loggedInUser.role === "admin"
-        ? "/app/admin"
-        : loggedInUser.role === "teacher"
-          ? "/app/teacher"
-          : loggedInUser.role === "student"
-            ? "/app/student"
-            : loggedInUser.role === "parent"
-              ? "/app/parent"
-              : "/login"
-    : "/login";
+  const dashboardPath =
+    loggedInUser && getSavedAccounts().length <= 1
+      ? loggedInUser.role === "superadmin"
+        ? "/superadmin/dashboard"
+        : loggedInUser.role === "admin"
+          ? "/app/admin"
+          : loggedInUser.role === "teacher"
+            ? "/app/teacher"
+            : loggedInUser.role === "student"
+              ? "/app/student"
+              : loggedInUser.role === "parent"
+                ? "/app/parent"
+                : "/login"
+      : "/login";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -98,7 +98,6 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  
   return (
     <div
       className={cn(
@@ -187,9 +186,7 @@ export default function Home() {
                   to={link.href}
                   className={cn(
                     "relative text-sm font-medium transition-colors duration-300 py-1 group",
-                    isActive
-                      ? "text-white"
-                      : "text-zinc-400 hover:text-white",
+                    isActive ? "text-white" : "text-zinc-400 hover:text-white",
                   )}
                 >
                   {link.label}
@@ -223,7 +220,7 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero Section - Standard Layout */}
-        <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-[90vh] flex items-center">
+        <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-[100dvh] flex items-center">
           <div className="max-w-7xl mx-auto flex flex-col items-center w-full relative">
             {/* Text Content */}
             <motion.div
@@ -313,10 +310,7 @@ export default function Home() {
 
         {/* Features Bento Grid */}
         <section
-          className={cn(
-            "py-24 px-6 border-t",
-            "bg-zinc-900 border-zinc-800",
-          )}
+          className={cn("py-24 px-6 border-t", "bg-zinc-900 border-zinc-800")}
           id="features"
         >
           <div className="max-w-7xl mx-auto">
@@ -329,12 +323,7 @@ export default function Home() {
               >
                 Όλα τα εργαλεία σε μία πλατφόρμα
               </h2>
-              <p
-                className={cn(
-                  "text-xl",
-                  "text-zinc-400",
-                )}
-              >
+              <p className={cn("text-xl", "text-zinc-400")}>
                 Αντικαταστήστε τα πολύπλοκα excel και τα τετράδια με ένα
                 ολοκληρωμένο σύστημα.
               </p>
@@ -389,10 +378,7 @@ export default function Home() {
                         19.5
                       </div>
                       <div
-                        className={cn(
-                          "text-sm font-medium",
-                          "text-zinc-500",
-                        )}
+                        className={cn("text-sm font-medium", "text-zinc-500")}
                       >
                         Μ.Ο. Τάξης
                       </div>
@@ -406,10 +392,7 @@ export default function Home() {
                     >
                       <div className="text-4xl font-bold text-blue-500">A</div>
                       <div
-                        className={cn(
-                          "text-sm font-medium",
-                          "text-zinc-500",
-                        )}
+                        className={cn("text-sm font-medium", "text-zinc-500")}
                       >
                         Επίδοση
                       </div>
@@ -443,10 +426,7 @@ export default function Home() {
                     Παρουσίες
                   </h3>
                   <p
-                    className={cn(
-                      "text-base leading-relaxed",
-                      "text-zinc-400",
-                    )}
+                    className={cn("text-base leading-relaxed", "text-zinc-400")}
                   >
                     Καταγραφή απουσιών με ένα κλικ και αυτόματη ενημέρωση γονέων
                     μέσω ειδοποιήσεων.
@@ -479,10 +459,7 @@ export default function Home() {
                     Επικοινωνία
                   </h3>
                   <p
-                    className={cn(
-                      "text-base leading-relaxed",
-                      "text-zinc-400",
-                    )}
+                    className={cn("text-base leading-relaxed", "text-zinc-400")}
                   >
                     Στείλτε μαζικά μηνύματα και ανακοινώσεις σε μαθητές και
                     γονείς.
@@ -494,12 +471,7 @@ export default function Home() {
         </section>
 
         {/* Role-Based Benefits */}
-        <section
-          className={cn(
-            "py-24 px-6 border-t",
-            "border-zinc-800",
-          )}
-        >
+        <section className={cn("py-24 px-6 border-t", "border-zinc-800")}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16 max-w-3xl mx-auto">
               <h2
@@ -510,12 +482,7 @@ export default function Home() {
               >
                 Σχεδιασμένο για κάθε ρόλο
               </h2>
-              <p
-                className={cn(
-                  "text-xl",
-                  "text-zinc-400",
-                )}
-              >
+              <p className={cn("text-xl", "text-zinc-400")}>
                 Κάθε χρήστης έχει εξατομικευμένη εμπειρία προσαρμοσμένη στις
                 ανάγκες του.
               </p>
@@ -606,12 +573,7 @@ export default function Home() {
                               "text-emerald-400",
                             )}
                           />
-                          <span
-                            className={cn(
-                              "text-base",
-                              "text-zinc-300",
-                            )}
-                          >
+                          <span className={cn("text-base", "text-zinc-300")}>
                             {feature}
                           </span>
                         </li>
@@ -627,15 +589,13 @@ export default function Home() {
         {/* Footer */}
         <footer className="py-8 px-6">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center md:justify-between gap-4">
-            <p
-              className={cn(
-                "text-sm",
-                "text-zinc-600",
-              )}
-            >
+            <p className={cn("text-sm", "text-zinc-600")}>
               © {new Date().getFullYear()} The GradeBook Team
             </p>
-            <Link to="/privacy" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+            <Link
+              to="/privacy"
+              className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
               Πολιτική Απορρήτου
             </Link>
           </div>
