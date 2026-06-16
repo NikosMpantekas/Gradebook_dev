@@ -91,21 +91,13 @@ const useRateLimit = () => {
   return { isRateLimited, recordAttempt, getRemainingTime };
 };
 
-const Logo = ({ darkMode, currentPath }) => {
-  const isHome = currentPath === "/home" || currentPath === "/";
+const Logo = () => {
   return (
     <Link
       to="/home"
       className={cn(
-        "relative flex items-center gap-2.5 text-xl font-bold tracking-tight font-serif py-1 group",
-        "no-underline transition-all duration-300",
-        isHome
-          ? darkMode
-            ? "text-white"
-            : "text-slate-900"
-          : darkMode
-            ? "text-zinc-300 hover:text-white"
-            : "text-slate-700 hover:text-slate-900",
+        "relative flex items-center gap-3 text-xl font-bold tracking-tight font-serif py-1 group",
+        "no-underline transition-all duration-300 text-white"
       )}
     >
       <img
@@ -114,19 +106,12 @@ const Logo = ({ darkMode, currentPath }) => {
         className="w-9 h-9 object-contain"
       />
       GradeBook
-      <span
-        className={cn(
-          "absolute -bottom-1 left-0 h-[2px] rounded-full transition-all duration-300 ease-out",
-          darkMode ? "bg-white" : "bg-slate-900",
-          isHome ? "w-full" : "w-0 group-hover:w-full",
-        )}
-      />
     </Link>
   );
 };
 
 const navLinks = [
-  { label: "Πίνακας Ελέγχου", href: "/login" },
+  { label: "Αρχική", href: "/home", match: "/home" },
   { label: "Σχετικά με εμάς", href: "/about", match: "/about" },
   { label: "Επικοινωνία", href: "/contact", match: "/contact" },
 ];
@@ -137,11 +122,7 @@ const Contact = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem("publicPageTheme");
-    return saved ? JSON.parse(saved) : true;
-  });
-
+  
   // Check if user is already logged in
   const loggedInUser = (() => {
     try {
@@ -191,14 +172,7 @@ const Contact = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleToggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-      localStorage.setItem("publicPageTheme", JSON.stringify(newMode));
-      return newMode;
-    });
-  };
-
+  
   const validateField = (name, value) => {
     const errors = {};
 
@@ -422,10 +396,10 @@ const Contact = () => {
     <div
       className={cn(
         "min-h-screen font-sans flex flex-col transition-colors duration-300 selection:bg-yellow-200 selection:text-zinc-900",
-        darkMode ? "bg-zinc-900 text-zinc-100" : "bg-gray-50 text-slate-900",
+        "bg-zinc-900 text-zinc-100",
       )}
       style={{
-        backgroundImage: `radial-gradient(${darkMode ? "#3f3f46" : "#cbd5e1"} 1px, transparent 1px)`,
+        backgroundImage: `radial-gradient(${"#3f3f46"} 1px, transparent 1px)`,
         backgroundSize: "32px 32px",
       }}
     >
@@ -435,9 +409,7 @@ const Contact = () => {
           "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300",
           "pt-[env(safe-area-inset-top)]",
           scrolled
-            ? darkMode
-              ? "bg-zinc-900/80 border-b border-zinc-800/50 backdrop-blur-md"
-              : "bg-gray-50/80 border-b border-slate-200/50 backdrop-blur-md"
+            ? "bg-zinc-900/80 border-b border-zinc-800/50 backdrop-blur-md"
             : "bg-transparent border-transparent",
         )}
       >
@@ -456,22 +428,16 @@ const Contact = () => {
               side="left"
               className={cn(
                 "w-[280px] p-0 backdrop-blur-xl border-r pb-[env(safe-area-inset-bottom)]",
-                darkMode
-                  ? "bg-[#09090b]/90 border-zinc-800"
-                  : "bg-white/90 border-slate-200",
+                "bg-[#09090b]/90 border-zinc-800",
               )}
             >
               <SheetHeader className="px-6 pt-[max(env(safe-area-inset-top),1.5rem)] pb-6 border-b border-zinc-100/10">
-                <Logo darkMode={darkMode} currentPath={currentPath} />
+                <Logo />
               </SheetHeader>
               <div className="p-4">
                 <nav className="flex flex-col gap-1">
                   {navLinks.map((link) => {
                     const isActive = currentPath === link.match;
-                    const resolvedHref =
-                      link.href === "/login" && loggedInUser
-                        ? dashboardPath
-                        : link.href;
                     return (
                       <Button
                         key={link.label}
@@ -480,53 +446,50 @@ const Contact = () => {
                         className={cn(
                           "justify-start text-sm font-medium h-10 px-4 rounded-md",
                           isActive
-                            ? darkMode
-                              ? "bg-zinc-800 text-white"
-                              : "bg-slate-100 text-slate-900"
-                            : darkMode
-                              ? "hover:bg-zinc-800 text-zinc-400 hover:text-white"
-                              : "hover:bg-slate-100 text-slate-600 hover:text-slate-900",
+                            ? "bg-zinc-800 text-white"
+                            : "hover:bg-zinc-800 text-zinc-400 hover:text-white",
                         )}
                       >
-                        <Link to={resolvedHref}>{link.label}</Link>
+                        <Link to={link.href}>{link.label}</Link>
                       </Button>
                     );
                   })}
+                  <div className="my-2 h-px bg-zinc-800" />
+                  <Button
+                    asChild
+                    className="w-full justify-start text-sm font-medium h-10 px-4 rounded-md bg-transparent hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 transition-colors duration-200"
+                  >
+                    <Link to={loggedInUser ? dashboardPath : "/login"}>
+                      {loggedInUser ? "Πίνακας Ελέγχου" : "Σύνδεση"}
+                    </Link>
+                  </Button>
                 </nav>
               </div>
             </SheetContent>
           </Sheet>
 
-          <Logo darkMode={darkMode} currentPath={currentPath} />
+          <Logo />
           <div className="flex-1" />
           <div className="hidden md:flex items-center gap-6">
-            <MaintenanceIndicator darkMode={darkMode} />
+            <MaintenanceIndicator />
             {navLinks.map((link) => {
               const isActive = currentPath === link.match;
-              const resolvedHref =
-                link.href === "/login" && loggedInUser
-                  ? dashboardPath
-                  : link.href;
               return (
                 <Link
                   key={link.label}
-                  to={resolvedHref}
+                  to={link.href}
                   className={cn(
                     "relative text-sm font-medium transition-colors duration-300 py-1 group",
                     isActive
-                      ? darkMode
-                        ? "text-white"
-                        : "text-slate-900"
-                      : darkMode
-                        ? "text-zinc-400 hover:text-white"
-                        : "text-slate-600 hover:text-slate-900",
+                      ? "text-white"
+                      : "text-zinc-400 hover:text-white",
                   )}
                 >
                   {link.label}
                   <span
                     className={cn(
                       "absolute -bottom-1 left-0 h-[2px] rounded-full transition-all duration-300 ease-out",
-                      darkMode ? "bg-white" : "bg-slate-900",
+                      "bg-white",
                       isActive ? "w-full" : "w-0 group-hover:w-full",
                     )}
                   />
@@ -535,26 +498,17 @@ const Contact = () => {
             })}
           </div>
           <div className="w-px h-4 mx-6 bg-slate-200/20 hidden md:block" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <span className="md:hidden">
-              <MaintenanceIndicator darkMode={darkMode} />
+              <MaintenanceIndicator />
             </span>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleToggleDarkMode}
-              className={cn(
-                "rounded-full transition-colors w-8 h-8",
-                darkMode
-                  ? "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-100",
-              )}
+              asChild
+              className="hidden md:inline-flex bg-transparent hover:bg-zinc-800 text-zinc-300 hover:text-white font-medium px-6 py-2 rounded-full transition-colors duration-200 border border-zinc-700 hover:border-zinc-500"
             >
-              {darkMode ? (
-                <Sun size={20} weight="bold" />
-              ) : (
-                <Moon size={20} weight="bold" />
-              )}
+              <Link to={loggedInUser ? dashboardPath : "/login"}>
+                {loggedInUser ? "Πίνακας Ελέγχου" : "Σύνδεση"}
+              </Link>
             </Button>
           </div>
         </div>
@@ -569,7 +523,7 @@ const Contact = () => {
                 <h1
                   className={cn(
                     "font-serif font-bold text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.1]",
-                    darkMode ? "text-white" : "text-slate-900",
+                    "text-white",
                   )}
                 >
                   Επικοινωνήστε μαζί μας
@@ -577,7 +531,7 @@ const Contact = () => {
                 <p
                   className={cn(
                     "text-lg md:text-xl leading-relaxed max-w-lg",
-                    darkMode ? "text-zinc-400" : "text-slate-600",
+                    "text-zinc-400",
                   )}
                 >
                   Έχετε κάποια ερώτηση ή πρόταση; Συμπληρώστε τη φόρμα και η
@@ -592,9 +546,7 @@ const Contact = () => {
                     href={info.href}
                     className={cn(
                       "group flex items-center gap-6 p-4 rounded-xl transition-all duration-300 border",
-                      darkMode
-                        ? "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:shadow-xl"
-                        : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl",
+                      "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:shadow-xl",
                     )}
                   >
                     <div
@@ -609,7 +561,7 @@ const Contact = () => {
                       <h3
                         className={cn(
                           "font-serif font-bold text-lg mb-1",
-                          darkMode ? "text-white" : "text-slate-900",
+                          "text-white",
                         )}
                       >
                         {info.title}
@@ -617,7 +569,7 @@ const Contact = () => {
                       <p
                         className={cn(
                           "text-sm font-medium mb-1",
-                          darkMode ? "text-blue-400" : "text-blue-600",
+                          "text-blue-400",
                         )}
                       >
                         {info.value}
@@ -625,7 +577,7 @@ const Contact = () => {
                       <p
                         className={cn(
                           "text-xs",
-                          darkMode ? "text-zinc-500" : "text-slate-500",
+                          "text-zinc-500",
                         )}
                       >
                         {info.description}
@@ -634,9 +586,7 @@ const Contact = () => {
                     <ArrowRight
                       className={cn(
                         "ml-auto w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1",
-                        darkMode
-                          ? "text-zinc-600 group-hover:text-blue-400"
-                          : "text-slate-400 group-hover:text-blue-600",
+                        "text-zinc-600 group-hover:text-blue-400",
                       )}
                     />
                   </a>
@@ -649,9 +599,7 @@ const Contact = () => {
               <Card
                 className={cn(
                   "border transition-all duration-300 shadow-2xl",
-                  darkMode
-                    ? "bg-zinc-900/50 border-zinc-800"
-                    : "bg-white border-slate-200",
+                  "bg-zinc-900/50 border-zinc-800",
                 )}
               >
                 <CardContent className="p-8 md:p-10">
@@ -662,7 +610,7 @@ const Contact = () => {
                           htmlFor="name"
                           className={cn(
                             "text-sm font-medium",
-                            darkMode ? "text-zinc-300" : "text-slate-700",
+                            "text-zinc-300",
                           )}
                         >
                           Όνομα
@@ -675,9 +623,7 @@ const Contact = () => {
                           onChange={handleInputChange}
                           className={cn(
                             "h-12 px-4 rounded-md transition-all duration-300",
-                            darkMode
-                              ? "bg-zinc-800/50 border-zinc-700 focus:border-blue-500"
-                              : "bg-white border-slate-300 focus:border-blue-500",
+                            "bg-zinc-800/50 border-zinc-700 focus:border-blue-500",
                             formErrors.name && "border-red-500",
                           )}
                         />
@@ -694,7 +640,7 @@ const Contact = () => {
                           htmlFor="email"
                           className={cn(
                             "text-sm font-medium",
-                            darkMode ? "text-zinc-300" : "text-slate-700",
+                            "text-zinc-300",
                           )}
                         >
                           Email
@@ -708,9 +654,7 @@ const Contact = () => {
                           onChange={handleInputChange}
                           className={cn(
                             "h-12 px-4 rounded-md transition-all duration-300",
-                            darkMode
-                              ? "bg-zinc-800/50 border-zinc-700 focus:border-blue-500"
-                              : "bg-white border-slate-300 focus:border-blue-500",
+                            "bg-zinc-800/50 border-zinc-700 focus:border-blue-500",
                             formErrors.email && "border-red-500",
                           )}
                         />
@@ -728,7 +672,7 @@ const Contact = () => {
                         htmlFor="subject"
                         className={cn(
                           "text-sm font-medium",
-                          darkMode ? "text-zinc-300" : "text-slate-700",
+                          "text-zinc-300",
                         )}
                       >
                         Θέμα
@@ -741,9 +685,7 @@ const Contact = () => {
                         onChange={handleInputChange}
                         className={cn(
                           "h-12 px-4 rounded-md transition-all duration-300",
-                          darkMode
-                            ? "bg-zinc-800/50 border-zinc-700 focus:border-blue-500"
-                            : "bg-white border-slate-300 focus:border-blue-500",
+                          "bg-zinc-800/50 border-zinc-700 focus:border-blue-500",
                           formErrors.subject && "border-red-500",
                         )}
                       />
@@ -760,7 +702,7 @@ const Contact = () => {
                         htmlFor="message"
                         className={cn(
                           "text-sm font-medium",
-                          darkMode ? "text-zinc-300" : "text-slate-700",
+                          "text-zinc-300",
                         )}
                       >
                         Μήνυμα
@@ -774,9 +716,7 @@ const Contact = () => {
                         rows={5}
                         className={cn(
                           "resize-none p-4 rounded-md transition-all duration-300",
-                          darkMode
-                            ? "bg-zinc-800/50 border-zinc-700 focus:border-blue-500"
-                            : "bg-white border-slate-300 focus:border-blue-500",
+                          "bg-zinc-800/50 border-zinc-700 focus:border-blue-500",
                           formErrors.message && "border-red-500",
                         )}
                       />
@@ -793,9 +733,7 @@ const Contact = () => {
                       disabled={isSubmitting}
                       className={cn(
                         "w-full h-14 rounded-full font-semibold text-lg transition-all duration-300 hover:scale-105",
-                        darkMode
-                          ? "bg-white text-zinc-900 hover:bg-zinc-200"
-                          : "bg-slate-900 text-white hover:bg-slate-800",
+                        "bg-white text-zinc-900 hover:bg-zinc-200",
                       )}
                     >
                       {isSubmitting ? (
@@ -827,15 +765,18 @@ const Contact = () => {
       </main>
 
       <footer className="py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center md:justify-between gap-4">
           <p
             className={cn(
               "text-sm",
-              darkMode ? "text-zinc-600" : "text-slate-400",
+              "text-zinc-600",
             )}
           >
             © {new Date().getFullYear()} The GradeBook Team
           </p>
+          <Link to="/privacy" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+            Πολιτική Απορρήτου
+          </Link>
         </div>
       </footer>
 
@@ -852,12 +793,8 @@ const Contact = () => {
               className={cn(
                 "rounded-full px-6 py-3 flex items-center gap-3 shadow-2xl border backdrop-blur-md",
                 snackbar.severity === "success"
-                  ? darkMode
-                    ? "bg-green-500/10 border-green-500/20 text-green-400"
-                    : "bg-green-50 border-green-200 text-green-700"
-                  : darkMode
-                    ? "bg-red-500/10 border-red-500/20 text-red-400"
-                    : "bg-red-50 border-red-200 text-red-700",
+                  ? "bg-green-500/10 border-green-500/20 text-green-400"
+                  : "bg-red-500/10 border-red-500/20 text-red-400",
               )}
             >
               {snackbar.severity === "success" ? (
