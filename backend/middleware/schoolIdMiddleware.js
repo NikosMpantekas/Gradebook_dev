@@ -56,72 +56,15 @@ const setSchoolContext = asyncHandler(async (req, res, next) => {
   });
 
   // Get schoolId from the user object
-  let schoolId = req.user.schoolId;
+  const schoolId = req.user.schoolId;
 
-  // CRITICAL FIX: Try to recover schoolId if missing
   if (!schoolId) {
-    logger.warn('MIDDLEWARE', 'SchoolId missing from user object - attempting recovery', {
+    logger.error('MIDDLEWARE', 'SchoolId missing from user object', {
       userId: req.user._id,
-      email: req.user.email,
-      role: req.user.role
+      email: req.user.email
     });
-    
-    try {
-      // Recovery method 1: Try legacy school field
-      if (req.user.school) {
-        schoolId = req.user.school;
-        logger.info('MIDDLEWARE', 'Recovered schoolId from legacy school field', {
-          userId: req.user._id,
-          schoolId
-        });
-      }
-      // Recovery method 2: Try user's schools array
-      else if (req.user.schools && req.user.schools.length > 0) {
-        schoolId = req.user.schools[0];
-        logger.info('MIDDLEWARE', 'Recovered schoolId from user schools list', {
-          userId: req.user._id,
-          schoolId
-        });
-      }
-      // Recovery method 3: Try to find schoolId from email domain
-      else if (req.user.email && req.user.email.includes('@')) {
-        const emailDomain = req.user.email.split('@')[1];
-        const school = await School.findOne({ emailDomain });
-        
-        if (school) {
-          schoolId = school._id;
-          logger.info('MIDDLEWARE', 'Recovered schoolId from email domain', {
-            userId: req.user._id,
-            email: req.user.email,
-            schoolId
-          });
-        }
-      }
-
-      if (schoolId) {
-        // Update user with schoolId for future requests
-        await mongoose.model('User').findByIdAndUpdate(
-          req.user._id, 
-          { schoolId: schoolId },
-          { new: true }
-        );
-        req.user.schoolId = schoolId;
-      } else {
-        logger.error('MIDDLEWARE', 'SchoolId recovery failed - no matching context found', {
-          userId: req.user._id,
-          email: req.user.email
-        });
-        res.status(400);
-        throw new Error('Unable to determine your school context - please contact administrator');
-      }
-    } catch (error) {
-      logger.error('MIDDLEWARE', 'Error during schoolId recovery', {
-        error: error.message,
-        userId: req.user._id
-      });
-      res.status(res.statusCode === 200 ? 500 : res.statusCode);
-      throw error;
-    }
+    res.status(400);
+    throw new Error('Unable to determine your school context - please contact administrator');
   }
 
   // Verify that the school exists and is active
