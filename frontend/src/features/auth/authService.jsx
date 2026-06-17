@@ -314,16 +314,12 @@ const logoutAllAccounts = async () => {
   window.location.replace(`/login?logout=all&cache=${cacheBuster}`);
 };
 
-// Switch active account locally — validates token before switching
-// ponytail: single /me call to gate stale tokens, refresh if needed
 const switchAccount = async (id, schoolId) => {
   const account = getAccountById(id, schoolId);
   if (!account) {
     throw new Error('Account not found in storage');
   }
 
-  // Validate the stored token is still alive
-  // ponytail: bare instance so global 401 interceptor doesn't hijack this
   const bare = axios.create();
   try {
     await bare.get(`${API_USERS}/me`, {

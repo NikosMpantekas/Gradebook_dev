@@ -12,8 +12,6 @@ import { List } from "phosphor-react";
 import MaintenanceIndicator from "../components/MaintenanceIndicator";
 import { getSavedAccounts } from "../services/accountStore";
 
-// ponytail: basic placeholder page, no complex logic.
-// minimalist-ui: clean typography, large padding, zinc colors.
 
 const Logo = () => (
   <Link
