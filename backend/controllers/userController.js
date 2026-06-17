@@ -1796,6 +1796,13 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
 
   console.log('CREATE_USER_BY_ADMIN', `Creating ${role} account for ${name} (${email})`);
 
+  // ponytail: restrict roles school admin can create to prevent privilege escalation
+  const allowedRoles = ['teacher', 'student', 'secretary', 'parent'];
+  if (req.user.role !== 'superadmin' && !allowedRoles.includes(role)) {
+    res.status(403);
+    throw new Error('Not authorized to create this user role');
+  }
+
   if (!name || !email || !password || !role) {
     console.log('CREATE_USER_BY_ADMIN', 'Validation failed: Missing required fields');
     res.status(400);
