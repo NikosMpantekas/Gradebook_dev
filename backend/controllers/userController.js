@@ -164,81 +164,6 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Register new user
-// @route   POST /api/users
-// @access  Public
-const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
-
-  if (!name || !email || !password) {
-    res.status(400);
-    throw new Error('Please add all fields');
-  }
-
-  // Extract email domain to determine school
-  const emailDomain = email.includes('@') ? email.split('@')[1] : null;
-  if (!emailDomain) {
-    res.status(400);
-    throw new Error('Invalid email format');
-  }
-
-  console.log(`User registration request for ${email} with domain ${emailDomain}`);
-
-  // Block registration of superadmin accounts via public registration
-  if (role === 'superadmin') {
-    res.status(400);
-    throw new Error('Self-registration as superadmin is not allowed');
-  }
-
-  // For regular users, find the school based on email domain
-  const school = await mongoose.model('School').findOne({ emailDomain });
-  if (!school) {
-    res.status(400);
-    throw new Error('No school found for this email domain. Please use your school email address.');
-  }
-
-  // Check if user with same email already exists in the school
-  const userExists = await User.findOne({
-    email,
-    schoolId: school._id
-  });
-
-  if (userExists) {
-    res.status(400);
-    throw new Error('User already exists in this school');
-  }
-
-  // Hash password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  // Create user with schoolId for multi-tenancy
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role: role || 'student', // Default to student if role not specified
-    schoolDomain: emailDomain,
-    schoolId: school._id, // Set schoolId for multi-tenancy
-    school: school._id, // Legacy field - keeping for compatibility
-    active: true,
-  });
-
-  if (user) {
-    res.status(201).json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      schoolId: school._id,
-      token: generateToken(user._id, school._id),
-    });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
-  }
-});
-
 // @desc    Authenticate a user
 // @route   POST /api/users/login
 // @access  Public
@@ -2128,7 +2053,6 @@ const updateAdminPack = asyncHandler(async (req, res) => {
 
 // Export functions
 module.exports = {
-  registerUser,
   loginUser,
   refreshToken,
   logoutUser,

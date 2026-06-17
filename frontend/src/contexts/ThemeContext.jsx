@@ -724,7 +724,6 @@ export const ThemeProvider = ({ children }) => {
     return (
       path === '/' ||
       path === '/login' ||
-      path === '/register' ||
       path === '/home' ||
       path === '/about' ||
       path === '/contact' ||
