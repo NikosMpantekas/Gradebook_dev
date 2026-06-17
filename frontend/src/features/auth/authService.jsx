@@ -23,32 +23,6 @@ const buildEndpointUrl = (path) => {
 // Common API endpoint paths
 const API_USERS = buildEndpointUrl('/api/users');
 
-// Register user
-const register = async (userData) => {
-  const url = `${API_USERS}/`;
-  console.log(`[authService] Registering at: ${url}`);
-  const response = await axios.post(url, userData);
-
-  if (response.data) {
-    const dataToStore = {
-      ...response.data,
-      saveCredentials: Boolean(userData.saveCredentials)
-    };
-    // If the user wants to save credentials, store in localStorage
-    if (userData.saveCredentials) {
-      localStorage.setItem('user', JSON.stringify(dataToStore));
-    } else {
-      // Store in sessionStorage if they don't want to save credentials
-      sessionStorage.setItem('user', JSON.stringify(dataToStore));
-    }
-    // Also save in multi-account store
-    saveAccount(dataToStore);
-    setActiveAccount(dataToStore._id || dataToStore.id, dataToStore.schoolId);
-  }
-
-  return response.data;
-};
-
 // Login user
 const login = async (userData) => {
   console.log('Login attempt with:', { email: userData.email, saveCredentials: userData.saveCredentials });
@@ -725,7 +699,6 @@ const getProfile = async () => {
 };
 
 const authService = {
-  register,
   login,
   forgotPasswordRequest,
   logout,

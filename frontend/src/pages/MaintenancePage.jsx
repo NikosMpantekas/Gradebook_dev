@@ -95,7 +95,6 @@ export const MaintenanceStatusChecker = ({ children }) => {
     "/about",
     "/contact",
     "/login",
-    "/register",
     "/maintenance",
     "/change-password",
   ];

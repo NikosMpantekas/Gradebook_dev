@@ -42,24 +42,6 @@ const initialState = {
   message: '',
 };
 
-// Register user
-export const register = createAsyncThunk(
-  'auth/register',
-  async (user, thunkAPI) => {
-    try {
-      return await authService.register(user);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
-
 // Login user
 export const login = createAsyncThunk('auth/login', async (user, thunkAPI) => {
   console.log('Auth Slice: Login thunk triggered with:', { email: user.email });
@@ -238,38 +220,6 @@ export const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(register.pending, (state) => {
-        state.isLoading = true;
-        state.isError = false;
-        state.isSuccess = false;
-        state.message = '';
-      })
-      .addCase(register.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.isSuccess = true;
-        state.user = action.payload;
-
-        // Ensure we respect saveCredentials
-        if (state.user) {
-          try {
-            if (state.user.saveCredentials) {
-              localStorage.setItem('user', JSON.stringify(state.user));
-              sessionStorage.removeItem('user');
-            } else {
-              sessionStorage.setItem('user', JSON.stringify(state.user));
-              localStorage.removeItem('user');
-            }
-          } catch (error) {
-            console.error('Failed to update storage in register:', error);
-          }
-        }
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload;
-        state.user = null;
-      })
       .addCase(login.pending, (state) => {
         console.log('=== REDUX LOGIN PENDING ===');
         console.log('Setting isLoading to true and clearing previous state');

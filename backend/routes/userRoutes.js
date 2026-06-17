@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const {
-  registerUser,
   loginUser,
   refreshToken,
   logoutUser,
@@ -34,7 +33,6 @@ const {
 const { protect, admin, canManageUsers, superadmin } = require('../middleware/authMiddleware');
 
 // Public routes
-router.post('/', registerUser);
 router.post('/login', loginUser);
 router.post('/refresh-token', refreshToken);
 router.post('/forgot-password', forgotPasswordRequest);
