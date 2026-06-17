@@ -1,10 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const SystemMaintenance = require("../models/systemMaintenanceModel");
 
-/**
- * Middleware to check and enforce system-wide maintenance mode.
- * Allows requests to proceed if maintenance is off, or if user has bypass permissions.
- */
 const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
   try {
     const skipMaintenanceRoutes = [
