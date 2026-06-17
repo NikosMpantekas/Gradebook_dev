@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const path = require("path");
 const logger = require("../utils/logger");
+const { escapeRegex } = require("../utils/regex");
 
 // @desc    Create a new school owner (admin)
 // @route   POST /api/superadmin/create-school-owner
@@ -682,8 +683,8 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
     if (query && query.trim()) {
       andConditions.push({
         $or: [
-          { name: { $regex: query.trim(), $options: "i" } },
-          { email: { $regex: query.trim(), $options: "i" } },
+          { name: { $regex: escapeRegex(query.trim()), $options: "i" } },
+          { email: { $regex: escapeRegex(query.trim()), $options: "i" } },
         ],
       });
       console.log(`  - Added text search for: "${query.trim()}"`);

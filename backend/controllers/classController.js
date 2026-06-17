@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Class = require('../models/classModel');
 const Subject = require('../models/subjectModel');
 const mongoose = require('mongoose');
+const { escapeRegex } = require('../utils/regex');
 
 // @desc    Create a new class
 // @route   POST /api/classes
@@ -221,9 +222,9 @@ const getClasses = asyncHandler(async (req, res) => {
   // Optional filters from query params
   const { subject, direction, schoolBranch, teacher, student } = req.query;
 
-  if (subject) query.subject = { $regex: subject, $options: 'i' };
-  if (direction) query.direction = { $regex: direction, $options: 'i' };
-  if (schoolBranch) query.schoolBranch = { $regex: schoolBranch, $options: 'i' };
+  if (subject) query.subject = { $regex: escapeRegex(subject), $options: 'i' };
+  if (direction) query.direction = { $regex: escapeRegex(direction), $options: 'i' };
+  if (schoolBranch) query.schoolBranch = { $regex: escapeRegex(schoolBranch), $options: 'i' };
   if (teacher && mongoose.Types.ObjectId.isValid(teacher)) {
     query.teachers = new mongoose.Types.ObjectId(teacher);
   }
