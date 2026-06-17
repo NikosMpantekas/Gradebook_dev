@@ -28,8 +28,6 @@ const connectDB = async () => {
     console.log(`Database Name: ${conn.connection.name}`.cyan.underline);
     
     // Create index for faster queries
-    console.log('Setting up database indexes for multi-tenancy...');
-    
     return conn;
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`.red.underline.bold);
