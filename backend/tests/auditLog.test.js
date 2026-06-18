@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const AuditLog = require('../models/auditLogModel');
 const Session = require('../models/sessionModel');
 const Attendance = require('../models/attendanceModel');
@@ -8,20 +7,7 @@ const User = require('../models/userModel');
 const { auditLogPlugin } = require('../middleware/auditLogMiddleware');
 
 describe('Audit Log Tests', () => {
-  let mongoServer;
   let testSchool, testUser, testSession;
-
-  beforeAll(async () => {
-    // Setup in-memory MongoDB instance
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-  });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
 
   beforeEach(async () => {
     // Clean database

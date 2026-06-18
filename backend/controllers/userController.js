@@ -1796,7 +1796,7 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
 
   console.log('CREATE_USER_BY_ADMIN', `Creating ${role} account for ${name} (${email})`);
 
-  // ponytail: restrict roles school admin can create to prevent privilege escalation
+  // Restrict roles school admin can create to prevent privilege escalation
   const allowedRoles = ['teacher', 'student', 'secretary', 'parent'];
   if (req.user.role !== 'superadmin' && !allowedRoles.includes(role)) {
     res.status(403);

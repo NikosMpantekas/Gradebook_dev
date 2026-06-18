@@ -160,29 +160,24 @@ attendanceSchema.statics.upsertAttendance = async function(attendanceData) {
       updateData.lateMinutes = null;
     }
 
-    // Increment version for optimistic locking
-    updateData.$inc = { version: 1 };
 
-    // Idempotent upsert with compound unique index enforcement
-    const result = await this.findOneAndUpdate(
-      { 
-        sessionId, 
-        studentId 
-      },
-      { 
-        $set: updateData,
-        $setOnInsert: { 
-          sessionId, 
-          studentId,
-          version: 1,
-        }
-      },
-      { 
-        upsert: true, 
-        new: true,
-        runValidators: true,
-      }
-    ).populate('sessionId studentId markedBy');
+
+
+    let result = await this.findOne({ sessionId, studentId });
+    if (result) {
+      updateData.version = result.version + 1;
+      result = await this.findOneAndUpdate(
+        { sessionId, studentId },
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).populate('sessionId studentId markedBy');
+    } else {
+      updateData.version = 1;
+      updateData.sessionId = sessionId;
+      updateData.studentId = studentId;
+      result = await this.create(updateData);
+      result = await this.findById(result._id).populate('sessionId studentId markedBy');
+    }
 
     console.log(`[ATTENDANCE_UPSERT] Successfully upserted attendance ${result._id} for student ${studentId}`);
     return result;

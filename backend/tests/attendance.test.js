@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const Attendance = require('../models/attendanceModel');
 const Session = require('../models/sessionModel');
 const Class = require('../models/classModel');
@@ -7,20 +6,7 @@ const School = require('../models/schoolModel');
 const User = require('../models/userModel');
 
 describe('Attendance Model Tests', () => {
-  let mongoServer;
   let testSchool, testClass, testSession, testStudent, testTeacher;
-
-  beforeAll(async () => {
-    // Setup in-memory MongoDB instance
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-  });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
 
   beforeEach(async () => {
     // Clean database
@@ -101,7 +87,7 @@ describe('Attendance Model Tests', () => {
       expect(attendance.status).toBe('present');
       expect(attendance.minutesPresent).toBe(90);
       expect(attendance.version).toBe(1);
-      expect(attendance.markedBy.toString()).toBe(testTeacher._id.toString());
+      expect(attendance.markedBy._id.toString()).toBe(testTeacher._id.toString());
     });
 
     test('should update existing attendance record (idempotent)', async () => {
@@ -172,7 +158,7 @@ describe('Attendance Model Tests', () => {
       });
 
       // Reload session to check status
-      await testSession.reload();
+      testSession = await Session.findById(testSession._id);
       expect(testSession.status).toBe('held');
       expect(testSession.actualStartAt).toBeDefined();
     });
@@ -379,8 +365,8 @@ describe('Attendance Model Tests', () => {
         const session = await Session.create({
           classId: testClass._id,
           schoolId: testSchool._id,
-          scheduledStartAt: new Date(`2024-01-0${i + 1}T09:00:00Z`),
-          scheduledEndAt: new Date(`2024-01-0${i + 1}T10:30:00Z`),
+          scheduledStartAt: new Date(`2024-01-0${i + 2}T09:00:00Z`),
+          scheduledEndAt: new Date(`2024-01-0${i + 2}T10:30:00Z`),
           status: 'held'
         });
         sessions.push(session);
