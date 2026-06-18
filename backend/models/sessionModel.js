@@ -105,7 +105,7 @@ sessionSchema.statics.generateSessionsForClass = async function(classId, startDa
 
     if (!classData.schedule || classData.schedule.length === 0) {
       console.log(`[SESSION_GENERATOR] No schedule found for class ${classId}`);
-      return [];
+      return { upsertedCount: 0, modifiedCount: 0 };
     }
 
     const sessions = [];

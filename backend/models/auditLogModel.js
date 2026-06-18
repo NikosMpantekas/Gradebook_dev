@@ -47,7 +47,6 @@ const auditLogSchema = mongoose.Schema(
     reasonCode: {
       type: String,
       enum: ['manual_correction', 'system_policy', 'admin_override', 'data_migration', 'student_request', 'medical_excuse', 'technical_error', 'other'],
-      default: null,
       index: true,
     },
     // Human-readable reason text
@@ -104,7 +103,7 @@ auditLogSchema.index({ operation: 1, reasonCode: 1 });
 // Static method to log an audit entry
 auditLogSchema.statics.logAction = async function(auditData) {
   try {
-    const { entity, entityId, schoolId, actorUserId, operation, reasonCode, reasonText, changes, metadata, clientInfo } = auditData;
+    const { entity, entityId, schoolId, actorUserId, operation, reasonCode, reasonText, changes, metadata, clientInfo, occurredAt } = auditData;
     
     console.log(`[AUDIT_LOG] Logging ${operation} action on ${entity} ${entityId} by user ${actorUserId}`);
     
@@ -114,11 +113,12 @@ auditLogSchema.statics.logAction = async function(auditData) {
       schoolId: new mongoose.Types.ObjectId(schoolId),
       actorUserId: new mongoose.Types.ObjectId(actorUserId),
       operation,
-      reasonCode: reasonCode || null,
+      reasonCode: reasonCode || undefined,
       reasonText: reasonText || '',
       changes: changes || [],
       metadata: metadata || new Map(),
       clientInfo: clientInfo || {},
+      occurredAt: occurredAt || undefined,
     });
     
     await auditEntry.save();
