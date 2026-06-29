@@ -127,26 +127,34 @@ import HomeScreenPrompt from "./components/HomeScreenPrompt";
  */
 const RootWrapper = () => {
   const location = useLocation();
-  const { applyPublicPageCSS, applyTheme, currentTheme, darkMode, authUser } = useTheme();
+  const { applyPublicPageCSS, applyTheme, currentTheme, darkMode, authUser } =
+    useTheme();
 
   useEffect(() => {
     const path = location.pathname.toLowerCase();
     const isPublic =
-      path === '/' ||
-      path === '/login' ||
-      path === '/home' ||
-      path === '/about' ||
-      path === '/contact' ||
-      path === '/maintenance' ||
-      path === '/print-grades' ||
-      path === '/student-stats/print';
+      path === "/" ||
+      path === "/login" ||
+      path === "/home" ||
+      path === "/about" ||
+      path === "/contact" ||
+      path === "/maintenance" ||
+      path === "/print-grades" ||
+      path === "/student-stats/print";
 
     if (isPublic) {
       applyPublicPageCSS(darkMode);
     } else if (authUser?.token) {
       applyTheme(currentTheme, darkMode);
     }
-  }, [location.pathname, darkMode, authUser, currentTheme, applyPublicPageCSS, applyTheme]);
+  }, [
+    location.pathname,
+    darkMode,
+    authUser,
+    currentTheme,
+    applyPublicPageCSS,
+    applyTheme,
+  ]);
 
   return (
     <MaintenanceStatusChecker>
@@ -196,6 +204,23 @@ function App() {
       trackError(error, "App.initialization");
       setConfigInitialized(false);
     }
+
+    try {
+      const rl = sessionStorage.getItem("rateLimited");
+      if (rl) {
+        sessionStorage.removeItem("rateLimited");
+        const { retrySeconds, ts } = JSON.parse(rl);
+        if (Date.now() - ts < 60000) {
+          // only if < 60s old
+          const msg = retrySeconds
+            ? `Πάρα πολλά αιτήματα. Παρακαλώ περιμένετε ${Math.ceil(retrySeconds / 60)} λεπτά.`
+            : "Πάρα πολλά αιτήματα. Παρακαλώ περιμένετε λίγο.";
+          toast.error(msg, { id: "rate-limited", duration: 8000 });
+        }
+      }
+    } catch (e) {
+      /* ignore parse errors */
+    }
   }, []);
 
   // Initialize axios interceptors
@@ -236,14 +261,16 @@ function App() {
             typeof __BUILD_ID__ !== "undefined" &&
             data.build_id !== __BUILD_ID__
           ) {
-            console.log(`[Version Management] New build detected: ${data.build_id} (current: ${__BUILD_ID__})`);
+            console.log(
+              `[Version Management] New build detected: ${data.build_id} (current: ${__BUILD_ID__})`,
+            );
 
             // Show alert toast with a reload action using sonner
             toast.warning("New version available!", {
               description: "Please reload the app to get the latest updates.",
               action: {
                 label: "Reload",
-                onClick: () => window.location.reload(true)
+                onClick: () => window.location.reload(true),
               },
               duration: Infinity, // Keep it visible until reloaded
             });
@@ -866,9 +893,7 @@ function App() {
   );
 
   return (
-    <ErrorBoundary
-      componentName="Application Root"
-    >
+    <ErrorBoundary componentName="Application Root">
       <ThemeProvider>
         <ShadcnThemeProvider>
           <ScrollFix />
