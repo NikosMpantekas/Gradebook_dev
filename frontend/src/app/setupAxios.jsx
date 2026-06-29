@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 import { store } from './store';
 import offlineManager from '../utils/offlineManager';
 
@@ -40,6 +41,17 @@ const setupAxios = () => {
     (error) => {
       // Handle network failures for offline detection
       offlineManager.handleRequestFailure(error);
+
+      // Handle rate limiting (429 Too Many Requests)
+      if (error.response && error.response.status === 429) {
+        console.warn('[RATE LIMITED]', error.response.data?.message || 'Too many requests');
+        const retrySeconds = error.response.data?.retryAfterSeconds;
+        sessionStorage.setItem('rateLimited', JSON.stringify({ retrySeconds, ts: Date.now() }));
+        const msg = retrySeconds
+          ? `Πάρα πολλά αιτήματα. Παρακαλώ περιμένετε ${Math.ceil(retrySeconds / 60)} λεπτά.`
+          : 'Πάρα πολλά αιτήματα. Παρακαλώ περιμένετε λίγο.';
+        toast.error(msg, { id: 'rate-limited', duration: 8000 });
+      }
       
       // Handle 401 Unauthorized errors
       if (error.response && error.response.status === 401) {

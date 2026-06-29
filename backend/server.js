@@ -71,7 +71,9 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 15, // Limit each IP to 15 requests per windowMs
   message: {
-    message: 'Too many attempts. Please try again in 15 minutes.'
+    message: 'Too many attempts. Please try again in 15 minutes.',
+    code: 'RATE_LIMITED',
+    retryAfterSeconds: 900
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -85,7 +87,9 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // Limit each IP to 200 requests per windowMs
   message: {
-    message: 'Too many requests from this IP. Please try again later.'
+    message: 'Too many requests from this IP. Please try again later.',
+    code: 'RATE_LIMITED',
+    retryAfterSeconds: 900
   },
   standardHeaders: true,
   legacyHeaders: false,

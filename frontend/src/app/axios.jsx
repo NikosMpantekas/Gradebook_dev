@@ -1,6 +1,7 @@
-import axios from 'axios';
-import { store } from './store';
-import { API_URL } from '../config/appConfig';
+import axios from "axios";
+import { toast } from "sonner";
+import { store } from "./store";
+import { API_URL } from "../config/appConfig";
 
 // Request deduplication cache to prevent duplicate requests
 // Maps request signature (method + url + JSON.stringify(data)) to request promise
@@ -25,23 +26,23 @@ const getHostFromUrl = (url) => {
     const parsedUrl = new URL(url);
     return parsedUrl.hostname;
   } catch (e) {
-    return 'unknown-host';
+    return "unknown-host";
   }
 };
 
 // Check if URL uses HTTPS
 const isHttpsUrl = (url) => {
   try {
-    return url.startsWith('https://');
+    return url.startsWith("https://");
   } catch (e) {
     return false;
   }
 };
 
 // Log current API configuration
-logApiCall('Base API URL', API_URL);
-logApiCall('Using HTTPS', isHttpsUrl(API_URL));
-logApiCall('Target host', getHostFromUrl(API_URL));
+logApiCall("Base API URL", API_URL);
+logApiCall("Using HTTPS", isHttpsUrl(API_URL));
+logApiCall("Target host", getHostFromUrl(API_URL));
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
@@ -50,30 +51,34 @@ const axiosInstance = axios.create({
   // Base configuration
   timeout: 30000, // 30 second timeout
   headers: {
-    'x-client-version': '1.6.0.198', // App version for debugging
-    'x-client-platform': 'web', // Platform identifier
-    'x-client-origin': typeof window !== 'undefined' ? window.location.origin : 'unknown', // Origin tracking
+    "x-client-version": "1.6.0.198", // App version for debugging
+    "x-client-platform": "web", // Platform identifier
+    "x-client-origin":
+      typeof window !== "undefined" ? window.location.origin : "unknown", // Origin tracking
     // Add custom header to help with CORS
-    'x-frontend-url': typeof window !== 'undefined' ? window.location.origin : 'unknown'
+    "x-frontend-url":
+      typeof window !== "undefined" ? window.location.origin : "unknown",
   },
-  // Accept all 2xx and 3xx responses, reject 5xx
+  // Accept 2xx-4xx but reject 429 (rate limited) so error interceptor can surface it
   validateStatus: function (status) {
-    return status >= 200 && status < 500;
+    return status >= 200 && status < 500 && status !== 429;
   },
   // IMPORTANT: For production environments, we need proper CORS handling
-  withCredentials: true // Send cookies and authentication headers cross-origin
+  withCredentials: true, // Send cookies and authentication headers cross-origin
 });
 
 // Additional security headers for better CORS handling
-axiosInstance.defaults.headers.common['Access-Control-Allow-Origin'] = '*';
-axiosInstance.defaults.headers.common['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-axiosInstance.defaults.headers.common['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+axiosInstance.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
+axiosInstance.defaults.headers.common["Access-Control-Allow-Methods"] =
+  "GET, POST, PUT, DELETE, OPTIONS";
+axiosInstance.defaults.headers.common["Access-Control-Allow-Headers"] =
+  "Origin, X-Requested-With, Content-Type, Accept, Authorization";
 
 // Log axios configuration
-logApiCall('Axios instance created with custom configuration', {
+logApiCall("Axios instance created with custom configuration", {
   timeout: axiosInstance.defaults.timeout,
   baseHeaders: axiosInstance.defaults.headers,
-  validateStatus: 'Custom validator installed'
+  validateStatus: "Custom validator installed",
 });
 
 // Add request interceptor for authentication and deduplication
@@ -85,24 +90,26 @@ axiosInstance.interceptors.request.use(
     // Check if user is logged in and has a token
     if (state?.auth?.user?.token) {
       // Add token to request headers
-      config.headers['Authorization'] = `Bearer ${state.auth.user.token}`;
+      config.headers["Authorization"] = `Bearer ${state.auth.user.token}`;
 
       // Debug log for token validation
-      console.log('Adding auth token to request: ',
-        state.auth.user.token ? 'Valid token' : 'Invalid token');
+      console.log(
+        "Adding auth token to request: ",
+        state.auth.user.token ? "Valid token" : "Invalid token",
+      );
     } else {
       // For debugging - log when no token is available
-      console.log('No authentication token available for request:', config.url);
+      console.log("No authentication token available for request:", config.url);
     }
 
     // Generate a unique request ID for tracing
     const requestId = generateRequestId();
-    config.headers['x-request-id'] = requestId;
+    config.headers["x-request-id"] = requestId;
 
     // Only deduplicate GET, POST, PUT, DELETE requests
     // Skip OPTIONS and other special requests
     const method = config.method?.toUpperCase();
-    if (['GET', 'POST', 'PUT', 'DELETE'].includes(method)) {
+    if (["GET", "POST", "PUT", "DELETE"].includes(method)) {
       // Create a request signature based on method, URL and data
       const signature = `${method}:${config.url}:${JSON.stringify(config.data || {})}`;
 
@@ -131,9 +138,9 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     // Handle request error
-    console.error('Request interceptor error:', error);
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add response interceptor to handle authentication errors and cleanup request cache
@@ -147,7 +154,12 @@ axiosInstance.interceptors.response.use(
     // Clean up the request cache
 
     // Clear the request from cache after completion
-    if (response.config.method && ['GET', 'POST', 'PUT', 'DELETE'].includes(response.config.method.toUpperCase())) {
+    if (
+      response.config.method &&
+      ["GET", "POST", "PUT", "DELETE"].includes(
+        response.config.method.toUpperCase(),
+      )
+    ) {
       const signature = `${response.config.method.toUpperCase()}:${response.config.url}:${JSON.stringify(response.config.data || {})}`;
       requestCache.delete(signature);
     }
@@ -157,7 +169,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     // Don't handle axios cancellation errors (from our deduplication)
     if (axios.isCancel(error)) {
-      console.log('Request cancelled:', error.message);
+      console.log("Request cancelled:", error.message);
       return Promise.reject(error);
     }
 
@@ -173,63 +185,95 @@ axiosInstance.interceptors.response.use(
       const isHttps = isHttpsUrl(url);
 
       // Log error with request ID and enhanced details
-      const requestId = error.config.headers['x-request-id'] || 'unknown';
+      const requestId = error.config.headers["x-request-id"] || "unknown";
       console.error(`[ERROR ${requestId}] ${method} ${url} - ${error.message}`);
 
       // Add specific logging for network/HTTPS errors
-      if (error.message === 'Network Error' && isHttps) {
-        console.error(`[SSL ERROR] Connection to ${host} failed - this is likely due to an untrusted SSL certificate`);
-        console.error('[SSL SOLUTION] Try using HTTP instead of HTTPS for IP-based backends, or install a trusted certificate');
+      if (error.message === "Network Error" && isHttps) {
+        console.error(
+          `[SSL ERROR] Connection to ${host} failed - this is likely due to an untrusted SSL certificate`,
+        );
+        console.error(
+          "[SSL SOLUTION] Try using HTTP instead of HTTPS for IP-based backends, or install a trusted certificate",
+        );
       }
     }
 
     // Handle maintenance mode (503 Service Unavailable)
     if (error.response && error.response.status === 503) {
-      console.log('[MAINTENANCE DETECTED] System is in maintenance mode');
+      console.log("[MAINTENANCE DETECTED] System is in maintenance mode");
 
       // Check if the response indicates maintenance mode
       const responseData = error.response.data;
       if (responseData && responseData.isMaintenanceMode) {
         // Don't redirect if user is on a public route — let them browse freely
-        const publicRoutes = ['/home', '/about', '/contact', '/login', '/maintenance', '/change-password'];
+        const publicRoutes = [
+          "/home",
+          "/about",
+          "/contact",
+          "/login",
+          "/maintenance",
+          "/change-password",
+        ];
         const currentPath = window.location.pathname;
         const isOnPublicRoute = publicRoutes.includes(currentPath);
 
         if (isOnPublicRoute) {
-          console.log('[MAINTENANCE] On public route, suppressing redirect:', currentPath);
+          console.log(
+            "[MAINTENANCE] On public route, suppressing redirect:",
+            currentPath,
+          );
           return Promise.reject(error);
         }
 
-        console.log('[MAINTENANCE] Redirecting to maintenance page:', {
+        console.log("[MAINTENANCE] Redirecting to maintenance page:", {
           message: responseData.maintenanceMessage,
-          estimatedCompletion: responseData.estimatedCompletion
+          estimatedCompletion: responseData.estimatedCompletion,
         });
 
         // Redirect to maintenance page if not already there
-        if (!currentPath.includes('/maintenance')) {
-          window.location.href = '/maintenance';
+        if (!currentPath.includes("/maintenance")) {
+          window.location.href = "/maintenance";
           return Promise.reject(error);
         }
       }
+    }
+
+    // Handle rate limiting (429 Too Many Requests)
+    if (error.response && error.response.status === 429) {
+      console.warn(
+        "[RATE LIMITED]",
+        error.response.data?.message || "Too many requests",
+      );
+
+      const retrySeconds = error.response.data?.retryAfterSeconds;
+      sessionStorage.setItem(
+        "rateLimited",
+        JSON.stringify({ retrySeconds, ts: Date.now() }),
+      );
+      const msg = retrySeconds
+        ? `Πάρα πολλά αιτήματα. Παρακαλώ περιμένετε ${Math.ceil(retrySeconds / 60)} λεπτά.`
+        : "Πάρα πολλά αιτήματα. Παρακαλώ περιμένετε λίγο.";
+      toast.error(msg, { id: "rate-limited", duration: 8000 });
     }
 
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
-      console.error('Authentication error:', error.response.data);
+      console.error("Authentication error:", error.response.data);
 
       // Clear user data from storage if unauthorized
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('user');
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
 
       // Redirect to login page if not already there
-      if (!window.location.pathname.includes('/login')) {
-        console.log('Redirecting to login due to auth error');
-        window.location.href = '/login';
+      if (!window.location.pathname.includes("/login")) {
+        console.log("Redirecting to login due to auth error");
+        window.location.href = "/login";
       }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;
