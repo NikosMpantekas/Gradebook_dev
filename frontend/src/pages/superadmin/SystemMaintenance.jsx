@@ -5,7 +5,7 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
-import { useToast } from '../../components/ui/use-toast';
+import { toast } from 'sonner';
 import { DatePicker } from '../../components/ui/date-picker';
 import { TimePicker } from '../../components/ui/time-picker';
 import {
@@ -34,7 +34,7 @@ const roleColors = {
 };
 
 const SystemMaintenance = () => {
-  const { toast } = useToast();
+
 
   const [maintenanceData, setMaintenanceData] = useState(null);
   const [history, setHistory] = useState([]);
@@ -121,7 +121,7 @@ const SystemMaintenance = () => {
         allowedRoles: data.allowedRoles || [],
       });
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to fetch maintenance data', variant: 'destructive' });
+      toast.error('Error', { description: 'Failed to fetch maintenance data' });
     } finally {
       setLoading(false);
     }
@@ -164,7 +164,7 @@ const SystemMaintenance = () => {
   const handleToggleMaintenance = async () => {
     const enabling = !formData.isMaintenanceMode;
     if (enabling && !formData.message.trim()) {
-      toast({ title: 'Message Required', description: 'Please provide a maintenance message before enabling.', variant: 'destructive' });
+      toast.error('Message Required', { description: 'Please provide a maintenance message before enabling.' });
       return;
     }
 
@@ -172,11 +172,11 @@ const SystemMaintenance = () => {
     try {
       const payload = buildPayload(enabling);
       const response = await api.put('/api/system/maintenance', payload);
-      toast({ title: enabling ? 'Maintenance Enabled' : 'System Online', description: response.data.message });
+      toast.success(enabling ? 'Maintenance Enabled' : 'System Online', { description: response.data.message });
       await fetchMaintenanceData();
       await fetchMaintenanceHistory();
     } catch (error) {
-      toast({ title: 'Error', description: error.response?.data?.message || 'Failed to update maintenance mode', variant: 'destructive' });
+      toast.error('Error', { description: error.response?.data?.message || 'Failed to update maintenance mode' });
     } finally {
       setUpdating(false);
     }
@@ -187,11 +187,11 @@ const SystemMaintenance = () => {
     try {
       const payload = buildPayload();
       await api.put('/api/system/maintenance', payload);
-      toast({ title: 'Settings Updated', description: 'Maintenance settings saved successfully.' });
+      toast.success('Settings Updated', { description: 'Maintenance settings saved successfully.' });
       await fetchMaintenanceData();
       await fetchMaintenanceHistory();
     } catch (error) {
-      toast({ title: 'Error', description: error.response?.data?.message || 'Failed to update settings', variant: 'destructive' });
+      toast.error('Error', { description: error.response?.data?.message || 'Failed to update settings' });
     } finally {
       setUpdating(false);
     }
@@ -201,10 +201,10 @@ const SystemMaintenance = () => {
     if (!window.confirm('Are you sure you want to clear the maintenance history?')) return;
     try {
       await api.delete('/api/system/maintenance/history');
-      toast({ title: 'History Cleared' });
+      toast.success('History Cleared');
       setHistory([]);
     } catch {
-      toast({ title: 'Error', description: 'Failed to clear history', variant: 'destructive' });
+      toast.error('Error', { description: 'Failed to clear history' });
     }
   };
 

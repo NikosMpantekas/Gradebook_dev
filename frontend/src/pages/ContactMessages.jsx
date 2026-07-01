@@ -14,7 +14,7 @@ import PatchNotesList from '../components/PatchNotesList';
 import PatchNoteEditor from '../components/PatchNoteEditor';
 import AdminMessagesList from '../components/AdminMessagesList';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { Spinner } from '../components/ui/spinner';
 // shadcn components
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';

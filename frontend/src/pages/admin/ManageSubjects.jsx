@@ -33,7 +33,7 @@ import {
   Search as SearchIcon,
   MenuBook as SubjectIcon,
 } from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   getSubjects,

@@ -24,7 +24,7 @@ import {
 } from '../../components/ui/dialog';
 import { Badge } from '../../components/ui/badge';
 import { Textarea } from '../../components/ui/textarea';
-import { useToast } from '../../components/ui/use-toast';
+import { toast } from 'sonner';
 import { Plus, Search, Filter, Calendar, CheckCircle, XCircle, Clock, Download, Users, Lock } from 'lucide-react';
 import api from '../../app/axios';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
@@ -32,7 +32,7 @@ import { useSelector } from 'react-redux';
 import { cn } from '../../lib/utils';
 
 const Payments = () => {
-  const { toast } = useToast();
+
   const { isFeatureEnabled, loading: featureLoading } = useFeatureToggles();
   const darkMode = useSelector((state) => state.ui?.darkMode || false);
 
@@ -99,11 +99,7 @@ const Payments = () => {
       setTotalPages(response.data.pagination?.pages || 1);
     } catch (error) {
       console.error('Error fetching payments:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch payments',
-        variant: 'destructive'
-      });
+      toast.error('Error', { description: 'Failed to fetch payments' });
     } finally {
       setLoading(false);
     }
@@ -162,11 +158,11 @@ const Payments = () => {
           paymentMethod: paymentForm.paymentMethod,
           notes: paymentForm.notes
         });
-        toast({ title: 'Success', description: 'Payment updated successfully' });
+        toast.success('Success', { description: 'Payment updated successfully' });
       } else {
         // Create new payment
         await api.post('/api/payments', paymentForm);
-        toast({ title: 'Success', description: 'Payment created successfully' });
+        toast.success('Success', { description: 'Payment created successfully' });
       }
 
       setIsCreateModalOpen(false);
@@ -176,11 +172,7 @@ const Payments = () => {
       fetchStats();
     } catch (error) {
       console.error('Error saving payment:', error);
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to save payment',
-        variant: 'destructive'
-      });
+      toast.error('Error', { description: error.response?.data?.message || 'Failed to save payment' });
     }
   };
 
@@ -188,20 +180,13 @@ const Payments = () => {
   const handleGeneratePayments = async () => {
     try {
       const response = await api.post('/api/payments/generate', generateForm);
-      toast({
-        title: 'Success',
-        description: response.data.message
-      });
+      toast.success('Success', { description: response.data.message });
       setIsGenerateModalOpen(false);
       fetchPayments();
       fetchStats();
     } catch (error) {
       console.error('Error generating payments:', error);
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to generate payments',
-        variant: 'destructive'
-      });
+      toast.error('Error', { description: error.response?.data?.message || 'Failed to generate payments' });
     }
   };
 

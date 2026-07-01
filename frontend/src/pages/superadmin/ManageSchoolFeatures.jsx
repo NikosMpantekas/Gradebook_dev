@@ -11,7 +11,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import StarRateIcon from '@mui/icons-material/StarRate';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 const ManageSchoolFeatures = () => {
   const navigate = useNavigate();

@@ -11,7 +11,7 @@ import {
   ChevronLeft,
   Send
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { format, isAfter, parseISO } from 'date-fns';
 
 // Redux actions

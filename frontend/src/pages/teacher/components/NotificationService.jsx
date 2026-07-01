@@ -1,5 +1,5 @@
 import { createNotification, reset } from '../../../features/notifications/notificationSlice';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 /**
  * NotificationService - Handles the logic for sending notifications

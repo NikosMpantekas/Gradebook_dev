@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 import { format } from 'date-fns';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 // Import our custom components

@@ -22,7 +22,7 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import axiosInstance from '../../app/axios';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../../config/appConfig';

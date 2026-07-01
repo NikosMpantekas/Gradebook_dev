@@ -31,7 +31,7 @@ import {
   EventNote as EventNoteIcon
 } from '@mui/icons-material';
 import { createEvent, updateEvent, deleteEvent, reset } from '../../features/events/eventSlice';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getUsers } from '../../features/users/userSlice';
 import { getSchools } from '../../features/schools/schoolSlice';

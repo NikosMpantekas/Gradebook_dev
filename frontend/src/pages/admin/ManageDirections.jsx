@@ -27,7 +27,7 @@ import {
   Search as SearchIcon,
   TrendingUp as DirectionIcon,
 } from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   getDirections,

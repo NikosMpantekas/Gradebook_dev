@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig.jsx';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { CheckCircle2, AlertTriangle, Star, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';

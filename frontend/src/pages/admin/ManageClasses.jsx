@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { getClasses, deleteClass, createClass, updateClass } from '../../features/classes/classSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
 import { getUsers } from '../../features/users/userSlice';

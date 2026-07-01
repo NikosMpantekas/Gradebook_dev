@@ -32,7 +32,7 @@ import {
   GraduationCap,
   UserPlus
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { createUser, reset } from '../../features/users/userSlice';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
