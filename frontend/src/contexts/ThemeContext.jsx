@@ -543,8 +543,21 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.style.color = isDark ? '#E0E8F0' : '#1E293B';
 
     // Update <meta name="theme-color"> so iOS status bar area matches the background
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
+    const isIOSStandalone = window.navigator.standalone || (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+      window.matchMedia('(display-mode: standalone)').matches
+    );
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (isIOSStandalone) {
+      if (metaThemeColor) {
+        metaThemeColor.remove();
+      }
+    } else {
+      if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.setAttribute('name', 'theme-color');
+        document.head.appendChild(metaThemeColor);
+      }
       metaThemeColor.setAttribute('content', finalBg);
     }
 
@@ -711,8 +724,21 @@ export const ThemeProvider = ({ children }) => {
     root.classList.toggle('dark', Boolean(isDark));
 
     // Update <meta name="theme-color"> so iOS status bar area matches the background
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
+    const isIOSStandalone = window.navigator.standalone || (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+      window.matchMedia('(display-mode: standalone)').matches
+    );
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (isIOSStandalone) {
+      if (metaThemeColor) {
+        metaThemeColor.remove();
+      }
+    } else {
+      if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.setAttribute('name', 'theme-color');
+        document.head.appendChild(metaThemeColor);
+      }
       metaThemeColor.setAttribute('content', colors.background);
     }
 
