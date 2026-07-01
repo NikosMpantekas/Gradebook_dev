@@ -542,23 +542,10 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.style.backgroundColor = finalBg;
     document.documentElement.style.color = isDark ? '#E0E8F0' : '#1E293B';
 
-    // Update <meta name="theme-color"> so iOS status bar area matches the background
-    const isIOSStandalone = window.navigator.standalone || (
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-      window.matchMedia('(display-mode: standalone)').matches
-    );
-    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (isIOSStandalone) {
-      if (metaThemeColor) {
-        metaThemeColor.remove();
-      }
-    } else {
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.setAttribute('name', 'theme-color');
-        document.head.appendChild(metaThemeColor);
-      }
-      metaThemeColor.setAttribute('content', finalBg);
+    // Remove <meta name="theme-color"> to allow iOS PWA status bar to be translucent and extend around the notch without a separator line
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.remove();
     }
 
     // Ensure dark class and color scheme are properly set for browser chrome and shadcn
@@ -723,23 +710,10 @@ export const ThemeProvider = ({ children }) => {
     // Set dark class appropriately
     root.classList.toggle('dark', Boolean(isDark));
 
-    // Update <meta name="theme-color"> so iOS status bar area matches the background
-    const isIOSStandalone = window.navigator.standalone || (
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-      window.matchMedia('(display-mode: standalone)').matches
-    );
-    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (isIOSStandalone) {
-      if (metaThemeColor) {
-        metaThemeColor.remove();
-      }
-    } else {
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.setAttribute('name', 'theme-color');
-        document.head.appendChild(metaThemeColor);
-      }
-      metaThemeColor.setAttribute('content', colors.background);
+    // Remove <meta name="theme-color"> to allow iOS PWA status bar to be translucent and extend around the notch without a separator line
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.remove();
     }
 
     console.log(`🎨 Applied ${isDark ? 'dark' : 'light'} mode CSS for public pages`);
