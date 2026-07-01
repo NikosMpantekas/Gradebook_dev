@@ -9,7 +9,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { getGrade, reset } from '../../features/grades/gradeSlice';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';

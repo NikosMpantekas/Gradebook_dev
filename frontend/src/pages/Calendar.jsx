@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, subMonths, parseISO, isSameDay, startOfMonth, endOfMonth } from 'date-fns';
 import { getEvents, deleteEvent, reset } from '../features/events/eventSlice';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import logger from '../services/loggerService';
 import CalendarGrid from '../components/calendar/CalendarGrid';
 import CalendarEventDialog from '../components/calendar/CalendarEventDialog';

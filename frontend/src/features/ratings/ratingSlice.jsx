@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import ratingService from './ratingService';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 // Initial state
 const initialState = {

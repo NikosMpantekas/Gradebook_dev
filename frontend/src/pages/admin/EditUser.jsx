@@ -32,7 +32,7 @@ import {
   Link,
   Unlink
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { getUserById, updateUser, reset } from '../../features/users/userSlice';
 import { updateCurrentUserPermissions } from '../../features/auth/authSlice';
 import { API_URL } from '../../config/appConfig';

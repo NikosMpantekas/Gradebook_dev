@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { CheckCircle, Block, Edit, School, Email } from '@mui/icons-material';
 import { updateSchoolOwnerStatus } from '../../features/superadmin/superAdminSlice';
 

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { API_URL } from '../config/appConfig';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

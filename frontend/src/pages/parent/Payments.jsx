@@ -24,13 +24,13 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
-import { useToast } from '../../components/ui/use-toast';
+import { toast } from 'sonner';
 import { CheckCircle, XCircle, Clock, Calendar, User, AlertTriangle, Download, Lock } from 'lucide-react';
 import api from '../../app/axios';
 import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
 
 const ParentPayments = () => {
-  const { toast } = useToast();
+
   const { user } = useSelector((state) => state.auth);
   const { isFeatureEnabled, loading: featureLoading } = useFeatureToggles();
   
@@ -89,11 +89,7 @@ const ParentPayments = () => {
             console.error('[PARENT PAYMENTS] Error fetching individual student details:', fetchError);
             // Set empty array if we can't fetch student details
             setStudents([]);
-            toast({
-              title: 'Error',
-              description: 'Failed to fetch student details. Please contact school administration.',
-              variant: 'destructive'
-            });
+            toast.error('Error', { description: 'Failed to fetch student details. Please contact school administration.' });
           }
         }
       } else {
@@ -103,11 +99,7 @@ const ParentPayments = () => {
     } catch (error) {
       console.error('[PARENT PAYMENTS] Error fetching parent data:', error);
       setStudents([]);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch linked students. Please contact school administration.',
-        variant: 'destructive'
-      });
+      toast.error('Error', { description: 'Failed to fetch linked students. Please contact school administration.' });
     }
   };
 
@@ -181,11 +173,7 @@ const ParentPayments = () => {
         errorMessage = 'No payment records found for the selected criteria.';
       }
       
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
+      toast.error('Error', { description: errorMessage });
       setPayments([]);
     } finally {
       setLoading(false);

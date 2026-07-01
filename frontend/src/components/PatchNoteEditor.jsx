@@ -7,7 +7,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
 import { Button } from './ui/button';

@@ -11,7 +11,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import {
   getNotification,
   markNotificationAsRead,

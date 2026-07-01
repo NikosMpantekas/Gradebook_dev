@@ -44,7 +44,7 @@ import {
 } from '@mui/icons-material';
 // Note: If the project uses an older version of MUI, we'll use TextField for dates
 // and format them manually with date-fns instead of using DateTimePicker
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { format, isAfter, parseISO } from 'date-fns';
 
 // Redux actions

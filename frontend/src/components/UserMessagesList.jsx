@@ -17,7 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { Button } from './ui/button';
 import axios from 'axios';
 import { API_URL } from '../config/appConfig';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { refreshAppCounts } from '../lib/utils';
 
 const UserMessagesList = ({ messages, user, onMessagesChanged }) => {

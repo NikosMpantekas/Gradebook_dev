@@ -37,7 +37,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Mail as EmailIcon,
