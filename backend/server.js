@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const path = require("path");
 require("colors");
 const cors = require("cors");
 const {
@@ -15,7 +16,7 @@ const webpush = require("web-push");
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 connectDB()
   .then(async () => {
