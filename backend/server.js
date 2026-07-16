@@ -125,14 +125,12 @@ const corsOptions = {
   origin: function (origin, callback) {
     console.log('[CORS] Request from origin:', origin);
 
-    // PRODUCTION SECURITY: STRICT ORIGIN VALIDATION ONLY
+    // PRODUCTION SECURITY: ORIGIN VALIDATION
     if (process.env.NODE_ENV === 'production') {
-      // NO bypass allowed in production - SECURITY FIRST
+      // Allow requests with no origin (same-origin, service workers, server-to-server)
+      // JWT auth middleware protects all authenticated routes
       if (!origin) {
-        console.error('[CORS] BLOCKED: No origin header in production request');
-        const error = new Error('CORS policy: Origin required in production');
-        error.status = 403;
-        return callback(error, false);
+        return callback(null, true);
       }
 
       // Only allow exact frontend domain in production
@@ -246,13 +244,14 @@ app.use('/api', (req, res, next) => {
     return next();
   }
 
-  // PRODUCTION: Strict validation - BLOCK ALL external requests
+  // PRODUCTION: Strict validation - BLOCK unauthorized external requests
   if (process.env.NODE_ENV === 'production') {
-    // Must have origin from authorized frontend
-    if (!origin || origin !== process.env.FRONTEND_URL) {
+    // Allow requests without origin (same-origin, service workers, PWA background sync)
+    // Block requests from unauthorized origins (origin present but wrong)
+    if (origin && origin !== process.env.FRONTEND_URL) {
       logger.warn('SECURITY', 'BLOCKED: Unauthorized origin in production', {
         ip: req.ip,
-        origin: origin || 'MISSING',
+        origin: origin,
         userAgent: userAgent,
         path: req.path
       });
@@ -263,11 +262,11 @@ app.use('/api', (req, res, next) => {
       });
     }
 
-    // Must have referer from authorized frontend 
-    if (!referer || !referer.startsWith(process.env.FRONTEND_URL)) {
+    // Block requests from unauthorized referers (referer present but wrong)
+    if (referer && !referer.startsWith(process.env.FRONTEND_URL)) {
       logger.warn('SECURITY', 'BLOCKED: Invalid referer in production', {
         ip: req.ip,
-        referer: referer || 'MISSING',
+        referer: referer,
         userAgent: userAgent,
         path: req.path
       });
