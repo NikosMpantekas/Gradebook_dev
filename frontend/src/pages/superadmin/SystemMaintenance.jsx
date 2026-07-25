@@ -246,7 +246,7 @@ const SystemMaintenance = () => {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">System Maintenance</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">System Maintenance</h1>
           <p className="text-sm text-muted-foreground">Control and schedule system-wide maintenance windows</p>
         </div>
         <div className={cn(

@@ -68,6 +68,15 @@ app.use(helmet({
   },
 }));
 
+// ponytail: trust proxy MUST be set before rate limiters so req.ip is the real client, not the proxy
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+  console.log('[PROXY] Trust proxy enabled for production environment'.cyan);
+} else {
+  app.set('trust proxy', true);
+  console.log('[PROXY] Trust proxy enabled for development environment'.cyan);
+}
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 15, // Limit each IP to 15 requests per windowMs
@@ -96,14 +105,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api', limiter);
-
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
-  console.log('[PROXY] Trust proxy enabled for production environment'.cyan);
-} else {
-  app.set('trust proxy', true);
-  console.log('[PROXY] Trust proxy enabled for development environment'.cyan);
-}
 
 const allowedOrigins = [
   process.env.FRONTEND_URL, // Environment variable if set

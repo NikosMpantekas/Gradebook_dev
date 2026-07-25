@@ -264,7 +264,7 @@ const Profile = () => {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t('profile.title')}</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('profile.title')}</h1>
           <p className="text-muted-foreground">{t('profile.subtitle')}</p>
         </div>
         <div className="flex space-x-2">

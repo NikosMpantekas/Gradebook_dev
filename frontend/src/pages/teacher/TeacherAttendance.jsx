@@ -563,7 +563,7 @@ const TeacherAttendance = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
             {t("attendance.managementTitle")}
           </h1>
           <p className="text-muted-foreground mt-1">

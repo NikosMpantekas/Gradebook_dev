@@ -684,7 +684,7 @@ const ManageUsers = () => {
     return (
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('admin.manageUsersPage.title')}</h1>
           <Button
             disabled
             className="gap-2"
@@ -708,7 +708,7 @@ const ManageUsers = () => {
     return (
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('admin.manageUsersPage.title')}</h1>
           <Button
             onClick={handleAddUser}
             className="gap-2"
@@ -739,7 +739,7 @@ const ManageUsers = () => {
     return (
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('admin.manageUsersPage.title')}</h1>
           <Button
             onClick={handleAddUser}
             className="gap-2"
@@ -758,7 +758,7 @@ const ManageUsers = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-foreground">{t('admin.manageUsersPage.title')}</h1>
+        <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('admin.manageUsersPage.title')}</h1>
         <Button
           onClick={() => handleAddUser(currentUser?.role === 'secretary')}
           title={currentUser?.role === 'secretary' ? t('admin.manageUsersPage.cannotCreateSecretaryAccounts') : ''}

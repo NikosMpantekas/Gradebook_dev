@@ -240,11 +240,11 @@ const ContactMessages = () => {
   }
 
   return (
-    <div className="w-full max-w-full p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Contact Messages</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Contact Messages</h1>
+          <p className="text-muted-foreground">
             View and respond to user feedback and support requests
           </p>
         </div>

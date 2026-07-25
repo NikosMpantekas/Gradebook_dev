@@ -293,7 +293,7 @@ const Payments = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Payment Management</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Payment Management</h1>
           <p className="text-muted-foreground">Track and manage student monthly payments</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">

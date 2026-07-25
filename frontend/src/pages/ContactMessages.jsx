@@ -225,12 +225,16 @@ const ContactMessages = () => {
   ];
 
   return (
-    <div className="w-full mx-auto p-4 sm:p-6">
-      <Card className="mt-4 md:mt-6 mb-4 md:mb-6">
-        <CardHeader>
-          <CardTitle className="text-xl md:text-2xl font-bold">{t('contactMessages.supportAndAnnouncements')}</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
+          {t('contactMessages.supportAndAnnouncements')}
+        </h1>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
           {/* Mobile: Dropdown Selector */}
           <div className="block md:hidden mb-4">
             <Select value={tabValue} onValueChange={handleTabChange}>

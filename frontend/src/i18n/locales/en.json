@@ -1242,7 +1242,7 @@
     "sent": "Sent",
     "received": "Received",
     "emptyAllTitle": "No notifications",
-    "emptyAllDesc": "There are no notifications to display.",
+    "emptyAllDesc": "New notifications will appear here when available.",
     "emptySentTitle": "No sent notifications",
     "emptySentDesc": "You haven't sent any notifications yet.",
     "emptySentCta": "Send your first notification",

@@ -457,7 +457,7 @@ const StudentGrades = () => {
       <div className="container mx-auto p-4 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{t('student.myGrades')}</h1>
+            <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('student.myGrades')}</h1>
             <p className="text-muted-foreground mt-2">
               {t('student.viewAndTrack')}
             </p>

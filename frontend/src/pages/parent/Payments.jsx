@@ -261,7 +261,7 @@ const ParentPayments = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Payment History</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Payment History</h1>
           <p className="text-gray-600">View your children's payment records</p>
         </div>
         
@@ -285,7 +285,7 @@ const ParentPayments = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Payment History</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Payment History</h1>
           <p className="text-gray-600">View your children's payment records</p>
         </div>
         
@@ -307,7 +307,7 @@ const ParentPayments = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Payment History</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Payment History</h1>
           <p className="text-gray-600">Track your children's monthly payment records</p>
         </div>
       </div>

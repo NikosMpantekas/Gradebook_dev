@@ -488,40 +488,40 @@ const StudentDashboard = () => {
               <Button
                 onClick={() => navigate('/app/student/grades')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
                 style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
                 <BookOpen className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                <span className="group-hover:text-primary">{t('student.viewMyGrades')}</span>
+                <span className="text-center group-hover:text-primary">{t('student.viewMyGrades')}</span>
               </Button>
 
               <Button
                 onClick={() => navigate('/app/student/schedule')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
                 style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
                 <Calendar className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                <span className="group-hover:text-primary">{t('student.mySchedule')}</span>
+                <span className="text-center group-hover:text-primary">{t('student.mySchedule')}</span>
               </Button>
 
               <Button
                 onClick={() => navigate('/app/student/notifications')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
                 style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
                 <Bell className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                <span className="group-hover:text-primary">{t('navigation.notifications')}</span>
+                <span className="text-center group-hover:text-primary">{t('navigation.notifications')}</span>
               </Button>
               <Button
                 onClick={() => navigate('/app/student/attendance')}
                 variant="ghost"
-                className="h-auto p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
+                className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
                 style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
               >
                 <UserCheck className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                <span className="group-hover:text-primary">{t('navigation.myAttendance')}</span>
+                <span className="text-center group-hover:text-primary">{t('navigation.myAttendance')}</span>
               </Button>
             </div>
           </CardContent>

@@ -121,11 +121,11 @@ const StandaloneDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Button onClick={navigateToProfile} className="h-auto p-4 flex-col">
+                  <Button onClick={navigateToProfile} className="h-full p-4 flex-col">
                     <User className="h-8 w-8 mb-2" />
                     <span>Profile</span>
                   </Button>
-                  <Button onClick={navigateToNotifications} className="h-auto p-4 flex-col" variant="outline">
+                  <Button onClick={navigateToNotifications} className="h-full p-4 flex-col" variant="outline">
                     <Bell className="h-8 w-8 mb-2" />
                     <span>Notifications</span>
                   </Button>

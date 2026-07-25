@@ -210,7 +210,7 @@ const SystemLogs = () => {
     <div className="w-full p-6 space-y-6 max-w-[1600px] mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">System Logs</h1>
+        <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">System Logs</h1>
         <p className="text-muted-foreground mt-2">
           Monitor system performance and error logs
         </p>

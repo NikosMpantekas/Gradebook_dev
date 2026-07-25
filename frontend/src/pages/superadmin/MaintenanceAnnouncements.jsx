@@ -229,7 +229,7 @@ const MaintenanceAnnouncements = () => {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Maintenance Announcements</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Maintenance Announcements</h1>
           <p className="text-muted-foreground">Create and manage scheduled maintenance messages for all users</p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

@@ -423,7 +423,7 @@ const RatingManager = () => {
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+        <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
           Teacher & Subject Rating System
         </h1>
         <p className="text-muted-foreground">

@@ -362,7 +362,7 @@ const CreateNotification = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
+            <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
               {user.role === 'admin' ? t('teacherNotifications.createPage.titleAdmin') : t('teacherNotifications.createPage.titleTeacher')}
             </h1>
             <p className="text-muted-foreground">

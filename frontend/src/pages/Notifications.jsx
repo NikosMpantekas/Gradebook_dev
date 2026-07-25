@@ -211,36 +211,33 @@ const Notifications = () => {
   }, [navigate]);
 
   return (
-    <div className="w-full mx-auto p-2 sm:p-4 lg:p-6">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Page Header */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
+            {t('notifications.title')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('notifications.subtitle') || 'Manage your notifications and communications'}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            handleRefresh();
+            toast.info(t('notifications.refreshing'));
+          }}
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className="mr-2 w-4 h-4" />
+          {t('notifications.refresh')}
+        </Button>
+      </div>
+
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold">
-                {t('notifications.title')}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground hidden sm:block">
-                {t('notifications.subtitle') || 'Manage your notifications and communications'}
-              </p>
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                console.log('Manually refreshing notifications');
-                handleRefresh();
-                toast.info(t('notifications.refreshing'));
-              }}
-              className="w-full sm:w-auto"
-            >
-              <RefreshCw className="mr-2 w-4 h-4" />
-              {t('notifications.refresh')}
-            </Button>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
+        <CardContent className="p-6">
           <Tabs value={tabValue} onValueChange={handleChangeTab} className="w-full">
             <TabsList className={`grid w-full ${(user?.role === 'teacher' || user?.role === 'admin') ? 'grid-cols-2' : 'grid-cols-1'} gap-1 bg-muted`}>
               <TabsTrigger value="received" className="relative flex items-center justify-center text-sm">

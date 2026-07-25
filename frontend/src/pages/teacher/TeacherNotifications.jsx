@@ -295,10 +295,10 @@ const TeacherNotifications = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between flex-col sm:flex-row gap-3">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('teacherNotifications.title')}</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('teacherNotifications.title')}</h1>
           <p className="text-muted-foreground">
             {t('teacherNotifications.subtitle')}
           </p>
@@ -310,13 +310,7 @@ const TeacherNotifications = () => {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            {t('teacherNotifications.center')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {/* Mobile: Dropdown Selector */}
           <div className="block md:hidden mb-4">
             <Select value={activeTab} onValueChange={setActiveTab}>
@@ -342,10 +336,7 @@ const TeacherNotifications = () => {
                 ) : data.all.length === 0 ? (
                   <div className="text-center py-8">
                     <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyAllTitle')}</h3>
-                    <p className="text-muted-foreground">
-                      {t('teacherNotifications.emptyAllDesc')}
-                    </p>
+                    <h3 className="text-lg font-semibold">{t('teacherNotifications.emptyAllTitle')}</h3>
                   </div>
                 ) : (
                   <NotificationsList
@@ -371,10 +362,7 @@ const TeacherNotifications = () => {
                 ) : data.sent.length === 0 ? (
                   <div className="text-center py-8">
                     <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptySentTitle')}</h3>
-                    <p className="text-muted-foreground mb-4">
-                      {t('teacherNotifications.emptySentDesc')}
-                    </p>
+                    <h3 className="text-lg font-semibold mb-4">{t('teacherNotifications.emptySentTitle')}</h3>
                     <Button onClick={handleCreateNew} variant="outline" className="w-full sm:w-auto">
                       {t('teacherNotifications.emptySentCta')}
                     </Button>
@@ -403,10 +391,7 @@ const TeacherNotifications = () => {
                 ) : data.received.length === 0 ? (
                   <div className="text-center py-8">
                     <MailOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyReceivedTitle')}</h3>
-                    <p className="text-muted-foreground">
-                      {t('teacherNotifications.emptyReceivedDesc')}
-                    </p>
+                    <h3 className="text-lg font-semibold">{t('teacherNotifications.emptyReceivedTitle')}</h3>
                   </div>
                 ) : (
                   <NotificationsList
@@ -442,10 +427,7 @@ const TeacherNotifications = () => {
                   ) : data.all.length === 0 ? (
                     <div className="text-center py-8">
                       <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyAllTitle')}</h3>
-                      <p className="text-muted-foreground">
-                        {t('teacherNotifications.emptyAllDesc')}
-                      </p>
+                      <h3 className="text-lg font-semibold">{t('teacherNotifications.emptyAllTitle')}</h3>
                     </div>
                   ) : (
                     <NotificationsList
@@ -470,10 +452,7 @@ const TeacherNotifications = () => {
                   ) : data.sent.length === 0 ? (
                     <div className="text-center py-8">
                       <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptySentTitle')}</h3>
-                      <p className="text-muted-foreground mb-4">
-                        {t('teacherNotifications.emptySentDesc')}
-                      </p>
+                      <h3 className="text-lg font-semibold mb-4">{t('teacherNotifications.emptySentTitle')}</h3>
                       <Button onClick={handleCreateNew} variant="outline">
                         {t('teacherNotifications.emptySentCta')}
                       </Button>
@@ -501,10 +480,7 @@ const TeacherNotifications = () => {
                   ) : data.received.length === 0 ? (
                     <div className="text-center py-8">
                       <MailOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">{t('teacherNotifications.emptyReceivedTitle')}</h3>
-                      <p className="text-muted-foreground">
-                        {t('teacherNotifications.emptyReceivedDesc')}
-                      </p>
+                      <h3 className="text-lg font-semibold">{t('teacherNotifications.emptyReceivedTitle')}</h3>
                     </div>
                   ) : (
                     <NotificationsList

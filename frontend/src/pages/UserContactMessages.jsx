@@ -177,7 +177,7 @@ const UserContactMessages = () => {
       {/* Page Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">My Messages & Bug Reports</h1>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">My Messages & Bug Reports</h1>
           <p className="text-muted-foreground">View and track responses to your submitted messages and bug reports.</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleBack} className="w-fit">

@@ -255,7 +255,7 @@ const SuperAdminNotifications = () => {
         <div className="flex items-center space-x-3">
           <NotificationsIcon className="h-8 w-8 text-primary shrink-0" />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Notifications Hub</h1>
+            <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Notifications Hub</h1>
             <p className="text-sm text-muted-foreground">Manage platform communications system-wide.</p>
           </div>
         </div>
