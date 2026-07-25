@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
@@ -10,6 +11,7 @@ import { API_URL } from '../../config/appConfig';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const StudentStatsPrint = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [gradesData, setGradesData] = useState(null);
@@ -116,7 +118,7 @@ const StudentStatsPrint = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('el-GR');
   };
 
   if (loading) {
@@ -146,7 +148,7 @@ const StudentStatsPrint = () => {
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Analysis
+          Πίσω στην Ανάλυση
         </Button>
         
         <div className="flex gap-2">
@@ -155,7 +157,7 @@ const StudentStatsPrint = () => {
             className="flex items-center gap-2"
           >
             <Printer className="h-4 w-4" />
-            Print
+            Εκτύπωση
           </Button>
         </div>
       </div>
@@ -167,18 +169,18 @@ const StudentStatsPrint = () => {
           <h1 className="text-3xl font-bold mb-1 print:text-black" style={{
             color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
           }}>
-            Student Grade Analysis Report
+            Αναφορά Ανάλυσης Βαθμών Μαθητή
           </h1>
           <h2 className="text-xl font-semibold mb-2 print:text-black" style={{
             color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
           }}>
-            {selectedStudentData?.name || 'Student Name'}
+            {selectedStudentData?.name || 'Όνομα Μαθητή'}
           </h2>
           <p className="text-lg text-muted-foreground mb-2 print:text-gray-600 no-print">
-            Period: {formatDate(startDate)} - {formatDate(endDate)}
+            Περίοδος: {formatDate(startDate)} - {formatDate(endDate)}
           </p>
           <p className="text-sm text-muted-foreground print:text-gray-600 no-print">
-            Generated on: {new Date().toLocaleDateString()}
+            Δημιουργήθηκε στις: {new Date().toLocaleDateString('el-GR')}
           </p>
         </div>
 
@@ -203,7 +205,7 @@ const StudentStatsPrint = () => {
                   <div className="text-center">
                     <p className="text-sm print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
-                    }}>Student Average:</p>
+                    }}>Μέσος Όρος Μαθητή:</p>
                     <p className="text-lg font-bold print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
                     }}>
@@ -213,7 +215,7 @@ const StudentStatsPrint = () => {
                   <div className="text-center">
                     <p className="text-sm print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
-                    }}>Class Average:</p>
+                    }}>Μέσος Όρος Τάξης:</p>
                     <p className="text-lg font-bold print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
                     }}>
@@ -223,7 +225,7 @@ const StudentStatsPrint = () => {
                   <div className="text-center">
                     <p className="text-sm print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
-                    }}>Total Grades:</p>
+                    }}>Σύνολο Βαθμών:</p>
                     <p className="text-lg font-bold print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
                     }}>
@@ -233,11 +235,11 @@ const StudentStatsPrint = () => {
                   <div className="text-center">
                     <p className="text-sm print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.['muted-foreground'] : themeData?.colors?.['muted-foreground']
-                    }}>Performance:</p>
+                    }}>Απόδοση:</p>
                     <p className="text-lg font-bold print:text-black" style={{
                       color: darkMode ? themeData?.darkColors?.foreground : themeData?.colors?.foreground
                     }}>
-                      {subjectData.studentAverage >= subjectData.classAverage ? 'Above Average' : 'Below Average'}
+                      {subjectData.studentAverage >= subjectData.classAverage ? t('student.aboveAverage') : t('student.belowAverage')}
                     </p>
                   </div>
                 </div>
@@ -246,7 +248,7 @@ const StudentStatsPrint = () => {
                 {subjectData.grades && subjectData.grades.length > 1 && (
                   <div className="mb-4">
                     <h3 className="text-base font-semibold mb-2 text-foreground print:text-black">
-                      Grade Progress Over Time
+                      Πρόοδος Βαθμών στο Χρόνο
                     </h3>
                     <div className="w-full h-64 mb-3">
                       <ResponsiveContainer>
@@ -301,11 +303,11 @@ const StudentStatsPrint = () => {
                   <Table className="print:border print:border-collapse">
                     <TableHeader>
                       <TableRow className="bg-muted print:bg-gray-100">
-                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Date</TableHead>
-                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Grade</TableHead>
-                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Description</TableHead>
-                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">Teacher</TableHead>
-                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">vs Class Avg</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">{t('student.date')}</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">{t('student.grade')}</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">{t('student.description')}</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">{t('student.teacher')}</TableHead>
+                        <TableHead className="font-bold text-foreground print:text-black print:border print:border-black">{t('student.vsClassAvg')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -324,7 +326,7 @@ const StudentStatsPrint = () => {
                             {grade.teacher?.name || 'Unknown'}
                           </TableCell>
                           <TableCell className="text-foreground print:text-black print:border print:border-black">
-                            {grade.value >= subjectData.classAverage ? 'Above' : 'Below'}
+                            {grade.value >= subjectData.classAverage ? t('student.above') : t('student.below')}
                           </TableCell>
                         </TableRow>
                       )) || (
@@ -343,7 +345,7 @@ const StudentStatsPrint = () => {
         ) : (
           <div className="text-center py-8">
             <h3 className="text-xl font-semibold text-muted-foreground print:text-black">
-              No grades found for the selected period
+              Δεν βρέθηκαν βαθμοί για την επιλεγμένη περίοδο
             </h3>
           </div>
         )}
@@ -351,7 +353,7 @@ const StudentStatsPrint = () => {
         {/* Footer */}
         <div className="mt-4 pt-3 border-t border-border text-center print:border-gray-300 no-print">
           <p className="text-sm text-muted-foreground print:text-gray-400">
-            GradeBook System - Student Grade Analysis Report
+            Σύστημα GradeBook - Αναφορά Ανάλυσης Βαθμών Μαθητή
           </p>
         </div>
       </div>

@@ -1,17 +1,14 @@
 import React from 'react';
 import {
-  FormControl,
-  InputLabel,
   Select,
-  MenuItem,
-  CircularProgress,
-  TextField
-} from '@mui/material';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 
-/**
- * ClassBasedFilter Component
- * A flexible filter component for class-based filtering
- */
 const ClassBasedFilter = ({
   filterType,
   value,
@@ -21,51 +18,49 @@ const ClassBasedFilter = ({
   label,
   disabled,
   helperText,
-  branchNames = {}, // Add branchNames mapping parameter with empty object default
+  branchNames = {},
   fullWidth = true
 }) => {
-  const handleChange = (event) => {
-    onChange(event.target.value);
-  };
-
   return (
-    <FormControl fullWidth={fullWidth} variant="outlined" disabled={disabled}>
-      <InputLabel>{label}</InputLabel>
-      <Select
-        value={value}
-        onChange={handleChange}
-        label={label}
-        disabled={disabled || loading}
-        endAdornment={loading ? <CircularProgress size={20} /> : null}
-      >
-        <MenuItem value="">
-          <em>All {label}s</em>
-        </MenuItem>
-        {(options || []).map((option, index) => (
-          <MenuItem 
-            key={option.value || index} 
-            value={option.value || option.label || option}
-          >
-            {/* Use branchNames mapping for school branch type */}
-            {filterType === 'schoolBranch' && branchNames[option.value] ? 
-              branchNames[option.value] : 
-              (option.label || option.value || option)
-            }
-          </MenuItem>
-        ))}
-      </Select>
+    <div className={`space-y-1.5 ${fullWidth ? 'w-full' : ''}`}>
+      {label && <Label className="text-xs text-muted-foreground font-medium">{label}</Label>}
+      <div className="relative">
+        <Select
+          value={value || 'ALL_ITEMS_OPTION'}
+          onValueChange={(val) => onChange(val === 'ALL_ITEMS_OPTION' ? '' : val)}
+          disabled={disabled || loading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={`All ${label || 'Items'}s`} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL_ITEMS_OPTION">
+              <span className="italic">All {label || 'Item'}s</span>
+            </SelectItem>
+            {(options || []).map((option, index) => {
+              const optVal = String(option.value || option.label || option);
+              const optLabel = filterType === 'schoolBranch' && branchNames[option.value]
+                ? branchNames[option.value]
+                : (option.label || option.value || option);
+
+              return (
+                <SelectItem key={optVal || index} value={optVal}>
+                  {optLabel}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+        {loading && (
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+            <Spinner className="h-4 w-4" />
+          </div>
+        )}
+      </div>
       {helperText && (
-        <TextField
-          variant="outlined"
-          size="small"
-          InputProps={{
-            readOnly: true,
-          }}
-          sx={{ mt: 1 }}
-          value={helperText}
-        />
+        <p className="text-xs text-muted-foreground mt-1 px-1">{helperText}</p>
       )}
-    </FormControl>
+    </div>
   );
 };
 

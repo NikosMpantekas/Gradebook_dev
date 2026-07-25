@@ -50,7 +50,6 @@ import Notifications from "./pages/Notifications";
 import NotificationDetail from "./pages/NotificationDetail";
 import UserContactMessages from "./pages/UserContactMessages";
 import ContactMessages from "./pages/ContactMessages";
-import Calendar from "./pages/Calendar";
 import Schedule from "./pages/common/Schedule";
 import StudentStats from "./pages/common/StudentStats";
 import StudentStatsPrint from "./pages/common/StudentStatsPrint";
@@ -82,11 +81,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageUsers from "./pages/admin/ManageUsers";
 import CreateUserErrorWrapper from "./pages/admin/CreateUserErrorWrapper";
 import EditUser from "./pages/admin/EditUser";
-import StudentProgress from "./pages/admin/StudentProgress";
 import AdminContactMessages from "./pages/admin/ContactMessages";
-import ManageDirections from "./pages/admin/ManageDirections";
 import ManageClasses from "./pages/admin/ManageClasses";
-import ManageSubjects from "./pages/admin/ManageSubjects";
 import SchoolBranchManager from "./pages/admin/SchoolBranchManager";
 import RatingManager from "./pages/admin/RatingManager";
 import RatingStatistics from "./pages/admin/RatingStatistics";
@@ -407,7 +403,6 @@ function App() {
                 path="/app/contact-messages"
                 element={<ContactMessages />}
               />
-              <Route path="/app/calendar" element={<Calendar />} />
               <Route path="/app/schedule" element={<Schedule />} />
               <Route path="/app/grades" element={<StudentGrades />} />
               <Route path="/app/grades/:id" element={<GradeDetail />} />
@@ -511,22 +506,7 @@ function App() {
                   </AdminRoute>
                 }
               />
-              <Route
-                path="/app/admin/progress"
-                element={
-                  <AdminRoute>
-                    <StudentProgress />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/app/admin/progress/:studentId"
-                element={
-                  <AdminRoute>
-                    <StudentProgress />
-                  </AdminRoute>
-                }
-              />
+
               <Route
                 path="/app/admin/student-stats"
                 element={
@@ -608,26 +588,10 @@ function App() {
                 }
               />
               <Route
-                path="/app/admin/directions"
-                element={
-                  <AdminRoute>
-                    <ManageDirections />
-                  </AdminRoute>
-                }
-              />
-              <Route
                 path="/app/admin/classes"
                 element={
                   <AdminRoute>
                     <ManageClasses />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/app/admin/subjects"
-                element={
-                  <AdminRoute>
-                    <ManageSubjects />
                   </AdminRoute>
                 }
               />

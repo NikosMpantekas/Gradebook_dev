@@ -2,54 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../config/appConfig';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import {
-  Typography,
-  Paper,
-  Box,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  Chip,
-  CircularProgress,
-  Button,
-  Alert,
-  Card,
-  CardHeader,
-  CardContent,
-  IconButton,
-  Grid,
-  Badge,
-  useMediaQuery,
-  useTheme,
-  Container,
-  Avatar,
-  Tooltip,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  BugReport as BugReportIcon,
-  Message as MessageIcon,
-  Reply as ReplyIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  AccessTime as AccessTimeIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material';
+  ArrowLeft,
+  Bug,
+  MessageSquare,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  User
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { 
-  Mail as EmailIcon,
-  Bug as BugIcon,
-  Megaphone as AnnouncementIcon,
-  ChevronDown as ExpandMoreIcon
-} from 'lucide-react';
 import { refreshAppCounts } from '../lib/utils';
+
 const UserContactMessages = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user } = useSelector((state) => state.auth);
   
   const [messages, setMessages] = useState([]);
@@ -62,32 +36,23 @@ const UserContactMessages = () => {
         setLoading(true);
         setError(null);
         
-        // GUARANTEED REPLY DISPLAY: Add fixed replies for any messages marked as replied but missing data
-        const fixMessages = (messages) => {
-          return messages.map(msg => {
-            // Clone the message to avoid mutation
+        const fixMessages = (msgs) => {
+          return msgs.map(msg => {
             const fixedMsg = { ...msg };
             
-            // Check and sanitize admin replies
             if (fixedMsg.status === 'replied') {
-              // If reply is missing or empty, add a default one
               if (!fixedMsg.adminReply || fixedMsg.adminReply.trim() === '') {
-                console.log(`ADDING MISSING REPLY to message ${fixedMsg._id}`);
                 fixedMsg.adminReply = 'Your message has been reviewed by admin. Thank you for your feedback.';
                 fixedMsg.adminReplyDate = fixedMsg.adminReplyDate || new Date();
-              } 
-              // If reply contains inappropriate content, replace it
-              else if (
+              } else if (
                 fixedMsg.adminReply.includes('skata') || 
                 fixedMsg.adminReply.toLowerCase().includes('test') ||
                 fixedMsg.adminReply.length < 5
               ) {
-                console.log(`REPLACING INAPPROPRIATE REPLY in message ${fixedMsg._id}`);
                 fixedMsg.adminReply = 'Your message has been reviewed. Thank you for your feedback.';
               }
             }
             
-            // Make sure dates are proper Date objects
             if (fixedMsg.createdAt) {
               fixedMsg.createdAt = new Date(fixedMsg.createdAt);
             }
@@ -95,7 +60,6 @@ const UserContactMessages = () => {
               fixedMsg.adminReplyDate = new Date(fixedMsg.adminReplyDate);
             }
             
-            // Ensure all messages have properly set type
             fixedMsg.isBugReport = fixedMsg.type === 'bug' || fixedMsg.isBugReport === true;
             
             return fixedMsg;
@@ -108,28 +72,10 @@ const UserContactMessages = () => {
           },
         };
         
-        // CRITICAL FIX: Force direct API call with timestamp to bypass cache
-        const timestamp = Date.now(); 
-        console.log(`EMERGENCY FIX: Fetching contact messages with timestamp ${timestamp}`);
-        console.log('Using API_URL for secure contact messages:', API_URL);
-        
-        // Make API call with absolute URL to ensure HTTPS in production
+        const timestamp = Date.now();
         const { data } = await axios.get(`${API_URL}/api/contact/user?_t=${timestamp}`, config);
         
-        // FIX ANY MISSING REPLIES CLIENT-SIDE
         const fixedMessages = fixMessages(data);
-        
-        // Debug logging
-        fixedMessages.forEach((msg, index) => {
-          if (msg.status === 'replied') {
-            console.log(`Message ${index} is replied:`, {
-              hasReplyText: !!msg.adminReply,
-              replyText: msg.adminReply?.substring(0, 20) + '...',
-              replyDate: msg.adminReplyDate
-            });
-          }
-        });
-        
         setMessages(fixedMessages);
       } catch (err) {
         console.error('Error fetching messages:', err);
@@ -152,16 +98,13 @@ const UserContactMessages = () => {
     try {
       return format(new Date(dateString), 'PPP p');
     } catch (err) {
-      console.error('Error formatting date:', err);
       return 'Invalid date';
     }
   };
   
-  // Mark all unread replies as read when viewed
   useEffect(() => {
     const markRepliesAsRead = async () => {
       try {
-        // Find messages with unread replies
         const unreadReplies = messages.filter(msg => 
           msg.status === 'replied' && 
           msg.adminReply && 
@@ -170,7 +113,6 @@ const UserContactMessages = () => {
         
         if (unreadReplies.length === 0) return;
         
-        // Mark each one as read
         for (const msg of unreadReplies) {
           const config = {
             headers: {
@@ -183,14 +125,10 @@ const UserContactMessages = () => {
             { replyRead: true },
             config
           );
-          
-          console.log(`Marked reply for message ${msg._id} as read`);
         }
         
-        // Refresh header counts
         refreshAppCounts();
         
-        // Update local state
         setMessages(prev => prev.map(msg => 
           unreadReplies.some(ur => ur._id === msg._id)
             ? { ...msg, replyRead: true }
@@ -205,175 +143,123 @@ const UserContactMessages = () => {
       markRepliesAsRead();
     }
   }, [loading, messages, user.token]);
-  
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'new':
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <Clock className="h-3 w-3" />
+            {status}
+          </Badge>
+        );
+      case 'in-progress':
+        return (
+          <Badge variant="outline" className="gap-1 border-warning text-warning">
+            <AlertTriangle className="h-3 w-3" />
+            {status}
+          </Badge>
+        );
+      case 'replied':
+        return (
+          <Badge variant="default" className="gap-1 bg-emerald-600 hover:bg-emerald-600">
+            <CheckCircle2 className="h-3 w-3" />
+            {status}
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
   return (
-    <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, sm: 3 }, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          sx={{ 
-            mr: { xs: 0, sm: 2 },
-            width: { xs: '100%', sm: 'auto' },
-            fontSize: { xs: '0.875rem', sm: '1rem' }
-          }}
-        >
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Page Header */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">My Messages & Bug Reports</h1>
+          <p className="text-muted-foreground">View and track responses to your submitted messages and bug reports.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleBack} className="w-fit">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-          My Messages & Bug Reports
-        </Typography>
-      </Box>
-      
+      </div>
+
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <Spinner className="h-8 w-8" />
+        </div>
       ) : error ? (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <div className="p-4 rounded-md bg-destructive/15 text-destructive text-sm font-medium">
           {error}
-        </Alert>
+        </div>
       ) : messages.length === 0 ? (
-        <Alert severity="info" sx={{ mt: 2 }}>
+        <div className="p-6 rounded-md bg-muted text-muted-foreground text-sm font-medium">
           You haven't sent any messages or bug reports yet.
-        </Alert>
+        </div>
       ) : (
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
+        <div className="space-y-4">
           {messages.map((message) => (
-            <Grid item xs={12} key={message._id}>
-              <Paper
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  boxShadow: message.status === 'replied' 
-                    ? '0 4px 20px rgba(33, 150, 243, 0.15)' 
-                    : '0 2px 10px rgba(0,0,0,0.08)',
-                }}
-              >
-                {/* Message Header */}
-                <Box
-                  sx={{
-                    p: { xs: 1.5, sm: 2 },
-                    bgcolor: message.isBugReport 
-                      ? 'error.main' 
-                      : 'primary.main',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: { xs: 1, sm: 0 }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Card key={message._id} className="overflow-hidden">
+              <CardHeader className={`p-4 text-white ${message.isBugReport ? 'bg-destructive' : 'bg-primary'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     {message.isBugReport ? (
-                      <BugReportIcon sx={{ mr: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+                      <Bug className="h-5 w-5 shrink-0" />
                     ) : (
-                      <MessageIcon sx={{ mr: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+                      <MessageSquare className="h-5 w-5 shrink-0" />
                     )}
-                    <Typography variant="h6" sx={{ fontWeight: 'medium', fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
+                    <CardTitle className="text-base font-semibold text-white">
                       {message.subject || 'No Subject'}
-                    </Typography>
-                  </Box>
-                  
-                  <Chip 
-                    label={message.status}
-                    size={isMobile ? "small" : "medium"}
-                    icon={
-                      message.status === 'new' ? <AccessTimeIcon /> :
-                      message.status === 'in-progress' ? <ErrorIcon /> :
-                      message.status === 'replied' ? <CheckCircleIcon /> :
-                      <AccessTimeIcon />
-                    }
-                    sx={{
-                      color: 'white',
-                      bgcolor: 
-                        message.status === 'new' ? 'rgba(255,255,255,0.2)' :
-                        message.status === 'in-progress' ? 'warning.dark' :
-                        message.status === 'replied' ? 'success.dark' :
-                        'default.main',
-                      '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                    }}
-                  />
-                </Box>
-                
-                {/* Message Content */}
-                <Box sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                      Sent on {formatDate(message.createdAt)}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography paragraph sx={{ whiteSpace: 'pre-wrap', mb: 3, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {message.message}
-                  </Typography>
-                  
-                  {/* CRITICAL FIX: GUARANTEED REPLY DISPLAY */}
-                  {message.status === 'replied' && (
-                    <>
-                      <Divider sx={{ my: 3 }} />
-                      
-                      <Box 
-                        sx={{ 
-                          p: { xs: 2, sm: 3 }, 
-                          bgcolor: 'rgba(33, 150, 243, 0.05)', 
-                          borderRadius: 2,
-                          border: '1px solid rgba(33, 150, 243, 0.2)',
-                          position: 'relative',
-                          '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            top: '-8px',
-                            left: '30px',
-                            width: '16px',
-                            height: '16px',
-                            transform: 'rotate(45deg)',
-                            bgcolor: 'rgba(33, 150, 243, 0.05)',
-                            borderTop: '1px solid rgba(33, 150, 243, 0.2)',
-                            borderLeft: '1px solid rgba(33, 150, 243, 0.2)',
-                          }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
-                          <Avatar sx={{ bgcolor: 'primary.main', mr: { xs: 0, sm: 2 }, width: 32, height: 32 }}>
-                            <PersonIcon sx={{ fontSize: '1rem' }} />
-                          </Avatar>
-                          <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                              Administrator Reply
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                              {message.adminReplyDate ? formatDate(message.adminReplyDate) : 'Unknown date'}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        
-                        <Typography 
-                          paragraph 
-                          sx={{ 
-                            whiteSpace: 'pre-wrap',
-                            ml: { xs: 0, sm: 6 }, // Align with admin name on desktop
-                            p: 0,
-                            fontSize: { xs: '0.875rem', sm: '0.95rem' }
-                          }}
-                        >
-                          {/* FALLBACK TEXT: If adminReply is missing, show default message */}
-                          {message.adminReply || 'Your message has been reviewed. Thank you for your feedback.'}
-                        </Typography>
-                      </Box>
-                    </>
-                  )}
-                </Box>
-              </Paper>
-            </Grid>
+                    </CardTitle>
+                  </div>
+                  <div>
+                    {getStatusBadge(message.status)}
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-6 space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Sent on {formatDate(message.createdAt)}
+                </p>
+
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {message.message}
+                </p>
+
+                {message.status === 'replied' && (
+                  <>
+                    <Separator className="my-4" />
+
+                    <div className="rounded-lg border bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 bg-primary">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            <User className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="text-sm font-semibold">Administrator Reply</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {message.adminReplyDate ? formatDate(message.adminReplyDate) : 'Unknown date'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-sm whitespace-pre-wrap pl-11 text-foreground/90">
+                        {message.adminReply || 'Your message has been reviewed. Thank you for your feedback.'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           ))}
-        </Grid>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

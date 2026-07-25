@@ -1,54 +1,57 @@
 import React from 'react';
-import { 
+import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  FormControl,
-  InputLabel,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Select,
-  MenuItem
-} from '@mui/material';
-import { Print as PrintIcon } from '@mui/icons-material';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Printer } from 'lucide-react';
 
-/**
- * Dialog to configure and initiate report printing
- */
 const PrintReportDialog = ({ open, handleClose, onPrint, onFilterChange, filters }) => {
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="print-dialog-title"
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle id="print-dialog-title">
-        Print Report Settings
-      </DialogTitle>
-      <DialogContent>
-        <FormControl fullWidth sx={{ mb: 2, mt: 1 }}>
-          <InputLabel>Target Type Filter</InputLabel>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Print Report Settings</DialogTitle>
+        </DialogHeader>
+
+        <div className="py-4 space-y-2">
+          <Label>Target Type Filter</Label>
           <Select
-            value={filters.targetType}
-            onChange={(e) => onFilterChange('targetType', e.target.value)}
-            label="Target Type Filter"
+            value={filters?.targetType || 'all'}
+            onValueChange={(val) => onFilterChange('targetType', val)}
           >
-            <MenuItem value="all">All Types</MenuItem>
-            <MenuItem value="teacher">Teachers Only</MenuItem>
-            <MenuItem value="subject">Subjects Only</MenuItem>
+            <SelectTrigger>
+              <SelectValue placeholder="Select target type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="teacher">Teachers Only</SelectItem>
+              <SelectItem value="subject">Subjects Only</SelectItem>
+            </SelectContent>
           </Select>
-        </FormControl>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button onClick={onPrint}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print Report
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="secondary">
-          Cancel
-        </Button>
-        <Button onClick={onPrint} color="primary" variant="contained" startIcon={<PrintIcon />}>
-          Print Report
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

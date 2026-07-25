@@ -351,7 +351,6 @@ const StudentDashboard = () => {
   const handleViewGrades = () => navigate('/app/grades');
   const handleSubmitRatings = () => navigate('/app/ratings');
   const handleViewSchedule = () => navigate('/app/schedule');
-  const handleViewCalendar = () => navigate('/app/calendar');
   const handleViewAllNotifications = () => navigate('/app/notifications');
 
   // Loading logic is handled inline below to keep the header static

@@ -1,50 +1,40 @@
 import React from 'react';
-import { 
+import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  List,
-  ListItem,
-  ListItemText
-} from '@mui/material';
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
-/**
- * Dialog to display text responses for a specific question
- */
 const TextResponsesDialog = ({ open, handleClose, responses, question }) => {
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="text-responses-title"
-      maxWidth="md"
-      fullWidth
-    >
-      <DialogTitle id="text-responses-title">
-        Text Responses for: {question}
-      </DialogTitle>
-      <DialogContent>
-        <List>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Text Responses for: {question}</DialogTitle>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-72 rounded-md border p-4 my-2">
           {responses && responses.length > 0 ? (
-            responses.map((response, index) => (
-              <ListItem key={index} divider={index < responses.length - 1}>
-                <ListItemText primary={response} />
-              </ListItem>
+            responses.map((resp, index) => (
+              <React.Fragment key={index}>
+                <div className="py-2 text-sm text-foreground">{resp}</div>
+                {index < responses.length - 1 && <Separator />}
+              </React.Fragment>
             ))
           ) : (
-            <ListItem>
-              <ListItemText primary="No text responses available." />
-            </ListItem>
+            <p className="text-sm text-muted-foreground">No text responses available.</p>
           )}
-        </List>
+        </ScrollArea>
+
+        <DialogFooter>
+          <Button onClick={handleClose}>Close</Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="primary">
-          Close
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

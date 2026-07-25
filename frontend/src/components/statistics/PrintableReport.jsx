@@ -18,35 +18,35 @@ const PrintableReport = ({ stats, periodTitle, filters }) => {
   return (
     <div style={{ padding: '20px', maxWidth: '100%', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <h1>Rating Statistics Report</h1>
-        <h2>{periodTitle || 'All Periods'}</h2>
-        <p>Generated on: {new Date().toLocaleString()}</p>
+        <h1>Αναφορά Στατιστικών Αξιολόγησης</h1>
+        <h2>{periodTitle || 'Όλες οι Περίοδοι'}</h2>
+        <p>Δημιουργήθηκε στις: {new Date().toLocaleString('el-GR')}</p>
       </div>
       
       <div style={{ marginBottom: '20px' }}>
-        <h3>Summary</h3>
-        <p>Total Ratings: {stats.totalRatings || 0}</p>
+        <h3>Σύνοψη</h3>
+        <p>Σύνολο Αξιολογήσεων: {stats.totalRatings || 0}</p>
       </div>
       
       {filteredTargets.length > 0 && (
         <div>
-          <h3>Targets Overview</h3>
+          <h3>Επισκόπηση Στόχων</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
             <thead>
               <tr>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Type</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Name</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Total Ratings</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Average Rating</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Τύπος</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Όνομα</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Σύνολο Αξιολογήσεων</th>
+                <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Μέση Αξιολόγηση</th>
               </tr>
             </thead>
             <tbody>
               {filteredTargets.map((target, index) => (
                 <tr key={index}>
                   <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                    {target.targetType === 'teacher' ? 'Teacher' : 'Subject'}
+                    {target.targetType === 'teacher' ? 'Καθηγητής' : 'Μάθημα'}
                   </td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{target.name || 'Unknown'}</td>
+                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{target.name || 'Άγνωστο'}</td>
                   <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>{target.totalRatings || 0}</td>
                   <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>{(target.averageRating || 0).toFixed(1)}/5</td>
                 </tr>
@@ -56,26 +56,26 @@ const PrintableReport = ({ stats, periodTitle, filters }) => {
           
           {filteredTargets.map((target, tIndex) => (
             <div key={tIndex} style={{ marginBottom: '30px', breakInside: 'avoid' }}>
-              <h3>{target.targetType === 'teacher' ? 'Teacher' : 'Subject'}: {target.name}</h3>
+              <h3>{target.targetType === 'teacher' ? 'Καθηγητής' : 'Μάθημα'}: {target.name}</h3>
               
-              <h4>Questions Detail</h4>
+              <h4>Λεπτομέρειες Ερωτήσεων</h4>
               <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
                 <thead>
                   <tr>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Question</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Type</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Rating/Responses</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Count</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Ερώτηση</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Τύπος</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Αξιολόγηση/Απαντήσεις</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>Πλήθος</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Array.isArray(target.questionStats) && target.questionStats.map((qStat, qIndex) => (
                     <tr key={qIndex}>
-                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{qStat.questionText || 'Unknown Question'}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>{qStat.questionType === 'text' ? 'Text' : 'Rating'}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{qStat.questionText || 'Άγνωστη Ερώτηση'}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>{qStat.questionType === 'text' ? 'Κείμενο' : 'Αξιολόγηση'}</td>
                       <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>
                         {qStat.questionType === 'text' ? 
-                          'Text Responses' : 
+                          'Απαντήσεις Κειμένου' : 
                           `${(qStat.average || 0).toFixed(1)}/5`
                         }
                       </td>

@@ -46,19 +46,7 @@ const ScrollFix = () => {
         margin: 0 auto;
       }
       
-      /* Fix for any remaining Material-UI classes that might exist */
-      .MuiBox-root, .MuiContainer-root, .MuiPaper-root {
-        max-height: none !important;
-        overflow: visible !important;
-      }
-      
-      .MuiFormControl-root {
-        margin-bottom: 12px !important;
-      }
-      
-      .MuiMenuItem-root {
-        padding: 12px 16px !important;
-      }
+
     `;
 
     document.head.appendChild(style);

@@ -1,51 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Button, 
-  Paper, 
-  Grid,
-  IconButton,
-  Tabs,
-  Tab,
-  Divider,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
   Select,
-  MenuItem,
-  FormHelperText,
-  Switch,
-  FormControlLabel,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Autocomplete
-} from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  Help as HelpIcon,
-  BarChart as StatsIcon
-} from '@mui/icons-material';
-// Note: If the project uses an older version of MUI, we'll use TextField for dates
-// and format them manually with date-fns instead of using DateTimePicker
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Plus, Pencil, Trash2, Play, Square, BarChart3, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, isAfter, parseISO } from 'date-fns';
+import { format, isAfter } from 'date-fns';
 
 // Redux actions
 import { 
@@ -55,14 +36,12 @@ import {
   deleteRatingPeriod,
   getRatingQuestions,
   createRatingQuestion,
-  updateRatingQuestion,
   deleteRatingQuestion,
   reset as resetRatings
 } from '../../features/ratings/ratingSlice';
 import { getSchools } from '../../features/schools/schoolSlice';
 import { getDirections } from '../../features/directions/directionSlice';
 
-// Components
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingScreen from '../../components/common/LoadingScreen';
 import ErrorState from '../../components/common/ErrorState';
@@ -70,13 +49,11 @@ import RatingStatsViewer from '../../components/ratings/RatingStatsViewer';
 
 const RatingManager = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector(state => state.auth);
   const { periods, questions, isLoading, isError, message } = useSelector(state => state.ratings);
   const { schools } = useSelector(state => state.schools);
   const { directions } = useSelector(state => state.directions);
 
-  // Local state
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('periods');
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
@@ -85,13 +62,12 @@ const RatingManager = () => {
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [statsTarget, setStatsTarget] = useState(null);
-  
-  // Form state
+
   const [periodForm, setPeriodForm] = useState({
     title: '',
     description: '',
     startDate: new Date(),
-    endDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days
+    endDate: new Date(new Date().setDate(new Date().getDate() + 7)),
     targetType: 'both',
     isActive: false,
     schools: [],
@@ -106,7 +82,6 @@ const RatingManager = () => {
     ratingPeriod: ''
   });
 
-  // Fetch data on component mount
   useEffect(() => {
     dispatch(getRatingPeriods());
     dispatch(getSchools());
@@ -117,28 +92,18 @@ const RatingManager = () => {
     };
   }, [dispatch]);
 
-  // Load questions when a period is selected
   useEffect(() => {
     if (selectedPeriod) {
       dispatch(getRatingQuestions(selectedPeriod._id));
     }
   }, [selectedPeriod, dispatch]);
 
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  // Reset period form function - moved outside handleOpenPeriodDialog for cleaner code
   const resetPeriodForm = () => {
-    // Create a safe date with error handling
     const today = new Date();
     const nextWeek = new Date();
     try {
       nextWeek.setDate(today.getDate() + 7);
     } catch (error) {
-      console.error('Error setting end date:', error);
-      // Fallback to today + 1 day if there's an error
       nextWeek.setDate(today.getDate() + 1);
     }
 
@@ -154,29 +119,25 @@ const RatingManager = () => {
     });
   };
 
-  // Open period dialog for creating/editing
   const handleOpenPeriodDialog = (period = null) => {
     if (period) {
-      // Edit mode - populate form
       setPeriodForm({
         id: period._id,
         title: period.title,
-        description: period.description,
+        description: period.description || '',
         startDate: new Date(period.startDate),
         endDate: new Date(period.endDate),
-        targetType: period.targetType,
-        isActive: period.isActive,
+        targetType: period.targetType || 'both',
+        isActive: period.isActive || false,
         schools: period.schools?.map(s => typeof s === 'object' ? s._id : s) || [],
         directions: period.directions?.map(d => typeof d === 'object' ? d._id : d) || []
       });
     } else {
-      // Create mode - reset form
       resetPeriodForm();
     }
     setPeriodDialogOpen(true);
   };
 
-  // Open question dialog for creating/editing
   const handleOpenQuestionDialog = (question = null) => {
     if (!selectedPeriod) {
       toast.error('Please select a rating period first');
@@ -184,7 +145,6 @@ const RatingManager = () => {
     }
 
     if (question) {
-      // Edit mode - populate form with question data
       setQuestionForm({
         text: question.text,
         questionType: question.questionType,
@@ -193,36 +153,25 @@ const RatingManager = () => {
         ratingPeriod: question.ratingPeriod
       });
     } else {
-      // Create mode - reset form with current period ID
       setQuestionForm({
         text: '',
         questionType: 'rating',
         targetType: 'both',
-        order: questions.length, // Default to next order
+        order: questions ? questions.length : 0,
         ratingPeriod: selectedPeriod._id
       });
     }
     setQuestionDialogOpen(true);
   };
 
-  // Handle period form change
   const handlePeriodFormChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value } = e.target;
     setPeriodForm(prev => ({
       ...prev,
-      [name]: name === 'isActive' ? checked : value
+      [name]: value
     }));
   };
 
-  // Handle date changes
-  const handleDateChange = (name, date) => {
-    setPeriodForm(prev => ({
-      ...prev,
-      [name]: date
-    }));
-  };
-
-  // Handle question form change
   const handleQuestionFormChange = (e) => {
     const { name, value } = e.target;
     setQuestionForm(prev => ({
@@ -231,9 +180,7 @@ const RatingManager = () => {
     }));
   };
 
-  // Submit period form
   const handlePeriodSubmit = () => {
-    // Validation
     if (!periodForm.title) {
       toast.error('Please enter a title');
       return;
@@ -244,23 +191,19 @@ const RatingManager = () => {
       return;
     }
 
-    if (selectedPeriod) {
-      // Update existing period
+    if (selectedPeriod && periodForm.id) {
       dispatch(updateRatingPeriod({
         id: selectedPeriod._id,
         periodData: periodForm
       }));
     } else {
-      // Create new period
       dispatch(createRatingPeriod(periodForm));
     }
 
     setPeriodDialogOpen(false);
   };
 
-  // Submit question form
   const handleQuestionSubmit = () => {
-    // Validation
     if (!questionForm.text) {
       toast.error('Please enter question text');
       return;
@@ -268,31 +211,26 @@ const RatingManager = () => {
 
     if (selectedPeriod) {
       dispatch(createRatingQuestion(questionForm))
-        .then((result) => {
-          console.log('Question created, reloading questions', result);
-          // After creating a question, reload the questions for this period
+        .then(() => {
           dispatch(getRatingQuestions(selectedPeriod._id));
         })
-        .catch(error => {
-          console.error('Error creating question:', error);
+        .catch(err => {
+          console.error('Error creating question:', err);
         });
     }
 
     setQuestionDialogOpen(false);
   };
 
-  // Handle period selection
   const handleSelectPeriod = (period) => {
     setSelectedPeriod(period);
   };
 
-  // Handle period deletion
   const handleDeletePeriod = (id) => {
     setDeleteItemId(id);
     setDeleteDialogOpen(true);
   };
 
-  // Confirm period deletion
   const confirmDeletePeriod = () => {
     dispatch(deleteRatingPeriod(deleteItemId));
     setDeleteDialogOpen(false);
@@ -302,20 +240,17 @@ const RatingManager = () => {
     }
   };
 
-  // Handle question deletion
   const handleDeleteQuestion = (id) => {
     setDeleteItemId(id);
     setDeleteQuestionDialogOpen(true);
   };
 
-  // Confirm question deletion
   const confirmDeleteQuestion = () => {
     dispatch(deleteRatingQuestion(deleteItemId));
     setDeleteQuestionDialogOpen(false);
     setDeleteItemId(null);
   };
 
-  // Toggle period active status
   const handleTogglePeriodActive = (period) => {
     dispatch(updateRatingPeriod({
       id: period._id,
@@ -323,526 +258,384 @@ const RatingManager = () => {
     }));
   };
 
-  // Show statistics dialog
-  const handleShowStats = (targetType, targetId) => {
-    setStatsTarget({ targetType, targetId });
-    setStatsDialogOpen(true);
-  };
-
-  // Render period list
   const renderPeriodList = () => {
     if (!periods || periods.length === 0) {
       return (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
-            No rating periods found
-          </Typography>
-          <Button 
-            startIcon={<AddIcon />} 
-            variant="contained" 
-            sx={{ mt: 2 }}
-            onClick={() => handleOpenPeriodDialog()}
-          >
+        <div className="text-center py-8 text-muted-foreground space-y-3">
+          <p>No rating periods found</p>
+          <Button onClick={() => handleOpenPeriodDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
             Create Your First Rating Period
           </Button>
-        </Box>
+        </div>
       );
     }
 
     return (
-      <List>
-        {periods.map(period => (
-          <ListItem 
-            key={period._id} 
-            button 
-            selected={selectedPeriod && selectedPeriod._id === period._id}
-            onClick={() => handleSelectPeriod(period)}
-            sx={{ 
-              mb: 1, 
-              borderRadius: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              backgroundColor: selectedPeriod && selectedPeriod._id === period._id 
-                ? 'action.selected' 
-                : 'background.paper'
-            }}
-          >
-            <ListItemText
-              primary={
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-                    {period.title}
-                  </Typography>
-                  <Chip 
-                    size="small"
-                    label={period.isActive ? 'Active' : 'Inactive'}
-                    color={period.isActive ? 'success' : 'default'}
-                    sx={{ ml: 2 }}
-                  />
-                </Box>
-              }
-              secondary={
-                <Box sx={{ mt: 0.5 }}>
-                  <Typography variant="body2" color="text.secondary">
+      <div className="space-y-3">
+        {periods.map(period => {
+          const isSelected = selectedPeriod && selectedPeriod._id === period._id;
+
+          return (
+            <div
+              key={period._id}
+              onClick={() => handleSelectPeriod(period)}
+              className={`p-4 rounded-lg border transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+              }`}
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-base">{period.title}</h4>
+                  <Badge variant={period.isActive ? "default" : "secondary"}>
+                    {period.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p>
                     {format(new Date(period.startDate), 'MMM d, yyyy')} - {format(new Date(period.endDate), 'MMM d, yyyy')}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  </p>
+                  <p>
                     Target: {period.targetType === 'both' 
                       ? 'Teachers & Subjects' 
                       : period.targetType === 'teacher' ? 'Teachers Only' : 'Subjects Only'}
-                  </Typography>
-                </Box>
-              }
-            />
-            <ListItemSecondaryAction>
-              <IconButton 
-                edge="end" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTogglePeriodActive(period);
-                }}
-                color={period.isActive ? 'error' : 'success'}
-                title={period.isActive ? 'Deactivate' : 'Activate'}
-              >
-                {period.isActive ? <StopIcon /> : <StartIcon />}
-              </IconButton>
-              <IconButton 
-                edge="end" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenPeriodDialog(period);
-                }}
-                color="primary"
-                title="Edit"
-              >
-                <EditIcon />
-              </IconButton>
-              <IconButton 
-                edge="end" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeletePeriod(period._id);
-                }}
-                color="error"
-                title="Delete"
-              >
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
-        ))}
-      </List>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTogglePeriodActive(period)}
+                  title={period.isActive ? 'Deactivate' : 'Activate'}
+                  className={period.isActive ? "text-destructive hover:text-destructive" : "text-emerald-600 hover:text-emerald-600"}
+                >
+                  {period.isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleOpenPeriodDialog(period)}
+                  title="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeletePeriod(period._id)}
+                  className="text-destructive hover:text-destructive"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
-  // Render question list - improved Google Forms style
   const renderQuestionList = () => {
     if (!selectedPeriod) {
       return (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
-            Please select a rating period to manage questions
-          </Typography>
-        </Box>
+        <div className="text-center py-8 text-muted-foreground">
+          Please select a rating period to manage questions
+        </div>
       );
     }
 
-    const periodQuestions = questions.filter(q => q.ratingPeriod === selectedPeriod._id);
+    const periodQuestions = questions ? questions.filter(q => q.ratingPeriod === selectedPeriod._id) : [];
 
     if (!periodQuestions || periodQuestions.length === 0) {
       return (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
-            No questions found for this rating period
-          </Typography>
-          <Button 
-            startIcon={<AddIcon />} 
-            variant="contained" 
-            sx={{ mt: 2 }}
-            onClick={() => handleOpenQuestionDialog()}
-          >
+        <div className="text-center py-8 text-muted-foreground space-y-3">
+          <p>No questions found for this rating period</p>
+          <Button onClick={() => handleOpenQuestionDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
             Add Your First Question
           </Button>
-        </Box>
+        </div>
       );
     }
 
     return (
-      <List>
+      <div className="space-y-3">
         {periodQuestions.map((question, index) => (
-          <ListItem 
+          <div
             key={question._id}
-            sx={{ 
-              mb: 1, 
-              borderRadius: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              backgroundColor: 'background.paper'
-            }}
+            className="p-4 rounded-lg border flex items-center justify-between gap-4"
           >
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              width: '100%'
-            }}>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  fontWeight: 'medium',
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: 28,
-                  height: 28,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mr: 2
-                }}
-              >
+            <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground font-semibold text-xs shrink-0">
                 {index + 1}
-              </Typography>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body1">
-                  {question.text}
-                </Typography>
-                <Box sx={{ display: 'flex', mt: 0.5 }}>
-                  <Chip 
-                    size="small"
-                    label={question.questionType === 'rating' ? 'Rating (1-10)' : 'Text Answer'}
-                    color={question.questionType === 'rating' ? 'primary' : 'secondary'}
-                    sx={{ mr: 1 }}
-                  />
+              </span>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{question.text}</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant={question.questionType === 'rating' ? "default" : "secondary"}>
+                    {question.questionType === 'rating' ? 'Rating (1-10)' : 'Text Answer'}
+                  </Badge>
                   {question.targetType !== 'both' && (
-                    <Chip 
-                      size="small"
-                      label={question.targetType === 'teacher' ? 'Teachers Only' : 'Subjects Only'}
-                      variant="outlined"
-                    />
+                    <Badge variant="outline">
+                      {question.targetType === 'teacher' ? 'Teachers Only' : 'Subjects Only'}
+                    </Badge>
                   )}
-                </Box>
-              </Box>
-            </Box>
-            <ListItemSecondaryAction>
-              <IconButton 
-                edge="end" 
-                onClick={() => handleDeleteQuestion(question._id)}
-                color="error"
-                title="Delete"
-              >
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDeleteQuestion(question._id)}
+              className="text-destructive hover:text-destructive shrink-0"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         ))}
-        
-        {/* Google Forms style add button */}
-        <Box sx={{ mt: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenQuestionDialog()}
-            fullWidth
-            sx={{ 
-              borderStyle: 'dashed', 
-              py: 1.5,
-              borderRadius: 2,
-              '&:hover': { borderStyle: 'dashed' }
-            }}
-          >
-            Add Question
-          </Button>
-        </Box>
-      </List>
+
+        <Button
+          variant="outline"
+          onClick={() => handleOpenQuestionDialog()}
+          className="w-full border-dashed py-6"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Question
+        </Button>
+      </div>
     );
   };
 
-  // If loading
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // If error
   if (isError) {
     return <ErrorState message={message} />;
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Teacher & Subject Rating System
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
+        </h1>
+        <p className="text-muted-foreground">
           Create and manage rating periods and questions for students to rate teachers and subjects.
-        </Typography>
+        </p>
+      </div>
 
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          indicatorColor="primary"
-          textColor="primary"
-          sx={{ mb: 3 }}
-        >
-          <Tab label="Rating Periods" />
-          <Tab label="Questions" />
-        </Tabs>
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 max-w-xs mb-4">
+              <TabsTrigger value="periods">Rating Periods</TabsTrigger>
+              <TabsTrigger value="questions">Questions</TabsTrigger>
+            </TabsList>
 
-        <Divider sx={{ mb: 3 }} />
-
-        {activeTab === 0 && (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenPeriodDialog()}
-              >
-                Create Rating Period
-              </Button>
-            </Box>
-            {renderPeriodList()}
-          </Box>
-        )}
-
-        {activeTab === 1 && (
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1">
-                {selectedPeriod ? `Questions for: ${selectedPeriod.title}` : 'Select a rating period'}
-              </Typography>
-              {selectedPeriod && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => handleOpenQuestionDialog()}
-                >
-                  Add Question
+            <TabsContent value="periods" className="space-y-4">
+              <div className="flex justify-end">
+                <Button onClick={() => handleOpenPeriodDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Rating Period
                 </Button>
-              )}
-            </Box>
-            {renderQuestionList()}
-          </Box>
-        )}
-      </Paper>
+              </div>
+              {renderPeriodList()}
+            </TabsContent>
+
+            <TabsContent value="questions" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold">
+                  {selectedPeriod ? `Questions for: ${selectedPeriod.title}` : 'Select a rating period'}
+                </h3>
+                {selectedPeriod && (
+                  <Button onClick={() => handleOpenQuestionDialog()}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Question
+                  </Button>
+                )}
+              </div>
+              {renderQuestionList()}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Rating Period Dialog */}
-      <Dialog open={periodDialogOpen} onClose={() => setPeriodDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {selectedPeriod ? 'Edit Rating Period' : 'Create Rating Period'}
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Title"
+      <Dialog open={periodDialogOpen} onOpenChange={setPeriodDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedPeriod && periodForm.id ? 'Edit Rating Period' : 'Create Rating Period'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="period-title">Title *</Label>
+              <Input
+                id="period-title"
                 name="title"
                 value={periodForm.title}
                 onChange={handlePeriodFormChange}
-                required
-                helperText="Enter a descriptive title for this rating period"
+                placeholder="e.g. End of Semester Evaluation 2026"
               />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="period-desc">Description</Label>
+              <Textarea
+                id="period-desc"
                 name="description"
                 value={periodForm.description}
                 onChange={handlePeriodFormChange}
-                multiline
                 rows={3}
-                helperText="Optional: Provide more details about this rating period"
+                placeholder="Optional details..."
               />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Start Date"
-                type="datetime-local"
-                value={periodForm.startDate ? format(periodForm.startDate, "yyyy-MM-dd'T'HH:mm") : ''}
-                onChange={(e) => handleDateChange('startDate', new Date(e.target.value))}
-                InputLabelProps={{ shrink: true }}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="start-date">Start Date</Label>
+                <Input
+                  id="start-date"
+                  type="datetime-local"
+                  value={periodForm.startDate ? format(periodForm.startDate, "yyyy-MM-dd'T'HH:mm") : ''}
+                  onChange={(e) => setPeriodForm(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="end-date">End Date</Label>
+                <Input
+                  id="end-date"
+                  type="datetime-local"
+                  value={periodForm.endDate ? format(periodForm.endDate, "yyyy-MM-dd'T'HH:mm") : ''}
+                  onChange={(e) => setPeriodForm(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Target Type</Label>
+              <Select
+                value={periodForm.targetType}
+                onValueChange={(val) => setPeriodForm(prev => ({ ...prev, targetType: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="both">Both Teachers & Subjects</SelectItem>
+                  <SelectItem value="teacher">Teachers Only</SelectItem>
+                  <SelectItem value="subject">Subjects Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between space-x-2 pt-2">
+              <Label htmlFor="is-active" className="cursor-pointer">
+                Active (available for students to submit ratings)
+              </Label>
+              <Switch
+                id="is-active"
+                checked={periodForm.isActive}
+                onCheckedChange={(checked) => setPeriodForm(prev => ({ ...prev, isActive: checked }))}
               />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="End Date"
-                type="datetime-local"
-                value={periodForm.endDate ? format(periodForm.endDate, "yyyy-MM-dd'T'HH:mm") : ''}
-                onChange={(e) => handleDateChange('endDate', new Date(e.target.value))}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Target Type</InputLabel>
-                <Select
-                  name="targetType"
-                  value={periodForm.targetType}
-                  onChange={handlePeriodFormChange}
-                  label="Target Type"
-                >
-                  <MenuItem value="both">Both Teachers & Subjects</MenuItem>
-                  <MenuItem value="teacher">Teachers Only</MenuItem>
-                  <MenuItem value="subject">Subjects Only</MenuItem>
-                </Select>
-                <FormHelperText>
-                  What should students be able to rate during this period?
-                </FormHelperText>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={periodForm.isActive}
-                    onChange={handlePeriodFormChange}
-                    name="isActive"
-                    color="primary"
-                  />
-                }
-                label="Active (available for students to submit ratings)"
-              />
-              <FormHelperText>
-                Ratings are only available to students when a period is active and within the date range
-              </FormHelperText>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                multiple
-                options={schools || []}
-                getOptionLabel={(option) => option.name}
-                value={(schools || []).filter(s => 
-                  periodForm.schools.includes(s._id)
-                )}
-                onChange={(e, newValue) => {
-                  setPeriodForm({
-                    ...periodForm,
-                    schools: newValue.map(v => v._id)
-                  });
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Schools"
-                    placeholder="Select schools"
-                    helperText="Leave empty to include all schools"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Autocomplete
-                multiple
-                options={directions || []}
-                getOptionLabel={(option) => option.name}
-                value={(directions || []).filter(d => 
-                  periodForm.directions.includes(d._id)
-                )}
-                onChange={(e, newValue) => {
-                  setPeriodForm({
-                    ...periodForm,
-                    directions: newValue.map(v => v._id)
-                  });
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Directions"
-                    placeholder="Select directions"
-                    helperText="Leave empty to include all directions"
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setPeriodDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePeriodSubmit}>
+              {selectedPeriod && periodForm.id ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPeriodDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handlePeriodSubmit} variant="contained" color="primary">
-            {selectedPeriod ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Question Dialog */}
-      <Dialog open={questionDialogOpen} onClose={() => setQuestionDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Add Rating Question
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Question Text"
+      <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Rating Question</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="question-text">Question Text *</Label>
+              <Input
+                id="question-text"
                 name="text"
                 value={questionForm.text}
                 onChange={handleQuestionFormChange}
-                required
-                helperText="Enter the question that students will answer"
+                placeholder="e.g. How effective is the teaching methodology?"
               />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Question Type</InputLabel>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Question Type</Label>
                 <Select
-                  name="questionType"
                   value={questionForm.questionType}
-                  onChange={handleQuestionFormChange}
-                  label="Question Type"
+                  onValueChange={(val) => setQuestionForm(prev => ({ ...prev, questionType: val }))}
                 >
-                  <MenuItem value="rating">Rating (1-10)</MenuItem>
-                  <MenuItem value="text">Text Answer</MenuItem>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rating">Rating (1-10)</SelectItem>
+                    <SelectItem value="text">Text Answer</SelectItem>
+                  </SelectContent>
                 </Select>
-                <FormHelperText>
-                  How should students answer this question?
-                </FormHelperText>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Target Type</InputLabel>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Target Type</Label>
                 <Select
-                  name="targetType"
                   value={questionForm.targetType}
-                  onChange={handleQuestionFormChange}
-                  label="Target Type"
+                  onValueChange={(val) => setQuestionForm(prev => ({ ...prev, targetType: val }))}
                 >
-                  <MenuItem value="both">Both Teachers & Subjects</MenuItem>
-                  <MenuItem value="teacher">Teachers Only</MenuItem>
-                  <MenuItem value="subject">Subjects Only</MenuItem>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="both">Both Teachers & Subjects</SelectItem>
+                    <SelectItem value="teacher">Teachers Only</SelectItem>
+                    <SelectItem value="subject">Subjects Only</SelectItem>
+                  </SelectContent>
                 </Select>
-                <FormHelperText>
-                  Which targets should this question apply to?
-                </FormHelperText>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Display Order"
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="question-order">Display Order</Label>
+              <Input
+                id="question-order"
                 name="order"
                 type="number"
                 value={questionForm.order}
                 onChange={handleQuestionFormChange}
-                helperText="Order in which questions will be displayed"
               />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setQuestionDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleQuestionSubmit}>Add Question</Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setQuestionDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleQuestionSubmit} variant="contained" color="primary">
-            Add Question
-          </Button>
-        </DialogActions>
       </Dialog>
 
-      {/* Delete Period Confirmation Dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Rating Period"
@@ -851,7 +644,6 @@ const RatingManager = () => {
         onCancel={() => setDeleteDialogOpen(false)}
       />
 
-      {/* Delete Question Confirmation Dialog */}
       <ConfirmDialog
         open={deleteQuestionDialogOpen}
         title="Delete Question"
@@ -859,28 +651,7 @@ const RatingManager = () => {
         onConfirm={confirmDeleteQuestion}
         onCancel={() => setDeleteQuestionDialogOpen(false)}
       />
-
-      {/* Stats Dialog */}
-      <Dialog 
-        open={statsDialogOpen} 
-        onClose={() => setStatsDialogOpen(false)} 
-        maxWidth="md" 
-        fullWidth
-      >
-        <DialogTitle>Rating Statistics</DialogTitle>
-        <DialogContent>
-          {statsTarget && (
-            <RatingStatsViewer 
-              targetType={statsTarget.targetType}
-              targetId={statsTarget.targetId}
-            />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setStatsDialogOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+    </div>
   );
 };
 

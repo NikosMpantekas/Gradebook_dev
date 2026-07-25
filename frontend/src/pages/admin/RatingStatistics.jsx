@@ -2,52 +2,48 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Paper, 
-  Grid,
-  FormControl,
-  InputLabel,
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import {
   Select,
-  MenuItem,
-  CircularProgress,
-  Alert,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
+  TableHeader,
   TableRow,
-  Rating,
-  Button,
+} from '@/components/ui/table';
+import {
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogContentText,
+  DialogHeader,
   DialogTitle,
-  TextField,
-  IconButton,
-  Snackbar
-} from '@mui/material';
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Star, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 
-// API URL from config
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-/**
- * RatingStatistics Component - Fixed Version
- * Properly handles authentication with correct localStorage key
- */
 const RatingStatistics = () => {
-  // State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [periods, setPeriods] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState('');
   const [statistics, setStatistics] = useState(null);
-  
-  // Dialog state
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -56,37 +52,21 @@ const RatingStatistics = () => {
     startDate: '',
     endDate: ''
   });
-  
-  // Notification state
-  const [notification, setNotification] = useState({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
-  
-  // Navigation hook
+
   const navigate = useNavigate();
-  
-  // Get authentication from Redux
   const auth = useSelector((state) => state.auth);
-  const userFromRedux = auth?.user; // IMPORTANT: Redux stores under 'user', not 'userInfo'
-  
-  // Get token with proper fallback to localStorage
+  const userFromRedux = auth?.user;
+
   const getAuthToken = useCallback(() => {
-    // First try from Redux state
     if (userFromRedux?.token) {
-      console.log('✅ Using token from Redux state');
       return userFromRedux.token;
     }
     
-    // Fallback to localStorage
     try {
-      // IMPORTANT: The app uses 'user' key, not 'userInfo'
       const userString = localStorage.getItem('user');
       if (userString) {
         const parsedUser = JSON.parse(userString);
         if (parsedUser?.token) {
-          console.log('✅ Using token from localStorage');
           return parsedUser.token;
         }
       }
@@ -94,16 +74,13 @@ const RatingStatistics = () => {
       console.error('Error accessing localStorage:', err);
     }
     
-    console.error('❌ No authentication token found in Redux or localStorage');
     return null;
   }, [userFromRedux]);
-  
-  // Create Axios instance with full configuration for all HTTP methods
+
   const createAxiosInstance = useCallback(() => {
     const token = getAuthToken();
     if (!token) return null;
     
-    // Create a properly configured Axios instance
     const instance = axios.create({
       baseURL: API_URL,
       headers: {
@@ -111,28 +88,20 @@ const RatingStatistics = () => {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      timeout: 15000, // 15 seconds timeout
+      timeout: 15000,
     });
     
-    // Add response interceptor for better error handling
     instance.interceptors.response.use(
       response => response,
       error => {
         console.error('Axios request failed:', error.message);
-        if (error.response) {
-          console.error('Response data:', error.response.data);
-          console.error('Response status:', error.response.status);
-        } else if (error.request) {
-          console.error('No response received, request details:', error.request);
-        }
         return Promise.reject(error);
       }
     );
     
     return instance;
   }, [getAuthToken]);
-  
-  // Fetch rating periods
+
   const fetchPeriods = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -146,19 +115,14 @@ const RatingStatistics = () => {
     }
     
     try {
-      console.log('📊 Fetching rating periods with token...');
       const response = await api.get('/api/ratings/periods');
-      
       if (response.data && Array.isArray(response.data)) {
-        console.log(`📊 Fetched ${response.data.length} rating periods`);
         setPeriods(response.data);
       } else {
-        console.warn('📊 No rating periods found or invalid response format');
         setPeriods([]);
       }
     } catch (err) {
       console.error('Error fetching rating periods:', err);
-      
       if (err.response?.status === 401) {
         setError('Your session has expired. Please log in again.');
         setTimeout(() => navigate('/login'), 3000);
@@ -169,8 +133,7 @@ const RatingStatistics = () => {
       setLoading(false);
     }
   }, [navigate, createAxiosInstance]);
-  
-  // Fetch statistics
+
   const fetchStatistics = useCallback(async (periodId) => {
     if (!periodId) return;
     
@@ -186,36 +149,25 @@ const RatingStatistics = () => {
     }
     
     try {
-      console.log(`📊 Fetching statistics for period ${periodId}...`);
       const response = await api.get(`/api/ratings/stats?periodId=${periodId}`);
-      
       if (response.data) {
-        console.log('📊 Statistics data received successfully');
         setStatistics(response.data);
       } else {
-        console.warn('📊 No statistics data in response');
         setStatistics(null);
       }
     } catch (err) {
       console.error('Error fetching statistics:', err);
-      
       if (err.response?.status === 401) {
         setError('Your session has expired. Please log in again.');
         setTimeout(() => navigate('/login'), 3000);
       } else {
         setError(`Error: ${err.message || 'Failed to load statistics'}`);
-        // Provide more detailed error information in console
-        if (err.response) {
-          console.error('Error status:', err.response.status);
-          console.error('Error details:', err.response.data);
-        }
       }
     } finally {
       setLoading(false);
     }
   }, [navigate, createAxiosInstance]);
-  
-  // Update a rating period
+
   const handleRatingPeriodUpdate = useCallback(async (periodId, updateData) => {
     if (!periodId || !updateData) return false;
     
@@ -229,12 +181,8 @@ const RatingStatistics = () => {
       return false;
     }
     
-    console.log(`🔄 Updating rating period ${periodId}...`);
-    console.log('Update data:', updateData);
-    
     try {
       await api.put(`/api/ratings/periods/${periodId}`, updateData);
-      console.log('✅ Rating period updated successfully');
       return true;
     } catch (err) {
       console.error('Error updating rating period:', err);
@@ -244,10 +192,9 @@ const RatingStatistics = () => {
       setLoading(false);
     }
   }, [createAxiosInstance]);
-  
-  // Handle period selection
-  const handlePeriodChange = (event) => {
-    const newPeriod = event.target.value;
+
+  const handlePeriodChange = (value) => {
+    const newPeriod = value === 'SELECT_PERIOD' ? '' : value;
     setSelectedPeriod(newPeriod);
     
     if (newPeriod) {
@@ -256,15 +203,13 @@ const RatingStatistics = () => {
       setStatistics(null);
     }
   };
-  
-  // Open edit dialog for a period
+
   const handleOpenEditDialog = (periodId) => {
     const periodToEdit = periods.find(p => p._id === periodId);
     if (!periodToEdit) return;
     
     setEditingPeriod(periodToEdit);
     
-    // Format dates for input fields (yyyy-MM-dd)
     const formatDate = (dateString) => {
       const date = new Date(dateString);
       return date.toISOString().split('T')[0];
@@ -279,14 +224,12 @@ const RatingStatistics = () => {
     
     setEditDialogOpen(true);
   };
-  
-  // Close edit dialog
+
   const handleCloseEditDialog = () => {
     setEditDialogOpen(false);
     setEditingPeriod(null);
   };
-  
-  // Handle form field changes
+
   const handleFormChange = (event) => {
     const { name, value } = event.target;
     setEditFormData(prev => ({
@@ -294,131 +237,96 @@ const RatingStatistics = () => {
       [name]: value
     }));
   };
-  
-  // Submit period edit
+
   const handleSubmitEdit = async () => {
     if (!editingPeriod) return;
     
-    // Basic validation
     if (!editFormData.title) {
-      setNotification({
-        open: true,
-        message: 'Title is required',
-        severity: 'error'
-      });
+      toast.error('Title is required');
       return;
     }
     
-    // Prepare data for update
-    const updateData = {
-      ...editFormData,
-      // Add any additional fields needed
-    };
-    
-    console.log('Submitting update for period:', editingPeriod._id);
-    console.log('Update data:', updateData);
-    
-    // Submit using our service function
-    const success = await handleRatingPeriodUpdate(editingPeriod._id, updateData);
+    const success = await handleRatingPeriodUpdate(editingPeriod._id, editFormData);
     
     if (success) {
-      // Show success notification
-      setNotification({
-        open: true,
-        message: 'Rating period updated successfully!',
-        severity: 'success'
-      });
-      
-      // Close dialog and refresh data
+      toast.success('Rating period updated successfully!');
       handleCloseEditDialog();
       fetchPeriods();
-    } else {
-      // Error notification is handled by the update function
-      console.error('Failed to update period');
     }
   };
-  
-  // Close notification
-  const handleCloseNotification = () => {
-    setNotification(prev => ({
-      ...prev,
-      open: false
-    }));
-  };
-  
-  // Initial data fetch
+
   useEffect(() => {
     fetchPeriods();
   }, [fetchPeriods]);
-  
-  // Render loading state
+
   if (loading && !error) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-          <CircularProgress />
-        </Box>
-      </Container>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
     );
   }
-  
-  // Render error state
+
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
+      <div className="p-6 space-y-4 max-w-6xl mx-auto">
+        <div className="p-4 rounded-md bg-destructive/15 text-destructive text-sm font-medium">
           {error}
-        </Alert>
-      </Container>
+        </div>
+      </div>
     );
   }
-  
-  // Render the component
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Rating Statistics
-      </Typography>
-      
-      {/* Rating Periods management section */}
-      <Paper sx={{ p: 2, mb: 3, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h6" gutterBottom>
-          Rating Periods
-        </Typography>
-        
-        {loading ? (
-          <Box display="flex" justifyContent="center" p={2}>
-            <CircularProgress />
-          </Box>
-        ) : periods.length > 0 ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Rating Statistics
+        </h1>
+        <p className="text-muted-foreground">
+          View and analyze student feedback and ratings across teachers and subjects.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Rating Periods</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center p-4">
+              <Spinner className="h-6 w-6" />
+            </div>
+          ) : periods.length > 0 ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              </TableHead>
+              </TableHeader>
               <TableBody>
                 {periods.map((period) => (
                   <TableRow key={period._id}>
-                    <TableCell>{period.title}</TableCell>
-                    <TableCell>{period.description || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{period.title}</TableCell>
+                    <TableCell className="text-muted-foreground">{period.description || 'N/A'}</TableCell>
                     <TableCell>
                       {period.startDate ? new Date(period.startDate).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell>
                       {period.endDate ? new Date(period.endDate).toLocaleDateString() : 'N/A'}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell className="text-right">
                       <Button 
-                        variant="outlined" 
-                        size="small" 
+                        variant="outline" 
+                        size="sm" 
                         onClick={() => handleOpenEditDialog(period._id)}
                       >
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
                         Edit
                       </Button>
                     </TableCell>
@@ -426,199 +334,173 @@ const RatingStatistics = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
-        ) : (
-          <Alert severity="info">No rating periods found</Alert>
-        )}
-      </Paper>
-      
-      {/* Statistics section */}
-      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h6" gutterBottom>
-          View Statistics
-        </Typography>
-        
-        {/* Period selection */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel id="period-select-label">Rating Period</InputLabel>
-              <Select
-                labelId="period-select-label"
-                id="period-select"
-                value={selectedPeriod}
-                onChange={handlePeriodChange}
-                label="Rating Period"
-              >
-                <MenuItem value="">
-                  <em>Select a period</em>
-                </MenuItem>
+          ) : (
+            <div className="p-4 rounded-md bg-muted text-muted-foreground text-sm">
+              No rating periods found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">View Statistics</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="max-w-md">
+            <Label htmlFor="period-select" className="mb-2 block">Rating Period</Label>
+            <Select
+              value={selectedPeriod || 'SELECT_PERIOD'}
+              onValueChange={handlePeriodChange}
+            >
+              <SelectTrigger id="period-select">
+                <SelectValue placeholder="Select a period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SELECT_PERIOD">
+                  <span className="italic">Select a period</span>
+                </SelectItem>
                 {periods.map((period) => (
-                  <MenuItem key={period._id} value={period._id}>
+                  <SelectItem key={period._id} value={period._id}>
                     {period.title}
-                  </MenuItem>
+                  </SelectItem>
                 ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-        
-        {/* No period selected message */}
-        {!selectedPeriod && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Please select a rating period to view statistics
-          </Alert>
-        )}
-        
-        {/* Statistics display */}
-        {selectedPeriod && !loading && (
-          <Box>
-            {statistics ? (
-              <>
-                <Typography variant="h6" gutterBottom>
-                  Statistics for Selected Period
-                </Typography>
-                
-                <TableContainer component={Paper} sx={{ mb: 3 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Question</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Average Rating</TableCell>
-                        <TableCell>Responses</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {Array.isArray(statistics.questions) ? (
-                        statistics.questions.map((question, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{question.text}</TableCell>
-                            <TableCell>{question.type || 'Rating'}</TableCell>
-                            <TableCell>
-                              {question.type === 'text' ? (
-                                'N/A'
-                              ) : (
-                                <>
-                                  {question.averageRating?.toFixed(1) || 'N/A'}
-                                  <Rating 
-                                    value={question.averageRating || 0} 
-                                    readOnly 
-                                    precision={0.1}
-                                    max={5}
-                                    size="small"
-                                    sx={{ ml: 1 }}
-                                  />
-                                </>
-                              )}
-                            </TableCell>
-                            <TableCell>{question.responseCount || 0}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
+              </SelectContent>
+            </Select>
+          </div>
+
+          {!selectedPeriod && (
+            <div className="p-4 rounded-md bg-muted text-muted-foreground text-sm font-medium">
+              Please select a rating period to view statistics
+            </div>
+          )}
+
+          {selectedPeriod && !loading && (
+            <div className="space-y-4">
+              {statistics ? (
+                <>
+                  <h4 className="font-semibold text-base">Statistics for Selected Period</h4>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={4}>
-                            <Alert severity="warning">
-                              No questions data available
-                            </Alert>
-                          </TableCell>
+                          <TableHead>Question</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Average Rating</TableHead>
+                          <TableHead>Responses</TableHead>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </>
-            ) : (
-              <Alert severity="warning">
-                No statistics available for the selected period
-              </Alert>
-            )}
-          </Box>
-        )}
-      </Paper>
-      
+                      </TableHeader>
+                      <TableBody>
+                        {Array.isArray(statistics.questions) ? (
+                          statistics.questions.map((question, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{question.text}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">
+                                  {question.type || 'Rating'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {question.type === 'text' ? (
+                                  'N/A'
+                                ) : (
+                                  <div className="flex items-center gap-1.5 font-semibold">
+                                    <span>{question.averageRating?.toFixed(1) || 'N/A'}</span>
+                                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>{question.responseCount || 0}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                              No questions data available
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              ) : (
+                <div className="p-4 rounded-md bg-amber-500/15 text-amber-600 text-sm font-medium">
+                  No statistics available for the selected period
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Rating Period</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Update the details for this rating period.
-          </DialogContentText>
-          
-          <TextField
-            margin="dense"
-            label="Title"
-            name="title"
-            value={editFormData.title}
-            onChange={handleFormChange}
-            fullWidth
-            required
-            sx={{ mb: 2 }}
-          />
-          
-          <TextField
-            margin="dense"
-            label="Description"
-            name="description"
-            value={editFormData.description}
-            onChange={handleFormChange}
-            fullWidth
-            multiline
-            rows={2}
-            sx={{ mb: 2 }}
-          />
-          
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                margin="dense"
-                label="Start Date"
-                name="startDate"
-                type="date"
-                value={editFormData.startDate}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Rating Period</DialogTitle>
+            <DialogDescription>
+              Update the details for this rating period.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-title">Title *</Label>
+              <Input
+                id="edit-title"
+                name="title"
+                value={editFormData.title}
                 onChange={handleFormChange}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                margin="dense"
-                label="End Date"
-                name="endDate"
-                type="date"
-                value={editFormData.endDate}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                name="description"
+                value={editFormData.description}
                 onChange={handleFormChange}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
+                rows={2}
               />
-            </Grid>
-          </Grid>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-start">Start Date</Label>
+                <Input
+                  id="edit-start"
+                  name="startDate"
+                  type="date"
+                  value={editFormData.startDate}
+                  onChange={handleFormChange}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-end">End Date</Label>
+                <Input
+                  id="edit-end"
+                  name="endDate"
+                  type="date"
+                  value={editFormData.endDate}
+                  onChange={handleFormChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={handleCloseEditDialog}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitEdit}>
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button onClick={handleSubmitEdit} variant="contained" color="primary">
-            Save Changes
-          </Button>
-        </DialogActions>
       </Dialog>
-      
-      {/* Notification Snackbar */}
-      <Snackbar
-        open={notification.open}
-        autoHideDuration={6000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseNotification} 
-          severity={notification.severity} 
-          sx={{ width: '100%' }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
-    </Container>
+    </div>
   );
 };
 

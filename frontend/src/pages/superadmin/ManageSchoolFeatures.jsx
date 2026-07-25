@@ -3,28 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
-import {
-  Box, Card, CardContent, Typography, Grid, FormControlLabel,
-  Switch, Button, Alert, CircularProgress, Paper, Divider
-} from '@mui/material';
-import SchoolIcon from '@mui/icons-material/School';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import StarRateIcon from '@mui/icons-material/StarRate';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { GraduationCap, Calendar, Star, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ManageSchoolFeatures = () => {
   const navigate = useNavigate();
-  // Get auth state from Redux store
   const { user, token } = useSelector((state) => state.auth);
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Fetch schools on component mount
   useEffect(() => {
-    // Only super admins should access this page
     if (user?.role !== 'superadmin') {
       navigate('/app/dashboard');
       return;
@@ -33,7 +28,6 @@ const ManageSchoolFeatures = () => {
     fetchSchools();
   }, [user, navigate]);
 
-  // Fetch schools and their feature toggles
   const fetchSchools = async () => {
     try {
       setLoading(true);
@@ -45,14 +39,11 @@ const ManageSchoolFeatures = () => {
         }
       };
 
-      // Get all schools
       const schoolsResponse = await axios.get(`${API_URL}/api/schools`, config);
       
-      // Get feature toggles for each school
       const schoolsWithFeatures = await Promise.all(
         schoolsResponse.data.map(async (school) => {
           try {
-            // Get school permissions (feature toggles)
             const permissionsResponse = await axios.get(
               `${API_URL}/api/schools/${school._id}/permissions`,
               config
@@ -66,8 +57,8 @@ const ManageSchoolFeatures = () => {
                 enablePayments: false
               }
             };
-          } catch (error) {
-            console.error(`Error fetching features for school ${school._id}:`, error);
+          } catch (err) {
+            console.error(`Error fetching features for school ${school._id}:`, err);
             return {
               ...school,
               features: {
@@ -81,15 +72,14 @@ const ManageSchoolFeatures = () => {
       );
 
       setSchools(schoolsWithFeatures);
-    } catch (error) {
-      console.error('Error fetching schools:', error);
+    } catch (err) {
+      console.error('Error fetching schools:', err);
       setError('Failed to load schools. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle toggle change for a specific feature
   const handleToggleFeature = (schoolId, feature, checked) => {
     setSchools(schools.map(school => {
       if (school._id === schoolId) {
@@ -105,7 +95,6 @@ const ManageSchoolFeatures = () => {
     }));
   };
 
-  // Save feature toggles for a school
   const saveFeatures = async (schoolId) => {
     try {
       setSaving(true);
@@ -129,8 +118,8 @@ const ManageSchoolFeatures = () => {
       );
 
       toast.success(`Features updated for ${school.name}`);
-    } catch (error) {
-      console.error('Error saving features:', error);
+    } catch (err) {
+      console.error('Error saving features:', err);
       toast.error('Failed to save feature settings');
     } finally {
       setSaving(false);
@@ -139,131 +128,107 @@ const ManageSchoolFeatures = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ mt: 2 }}>
-        <Alert severity="error">{error}</Alert>
-        <Button
-          variant="outlined"
-          color="primary"
-          sx={{ mt: 2 }}
-          onClick={fetchSchools}
-        >
+      <div className="p-6 space-y-4">
+        <div className="p-4 rounded-md bg-destructive/15 text-destructive text-sm font-medium">
+          {error}
+        </div>
+        <Button variant="outline" onClick={fetchSchools}>
           Try Again
         </Button>
-      </Box>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Manage School Features
-      </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Toggle features on or off for each school. Changes will apply immediately for all users of that school.
-      </Typography>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Manage School Features</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Toggle features on or off for each school. Changes apply immediately for all users of that school.
+        </p>
+      </div>
 
       {schools.length === 0 ? (
-        <Alert severity="info">No schools found. Create a school first to manage its features.</Alert>
+        <div className="p-6 rounded-md bg-muted text-muted-foreground text-sm font-medium">
+          No schools found. Create a school first to manage its features.
+        </div>
       ) : (
-        <Grid container spacing={3} sx={{ mt: 2 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {schools.map((school) => (
-            <Grid item xs={12} sm={6} md={4} key={school._id}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <SchoolIcon sx={{ mr: 1 }} />
-                    <Typography variant="h6" noWrap>
-                      {school.name}
-                    </Typography>
-                  </Box>
+            <Card key={school._id} className="flex flex-col justify-between">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <span className="truncate">{school.name}</span>
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="space-y-4 pt-2">
+                <div className="rounded-lg border bg-muted/40 p-4 space-y-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Feature Toggles
+                  </h4>
                   
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Feature Toggles
-                    </Typography>
-                    
-                    <Box sx={{ mt: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={school.features?.enableCalendar === true}
-                            onChange={(e) => handleToggleFeature(school._id, 'enableCalendar', e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <CalendarMonthIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                            <Typography variant="body2">Calendar</Typography>
-                          </Box>
-                        }
-                      />
-                    </Box>
-                    
-                    <Box sx={{ mt: 1 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={school.features?.enableRatingSystem === true}
-                            onChange={(e) => handleToggleFeature(school._id, 'enableRatingSystem', e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <StarRateIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                            <Typography variant="body2">Rating System</Typography>
-                          </Box>
-                        }
-                      />
-                    </Box>
-                    
-                    <Box sx={{ mt: 1 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={school.features?.enablePayments === true}
-                            onChange={(e) => handleToggleFeature(school._id, 'enablePayments', e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <CreditCardIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                            <Typography variant="body2">Payment Management</Typography>
-                          </Box>
-                        }
-                      />
-                    </Box>
-                  </Paper>
-                  
-                  <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => saveFeatures(school._id)}
-                      disabled={saving}
-                    >
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                  <div className="flex items-center justify-between space-x-2">
+                    <Label htmlFor={`cal-${school._id}`} className="flex items-center gap-2 cursor-pointer text-sm font-normal">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      Calendar
+                    </Label>
+                    <Switch
+                      id={`cal-${school._id}`}
+                      checked={school.features?.enableCalendar === true}
+                      onCheckedChange={(checked) => handleToggleFeature(school._id, 'enableCalendar', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between space-x-2">
+                    <Label htmlFor={`rating-${school._id}`} className="flex items-center gap-2 cursor-pointer text-sm font-normal">
+                      <Star className="h-4 w-4 text-muted-foreground" />
+                      Rating System
+                    </Label>
+                    <Switch
+                      id={`rating-${school._id}`}
+                      checked={school.features?.enableRatingSystem === true}
+                      onCheckedChange={(checked) => handleToggleFeature(school._id, 'enableRatingSystem', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between space-x-2">
+                    <Label htmlFor={`pay-${school._id}`} className="flex items-center gap-2 cursor-pointer text-sm font-normal">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      Payment Management
+                    </Label>
+                    <Switch
+                      id={`pay-${school._id}`}
+                      checked={school.features?.enablePayments === true}
+                      onCheckedChange={(checked) => handleToggleFeature(school._id, 'enablePayments', checked)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="justify-end pt-0">
+                <Button
+                  size="sm"
+                  onClick={() => saveFeatures(school._id)}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardFooter>
+            </Card>
           ))}
-        </Grid>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

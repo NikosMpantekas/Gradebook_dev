@@ -19,14 +19,12 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// shadcn/ui components
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Label } from '../../components/ui/label';
-import { Input } from '../../components/ui/input';
 import { DatePicker } from '../../components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Spinner } from '../../components/ui/spinner';
@@ -55,28 +53,37 @@ const StudentStats = () => {
     }
   }, [selectedStudent, startDate, endDate]);
 
-  // Fetch students list - teachers only see their assigned students
+  const getToken = () => {
+    if (user?.token) return user.token;
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed?.token) return parsed.token;
+      }
+    } catch (err) {
+      console.error('Error getting auth token:', err);
+    }
+    return localStorage.getItem('token') || '';
+  };
+
   const fetchStudents = async () => {
     try {
       setStudentsLoading(true);
-      const token = localStorage.getItem('token');
+      setError('');
+      const token = getToken();
       
-      // For teachers, use teacher-specific endpoint to get only their students
-      // For admins, get all students
       const endpoint = user?.role === 'teacher' 
-        ? `${API_URL}/api/users/teacher-students`  // Only students from teacher's classes
-        : `${API_URL}/api/users/students`;         // All students for admin
-      
-      console.log(`[StudentStats] Fetching students for ${user?.role}:`, endpoint);
+        ? `${API_URL}/api/users/teacher-students`
+        : `${API_URL}/api/users/students`;
       
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log(`[StudentStats] Received ${response.data?.length || 0} students for ${user?.role}`);
       setStudents(response.data || []);
-    } catch (error) {
-      console.error('Error fetching students:', error);
+    } catch (err) {
+      console.error('Error fetching students:', err);
       setError('Failed to load students');
       setStudents([]);
     } finally {
@@ -84,12 +91,11 @@ const StudentStats = () => {
     }
   };
 
-  // Fetch grades data for selected student and date range
   const fetchGradesData = async () => {
     try {
       setLoading(true);
       setError('');
-      const token = localStorage.getItem('token');
+      const token = getToken();
       
       const response = await axios.get(`${API_URL}/api/grades/student-period-analysis`, {
         params: {
@@ -101,8 +107,8 @@ const StudentStats = () => {
       });
       
       setGradesData(response.data);
-    } catch (error) {
-      console.error('Error fetching grades data:', error);
+    } catch (err) {
+      console.error('Error fetching grades data:', err);
       setError('Failed to load grades data');
       setGradesData(null);
     } finally {
@@ -110,24 +116,22 @@ const StudentStats = () => {
     }
   };
 
-  // Get role-specific header info
   const getRoleInfo = () => {
     if (user?.role === 'admin') {
       return {
-        icon: <Shield className="h-8 w-8" />,
+        icon: <Shield className="h-5 w-5 text-primary" />,
         title: t('student.adminStudentAnalysis'),
         description: t('student.detailedAnalysis')
       };
     } else {
       return {
-        icon: <School className="h-8 w-8" />,
+        icon: <School className="h-5 w-5 text-primary" />,
         title: t('student.studentGradeAnalysis'),
         description: t('student.detailedAnalysis')
       };
     }
   };
 
-  // Prepare chart data for subjects with multiple grades
   const prepareChartData = (subjectGrades) => {
     return subjectGrades.map((grade, index) => ({
       index: index + 1,
@@ -137,7 +141,6 @@ const StudentStats = () => {
     })).sort((a, b) => a.timestamp - b.timestamp);
   };
 
-  // Navigate to dedicated print page
   const handlePrintReport = () => {
     if (!selectedStudent || !startDate || !endDate) {
       alert(t('student.selectStudentAndDate'));
@@ -158,31 +161,22 @@ const StudentStats = () => {
   const selectedStudentData = students.find(s => s._id === selectedStudent);
 
   return (
-    <>
-
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       {/* Header */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-primary rounded-lg">
-                {roleInfo.icon}
-              </div>
-              <div>
-                <CardTitle className="text-2xl sm:text-3xl font-light">{roleInfo.title}</CardTitle>
-                <p className="text-muted-foreground text-sm sm:text-base">{roleInfo.description}</p>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          {roleInfo.title}
+        </h1>
+        <p className="text-muted-foreground">
+          {roleInfo.description}
+        </p>
+      </div>
 
       {/* Selection Controls */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
               <Label htmlFor="student">{t('student.selectStudent')}</Label>
               <Select
                 value={selectedStudent}
@@ -202,7 +196,7 @@ const StudentStats = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="startDate">{t('student.startDate')}</Label>
               <DatePicker
                 placeholder={t('student.startDate')}
@@ -214,7 +208,7 @@ const StudentStats = () => {
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="endDate">{t('student.endDate')}</Label>
               <DatePicker
                 placeholder={t('student.endDate')}
@@ -227,14 +221,10 @@ const StudentStats = () => {
               />
             </div>
           </div>
-          
-          {/* Print Report Button */}
+
           {selectedStudent && startDate && endDate && (
-            <div className="flex justify-center">
-              <Button
-                onClick={handlePrintReport}
-                className="min-w-[140px]"
-              >
+            <div className="flex justify-end mt-4 pt-4 border-t">
+              <Button onClick={handlePrintReport}>
                 <Printer className="h-4 w-4 mr-2" />
                 {t('student.printReport')}
               </Button>
@@ -243,112 +233,91 @@ const StudentStats = () => {
         </CardContent>
       </Card>
 
-      {/* Error display */}
       {error && (
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            <span>{error}</span>
-          </div>
+        <div className="p-4 rounded-md bg-destructive/15 text-destructive text-sm font-medium flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Loading state */}
       {loading && (
-        <div className="flex justify-center my-8">
-          <Spinner className="text-primary" />
+        <div className="flex justify-center items-center py-12">
+          <Spinner className="h-8 w-8 text-primary" />
         </div>
       )}
 
       {/* Grades Analysis Content */}
       {gradesData && (
-        <div id="printable-content">
-          {/* Report Header */}
-          <Card className="mb-6">
+        <div id="printable-content" className="space-y-6">
+          <Card>
             <CardContent className="p-6">
-              <div className="text-center mb-4 sm:mb-6">
-                <h1 className="text-2xl sm:text-4xl font-light mb-3 sm:mb-4">{t('student.gradeAnalysisReport')}</h1>
-                <h2 className="text-xl sm:text-2xl text-primary mb-2">{selectedStudentData?.name}</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-bold">{t('student.gradeAnalysisReport')}</h3>
+                <p className="text-lg font-semibold text-primary">{selectedStudentData?.name}</p>
+                <p className="text-xs text-muted-foreground">
                   {t('student.dateRange')}: {startDate ? new Date(startDate).toLocaleDateString() : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString() : 'N/A'}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  {t('student.generatedOn')}: {new Date().toLocaleDateString()}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Subject-wise Grades */}
           {gradesData.subjectAnalysis && Object.keys(gradesData.subjectAnalysis).length > 0 ? (
             Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData]) => (
-              <Card key={subjectName} className="mb-6">
-                <CardContent className="p-6">
-                  <h3 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-                    <BookOpen className="h-6 w-6 text-primary" />
-                    {subjectName}
-                  </h3>
-                  
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                    <Card>
-                      <CardContent className="text-center p-4">
-                        <div className="text-2xl font-bold text-primary">
-                          {subjectData.studentAverage?.toFixed(1) || 'N/A'}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{t('student.studentAverage')}</p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="text-center p-4">
-                        <div className="text-2xl font-bold text-secondary">
-                          {subjectData.classAverage?.toFixed(1) || 'N/A'}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{t('student.classAverage')}</p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="text-center p-4">
-                        <div className="text-2xl font-bold">
-                          {subjectData.grades?.length || 0}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{t('student.totalGrades')}</p>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="text-center p-4">
-                        <Badge 
-                          variant={subjectData.studentAverage >= subjectData.classAverage ? 'default' : 'secondary'}
-                          className="text-sm"
-                        >
-                          {subjectData.studentAverage >= subjectData.classAverage ? t('student.aboveAverage') : t('student.belowAverage')}
-                        </Badge>
-                      </CardContent>
-                    </Card>
+              <Card key={subjectName}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <span>{subjectName}</span>
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  {/* Summary Metric Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                      <p className="text-2xl font-bold text-primary">
+                        {subjectData.studentAverage?.toFixed(1) || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('student.studentAverage')}</p>
+                    </div>
+
+                    <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {subjectData.classAverage?.toFixed(1) || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('student.classAverage')}</p>
+                    </div>
+
+                    <div className="p-4 rounded-lg border bg-muted/30 text-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {subjectData.grades?.length || 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('student.totalGrades')}</p>
+                    </div>
+
+                    <div className="p-4 rounded-lg border bg-muted/30 flex items-center justify-center">
+                      <Badge 
+                        variant={subjectData.studentAverage >= subjectData.classAverage ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {subjectData.studentAverage >= subjectData.classAverage ? t('student.aboveAverage') : t('student.belowAverage')}
+                      </Badge>
+                    </div>
                   </div>
 
                   {/* Progress Graph for multiple grades */}
                   {subjectData.grades && subjectData.grades.length > 1 && (
-                    <div className="mb-6">
-                      <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-primary" />
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
                         {t('student.gradeProgressOverTime')}
                       </h4>
-                      <div className="w-full h-[250px] sm:h-[300px]">
-                        <ResponsiveContainer>
+                      <div className="h-64 border rounded-md p-4 bg-card">
+                        <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={prepareChartData(subjectData.grades)}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis 
-                              dataKey="date" 
-                              tick={{ fontSize: 12 }}
-                            />
-                            <YAxis 
-                              domain={[0, 20]}
-                              tick={{ fontSize: 12 }}
-                            />
+                            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                            <YAxis domain={[0, 20]} tick={{ fontSize: 12 }} />
                             <Tooltip 
                               formatter={(value) => [value, t('student.grade')]}
                               labelFormatter={(label) => `${t('student.date')}: ${label}`}
@@ -358,8 +327,8 @@ const StudentStats = () => {
                               type="monotone" 
                               dataKey="grade" 
                               stroke="hsl(var(--primary))" 
-                              strokeWidth={3}
-                              dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
+                              strokeWidth={2}
+                              dot={{ fill: 'hsl(var(--primary))', r: 4 }}
                               name={t('student.grade')}
                             />
                           </LineChart>
@@ -369,85 +338,81 @@ const StudentStats = () => {
                   )}
 
                   {/* Grades Table */}
-                  <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-primary" />
-                    {t('student.allGrades')}
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[100px]">{t('student.date')}</TableHead>
-                          <TableHead className="min-w-[80px]">{t('student.grade')}</TableHead>
-                          <TableHead className="min-w-[150px]">{t('student.description')}</TableHead>
-                          <TableHead className="min-w-[120px]">{t('student.teacher')}</TableHead>
-                          <TableHead className="min-w-[100px]">{t('student.vsClassAvg')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {subjectData.grades?.map((grade, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="min-w-[100px]">
-                              <span className="text-sm">
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4 text-primary" />
+                      {t('student.allGrades')}
+                    </h4>
+                    <div className="border rounded-md overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50 dark:bg-slate-900">
+                            <TableHead>{t('student.date')}</TableHead>
+                            <TableHead>{t('student.grade')}</TableHead>
+                            <TableHead>{t('student.description')}</TableHead>
+                            <TableHead>{t('student.teacher')}</TableHead>
+                            <TableHead>{t('student.vsClassAvg')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {subjectData.grades?.map((grade, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="text-xs">
                                 {new Date(grade.date).toLocaleDateString()}
-                              </span>
-                            </TableCell>
-                            <TableCell className="min-w-[80px]">
-                              <Badge 
-                                variant={grade.value >= subjectData.classAverage ? 'default' : grade.value >= subjectData.classAverage * 0.8 ? 'secondary' : 'destructive'}
-                              >
-                                {grade.value}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="min-w-[150px]">
-                              <span className="text-sm break-words">
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={grade.value >= subjectData.classAverage ? 'default' : grade.value >= subjectData.classAverage * 0.8 ? 'secondary' : 'destructive'}
+                                >
+                                  {grade.value}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
                                 {grade.description || '-'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="min-w-[120px]">
-                              <span className="text-sm">
+                              </TableCell>
+                              <TableCell className="text-xs font-medium">
                                 {grade.teacher?.name || 'Unknown'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="min-w-[100px]">
-                              <Badge 
-                                variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
-                                className="text-xs flex items-center w-fit gap-1"
-                              >
-                                {grade.value >= subjectData.classAverage ? (
-                                  <>
-                                    <TrendingUp className="h-3 w-3 text-green-600" />
-                                    <span>{t('student.above')}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <TrendingDown className="h-3 w-3 text-red-600" />
-                                    <span>{t('student.below')}</span>
-                                  </>
-                                )}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        )) || (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center">
-                              {t('student.noGradesForPeriod')}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={grade.value >= subjectData.classAverage ? 'default' : 'secondary'}
+                                  className="text-xs flex items-center w-fit gap-1"
+                                >
+                                  {grade.value >= subjectData.classAverage ? (
+                                    <>
+                                      <TrendingUp className="h-3 w-3 text-emerald-600" />
+                                      <span>{t('student.above')}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <TrendingDown className="h-3 w-3 text-destructive" />
+                                      <span>{t('student.below')}</span>
+                                    </>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )) || (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-6">
+                                {t('student.noGradesForPeriod')}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))
           ) : (
             <Card>
-              <CardContent className="p-8 text-center">
-                <h3 className="text-lg text-muted-foreground mb-2">
+              <CardContent className="p-8 text-center text-muted-foreground space-y-1">
+                <h4 className="font-semibold text-base">
                   {t('student.noGradesFoundPeriod')}
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                </h4>
+                <p className="text-xs">
                   {t('student.tryDifferentPeriod')}
                 </p>
               </CardContent>
@@ -456,22 +421,23 @@ const StudentStats = () => {
         </div>
       )}
 
-      {/* Selection prompt */}
+      {/* Selection Prompt */}
       {!selectedStudent || !startDate || !endDate ? (
         <Card>
-          <CardContent className="p-6 sm:p-8 text-center">
-            <BarChart3 className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
-            <h3 className="text-base sm:text-lg text-muted-foreground mb-2">
-              {t('student.selectForAnalysis')}
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {t('student.chooseForReport')}
-            </p>
+          <CardContent className="p-8 text-center text-muted-foreground space-y-3">
+            <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground/60" />
+            <div>
+              <h3 className="font-semibold text-base text-foreground">
+                {t('student.selectForAnalysis')}
+              </h3>
+              <p className="text-xs mt-1">
+                {t('student.chooseForReport')}
+              </p>
+            </div>
           </CardContent>
         </Card>
       ) : null}
-      </div>
-    </>
+    </div>
   );
 };
 

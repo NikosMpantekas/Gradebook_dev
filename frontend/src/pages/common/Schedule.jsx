@@ -404,72 +404,66 @@ const Schedule = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Header - Always immediately rendered */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-primary rounded-lg">
-              <Calendar className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <div>
-              <CardTitle className="text-3xl font-light">{t('schedule.weeklySchedule')}</CardTitle>
-              <p className="text-muted-foreground">
-                {user?.role === 'student' && t('schedule.header.student')}
-                {user?.role === 'teacher' && t('schedule.header.teacher')}
-                {user?.role === 'admin' && t('schedule.header.admin')}
-              </p>
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          {t('schedule.weeklySchedule')}
+        </h1>
+        <p className="text-muted-foreground">
+          {user?.role === 'student' && t('schedule.header.student')}
+          {user?.role === 'teacher' && t('schedule.header.teacher')}
+          {user?.role === 'admin' && t('schedule.header.admin')}
+        </p>
+      </div>
 
-          {/* Filters — admin & teacher */}
-          {(user?.role === 'admin' || user?.role === 'teacher') && (
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">{t('schedule.filtersTitle')}</h3>
-                {/* Subtle "revalidating" pulse when loading in the background */}
-                {isLoading && scheduleData && (
-                  <span className="ml-2 text-xs text-muted-foreground animate-pulse">
-                    {t('common.updating') || 'Updating…'}
-                  </span>
-                )}
+      {/* Filters — admin & teacher */}
+      {(user?.role === 'admin' || user?.role === 'teacher') && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold">{t('schedule.filtersTitle')}</h3>
+              {isLoading && scheduleData && (
+                <span className="ml-2 text-xs text-muted-foreground animate-pulse">
+                  {t('common.updating') || 'Updating…'}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>{t('schedule.branch')}</Label>
+                <Select value={filters.schoolBranch} onValueChange={v => handleFilterChange('schoolBranch', v)} disabled={loadingFilters}>
+                  <SelectTrigger><SelectValue placeholder={t('schedule.allBranches')} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('schedule.allBranches')}</SelectItem>
+                    {filterOptions.schoolBranches.map(branch => (
+                      <SelectItem key={branch.value} value={branch.value}>
+                        {branchNames[branch.value] || branch.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('schedule.branch')}</Label>
-                  <Select value={filters.schoolBranch} onValueChange={v => handleFilterChange('schoolBranch', v)} disabled={loadingFilters}>
-                    <SelectTrigger><SelectValue placeholder={t('schedule.allBranches')} /></SelectTrigger>
+
+              {user?.role === 'admin' && (
+                <div className="space-y-1.5">
+                  <Label>{t('schedule.teacher')}</Label>
+                  <Select value={filters.teacher} onValueChange={v => handleFilterChange('teacher', v)} disabled={loadingFilters}>
+                    <SelectTrigger><SelectValue placeholder={t('schedule.allTeachers')} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{t('schedule.allBranches')}</SelectItem>
-                      {filterOptions.schoolBranches.map(branch => (
-                        <SelectItem key={branch.value} value={branch.value}>
-                          {branchNames[branch.value] || branch.label}
-                        </SelectItem>
+                      <SelectItem value="all">{t('schedule.allTeachers')}</SelectItem>
+                      {filterOptions.teachers.map(teacher => (
+                        <SelectItem key={teacher.value} value={teacher.value}>{teacher.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {user?.role === 'admin' && (
-                  <div className="space-y-2">
-                    <Label>{t('schedule.teacher')}</Label>
-                    <Select value={filters.teacher} onValueChange={v => handleFilterChange('teacher', v)} disabled={loadingFilters}>
-                      <SelectTrigger><SelectValue placeholder={t('schedule.allTeachers')} /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t('schedule.allTeachers')}</SelectItem>
-                        {filterOptions.teachers.map(teacher => (
-                          <SelectItem key={teacher.value} value={teacher.value}>{teacher.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          )}
-        </CardHeader>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading && !scheduleData ? (
         <ScheduleSkeleton />

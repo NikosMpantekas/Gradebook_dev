@@ -225,12 +225,12 @@ const MaintenanceAnnouncements = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       {/* Header */}
-      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-light tracking-wide">Maintenance Announcements</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">Create and manage scheduled maintenance messages for all users</p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Maintenance Announcements</h1>
+          <p className="text-muted-foreground">Create and manage scheduled maintenance messages for all users</p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>

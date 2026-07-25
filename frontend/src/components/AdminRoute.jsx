@@ -122,14 +122,7 @@ const AdminRoute = ({ children }) => {
       }
     }
     
-    // Subjects Management
-    if (location.pathname.includes('/app/admin/subjects')) {
-      if (!isFeatureEnabled('enableSubjects')) {
-        console.log('❌ AdminRoute - Subjects feature disabled for this school');
-        return <Navigate to="/app/dashboard" />;
-      }
-    }
-    
+
     // Analytics/Statistics
     if (location.pathname.includes('/app/admin/analytics') || location.pathname.includes('/app/admin/statistics')) {
       if (!isFeatureEnabled('enableAnalytics')) {
@@ -173,13 +166,7 @@ const AdminRoute = ({ children }) => {
       return <Navigate to="/app/dashboard" />;
     }
     
-    // Check for calendar routes
-    if ((location.pathname.includes('/app/calendar') || 
-         location.pathname.includes('/app/admin/calendar')) && 
-        !isFeatureEnabled('enableCalendar')) {
-      return <Navigate to="/app/dashboard" />;
-    }
-    
+
     if (location.pathname.includes('/app/admin/progress') && !isFeatureEnabled('enableStudentProgress')) {
       console.log('❌ AdminRoute - Student Progress feature disabled for this school');
       return <Navigate to="/app/dashboard" />;
