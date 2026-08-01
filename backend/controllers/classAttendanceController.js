@@ -1,11 +1,10 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
 const Class = require('../models/classModel');
 const User = require('../models/userModel');
 const Attendance = require('../models/attendanceModel');
 const Session = require('../models/sessionModel');
 const logger = require('../utils/logger');
-const { escapeRegex } = require('../utils/regex');
 
 // @desc    Save class session attendance
 // @route   POST /api/attendance/class-session
@@ -338,8 +337,8 @@ const searchStudents = asyncHandler(async (req, res) => {
       schoolId: req.user.schoolId,
       active: true,
       $or: [
-        { name: { $regex: escapeRegex(query), $options: 'i' } },
-        { email: { $regex: escapeRegex(query), $options: 'i' } }
+        { name: { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(query), $options: 'i' } },
+        { email: { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(query), $options: 'i' } }
       ]
     }).select('_id name email').limit(10);
 

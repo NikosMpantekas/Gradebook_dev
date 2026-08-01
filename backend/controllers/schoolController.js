@@ -1,4 +1,4 @@
-const asyncHandler = require("express-async-handler");
+const asyncHandler = require('../utils/asyncHandler');
 const School = require("../models/schoolModel");
 const mongoose = require("mongoose");
 

@@ -7,7 +7,7 @@
  * Because it expects req.user to be populated by the auth middleware
  */
 
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
 const School = require('../models/schoolModel');
 const logger = require('../utils/logger');

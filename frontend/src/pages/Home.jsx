@@ -12,19 +12,19 @@ import {
 import { cn } from "../lib/utils";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
-  List,
+  Menu,
   Sun,
   Moon,
   ArrowRight,
   GraduationCap,
-  ChalkboardTeacher,
-  Buildings,
+  Presentation,
+  Building,
   Users,
   Notebook,
   CalendarCheck,
-  ChatCircleDots,
-  CircleWavyCheck,
-} from "phosphor-react";
+  MessageCircle,
+  BadgeCheck,
+} from "lucide-react";
 import MaintenanceIndicator from "../components/MaintenanceIndicator";
 
 const Logo = () => {
@@ -127,7 +127,7 @@ export default function Home() {
                 size="icon"
                 className="flex md:hidden mr-2"
               >
-                <List size={20} weight="bold" />
+                <Menu size={20} strokeWidth={2} />
               </Button>
             </SheetTrigger>
             <SheetContent
@@ -287,9 +287,9 @@ export default function Home() {
                       : "Συνδεθείτε στο GradeBook"}
                     <div className="transition-transform duration-300 ease-out group-hover:translate-x-1 flex items-center">
                       {loggedInUser ? (
-                        <ArrowRight size={20} weight="bold" />
+                        <ArrowRight size={20} strokeWidth={2} />
                       ) : (
-                        <GraduationCap size={20} weight="bold" />
+                        <GraduationCap size={20} strokeWidth={2} />
                       )}
                     </div>
                   </Link>
@@ -345,7 +345,7 @@ export default function Home() {
                         "text-blue-400",
                       )}
                     >
-                      <Notebook size={48} weight="bold" />
+                      <Notebook size={48} strokeWidth={2} />
                     </div>
                     <h3
                       className={cn(
@@ -415,7 +415,7 @@ export default function Home() {
                       "text-emerald-400",
                     )}
                   >
-                    <CalendarCheck size={40} weight="bold" />
+                    <CalendarCheck size={40} strokeWidth={2} />
                   </div>
                   <h3
                     className={cn(
@@ -448,7 +448,7 @@ export default function Home() {
                       "text-purple-400",
                     )}
                   >
-                    <ChatCircleDots size={40} weight="bold" />
+                    <MessageCircle size={40} strokeWidth={2} />
                   </div>
                   <h3
                     className={cn(
@@ -490,7 +490,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[
                 {
-                  icon: <GraduationCap size={48} weight="bold" />,
+                  icon: <GraduationCap size={48} strokeWidth={2} />,
                   title: "Μαθητές",
                   color: "text-blue-400",
                   borderHover: "hover:border-blue-500/30",
@@ -502,7 +502,7 @@ export default function Home() {
                   ],
                 },
                 {
-                  icon: <ChalkboardTeacher size={48} weight="bold" />,
+                  icon: <Presentation size={48} strokeWidth={2} />,
                   title: "Καθηγητές",
                   color: "text-emerald-400",
                   borderHover: "hover:border-emerald-500/30",
@@ -514,7 +514,7 @@ export default function Home() {
                   ],
                 },
                 {
-                  icon: <Buildings size={48} weight="bold" />,
+                  icon: <Building size={48} strokeWidth={2} />,
                   title: "Διαχειριστές",
                   color: "text-purple-400",
                   borderHover: "hover:border-purple-500/30",
@@ -526,7 +526,7 @@ export default function Home() {
                   ],
                 },
                 {
-                  icon: <Users size={48} weight="bold" />,
+                  icon: <Users size={48} strokeWidth={2} />,
                   title: "Γονείς",
                   color: "text-rose-400",
                   borderHover: "hover:border-rose-500/30",
@@ -565,9 +565,9 @@ export default function Home() {
                     <ul className="space-y-3">
                       {role.features.map((feature, j) => (
                         <li key={j} className="flex items-start gap-3">
-                          <CircleWavyCheck
+                          <BadgeCheck
                             size={24}
-                            weight="bold"
+                            strokeWidth={2}
                             className={cn(
                               "mt-0.5 flex-shrink-0",
                               "text-emerald-400",

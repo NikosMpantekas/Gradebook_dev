@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const ScheduleRun  = require('../models/scheduleRunModel');
 const Class        = require('../models/classModel');
 const User         = require('../models/userModel');

@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const BetaFeatures = require('../models/betaFeaturesModel');
 
 // @desc  Get all beta feature route flags

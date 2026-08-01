@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const Payment = require('../models/paymentModel');
 const User = require('../models/userModel');
 

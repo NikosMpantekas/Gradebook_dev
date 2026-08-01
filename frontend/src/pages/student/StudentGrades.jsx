@@ -16,8 +16,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getStudentGrades } from '../../features/grades/gradeSlice';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -146,8 +145,6 @@ const GradesSkeleton = ({ isMobile, t }) => (
 import { useIsMobile } from '../../components/hooks/use-mobile';
 import { cn } from '../../lib/utils';
 
-// Register ChartJS components
-ChartJS.register(ArcElement, ChartTooltip, Legend);
 
 const StudentGrades = () => {
   const { t } = useTranslation();
@@ -255,32 +252,18 @@ const StudentGrades = () => {
   };
 
   // Prepare data for Pie chart
-  const pieData = {
-    labels: Object.keys(gradeStats.gradeDistribution || {}),
-    datasets: [
-      {
-        label: 'Grade Distribution',
-        data: Object.values(gradeStats.gradeDistribution || {}),
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(153, 102, 255, 0.6)',
-          'rgba(255, 205, 86, 0.6)',
-          'rgba(255, 159, 64, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 205, 86, 1)',
-          'rgba(255, 159, 64, 1)',
-          'rgba(255, 99, 132, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+  const pieData = Object.entries(gradeStats.gradeDistribution || {}).map(([name, value]) => ({
+    name,
+    value
+  }));
+  const COLORS = [
+    'hsl(175, 50%, 50%)',
+    'hsl(205, 80%, 55%)',
+    'hsl(260, 100%, 70%)',
+    'hsl(45, 100%, 65%)',
+    'hsl(25, 100%, 60%)',
+    'hsl(350, 100%, 70%)',
+  ];
 
   const getGradeColor = (grade) => {
     if (grade >= 80) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--success))]';
@@ -543,26 +526,25 @@ const StudentGrades = () => {
                         </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Pie 
-                            data={pieData} 
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              animation: {
-                                duration: 1000,
-                                easing: 'easeInOutQuart'
-                              },
-                              plugins: {
-                                legend: {
-                                  position: 'bottom',
-                                  labels: {
-                                    usePointStyle: true,
-                                    padding: 20
-                                  }
-                                }
-                              }
-                            }}
-                          />
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                outerRadius={120}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip />
+                              <Legend verticalAlign="bottom" height={36}/>
+                            </PieChart>
+                          </ResponsiveContainer>
                         </div>
                       )}
                     </div>

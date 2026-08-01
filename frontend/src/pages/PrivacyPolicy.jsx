@@ -8,7 +8,7 @@ import {
   SheetHeader,
 } from "../components/ui/sheet";
 import { cn } from "../lib/utils";
-import { List } from "phosphor-react";
+import { Menu } from "lucide-react";
 import MaintenanceIndicator from "../components/MaintenanceIndicator";
 import { getSavedAccounts } from "../services/accountStore";
 
@@ -101,7 +101,7 @@ export default function PrivacyPolicy() {
                 size="icon"
                 className="flex md:hidden mr-2"
               >
-                <List size={20} weight="bold" />
+                <Menu size={20} strokeWidth={2} />
               </Button>
             </SheetTrigger>
             <SheetContent

@@ -1,7 +1,7 @@
 // New School Permissions Controller
 // Handles all school feature permissions for the comprehensive permission control system
 
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const SchoolPermissions = require('../models/schoolPermissionsModel');
 const School = require('../models/schoolModel');
 

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const User = require('../models/userModel');
@@ -171,23 +171,6 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const clientIp = req.ip;
 
-  // Import login attempt tracking
-  const { isLockedOut, recordFailedAttempt, recordSuccessfulAttempt } = require('../utils/loginAttempts');
-
-  // SECURITY: Check if IP is locked out due to failed attempts
-  const lockoutCheck = isLockedOut(clientIp);
-  if (lockoutCheck.isLocked) {
-    logger.warn('AUTH', 'Login attempt blocked - IP locked out', {
-      ip: clientIp,
-      email,
-      remainingLockoutSeconds: lockoutCheck.remainingTime,
-      userAgent: req.headers['user-agent']
-    });
-
-    res.status(429); // Too Many Requests
-    throw new Error(`Too many failed login attempts. Account locked for ${lockoutCheck.remainingTime} seconds. Try again later.`);
-  }
-
   logger.info('AUTH', `Login attempt for email: ${email}`, {
     ip: clientIp,
     userAgent: req.headers['user-agent'],
@@ -227,15 +210,6 @@ const loginUser = asyncHandler(async (req, res) => {
       const isMatch = await bcrypt.compare(password, isSuperAdmin.password);
       if (!isMatch) {
         logger.warn('AUTH', 'Invalid superadmin password', { id: isSuperAdmin._id, email });
-
-        // SECURITY: Record failed login attempt with exponential backoff
-        const attemptResult = recordFailedAttempt(clientIp, email);
-        logger.warn('AUTH', 'Failed superadmin login attempt recorded', {
-          ip: clientIp,
-          email,
-          attemptsLeft: attemptResult.attemptsLeft,
-          willBeLocked: attemptResult.isLocked
-        });
 
         res.status(401);
         throw new Error('Invalid credentials');
@@ -297,14 +271,6 @@ const loginUser = asyncHandler(async (req, res) => {
         hasToken: !!responseObj.token
       });
 
-      // SECURITY: Record successful login to reset failed attempts
-      recordSuccessfulAttempt(clientIp, email);
-      logger.info('AUTH', 'Superadmin successful login recorded', {
-        ip: clientIp,
-        email,
-        userId: isSuperAdmin._id
-      });
-
       // Return superadmin user information with all fields expected by frontend
       return res.json(responseObj);
     }
@@ -361,17 +327,6 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!isPasswordValid) {
       console.log(`Invalid password for user: ${email}`);
 
-      // SECURITY: Record failed login attempt with exponential backoff
-      const attemptResult = recordFailedAttempt(clientIp, email);
-      logger.warn('AUTH', 'Failed regular user login attempt recorded', {
-        ip: clientIp,
-        email,
-        userId: user._id,
-        schoolId: user.schoolId,
-        attemptsLeft: attemptResult.attemptsLeft,
-        willBeLocked: attemptResult.isLocked
-      });
-
       res.status(401);
       throw new Error('Invalid credentials');
     }
@@ -426,15 +381,6 @@ const loginUser = asyncHandler(async (req, res) => {
       hasToken: true,
       tokenLength: token.length,
       hasSchoolFeatures: !!schoolFeatures
-    });
-
-    // SECURITY: Record successful login to reset failed attempts
-    recordSuccessfulAttempt(clientIp, email);
-    logger.info('AUTH', 'Regular user successful login recorded', {
-      ip: clientIp,
-      email,
-      userId: user._id,
-      schoolId: user.schoolId
     });
 
     const responseData = {

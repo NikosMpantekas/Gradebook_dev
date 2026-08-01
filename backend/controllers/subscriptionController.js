@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const Subscription = require('../models/subscriptionModel');
 const logger = require('../utils/logger');
 

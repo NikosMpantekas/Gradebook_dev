@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const Direction = require('../models/directionModel');
 
 // @desc    Create a new direction

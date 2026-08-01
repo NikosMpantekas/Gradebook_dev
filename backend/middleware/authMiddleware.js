@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const User = require('../models/userModel');
 const logger = require('../utils/logger');
 const { checkMaintenanceMode } = require('./maintenanceMiddleware');

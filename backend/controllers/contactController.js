@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const Contact = require('../models/contactModel');
 const nodemailer = require('nodemailer');
 

@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const MaintenanceAnnouncement = require('../models/maintenanceAnnouncementModel');
 
 // @desc    Get active maintenance announcements for dashboard

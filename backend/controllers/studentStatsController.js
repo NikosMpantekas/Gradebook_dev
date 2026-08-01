@@ -1,7 +1,6 @@
-const asyncHandler = require('express-async-handler');
+const asyncHandler = require('../utils/asyncHandler');
 const Grade = require('../models/gradeModel');
 const mongoose = require('mongoose');
-const { escapeRegex } = require('../utils/regex');
 const User = require('../models/userModel');
 const Class = require('../models/classModel');
 
@@ -110,7 +109,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
 
     // Add search filter if provided
     if (search && search.trim()) {
-      studentQuery.name = { $regex: escapeRegex(search.trim()), $options: 'i' };
+      studentQuery.name = { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(search.trim()), $options: 'i' };
     }
 
     let students;

@@ -12,14 +12,14 @@ import {
 import { cn } from "../lib/utils";
 import { motion } from "framer-motion";
 import {
-  List,
+  Menu,
   Sun,
   Moon,
   Compass,
   ShieldCheck,
   Megaphone,
-  Lifebuoy,
-} from "phosphor-react";
+  LifeBuoy,
+} from "lucide-react";
 import MaintenanceIndicator from "../components/MaintenanceIndicator";
 
 const Logo = () => {
@@ -90,25 +90,25 @@ export default function About() {
   
   const features = [
     {
-      icon: <Compass size={48} weight="bold" />,
+      icon: <Compass size={48} strokeWidth={2} />,
       title: "Διαχείριση Φροντιστηρίων",
       description:
         "Πλήρης έλεγχος των τάξεων, μαθητών και βαθμολογιών με εύκολη και διαισθητική διασύνδεση.",
     },
     {
-      icon: <ShieldCheck size={48} weight="bold" />,
+      icon: <ShieldCheck size={48} strokeWidth={2} />,
       title: "Ασφάλεια Δεδομένων",
       description:
         "Προστασία των ευαίσθητων πληροφοριών των μαθητών με σύγχρονες τεχνολογίες κρυπτογράφησης.",
     },
     {
-      icon: <Megaphone size={48} weight="bold" />,
+      icon: <Megaphone size={48} strokeWidth={2} />,
       title: "Γρήγορη Ενημέρωση",
       description:
         "Άμεση επικοινωνία με γονείς και μαθητές μέσω push notifications και email ειδοποιήσεων.",
     },
     {
-      icon: <Lifebuoy size={48} weight="bold" />,
+      icon: <LifeBuoy size={48} strokeWidth={2} />,
       title: "24/7 Υποστήριξη",
       description:
         "Συνεχής τεχνική υποστήριξη για όλες τις ανάγκες του φροντιστηρίου σας.",
@@ -144,7 +144,7 @@ export default function About() {
                 size="icon"
                 className="flex md:hidden mr-2"
               >
-                <List size={20} weight="bold" />
+                <Menu size={20} strokeWidth={2} />
               </Button>
             </SheetTrigger>
             <SheetContent

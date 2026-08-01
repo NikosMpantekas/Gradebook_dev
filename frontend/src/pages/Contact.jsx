@@ -15,16 +15,16 @@ import {
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  List,
+  Menu,
   Sun,
   Moon,
-  EnvelopeSimple,
-  ChatText,
-  PaperPlaneTilt,
-  CircleNotch,
-  WarningCircle,
+  Mail,
+  MessageSquare,
+  Send,
+  Loader2,
+  AlertCircle,
   ArrowRight,
-} from "phosphor-react";
+} from "lucide-react";
 import axios from "axios";
 import { API_URL } from "../config/appConfig";
 import MaintenanceIndicator from "../components/MaintenanceIndicator";
@@ -374,7 +374,7 @@ const Contact = () => {
   };
   const contactInfo = [
     {
-      icon: <EnvelopeSimple size={32} weight="bold" />,
+      icon: <Mail size={32} strokeWidth={2} />,
       title: "Email",
       value: "info@gradebook.pro",
       href: "mailto:info@gradebook.pro",
@@ -382,7 +382,7 @@ const Contact = () => {
       colorClass: "text-blue-400",
     },
     {
-      icon: <ChatText size={32} weight="bold" />,
+      icon: <MessageSquare size={32} strokeWidth={2} />,
       title: "Discord",
       value: "Coming soon...",
       href: "#",
@@ -420,7 +420,7 @@ const Contact = () => {
                 size="icon"
                 className="flex md:hidden mr-2"
               >
-                <List size={20} weight="bold" />
+                <Menu size={20} strokeWidth={2} />
               </Button>
             </SheetTrigger>
             <SheetContent
@@ -619,7 +619,7 @@ const Contact = () => {
                         />
                         {formErrors.name && (
                           <p className="text-xs text-red-500 flex items-center gap-1">
-                            <WarningCircle className="h-4 w-4" weight="bold" />{" "}
+                            <AlertCircle className="h-4 w-4" strokeWidth={2} />{" "}
                             {formErrors.name}
                           </p>
                         )}
@@ -647,7 +647,7 @@ const Contact = () => {
                         />
                         {formErrors.email && (
                           <p className="text-xs text-red-500 flex items-center gap-1">
-                            <WarningCircle className="h-4 w-4" weight="bold" />{" "}
+                            <AlertCircle className="h-4 w-4" strokeWidth={2} />{" "}
                             {formErrors.email}
                           </p>
                         )}
@@ -675,7 +675,7 @@ const Contact = () => {
                       />
                       {formErrors.subject && (
                         <p className="text-xs text-red-500 flex items-center gap-1">
-                          <WarningCircle className="h-4 w-4" weight="bold" />{" "}
+                          <AlertCircle className="h-4 w-4" strokeWidth={2} />{" "}
                           {formErrors.subject}
                         </p>
                       )}
@@ -703,7 +703,7 @@ const Contact = () => {
                       />
                       {formErrors.message && (
                         <p className="text-xs text-red-500 flex items-center gap-1">
-                          <WarningCircle className="h-4 w-4" weight="bold" />{" "}
+                          <AlertCircle className="h-4 w-4" strokeWidth={2} />{" "}
                           {formErrors.message}
                         </p>
                       )}
@@ -719,9 +719,9 @@ const Contact = () => {
                     >
                       {isSubmitting ? (
                         <>
-                          <CircleNotch
+                          <Loader2
                             size={20}
-                            weight="bold"
+                            strokeWidth={2}
                             className="animate-spin mr-2"
                           />
                           Αποστολή...
@@ -729,9 +729,9 @@ const Contact = () => {
                       ) : (
                         <>
                           Αποστολή Μηνύματος
-                          <PaperPlaneTilt
+                          <Send
                             size={20}
-                            weight="bold"
+                            strokeWidth={2}
                             className="ml-2"
                           />
                         </>

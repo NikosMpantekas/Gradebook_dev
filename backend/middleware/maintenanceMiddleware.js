@@ -1,4 +1,4 @@
-const asyncHandler = require("express-async-handler");
+const asyncHandler = require('../utils/asyncHandler');
 const SystemMaintenance = require("../models/systemMaintenanceModel");
 
 const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
