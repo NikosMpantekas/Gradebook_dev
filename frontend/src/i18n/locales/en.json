@@ -349,7 +349,21 @@
     "yourGrade": "Your Grade",
     "aboveAverage": "Above Average",
     "belowAverage": "Below Average",
-    "atAverage": "At Average"
+    "atAverage": "At Average",
+    "gradeDetails": "Grade Details",
+    "outOf100": "out of 100",
+    "submittedOn": "Submitted on {{date}}",
+    "dateAssigned": "Date Assigned",
+    "description": "Description",
+    "noDescription": "No description provided",
+    "noFeedbackProvided": "No feedback provided for this grade.",
+    "statusExcellent": "Excellent",
+    "statusVeryGood": "Very Good",
+    "statusGood": "Good",
+    "statusSatisfactory": "Satisfactory",
+    "statusPass": "Pass",
+    "statusFail": "Fail",
+    "statusUnknown": "Unknown"
   },
   "students": {
     "title": "Students Management",

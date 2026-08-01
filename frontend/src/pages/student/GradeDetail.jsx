@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Calendar,
@@ -23,7 +24,6 @@ const GradeDetailSkeleton = () => (
     <Skeleton className="h-10 w-32 mb-6" />
 
     <div className="grid gap-6 md:grid-cols-3">
-      {/* Grade Summary Card Skeleton - Fixed stable placeholders */}
       <div className="md:col-span-1">
         <Card className="h-full">
           <CardContent className="flex flex-col items-center p-8">
@@ -37,7 +37,6 @@ const GradeDetailSkeleton = () => (
         </Card>
       </div>
 
-      {/* Grade Details Card Skeleton */}
       <div className="md:col-span-2">
         <Card>
           <CardHeader>
@@ -74,11 +73,11 @@ const GradeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const { grade: singleGrade, grades, isLoading, isError, message } = useSelector((state) => state.grades);
   const { user } = useSelector((state) => state.auth);
 
-  // Instant load: check if the grade is already in the grades list
   const grade = singleGrade || (grades && id ? grades.find(g => g._id === id) : null);
 
   useEffect(() => {
@@ -102,31 +101,26 @@ const GradeDetail = () => {
     navigate('/app/grades');
   };
 
-  // Helper to format date
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return format(new Date(dateString), 'PPP');
   };
 
-  // Get grade status and color
   const getGradeStatus = () => {
-    if (!grade) return { status: 'Unknown', color: 'grey' };
+    if (!grade) return { status: t('grades.statusUnknown', 'Unknown'), color: 'grey' };
 
-    if (grade.value >= 90) return { status: 'Excellent', color: '#388e3c' };
-    if (grade.value >= 80) return { status: 'Very Good', color: '#2e7d32' };
-    if (grade.value >= 70) return { status: 'Good', color: '#43a047' };
-    if (grade.value >= 60) return { status: 'Satisfactory', color: '#ffb74d' };
-    if (grade.value >= 50) return { status: 'Pass', color: '#ff9800' };
-    return { status: 'Fail', color: '#e53935' };
+    if (grade.value >= 90) return { status: t('grades.statusExcellent', 'Excellent'), color: '#388e3c' };
+    if (grade.value >= 80) return { status: t('grades.statusVeryGood', 'Very Good'), color: '#2e7d32' };
+    if (grade.value >= 70) return { status: t('grades.statusGood', 'Good'), color: '#43a047' };
+    if (grade.value >= 60) return { status: t('grades.statusSatisfactory', 'Satisfactory'), color: '#ffb74d' };
+    if (grade.value >= 50) return { status: t('grades.statusPass', 'Pass'), color: '#ff9800' };
+    return { status: t('grades.statusFail', 'Fail'), color: '#e53935' };
   };
 
-  // Only show skeleton if we don't have the grade yet (neither cached nor just loaded)
   if (!grade && isLoading) {
     return <GradeDetailSkeleton />;
   }
 
-  // If we still don't have the grade and it's not loading, something might be wrong
-  // but we'll show the skeleton briefly while the effect dispatches
   if (!grade) {
     return <GradeDetailSkeleton />;
   }
@@ -141,19 +135,17 @@ const GradeDetail = () => {
         className="mb-6"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Grades
+        {t('grades.backToGrades', 'Back to Grades')}
       </Button>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Grade Summary Card */}
         <div className="md:col-span-1">
           <Card className="h-full">
             <CardContent className="flex flex-col items-center p-8">
               <CardTitle className="mb-6 text-center">
-                {grade.subject?.name || 'Subject'}
+                {grade.subject?.name || t('grades.subject', 'Subject')}
               </CardTitle>
               
-              {/* Circular Progress */}
               <div className="relative mb-6">
                 <div 
                   className="w-40 h-40 rounded-full flex items-center justify-center relative"
@@ -163,7 +155,7 @@ const GradeDetail = () => {
                 >
                   <div className="absolute inset-2 flex flex-col items-center justify-center bg-background rounded-full border">
                     <span className="text-4xl font-bold">{grade.value}</span>
-                    <span className="text-xs text-muted-foreground">out of 100</span>
+                    <span className="text-xs text-muted-foreground">{t('grades.outOf100', 'out of 100')}</span>
                   </div>
                 </div>
               </div>
@@ -177,17 +169,16 @@ const GradeDetail = () => {
               </Badge>
               
               <p className="text-sm text-muted-foreground text-center">
-                Submitted on {formatDate(grade.date)}
+                {t('grades.submittedOn', { date: formatDate(grade.date), defaultValue: `Submitted on ${formatDate(grade.date)}` })}
               </p>
             </CardContent>
           </Card>
         </div>
         
-        {/* Grade Details Card */}
         <div className="md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Grade Details</CardTitle>
+              <CardTitle>{t('grades.gradeDetails', 'Grade Details')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <Separator />
@@ -196,23 +187,23 @@ const GradeDetail = () => {
                 <div className="flex items-start space-x-3">
                   <GraduationCap className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Subject</p>
-                    <p className="text-base">{grade.subject?.name || 'N/A'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('grades.subject', 'Subject')}</p>
+                    <p className="text-base">{grade.subject?.name || t('common.na', 'N/A')}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start space-x-3">
                   <User className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Teacher</p>
-                    <p className="text-base">{grade.teacher?.name || 'N/A'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('grades.teacher', 'Teacher')}</p>
+                    <p className="text-base">{grade.teacher?.name || t('common.na', 'N/A')}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start space-x-3">
                   <Calendar className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Date Assigned</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('grades.dateAssigned', 'Date Assigned')}</p>
                     <p className="text-base">{formatDate(grade.date)}</p>
                   </div>
                 </div>
@@ -220,8 +211,8 @@ const GradeDetail = () => {
                 <div className="flex items-start space-x-3 md:col-span-2">
                   <FileText className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Description</p>
-                    <p className="text-base">{grade.description || 'No description provided'}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('grades.description', 'Description')}</p>
+                    <p className="text-base">{grade.description || t('grades.noDescription', 'No description provided')}</p>
                   </div>
                 </div>
               </div>
@@ -229,13 +220,13 @@ const GradeDetail = () => {
               <Separator />
               
               <div>
-                <h3 className="text-lg font-semibold mb-3">Feedback</h3>
+                <h3 className="text-lg font-semibold mb-3">{t('grades.feedback', 'Feedback')}</h3>
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <p className="text-base leading-relaxed">
                     {grade.description ? (
                       grade.description
                     ) : (
-                      'No feedback provided for this grade.'
+                      t('grades.noFeedbackProvided', 'No feedback provided for this grade.')
                     )}
                   </p>
                 </div>

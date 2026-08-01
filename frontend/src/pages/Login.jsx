@@ -98,7 +98,6 @@ const Login = () => {
       const cacheBuster = Date.now();
       window.location.replace(`${targetPath}?v=${cacheBuster}`);
     } catch (err) {
-      toast.error(err || "Failed to switch account. Please try again.");
       setSwitchingTo(null);
       setSavedAccounts(getSavedAccounts());
       if (getSavedAccounts().length === 0) setShowLoginForm(true);
@@ -131,7 +130,7 @@ const Login = () => {
     (state) => state.auth,
   );
   // Sync theme with homepage's publicPageTheme preference
-  
+
   useEffect(() => {
     setIsLoaded(true);
     const queryParams = new URLSearchParams(window.location.search);
@@ -154,7 +153,7 @@ const Login = () => {
 
     if (isError) {
       console.error("Login error:", message);
-      toast.error(message);
+      toast.error(message, { id: "login-error" });
       setAnimationStep("error");
       setHasSubmitted(false);
       // Reset after 3 seconds
@@ -358,15 +357,13 @@ const Login = () => {
           <div
             className="absolute -top-1/3 -left-1/4 w-[70%] h-[70%] rounded-full opacity-[0.07] blur-[100px]"
             style={{
-              background:
-                `radial-gradient(circle, ${"#3b82f6"} 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${"#3b82f6"} 0%, transparent 70%)`,
             }}
           />
           <div
             className="absolute -bottom-1/4 right-0 w-[50%] h-[50%] rounded-full opacity-[0.05] blur-[80px]"
             style={{
-              background:
-                `radial-gradient(circle, ${"#3b82f6"} 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${"#3b82f6"} 0%, transparent 70%)`,
             }}
           />
         </div>
@@ -544,10 +541,7 @@ const Login = () => {
                       />
                       <Label
                         htmlFor="saveCredentials"
-                        className={cn(
-                          "text-sm font-normal",
-                          "text-zinc-400",
-                        )}
+                        className={cn("text-sm font-normal", "text-zinc-400")}
                       >
                         Απομνημόνευση στοιχείων
                       </Label>
@@ -646,10 +640,7 @@ const Login = () => {
                             )}
                           >
                             <Avatar
-                              className={cn(
-                                "h-9 w-9 shrink-0",
-                                "bg-zinc-800",
-                              )}
+                              className={cn("h-9 w-9 shrink-0", "bg-zinc-800")}
                             >
                               <AvatarFallback
                                 className={cn(
@@ -780,12 +771,7 @@ const Login = () => {
 
             {/* Mobile-only footer */}
             <div className="lg:hidden mt-8 text-center">
-              <p
-                className={cn(
-                  "text-xs",
-                  "text-zinc-600",
-                )}
-              >
+              <p className={cn("text-xs", "text-zinc-600")}>
                 © {new Date().getFullYear()} GradeBook
               </p>
             </div>
@@ -805,20 +791,13 @@ const Login = () => {
             <DialogTitle className="font-serif">
               Ξεχάσατε τον κωδικό σας;
             </DialogTitle>
-            <DialogDescription
-              className={"text-zinc-500"}
-            >
+            <DialogDescription className={"text-zinc-500"}>
               Εισαγάγετε το email σας και θα στείλουμε αίτημα για την επαναφορά
               του κωδικού σας.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p
-              className={cn(
-                "text-sm",
-                "text-zinc-400",
-              )}
-            >
+            <p className={cn("text-sm", "text-zinc-400")}>
               Εισαγάγετε το email που χρησιμοποιείτε. Θα ειδοποιήσουμε τον
               διαχειριστή για να σας βοηθήσει.
             </p>
@@ -828,10 +807,7 @@ const Login = () => {
               autoComplete="off"
             >
               <div className="space-y-2">
-                <Label
-                  htmlFor="forgot-email"
-                  className={"text-zinc-400"}
-                >
+                <Label htmlFor="forgot-email" className={"text-zinc-400"}>
                   Email
                 </Label>
                 <Input
