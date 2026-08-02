@@ -462,7 +462,6 @@ app.use(
   protect,
   checkMaintenanceMode,
   setSchoolContext,
-  checkRatingEnabled,
   require("./routes/ratingRoutes"),
 );
 app.use(
@@ -470,7 +469,6 @@ app.use(
   protect,
   checkMaintenanceMode,
   setSchoolContext,
-  checkCalendarEnabled,
   require("./routes/eventRoutes"),
 );
 
