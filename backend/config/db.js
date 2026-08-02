@@ -5,7 +5,7 @@ const connectDB = async () => {
   try {
     // Check if MONGO_URI exists
     if (!process.env.MONGO_URI) {
-      console.warn('Warning: MONGO_URI is not defined. Using fallback connection string.'.yellow);
+      console.warn('Warning: MONGO_URI is not defined. Using fallback connection string.');
       // Use a fallback connection string for local development
       process.env.MONGO_URI = 'mongodb://localhost:27017/gradebook';
     }
@@ -24,13 +24,13 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 5000,
     });
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`.cyan.underline);
-    console.log(`Database Name: ${conn.connection.name}`.cyan.underline);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`Database Name: ${conn.connection.name}`);
     
     // Create index for faster queries
     return conn;
   } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`.red.underline.bold);
+    console.error(`MongoDB Connection Error: ${error.message}`);
     process.exit(1);
   }
 };

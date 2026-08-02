@@ -10,10 +10,10 @@ const rateLimit = require("express-rate-limit");
 
 connectDB()
   .then(async () => {
-    console.log("MongoDB Connected Succesfully".cyan.bold);
+    console.log("MongoDB Connected Succesfully");
   })
   .catch((err) => {
-    console.error(`MongoDB Connection Error: ${err.message}`.red.bold);
+    console.error(`MongoDB Connection Error: ${err.message}`);
     process.exit(1);
   });
 
@@ -65,10 +65,10 @@ app.use(
 
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
-  console.log("[PROXY] Trust proxy enabled for production environment".cyan);
+  console.log("[PROXY] Trust proxy enabled for production environment");
 } else {
   app.set("trust proxy", true);
-  console.log("[PROXY] Trust proxy enabled for development environment".cyan);
+  console.log("[PROXY] Trust proxy enabled for development environment");
 }
 
 const authLimiter = rateLimit({
@@ -546,7 +546,6 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "127.0.0.1", () => {
   console.log(
-    `Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}`.green
-      .bold,
+    `Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}`,
   );
 });
