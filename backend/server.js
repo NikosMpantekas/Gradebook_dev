@@ -1,4 +1,5 @@
 const path = require("path");
+const { styleText } = require("util");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
@@ -547,6 +548,6 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "127.0.0.1", () => {
   console.log(
-    `Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}`,
+    styleText(["green", "bold"], `Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}`)
   );
 });

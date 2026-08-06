@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
+const { styleText } = util;
 
 // Log levels with numeric values for filtering
 const LOG_LEVELS = {
@@ -266,7 +267,15 @@ const logToConsole = (entry) => {
   const { level, levelName, timestamp, category, message, error, data } = entry;
 
   // Format the prefix with colors
-  const prefix = `[${levelName}]${timestamp ? ` ${timestamp}` : ''}${category ? ` [${category}]` : ''}:`;
+  let prefix = `[${levelName}]${timestamp ? ` ${timestamp}` : ''}${category ? ` [${category}]` : ''}:`;
+  
+  switch (level) {
+    case LOG_LEVELS.DEBUG: prefix = styleText('gray', prefix); break;
+    case LOG_LEVELS.INFO: prefix = styleText('cyan', prefix); break;
+    case LOG_LEVELS.WARN: prefix = styleText('yellow', prefix); break;
+    case LOG_LEVELS.ERROR:
+    case LOG_LEVELS.CRITICAL: prefix = styleText(['red', 'bold'], prefix); break;
+  }
 
   // Format data with colored IP addresses
   const coloredData = data ? formatDataWithColors(data) : null;
