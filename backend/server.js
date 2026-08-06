@@ -1,5 +1,4 @@
 const path = require("path");
-const { styleText } = require("util");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
@@ -547,7 +546,9 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "127.0.0.1", () => {
+  const ANSI_GREEN_BOLD = '\x1b[32m\x1b[1m';
+  const ANSI_RESET = '\x1b[0m';
   console.log(
-    styleText(["green", "bold"], `Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}`)
+    `${ANSI_GREEN_BOLD}Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}${ANSI_RESET}`
   );
 });

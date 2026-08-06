@@ -4,10 +4,9 @@
  * Can be configured to write to console, file, or external services
  */
 
-const fs = require('fs');
-const path = require('path');
-const util = require('util');
-const { styleText } = util;
+const fs = require("fs");
+const path = require("path");
+const util = require("util");
 
 // Log levels with numeric values for filtering
 const LOG_LEVELS = {
@@ -15,20 +14,21 @@ const LOG_LEVELS = {
   INFO: 1,
   WARN: 2,
   ERROR: 3,
-  CRITICAL: 4
+  CRITICAL: 4,
 };
 
 // Default configuration - can be overridden in environment
 const config = {
-  minLevel: process.env.NODE_ENV === 'production' ? LOG_LEVELS.INFO : LOG_LEVELS.DEBUG,
+  minLevel:
+    process.env.NODE_ENV === "production" ? LOG_LEVELS.INFO : LOG_LEVELS.DEBUG,
   enableConsole: true,
-  enableFileLogging: process.env.NODE_ENV === 'production',
-  logDirectory: process.env.LOG_DIR || 'logs',
-  logFileName: process.env.LOG_FILE || 'gradebook-app.log',
-  errorLogFileName: process.env.ERROR_LOG_FILE || 'gradebook-error.log',
+  enableFileLogging: process.env.NODE_ENV === "production",
+  logDirectory: process.env.LOG_DIR || "logs",
+  logFileName: process.env.LOG_FILE || "gradebook-app.log",
+  errorLogFileName: process.env.ERROR_LOG_FILE || "gradebook-error.log",
   maxLogSize: 10 * 1024 * 1024, // 10MB
   includeTimestamps: true,
-  includeContext: true
+  includeContext: true,
 };
 
 // Ensure log directory exists
@@ -57,10 +57,10 @@ const formatLogEntry = (level, category, message, data = null) => {
 
   const entry = {
     level,
-    levelName: Object.keys(LOG_LEVELS).find(key => LOG_LEVELS[key] === level),
+    levelName: Object.keys(LOG_LEVELS).find((key) => LOG_LEVELS[key] === level),
     timestamp,
     category,
-    message
+    message,
   };
 
   if (data) {
@@ -69,7 +69,7 @@ const formatLogEntry = (level, category, message, data = null) => {
       entry.error = {
         name: data.name,
         message: data.message,
-        stack: data.stack
+        stack: data.stack,
       };
     } else {
       entry.data = data;
@@ -81,7 +81,7 @@ const formatLogEntry = (level, category, message, data = null) => {
 
 /**
  * Format an entry for text output (console/file)
- * @param {Object} entry - Log entry object 
+ * @param {Object} entry - Log entry object
  * @returns {string} Formatted log string
  */
 const formatEntryForOutput = (entry) => {
@@ -99,9 +99,10 @@ const formatEntryForOutput = (entry) => {
     }
   } else if (data) {
     // For objects, format them nicely with indentation
-    const formattedData = typeof data === 'object'
-      ? util.inspect(data, { depth: 4, colors: false })
-      : data;
+    const formattedData =
+      typeof data === "object"
+        ? util.inspect(data, { depth: 4, colors: false })
+        : data;
     output += `\nData: ${formattedData}`;
   }
 
@@ -116,10 +117,10 @@ const cleanupOldBackups = (logDir) => {
   try {
     if (fs.existsSync(logDir)) {
       const files = fs.readdirSync(logDir);
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
-      files.forEach(file => {
-        if (file.includes('.log.') && file.match(/\.log\.\d{4}-\d{2}-\d{2}$/)) {
+      files.forEach((file) => {
+        if (file.includes(".log.") && file.match(/\.log\.\d{4}-\d{2}-\d{2}$/)) {
           const safeFileName = path.basename(file);
           const filePath = path.resolve(logDir, safeFileName);
 
@@ -153,11 +154,12 @@ const rotateLogFile = (logPath) => {
 
       if (fileAge > sevenDaysInMs) {
         // Create backup with timestamp
-        const backupPath = logPath + '.' + new Date().toISOString().split('T')[0];
+        const backupPath =
+          logPath + "." + new Date().toISOString().split("T")[0];
         fs.renameSync(logPath, backupPath);
 
         // Create new empty log file
-        fs.writeFileSync(logPath, '');
+        fs.writeFileSync(logPath, "");
         console.log(`Log file rotated: ${logPath} -> ${backupPath}`);
 
         // Clean up old backups
@@ -187,7 +189,7 @@ const flushLogBuffer = async (logPath) => {
   try {
     logBuffer = []; // Clear buffer
 
-    const logString = logsToWrite.join('');
+    const logString = logsToWrite.join("");
 
     // Use async file write
     await fs.promises.appendFile(logPath, logString);
@@ -209,15 +211,18 @@ const writeToFile = (entry) => {
     const logPath = path.resolve(
       process.cwd(),
       config.logDirectory,
-      entry.level >= LOG_LEVELS.ERROR ? config.errorLogFileName : config.logFileName
+      entry.level >= LOG_LEVELS.ERROR
+        ? config.errorLogFileName
+        : config.logFileName,
     );
 
     // Check file rotation periodically (not on every log)
-    if (Math.random() < 0.1) { // 10% chance to check rotation
+    if (Math.random() < 0.1) {
+      // 10% chance to check rotation
       rotateLogFile(logPath);
     }
 
-    const logString = formatEntryForOutput(entry) + '\n';
+    const logString = formatEntryForOutput(entry) + "\n";
 
     // Add to buffer
     logBuffer.push(logString);
@@ -242,10 +247,10 @@ const writeToFile = (entry) => {
  * @returns {Object} Formatted data with colored IP addresses
  */
 const formatDataWithColors = (data) => {
-  if (!data || typeof data !== 'object') return data;
+  if (!data || typeof data !== "object") return data;
 
-  const BLUE = '\x1b[34m';  // ANSI blue color
-  const RESET = '\x1b[0m';  // ANSI reset color
+  const BLUE = "\x1b[34m"; // ANSI blue color
+  const RESET = "\x1b[0m"; // ANSI reset color
 
   const formatted = { ...data };
 
@@ -267,14 +272,23 @@ const logToConsole = (entry) => {
   const { level, levelName, timestamp, category, message, error, data } = entry;
 
   // Format the prefix with colors
-  let prefix = `[${levelName}]${timestamp ? ` ${timestamp}` : ''}${category ? ` [${category}]` : ''}:`;
-  
+  let prefix = `[${levelName}]${timestamp ? ` ${timestamp}` : ""}${category ? ` [${category}]` : ""}:`;
+
+  const ANSI = {
+    gray: '\x1b[90m',
+    cyan: '\x1b[36m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    bold: '\x1b[1m',
+    reset: '\x1b[0m'
+  };
+
   switch (level) {
-    case LOG_LEVELS.DEBUG: prefix = styleText('gray', prefix); break;
-    case LOG_LEVELS.INFO: prefix = styleText('cyan', prefix); break;
-    case LOG_LEVELS.WARN: prefix = styleText('yellow', prefix); break;
+    case LOG_LEVELS.DEBUG: prefix = `${ANSI.gray}${prefix}${ANSI.reset}`; break;
+    case LOG_LEVELS.INFO: prefix = `${ANSI.cyan}${prefix}${ANSI.reset}`; break;
+    case LOG_LEVELS.WARN: prefix = `${ANSI.yellow}${prefix}${ANSI.reset}`; break;
     case LOG_LEVELS.ERROR:
-    case LOG_LEVELS.CRITICAL: prefix = styleText(['red', 'bold'], prefix); break;
+    case LOG_LEVELS.CRITICAL: prefix = `${ANSI.red}${ANSI.bold}${prefix}${ANSI.reset}`; break;
   }
 
   // Format data with colored IP addresses
@@ -298,10 +312,10 @@ const logToConsole = (entry) => {
     case LOG_LEVELS.CRITICAL:
       console.error(prefix, message);
       if (error) {
-        console.error('Error:', error.name, error.message);
-        if (error.stack) console.error('Stack:', error.stack);
+        console.error("Error:", error.name, error.message);
+        if (error.stack) console.error("Stack:", error.stack);
       } else if (coloredData) {
-        console.error('Data:', coloredData);
+        console.error("Data:", coloredData);
       }
       break;
     default:
@@ -335,11 +349,16 @@ const log = (level, category, message, data = null) => {
 };
 
 // Convenience methods for different log levels
-const debug = (category, message, data) => log(LOG_LEVELS.DEBUG, category, message, data);
-const info = (category, message, data) => log(LOG_LEVELS.INFO, category, message, data);
-const warn = (category, message, data) => log(LOG_LEVELS.WARN, category, message, data);
-const error = (category, message, data) => log(LOG_LEVELS.ERROR, category, message, data);
-const critical = (category, message, data) => log(LOG_LEVELS.CRITICAL, category, message, data);
+const debug = (category, message, data) =>
+  log(LOG_LEVELS.DEBUG, category, message, data);
+const info = (category, message, data) =>
+  log(LOG_LEVELS.INFO, category, message, data);
+const warn = (category, message, data) =>
+  log(LOG_LEVELS.WARN, category, message, data);
+const error = (category, message, data) =>
+  log(LOG_LEVELS.ERROR, category, message, data);
+const critical = (category, message, data) =>
+  log(LOG_LEVELS.CRITICAL, category, message, data);
 
 /**
  * Update logger configuration
@@ -367,5 +386,5 @@ module.exports = {
   critical,
   logError,
   configure,
-  LOG_LEVELS
+  LOG_LEVELS,
 };
