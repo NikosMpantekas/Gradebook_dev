@@ -18,6 +18,7 @@ import {
   User
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getDateFnsLocale } from '../utils/dateLocale';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { refreshAppCounts } from '../lib/utils';
@@ -96,7 +97,7 @@ const UserContactMessages = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown date';
     try {
-      return format(new Date(dateString), 'PPP p');
+      return format(new Date(dateString), 'PPP p', { locale: getDateFnsLocale() });
     } catch (err) {
       return 'Invalid date';
     }

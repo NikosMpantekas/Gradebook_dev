@@ -1,5 +1,6 @@
 import React from 'react';
 import { format, isValid, parseISO } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
@@ -68,7 +69,7 @@ const NotificationsList = ({
         return t('notifications.dateError');
       }
       
-      return format(date, 'MMM dd, yyyy HH:mm');
+      return format(date, 'MMM dd, yyyy HH:mm', { locale: getDateFnsLocale() });
     } catch (error) {
       console.error('Error formatting notification date:', error);
               return t('notifications.dateError');

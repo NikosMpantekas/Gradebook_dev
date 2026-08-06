@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, isAfter, parseISO } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 
 // Redux actions
 import { 
@@ -307,7 +308,7 @@ const RatingSubmission = () => {
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       <span>
-                        {format(parseISO(period.startDate), 'MMM dd, yyyy')} - {format(parseISO(period.endDate), 'MMM dd, yyyy')}
+                        {format(parseISO(period.startDate), 'MMM dd, yyyy', { locale: getDateFnsLocale() })} - {format(parseISO(period.endDate), 'MMM dd, yyyy', { locale: getDateFnsLocale() })}
                       </span>
                     </div>
                     <Badge variant={isPeriodActive(period) ? "default" : "secondary"}>

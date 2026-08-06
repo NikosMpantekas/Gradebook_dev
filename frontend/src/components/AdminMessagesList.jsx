@@ -13,6 +13,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateFnsLocale } from '../utils/dateLocale';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { API_URL } from '../config/appConfig';
@@ -198,7 +199,7 @@ const AdminMessagesList = ({ messages, user, onMessagesChanged }) => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                       </span>
                       <ChevronDown className={`h-4 w-4 transition-transform ${
                         expandedPanel === message._id ? 'rotate-180' : ''

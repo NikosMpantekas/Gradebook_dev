@@ -5,7 +5,10 @@ import {
   RefreshCw,
   Clock,
   ArrowRight,
+  Loader2,
+  Wrench,
 } from "lucide-react";
+import { getDateLocale } from "../utils/dateLocale";
 import { API_URL } from "../config/appConfig";
 import { cn } from "../lib/utils";
 import { Button } from "../components/ui/button";
@@ -87,7 +90,7 @@ const Maintenance = () => {
       if (diffHrs <= 23) return `~${diffHrs} ώρες`;
 
       // More than a day — show full date + time
-      return date.toLocaleString("el-GR", {
+      return date.toLocaleString(getDateLocale(), {
         weekday: "long",
         day: "numeric",
         month: "long",

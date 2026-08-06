@@ -514,7 +514,7 @@ const ManageGrades = () => {
                   
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm text-muted-foreground">
-                      {new Date(grade.createdAt).toLocaleDateString()}
+                                            {new Date(grade.createdAt).toLocaleDateString(getDateLocale())}
                     </span>
                   </div>
                   
@@ -646,7 +646,7 @@ const ManageGrades = () => {
                       </Badge>
                     </td>
                     <td className="p-4 text-foreground text-base">
-                      {new Date(grade.createdAt).toLocaleDateString()}
+                                            {new Date(grade.createdAt).toLocaleDateString(getDateLocale())}
                     </td>
                     <td className="p-4 text-foreground text-base max-w-xs truncate">
                       {grade.description || '-'}

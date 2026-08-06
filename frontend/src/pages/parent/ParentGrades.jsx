@@ -49,7 +49,7 @@ const ParentGrades = () => {
               </span>
             </div>
             <span className="text-sm text-muted-foreground">
-              {new Date(grade.createdAt).toLocaleDateString()}
+              {new Date(grade.createdAt).toLocaleDateString(getDateLocale())}
             </span>
           </div>
           

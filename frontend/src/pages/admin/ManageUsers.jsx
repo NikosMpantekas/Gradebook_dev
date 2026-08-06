@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 
 import { format } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
@@ -492,7 +493,7 @@ const ManageUsers = () => {
                     <div className="flex items-center gap-2">
                       <ScheduleIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {t('admin.manageUsersPage.tableHeaders.created')}: {user.createdAt ? format(new Date(user.createdAt), 'PP') : t('admin.manageUsersPage.unknown')}
+                        {t('admin.manageUsersPage.tableHeaders.created')}: {user.createdAt ? format(new Date(user.createdAt), 'PP', { locale: getDateFnsLocale() }) : t('admin.manageUsersPage.unknown')}
                       </span>
                     </div>
                   </div>
@@ -580,7 +581,7 @@ const ManageUsers = () => {
                         </Badge>
                       </td>
                       <td className="p-4 text-foreground text-base">
-                        {user.createdAt ? format(new Date(user.createdAt), 'PP') : t('admin.manageUsersPage.unknown')}
+                        {user.createdAt ? format(new Date(user.createdAt), 'PP', { locale: getDateFnsLocale() }) : t('admin.manageUsersPage.unknown')}
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-3">

@@ -130,7 +130,7 @@ const SystemLogs = () => {
     try {
       const date = new Date(timestamp);
       if (!isNaN(date.getTime())) {
-        return date.toLocaleString('en-US', options);
+        return date.toLocaleString(getDateLocale(), options);
       }
     } catch (err) { }
 
@@ -139,7 +139,7 @@ const SystemLogs = () => {
       try {
         const date = new Date(timestampMatch[1]);
         if (!isNaN(date.getTime())) {
-          return date.toLocaleString('en-US', options);
+          return date.toLocaleString(getDateLocale(), options);
         }
       } catch (err2) { }
     }
@@ -149,7 +149,7 @@ const SystemLogs = () => {
       try {
         const date = new Date(isoMatch[1]);
         if (!isNaN(date.getTime())) {
-          return date.toLocaleString('en-US', options);
+          return date.toLocaleString(getDateLocale(), options);
         }
       } catch (err2) { }
     }
@@ -159,12 +159,12 @@ const SystemLogs = () => {
       try {
         const date = new Date(dateMatch[1].replace(' ', 'T'));
         if (!isNaN(date.getTime())) {
-          return date.toLocaleString('en-US', options);
+          return date.toLocaleString(getDateLocale(), options);
         }
       } catch (err2) { }
     }
 
-    return new Date().toLocaleString('en-US', options);
+    return new Date().toLocaleString(getDateLocale(), options);
   };
 
   // Copy log line to clipboard

@@ -652,7 +652,7 @@ const CreateGradeSimple = () => {
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{t('teacherGrades.createPage.previewDate')}</span>
-                    <span>{new Date(formData.date).toLocaleDateString()}</span>
+                    <span>{new Date(formData.date).toLocaleDateString(getDateLocale())}</span>
                   </div>
                 )}
               </div>

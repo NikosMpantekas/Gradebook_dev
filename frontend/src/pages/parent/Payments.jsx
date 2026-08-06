@@ -230,7 +230,7 @@ const ParentPayments = () => {
   const formatPaymentPeriod = (period) => {
     const [year, month] = period.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString(getDateLocale(), { month: 'long', year: 'numeric' });
   };
 
   // Get student name by ID
@@ -461,7 +461,7 @@ const ParentPayments = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {new Date(payment.dueDate).toLocaleDateString()}
+                        {new Date(payment.dueDate).toLocaleDateString(getDateLocale())}
                         {payment.status === 'overdue' && (
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                         )}
@@ -470,7 +470,7 @@ const ParentPayments = () => {
                     <TableCell>
                       {payment.paidDate ? (
                         <span className="text-green-600 font-medium">
-                          {new Date(payment.paidDate).toLocaleDateString()}
+                          {new Date(payment.paidDate).toLocaleDateString(getDateLocale())}
                         </span>
                       ) : (
                         <span className="text-gray-400">Not paid yet</span>

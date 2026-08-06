@@ -217,10 +217,10 @@ function SchoolOwnerDetails() {
           <hr className="my-4" />
           
           <p className="text-base mb-2">
-            <span className="font-semibold">Created At:</span> {new Date(schoolOwner.createdAt).toLocaleString()}
+            <span className="font-semibold">Created At:</span> {new Date(schoolOwner.createdAt).toLocaleString(getDateLocale())}
           </p>
           <p className="text-base mb-2">
-            <span className="font-semibold">Last Updated:</span> {new Date(schoolOwner.updatedAt).toLocaleString()}
+            <span className="font-semibold">Last Updated:</span> {new Date(schoolOwner.updatedAt).toLocaleString(getDateLocale())}
           </p>
           
           <hr className="my-4" />

@@ -103,7 +103,7 @@ const StudentStatsPrint = () => {
     return subjectGrades.map((grade, index) => ({
       index: index + 1,
       grade: grade.value,
-      date: new Date(grade.date).toLocaleDateString(),
+      date: new Date(grade.date).toLocaleDateString('el-GR'),
       timestamp: new Date(grade.date).getTime()
     })).sort((a, b) => a.timestamp - b.timestamp);
   };

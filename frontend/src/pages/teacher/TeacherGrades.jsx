@@ -215,7 +215,7 @@ const TeacherGrades = () => {
       grade.student?.name || 'Unknown Student',
       grade.subject?.name || 'Unknown Subject',
       grade.value,
-      new Date(grade.createdAt).toLocaleDateString(),
+      new Date(grade.createdAt).toLocaleDateString(getDateLocale()),
       grade.description || '-'
     ]);
     
@@ -602,7 +602,7 @@ const TeacherGrades = () => {
                         </Badge>
                         </td>
                         <td className="p-2 text-sm text-muted-foreground">
-                          {new Date(grade.createdAt).toLocaleDateString()}
+                          {new Date(grade.createdAt).toLocaleDateString(getDateLocale())}
                         </td>
                         <td className="p-2 text-sm text-muted-foreground max-w-xs truncate">
                           {grade.description || '-'}
@@ -680,7 +680,7 @@ const TeacherGrades = () => {
                         
                         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          <span>{new Date(grade.createdAt).toLocaleDateString()}</span>
+                          <span>{new Date(grade.createdAt).toLocaleDateString(getDateLocale())}</span>
                         </div>
                         
                         {grade.description && (

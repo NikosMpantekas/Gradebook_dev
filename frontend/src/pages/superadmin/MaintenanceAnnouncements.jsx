@@ -444,7 +444,7 @@ const MaintenanceAnnouncements = () => {
                     <div className="min-w-0">
                       <p className="font-medium text-xs sm:text-sm">Start Time</p>
                       <p className="text-muted-foreground text-xs sm:text-sm break-words">
-                        {new Date(announcement.scheduledStart).toLocaleString()}
+                        {new Date(announcement.scheduledStart).toLocaleString(getDateLocale())}
                       </p>
                     </div>
                   </div>
@@ -454,7 +454,7 @@ const MaintenanceAnnouncements = () => {
                     <div className="min-w-0">
                       <p className="font-medium text-xs sm:text-sm">End Time</p>
                       <p className="text-muted-foreground text-xs sm:text-sm break-words">
-                        {new Date(announcement.scheduledEnd).toLocaleString()}
+                        {new Date(announcement.scheduledEnd).toLocaleString(getDateLocale())}
                       </p>
                     </div>
                   </div>
@@ -473,7 +473,7 @@ const MaintenanceAnnouncements = () => {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Created by {announcement.createdBy?.name}</span>
-                    <span>{new Date(announcement.createdAt).toLocaleDateString()}</span>
+                    <span>{new Date(announcement.createdAt).toLocaleDateString(getDateLocale())}</span>
                   </div>
                 </div>
               </CardContent>

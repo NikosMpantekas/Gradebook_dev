@@ -11,6 +11,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getDateFnsLocale } from '../utils/dateLocale';
 import { toast } from 'sonner';
 import {
   getNotification,
@@ -92,7 +93,7 @@ const NotificationDetail = () => {
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      return format(date, 'PPpp'); // Example: 'Apr 29, 2021, 5:34 PM'
+      return format(date, 'PPpp', { locale: getDateFnsLocale() }); // Example: 'Apr 29, 2021, 5:34 PM'
     } catch (error) {
       return 'Invalid date';
     }

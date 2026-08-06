@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useTheme } from '../../components/theme-provider';
-import { 
+import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useTheme } from "../../components/theme-provider";
+import {
   Search,
   Eye,
   TrendingUp,
@@ -12,23 +12,53 @@ import {
   BookOpen,
   Calendar,
   User,
-  Loader2
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getStudentGrades } from '../../features/grades/gradeSlice';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
-import { TooltipProvider } from '../../components/ui/tooltip';
-import { useTranslation } from 'react-i18next';
-import { Spinner } from '../../components/ui/spinner';
-import { Skeleton } from '../../components/ui/skeleton';
+  Loader2,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { getDateFnsLocale } from "../../utils/dateLocale";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { getStudentGrades } from "../../features/grades/gradeSlice";
+import { Button } from "../../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Badge } from "../../components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../components/ui/tooltip";
+import { TooltipProvider } from "../../components/ui/tooltip";
+import { useTranslation } from "react-i18next";
+import { Spinner } from "../../components/ui/spinner";
+import { Skeleton } from "../../components/ui/skeleton";
 
 const GradesSkeleton = ({ isMobile, t }) => (
   <div className="space-y-6">
@@ -72,7 +102,7 @@ const GradesSkeleton = ({ isMobile, t }) => (
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder={t ? t('student.searchGrades') : 'Search grades...'}
+          placeholder={t ? t("student.searchGrades") : "Search grades..."}
           className="pl-10"
           disabled
         />
@@ -114,23 +144,50 @@ const GradesSkeleton = ({ isMobile, t }) => (
           <Table>
             <TableHeader>
               <TableRow className="border-b border-gray-200 dark:border-gray-600">
-                <TableHead className="p-4"><div className="h-4 w-24 bg-muted/50 rounded-md" /></TableHead>
-                <TableHead className="p-4"><div className="h-4 w-12 bg-muted/40 rounded-md mx-auto" /></TableHead>
-                <TableHead className="p-4"><div className="h-4 w-32 bg-muted/50 rounded-md" /></TableHead>
-                <TableHead className="p-4"><div className="h-4 w-24 bg-muted/40 rounded-md" /></TableHead>
-                <TableHead className="p-4"><div className="h-4 w-24 bg-muted/40 rounded-md" /></TableHead>
-                <TableHead className="p-4 text-center"><div className="h-4 w-16 bg-muted/50 rounded-md mx-auto" /></TableHead>
+                <TableHead className="p-4">
+                  <div className="h-4 w-24 bg-muted/50 rounded-md" />
+                </TableHead>
+                <TableHead className="p-4">
+                  <div className="h-4 w-12 bg-muted/40 rounded-md mx-auto" />
+                </TableHead>
+                <TableHead className="p-4">
+                  <div className="h-4 w-32 bg-muted/50 rounded-md" />
+                </TableHead>
+                <TableHead className="p-4">
+                  <div className="h-4 w-24 bg-muted/40 rounded-md" />
+                </TableHead>
+                <TableHead className="p-4">
+                  <div className="h-4 w-24 bg-muted/40 rounded-md" />
+                </TableHead>
+                <TableHead className="p-4 text-center">
+                  <div className="h-4 w-16 bg-muted/50 rounded-md mx-auto" />
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {[1, 2, 3, 4, 5].map((i) => (
-                <TableRow key={i} className="border-b border-gray-200 dark:border-gray-600">
-                  <TableCell className="p-4"><div className="h-5 w-32 bg-muted/30 rounded-md" /></TableCell>
-                  <TableCell className="p-4 text-center"><div className="h-6 w-10 bg-muted/40 rounded-lg mx-auto" /></TableCell>
-                  <TableCell className="p-4"><div className="h-5 w-48 bg-muted/30 rounded-md" /></TableCell>
-                  <TableCell className="p-4"><div className="h-5 w-32 bg-muted/30 rounded-md" /></TableCell>
-                  <TableCell className="p-4"><div className="h-5 w-24 bg-muted/30 rounded-md" /></TableCell>
-                  <TableCell className="p-4 text-center"><div className="h-9 w-12 bg-muted/40 rounded-md mx-auto" /></TableCell>
+                <TableRow
+                  key={i}
+                  className="border-b border-gray-200 dark:border-gray-600"
+                >
+                  <TableCell className="p-4">
+                    <div className="h-5 w-32 bg-muted/30 rounded-md" />
+                  </TableCell>
+                  <TableCell className="p-4 text-center">
+                    <div className="h-6 w-10 bg-muted/40 rounded-lg mx-auto" />
+                  </TableCell>
+                  <TableCell className="p-4">
+                    <div className="h-5 w-48 bg-muted/30 rounded-md" />
+                  </TableCell>
+                  <TableCell className="p-4">
+                    <div className="h-5 w-32 bg-muted/30 rounded-md" />
+                  </TableCell>
+                  <TableCell className="p-4">
+                    <div className="h-5 w-24 bg-muted/30 rounded-md" />
+                  </TableCell>
+                  <TableCell className="p-4 text-center">
+                    <div className="h-9 w-12 bg-muted/40 rounded-md mx-auto" />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -142,9 +199,8 @@ const GradesSkeleton = ({ isMobile, t }) => (
 );
 
 // Import mobile detection and utilities
-import { useIsMobile } from '../../components/hooks/use-mobile';
-import { cn } from '../../lib/utils';
-
+import { useIsMobile } from "../../components/hooks/use-mobile";
+import { cn } from "../../lib/utils";
 
 const StudentGrades = () => {
   const { t } = useTranslation();
@@ -152,13 +208,13 @@ const StudentGrades = () => {
   const dispatch = useDispatch();
   const { darkMode } = useTheme();
   const isMobile = useIsMobile();
-  
+
   const { user } = useSelector((state) => state.auth);
   const { grades, isLoading } = useSelector((state) => state.grades);
-  
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [filteredGrades, setFilteredGrades] = useState([]);
   const [displayedGrades, setDisplayedGrades] = useState([]);
   const [gradeStats, setGradeStats] = useState({
@@ -182,19 +238,25 @@ const StudentGrades = () => {
 
   const applyFilters = () => {
     if (!grades) return;
-    
+
     let filtered = [...grades];
-    
+
     // Apply search filter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter((grade) => 
-        (grade.subject && grade.subject.name && grade.subject.name.toLowerCase().includes(search)) ||
-        (grade.description && grade.description.toLowerCase().includes(search)) ||
-        (grade.teacher && grade.teacher.name && grade.teacher.name.toLowerCase().includes(search))
+      filtered = filtered.filter(
+        (grade) =>
+          (grade.subject &&
+            grade.subject.name &&
+            grade.subject.name.toLowerCase().includes(search)) ||
+          (grade.description &&
+            grade.description.toLowerCase().includes(search)) ||
+          (grade.teacher &&
+            grade.teacher.name &&
+            grade.teacher.name.toLowerCase().includes(search)),
       );
     }
-    
+
     setFilteredGrades(filtered);
     setDisplayedGrades(filtered);
   };
@@ -205,23 +267,31 @@ const StudentGrades = () => {
     // Calculate average grade
     const sum = grades.reduce((acc, grade) => acc + grade.value, 0);
     const average = sum / grades.length;
-    
+
     // Calculate highest and lowest grades
-    const highestGrade = Math.max(...grades.map(grade => grade.value));
-    const lowestGrade = Math.min(...grades.map(grade => grade.value));
-    
+    const highestGrade = Math.max(...grades.map((grade) => grade.value));
+    const lowestGrade = Math.min(...grades.map((grade) => grade.value));
+
     // Calculate passing rate (grades >= 50)
-    const passingGrades = grades.filter(grade => grade.value >= 50).length;
+    const passingGrades = grades.filter((grade) => grade.value >= 50).length;
     const passingRate = (passingGrades / grades.length) * 100;
-    
+
     // Calculate grade distribution
     const distribution = {
-      'A (90-100)': grades.filter(grade => grade.value >= 90).length,
-      'B (80-89)': grades.filter(grade => grade.value >= 80 && grade.value < 90).length,
-      'C (70-79)': grades.filter(grade => grade.value >= 70 && grade.value < 80).length,
-      'D (60-69)': grades.filter(grade => grade.value >= 60 && grade.value < 70).length,
-      'E (50-59)': grades.filter(grade => grade.value >= 50 && grade.value < 60).length,
-      'F (0-49)': grades.filter(grade => grade.value < 50).length,
+      "A (90-100)": grades.filter((grade) => grade.value >= 90).length,
+      "B (80-89)": grades.filter(
+        (grade) => grade.value >= 80 && grade.value < 90,
+      ).length,
+      "C (70-79)": grades.filter(
+        (grade) => grade.value >= 70 && grade.value < 80,
+      ).length,
+      "D (60-69)": grades.filter(
+        (grade) => grade.value >= 60 && grade.value < 70,
+      ).length,
+      "E (50-59)": grades.filter(
+        (grade) => grade.value >= 50 && grade.value < 60,
+      ).length,
+      "F (0-49)": grades.filter((grade) => grade.value < 50).length,
     };
 
     setGradeStats({
@@ -252,37 +322,49 @@ const StudentGrades = () => {
   };
 
   // Prepare data for Pie chart
-  const pieData = Object.entries(gradeStats.gradeDistribution || {}).map(([name, value]) => ({
-    name,
-    value
-  }));
+  const pieData = Object.entries(gradeStats.gradeDistribution || {}).map(
+    ([name, value]) => ({
+      name,
+      value,
+    }),
+  );
   const COLORS = [
-    'hsl(175, 50%, 50%)',
-    'hsl(205, 80%, 55%)',
-    'hsl(260, 100%, 70%)',
-    'hsl(45, 100%, 65%)',
-    'hsl(25, 100%, 60%)',
-    'hsl(350, 100%, 70%)',
+    "hsl(175, 50%, 50%)",
+    "hsl(205, 80%, 55%)",
+    "hsl(260, 100%, 70%)",
+    "hsl(45, 100%, 65%)",
+    "hsl(25, 100%, 60%)",
+    "hsl(350, 100%, 70%)",
   ];
 
   const getGradeColor = (grade) => {
-    if (grade >= 80) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--success))]';
-    if (grade >= 60) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--info))]';
-    if (grade >= 50) return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--warning))]';
-    return 'text-white font-semibold' + ' ' + 'bg-[hsl(var(--error))]';
+    if (grade >= 80)
+      return "text-white font-semibold" + " " + "bg-[hsl(var(--success))]";
+    if (grade >= 60)
+      return "text-white font-semibold" + " " + "bg-[hsl(var(--info))]";
+    if (grade >= 50)
+      return "text-white font-semibold" + " " + "bg-[hsl(var(--warning))]";
+    return "text-white font-semibold" + " " + "bg-[hsl(var(--error))]";
   };
 
   // Mobile card layout for grades
   const renderMobileContent = () => {
-    const paginatedGrades = filteredGrades.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-    
+    const paginatedGrades = filteredGrades.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage,
+    );
+
     if (paginatedGrades.length === 0) {
       return (
         <div className="text-center py-8">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">{t('student.noGradesAvailable')}</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            {t("student.noGradesAvailable")}
+          </h3>
           <p className="text-muted-foreground">
-            {!grades || grades.length === 0 ? t('student.noGradesYet') : t('student.noGradesMatch')}
+            {!grades || grades.length === 0
+              ? t("student.noGradesYet")
+              : t("student.noGradesMatch")}
           </p>
         </div>
       );
@@ -300,13 +382,13 @@ const StudentGrades = () => {
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
-                      {grade.subject?.name || 'N/A'}
+                      {grade.subject?.name || "N/A"}
                     </h3>
-                    <Badge className={getGradeColor(grade.value) + ' text-sm'}>
+                    <Badge className={getGradeColor(grade.value) + " text-sm"}>
                       {grade.value}
                     </Badge>
                   </div>
-                  
+
                   {grade.teacher?.name && (
                     <div className="flex items-center gap-2 mb-2">
                       <User className="h-4 w-4 text-muted-foreground" />
@@ -315,14 +397,14 @@ const StudentGrades = () => {
                       </span>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
+                      {grade.date ? format(new Date(grade.date), "PPP", { locale: getDateFnsLocale() }) : "N/A"}
                     </span>
                   </div>
-                  
+
                   {grade.description && (
                     <div className="mb-2">
                       <p className="text-sm text-muted-foreground line-clamp-2">
@@ -332,18 +414,18 @@ const StudentGrades = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* Action button */}
               <div className="flex justify-end mt-4">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleViewGrade(grade._id)}
-                  title={t('student.viewDetails')}
+                  title={t("student.viewDetails")}
                   className="hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 gap-2"
                 >
                   <Eye className="h-4 w-4" />
-                  {t('student.viewDetails')}
+                  {t("student.viewDetails")}
                 </Button>
               </div>
             </CardContent>
@@ -361,24 +443,40 @@ const StudentGrades = () => {
           <Table>
             <TableHeader>
               <TableRow className="border-b border-gray-200 dark:border-gray-600">
-                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.subject')}</TableHead>
-                <TableHead className="text-center p-4 text-foreground font-medium">{t('student.grade')}</TableHead>
-                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.description')}</TableHead>
-                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.teacher')}</TableHead>
-                <TableHead className="text-left p-4 text-foreground font-medium">{t('student.date')}</TableHead>
-                <TableHead className="text-center p-4 text-foreground font-medium">{t('student.actions')}</TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">
+                  {t("student.subject")}
+                </TableHead>
+                <TableHead className="text-center p-4 text-foreground font-medium">
+                  {t("student.grade")}
+                </TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">
+                  {t("student.description")}
+                </TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">
+                  {t("student.teacher")}
+                </TableHead>
+                <TableHead className="text-left p-4 text-foreground font-medium">
+                  {t("student.date")}
+                </TableHead>
+                <TableHead className="text-center p-4 text-foreground font-medium">
+                  {t("student.actions")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredGrades
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .length > 0 ? (
+              {filteredGrades.slice(
+                page * rowsPerPage,
+                page * rowsPerPage + rowsPerPage,
+              ).length > 0 ? (
                 filteredGrades
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((grade) => (
-                    <TableRow key={grade._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-300">
+                    <TableRow
+                      key={grade._id}
+                      className="border-b border-gray-200 dark:border-gray-600 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors duration-300"
+                    >
                       <TableCell className="p-4 font-medium text-foreground text-base">
-                        {grade.subject?.name || 'N/A'}
+                        {grade.subject?.name || "N/A"}
                       </TableCell>
                       <TableCell className="p-4 text-center">
                         <Badge className={getGradeColor(grade.value)}>
@@ -386,13 +484,15 @@ const StudentGrades = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="p-4 text-foreground text-base max-w-xs truncate">
-                        {grade.description || 'N/A'}
+                        {grade.description || "N/A"}
                       </TableCell>
                       <TableCell className="p-4 text-foreground text-base">
-                        {grade.teacher?.name || 'N/A'}
+                        {grade.teacher?.name || "N/A"}
                       </TableCell>
                       <TableCell className="p-4 text-foreground text-base">
-                        {grade.date ? format(new Date(grade.date), 'PPP') : 'N/A'}
+                        {grade.date
+                          ? format(new Date(grade.date), "PPP", { locale: getDateFnsLocale() })
+                          : "N/A"}
                       </TableCell>
                       <TableCell className="p-4 text-center">
                         <Tooltip>
@@ -401,14 +501,14 @@ const StudentGrades = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewGrade(grade._id)}
-                              title={t('student.viewDetails')}
+                              title={t("student.viewDetails")}
                               className="hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 px-4 py-2"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{t('student.viewDetails')}</p>
+                            <p>{t("student.viewDetails")}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
@@ -419,9 +519,13 @@ const StudentGrades = () => {
                   <TableCell colSpan={6} className="text-center py-12">
                     <div className="text-center">
                       <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">{t('student.noGradesAvailable')}</h3>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {t("student.noGradesAvailable")}
+                      </h3>
                       <p className="text-muted-foreground">
-                        {!grades || grades.length === 0 ? t('student.noGradesYet') : t('student.noGradesMatch')}
+                        {!grades || grades.length === 0
+                          ? t("student.noGradesYet")
+                          : t("student.noGradesMatch")}
                       </p>
                     </div>
                   </TableCell>
@@ -434,15 +538,16 @@ const StudentGrades = () => {
     );
   };
 
-
   return (
     <TooltipProvider>
       <div className="container mx-auto p-4 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('student.myGrades')}</h1>
+            <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
+              {t("student.myGrades")}
+            </h1>
             <p className="text-muted-foreground mt-2">
-              {t('student.viewAndTrack')}
+              {t("student.viewAndTrack")}
             </p>
           </div>
         </div>
@@ -464,8 +569,12 @@ const StudentGrades = () => {
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{t('student.average')}</p>
-                    <p className="text-2xl font-bold text-primary">{gradeStats.average}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t("student.average")}
+                    </p>
+                    <p className="text-2xl font-bold text-primary">
+                      {gradeStats.average}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -473,10 +582,20 @@ const StudentGrades = () => {
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
                     <div className="flex items-center justify-center mb-2">
-                      <Award className="h-5 w-5" style={{color: 'hsl(var(--success))'}} />
+                      <Award
+                        className="h-5 w-5"
+                        style={{ color: "hsl(var(--success))" }}
+                      />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{t('student.highest')}</p>
-                    <p className="text-2xl font-bold" style={{color: 'hsl(var(--success))'}}>{gradeStats.highestGrade}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t("student.highest")}
+                    </p>
+                    <p
+                      className="text-2xl font-bold"
+                      style={{ color: "hsl(var(--success))" }}
+                    >
+                      {gradeStats.highestGrade}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -484,10 +603,20 @@ const StudentGrades = () => {
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
                     <div className="flex items-center justify-center mb-2">
-                      <AlertTriangle className="h-5 w-5" style={{color: 'hsl(var(--error))'}} />
+                      <AlertTriangle
+                        className="h-5 w-5"
+                        style={{ color: "hsl(var(--error))" }}
+                      />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{t('student.lowest')}</p>
-                    <p className="text-2xl font-bold" style={{color: 'hsl(var(--error))'}}>{gradeStats.lowestGrade}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t("student.lowest")}
+                    </p>
+                    <p
+                      className="text-2xl font-bold"
+                      style={{ color: "hsl(var(--error))" }}
+                    >
+                      {gradeStats.lowestGrade}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -495,10 +624,20 @@ const StudentGrades = () => {
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
                     <div className="flex items-center justify-center mb-2">
-                      <CheckCircle className="h-5 w-5" style={{color: 'hsl(var(--info))'}} />
+                      <CheckCircle
+                        className="h-5 w-5"
+                        style={{ color: "hsl(var(--info))" }}
+                      />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{t('student.passingRate')}</p>
-                    <p className="text-2xl font-bold" style={{color: 'hsl(var(--info))'}}>{gradeStats.passingRate}%</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t("student.passingRate")}
+                    </p>
+                    <p
+                      className="text-2xl font-bold"
+                      style={{ color: "hsl(var(--info))" }}
+                    >
+                      {gradeStats.passingRate}%
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -509,7 +648,7 @@ const StudentGrades = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BookOpen className="h-5 w-5" />
-                      {t('student.gradeDistribution')}
+                      {t("student.gradeDistribution")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
@@ -517,12 +656,14 @@ const StudentGrades = () => {
                       {isLoading ? (
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                          <p className="text-sm">{t('student.loadingChart')}</p>
+                          <p className="text-sm">{t("student.loadingChart")}</p>
                         </div>
                       ) : !grades || grades.length === 0 ? (
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <BookOpen className="h-12 w-12 mb-2 opacity-50" />
-                          <p className="text-sm">{t('student.noGradesForChart')}</p>
+                          <p className="text-sm">
+                            {t("student.noGradesForChart")}
+                          </p>
                         </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -536,13 +677,18 @@ const StudentGrades = () => {
                                 outerRadius={120}
                                 fill="#8884d8"
                                 dataKey="value"
+                                startAngle={90}
+                                endAngle={-270}
                               >
                                 {pieData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                  />
                                 ))}
                               </Pie>
                               <RechartsTooltip />
-                              <Legend verticalAlign="bottom" height={36}/>
+                              <Legend verticalAlign="bottom" height={36} />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -558,7 +704,7 @@ const StudentGrades = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t('student.searchGrades')}
+                  placeholder={t("student.searchGrades")}
                   value={searchTerm}
                   onChange={handleSearchChange}
                   className="pl-10"
@@ -569,18 +715,23 @@ const StudentGrades = () => {
             {/* Grades List */}
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-foreground mb-4">
-                {t('student.grades')}
+                {t("student.grades")}
               </h2>
-              
+
               {/* Responsive layout */}
               {isMobile ? renderMobileContent() : renderDesktopContent()}
-              
+
               {/* Pagination */}
               {filteredGrades.length > 0 && (
                 <div className="flex items-center justify-between space-x-2 py-4 mt-4">
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm text-muted-foreground">{t('student.rowsPerPage')}</p>
-                    <Select value={rowsPerPage.toString()} onValueChange={handleChangeRowsPerPage}>
+                    <p className="text-sm text-muted-foreground">
+                      {t("student.rowsPerPage")}
+                    </p>
+                    <Select
+                      value={rowsPerPage.toString()}
+                      onValueChange={handleChangeRowsPerPage}
+                    >
                       <SelectTrigger className="h-8 w-[70px]">
                         <SelectValue />
                       </SelectTrigger>
@@ -593,7 +744,12 @@ const StudentGrades = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-muted-foreground">
-                      {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filteredGrades.length)} of {filteredGrades.length}
+                      {page * rowsPerPage + 1}-
+                      {Math.min(
+                        (page + 1) * rowsPerPage,
+                        filteredGrades.length,
+                      )}{" "}
+                      of {filteredGrades.length}
                     </p>
                     <Button
                       variant="outline"
@@ -601,15 +757,17 @@ const StudentGrades = () => {
                       onClick={() => handleChangePage(page - 1)}
                       disabled={page === 0}
                     >
-                      {t('student.previous')}
+                      {t("student.previous")}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleChangePage(page + 1)}
-                      disabled={(page + 1) * rowsPerPage >= filteredGrades.length}
+                      disabled={
+                        (page + 1) * rowsPerPage >= filteredGrades.length
+                      }
                     >
-                      {t('student.next')}
+                      {t("student.next")}
                     </Button>
                   </div>
                 </div>
@@ -620,9 +778,11 @@ const StudentGrades = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">{t('student.noGradesAvailable')}</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {t("student.noGradesAvailable")}
+              </h3>
               <p className="text-muted-foreground text-center">
-                {t('student.noGradesYet')}
+                {t("student.noGradesYet")}
               </p>
             </CardContent>
           </Card>

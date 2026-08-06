@@ -315,10 +315,10 @@ const RatingStatistics = () => {
                     <TableCell className="font-medium">{period.title}</TableCell>
                     <TableCell className="text-muted-foreground">{period.description || 'N/A'}</TableCell>
                     <TableCell>
-                      {period.startDate ? new Date(period.startDate).toLocaleDateString() : 'N/A'}
+                      {period.startDate ? new Date(period.startDate).toLocaleDateString(getDateLocale()) : 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {period.endDate ? new Date(period.endDate).toLocaleDateString() : 'N/A'}
+                      {period.endDate ? new Date(period.endDate).toLocaleDateString(getDateLocale()) : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 

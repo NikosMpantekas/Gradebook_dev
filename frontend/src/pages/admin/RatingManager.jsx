@@ -27,6 +27,7 @@ import {
 import { Plus, Pencil, Trash2, Play, Square, BarChart3, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, isAfter } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 
 // Redux actions
 import { 
@@ -293,7 +294,7 @@ const RatingManager = () => {
                 </div>
                 <div className="text-xs text-muted-foreground space-y-0.5">
                   <p>
-                    {format(new Date(period.startDate), 'MMM d, yyyy')} - {format(new Date(period.endDate), 'MMM d, yyyy')}
+                    {format(new Date(period.startDate), 'MMM d, yyyy', { locale: getDateFnsLocale() })} - {format(new Date(period.endDate), 'MMM d, yyyy', { locale: getDateFnsLocale() })}
                   </p>
                   <p>
                     Target: {period.targetType === 'both' 

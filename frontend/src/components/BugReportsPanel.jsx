@@ -11,6 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateFnsLocale } from '../utils/dateLocale';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -198,7 +199,7 @@ const BugReportsPanel = ({ openContactForm }) => {
                             {message.subject}
                           </h4>
                           <p className="text-sm text-muted-foreground">
-                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                           </p>
                         </div>
                       </div>
@@ -245,7 +246,7 @@ const BugReportsPanel = ({ openContactForm }) => {
                             {message.adminReply}
                           </p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Replied {formatDistanceToNow(new Date(message.adminReplyDate || message.updatedAt), { addSuffix: true })}
+                            Replied {formatDistanceToNow(new Date(message.adminReplyDate || message.updatedAt), { addSuffix: true, locale: getDateFnsLocale() })}
                           </p>
                         </div>
                         

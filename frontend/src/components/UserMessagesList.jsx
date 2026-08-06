@@ -11,6 +11,7 @@ import {
   MailOpen
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateFnsLocale } from '../utils/dateLocale';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
@@ -146,7 +147,7 @@ const UserMessagesList = ({ messages, user, onMessagesChanged }) => {
                         {message.subject}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                       </p>
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 import { toast } from 'sonner';
 import { getGrade, reset } from '../../features/grades/gradeSlice';
 import { Button } from '../../components/ui/button';
@@ -103,7 +104,7 @@ const GradeDetail = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    return format(new Date(dateString), 'PPP');
+    return format(new Date(dateString), 'PPP', { locale: getDateFnsLocale() });
   };
 
   const getGradeStatus = () => {

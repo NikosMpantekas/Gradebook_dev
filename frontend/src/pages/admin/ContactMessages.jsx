@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
 import { format } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -285,7 +286,7 @@ const ContactMessages = () => {
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {message.createdAt ? format(new Date(message.createdAt), 'PPpp') : 'Date unknown'}
+                    {message.createdAt ? format(new Date(message.createdAt), 'PPpp', { locale: getDateFnsLocale() }) : 'Date unknown'}
                   </p>
                 </div>
                 

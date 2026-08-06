@@ -505,7 +505,7 @@ const AdminDashboard = () => {
                       variant="secondary" 
                       className="text-xs transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/30"
                     >
-                      {new Date(notification.createdAt).toLocaleDateString()}
+                      {new Date(notification.createdAt).toLocaleDateString(getDateLocale())}
                     </Badge>
                   </div>
                 ))}

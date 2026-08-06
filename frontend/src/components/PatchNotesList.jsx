@@ -10,6 +10,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateFnsLocale } from '../utils/dateLocale';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -125,7 +126,7 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
                           </h3>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                         </p>
                       </div>
                     </div>
@@ -212,7 +213,7 @@ const PatchNotesList = ({ patchNotes, user, onEdit, onDelete }) => {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-3">
-                        {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                       </p>
                       
                       {/* Mobile action buttons */}

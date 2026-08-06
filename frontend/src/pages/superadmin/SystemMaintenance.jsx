@@ -77,7 +77,7 @@ const SystemMaintenance = () => {
       if (diffHrs <= 23) return `~${diffHrs} ώρες`;
 
       // More than a day away — show full date + time
-      return date.toLocaleString('el-GR', {
+      return date.toLocaleString(getDateLocale(), {
         weekday: 'short', day: 'numeric', month: 'short',
         hour: '2-digit', minute: '2-digit'
       });
@@ -217,7 +217,7 @@ const SystemMaintenance = () => {
     }));
   };
 
-  const formatTimestamp = (ts) => ts ? new Date(ts).toLocaleString('el-GR', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  const formatTimestamp = (ts) => ts ? new Date(ts).toLocaleString(getDateLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
   const getActionBadge = (action) => {
     const map = {

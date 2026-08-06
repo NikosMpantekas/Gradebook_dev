@@ -136,7 +136,7 @@ const StudentStats = () => {
     return subjectGrades.map((grade, index) => ({
       index: index + 1,
       grade: grade.value,
-      date: new Date(grade.date).toLocaleDateString(),
+      date: new Date(grade.date).toLocaleDateString(getDateLocale()),
       timestamp: new Date(grade.date).getTime()
     })).sort((a, b) => a.timestamp - b.timestamp);
   };
@@ -255,7 +255,7 @@ const StudentStats = () => {
                 <h3 className="text-xl font-bold">{t('student.gradeAnalysisReport')}</h3>
                 <p className="text-lg font-semibold text-primary">{selectedStudentData?.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {t('student.dateRange')}: {startDate ? new Date(startDate).toLocaleDateString() : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString() : 'N/A'}
+                  {t('student.dateRange')}: {startDate ? new Date(startDate).toLocaleDateString(getDateLocale()) : 'N/A'} - {endDate ? new Date(endDate).toLocaleDateString(getDateLocale()) : 'N/A'}
                 </p>
               </div>
             </CardContent>
@@ -358,7 +358,7 @@ const StudentStats = () => {
                           {subjectData.grades?.map((grade, index) => (
                             <TableRow key={index}>
                               <TableCell className="text-xs">
-                                {new Date(grade.date).toLocaleDateString()}
+                                                                {new Date(grade.date).toLocaleDateString(getDateLocale())}
                               </TableCell>
                               <TableCell>
                                 <Badge 
