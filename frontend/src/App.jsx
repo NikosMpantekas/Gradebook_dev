@@ -116,6 +116,7 @@ import BetaManager from "./pages/superadmin/BetaManager";
 
 // Custom components
 import HomeScreenPrompt from "./components/HomeScreenPrompt";
+import ServerWarningBanner from "./components/common/ServerWarningBanner";
 
 /**
  * RootWrapper component to include ScrollRestoration and MaintenanceStatusChecker
@@ -868,6 +869,7 @@ function App() {
             </BetaProvider>
           </FeatureToggleProvider>
           <Toaster />
+          <ServerWarningBanner />
         </ShadcnThemeProvider>
       </ThemeProvider>
     </ErrorBoundary>
