@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '../../utils/dateLocale';
 
 // Components
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';

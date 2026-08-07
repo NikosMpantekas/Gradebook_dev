@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
+import { getDateLocale } from '../../utils/dateLocale';
 import { useSelector } from 'react-redux';
 import { RefreshCw, Copy, Server, AlertCircle, Info, Loader2, ArrowUp, ChevronLeft, ChevronRight } from 'lucide-react';
 

@@ -27,6 +27,7 @@ import { Spinner } from '../../components/ui/spinner';
 import { DatePicker } from '../../components/ui/date-picker';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '../../utils/dateLocale';
 
 const CreateGradeSimple = () => {
   const navigate = useNavigate();

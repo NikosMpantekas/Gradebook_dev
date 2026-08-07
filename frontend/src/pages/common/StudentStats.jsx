@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../../config/appConfig';
+import { getDateLocale } from '../../utils/dateLocale';
 import { 
   BarChart3, 
   BookOpen, 

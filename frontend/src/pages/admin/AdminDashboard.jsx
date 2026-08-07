@@ -38,6 +38,7 @@ import axiosInstance from '../../app/axios';
 import { API_URL } from '../../config/appConfig';
 import { useTranslation } from 'react-i18next';
 import { setDashboardDataCache } from '../../features/ui/uiSlice';
+import { getDateLocale } from '../../utils/dateLocale';
 
 // Static skeleton - no animations, matches AdminDashboard pattern exactly
 const AdminDashboardSkeleton = () => (

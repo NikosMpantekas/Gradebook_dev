@@ -790,11 +790,35 @@ const getSystemLogs = asyncHandler(async (req, res) => {
         // Parse and format log entries
         const parsedLines = [];
         let currentLog = null;
+        const PINO_LEVELS = { 10: 'DEBUG', 20: 'DEBUG', 30: 'INFO', 40: 'WARN', 50: 'ERROR', 60: 'CRITICAL' };
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
+
+          // Try pino JSON format first
           try {
-            // Parse log format: [LEVEL] timestamp [CATEGORY]: message
+            const j = JSON.parse(line);
+            if (j.time) {
+              const ts = new Date(j.time);
+              if (ts >= oneDayAgo) {
+                let msg = j.msg || '';
+                if (j.data) msg += '\nData: ' + JSON.stringify(j.data);
+                if (j.err) msg += '\nError: ' + (j.err.type || 'Error') + ': ' + j.err.message + (j.err.stack ? '\nStack: ' + j.err.stack : '');
+                parsedLines.push({
+                  level: PINO_LEVELS[j.level] || 'INFO',
+                  timestamp: ts.toISOString(),
+                  category: (j.category || 'GENERAL').trim(),
+                  message: msg,
+                  source: file.name,
+                  parsedTimestamp: ts,
+                });
+              }
+              continue;
+            }
+          } catch { /* Not JSON, try text format below */ }
+
+          try {
+            // Fallback: old text log format [LEVEL] timestamp [CATEGORY]: message
             const match = line.match(
               /^\[(\w+)\]\s+([^\s]+)\s+\[([^\]]+)\]:\s+(.+)$/,
             );

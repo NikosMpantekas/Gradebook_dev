@@ -9,6 +9,7 @@ import { Label } from '../../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
+import { getDateLocale } from '../../utils/dateLocale';
 
 const ParentGrades = () => {
   const [studentsData, setStudentsData] = useState(null);

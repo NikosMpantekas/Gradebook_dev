@@ -33,6 +33,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../compo
 import { Checkbox } from '../../components/ui/checkbox';
 import { Spinner } from '../../components/ui/spinner';
 import { API_URL } from '../../config/appConfig';
+import { getDateLocale } from '../../utils/dateLocale';
 
 const TeacherGrades = () => {
   const [grades, setGrades] = useState([]);

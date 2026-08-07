@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { Star, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { getDateLocale } from '@/utils/dateLocale';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
