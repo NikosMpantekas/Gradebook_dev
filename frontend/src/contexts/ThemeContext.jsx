@@ -526,7 +526,11 @@ export const ThemeProvider = ({ children }) => {
         const g = Math.round(bgG + (pG - bgG) * blend);
         const b = Math.round(bgB + (pB - bgB) * blend);
 
-        return `rgb(${r}, ${g}, ${b})`;
+        const toHex = (c) => {
+          const hex = c.toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        };
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
       } catch (e) {
         return colors.background;
       }
@@ -540,24 +544,13 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.style.backgroundColor = finalBg;
     document.documentElement.style.color = isDark ? '#E0E8F0' : '#1E293B';
 
-    // Set <meta name="theme-color"> to match background so status bar matches on desktop/mobile browsers, but remove it on iOS standalone PWA to let the layout extend around the notch
-    const isIOSStandalone = window.navigator.standalone || (
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-      window.matchMedia('(display-mode: standalone)').matches
-    );
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (isIOSStandalone) {
-      if (metaThemeColor) {
-        metaThemeColor.remove();
-      }
-    } else {
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.setAttribute('name', 'theme-color');
-        document.head.appendChild(metaThemeColor);
-      }
-      metaThemeColor.setAttribute('content', finalBg);
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
     }
+    metaThemeColor.setAttribute('content', finalBg);
 
     // Ensure dark class and color scheme are properly set for browser chrome and shadcn
     root.classList.toggle('dark', Boolean(isDark));
@@ -719,24 +712,13 @@ export const ThemeProvider = ({ children }) => {
     // Set dark class appropriately
     root.classList.toggle('dark', Boolean(isDark));
 
-    // Set <meta name="theme-color"> to match background so status bar matches on desktop/mobile browsers, but remove it on iOS standalone PWA to let the layout extend around the notch
-    const isIOSStandalone = window.navigator.standalone || (
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-      window.matchMedia('(display-mode: standalone)').matches
-    );
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (isIOSStandalone) {
-      if (metaThemeColor) {
-        metaThemeColor.remove();
-      }
-    } else {
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.setAttribute('name', 'theme-color');
-        document.head.appendChild(metaThemeColor);
-      }
-      metaThemeColor.setAttribute('content', colors.background);
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
     }
+    metaThemeColor.setAttribute('content', colors.background);
 
     console.log(`🎨 Applied ${isDark ? 'dark' : 'light'} mode CSS for public pages`);
   };
