@@ -31,6 +31,7 @@ const {
   getStudentParents,
 } = require('../controllers/parentController');
 const { protect, admin, canManageUsers, superadmin } = require('../middleware/authMiddleware');
+const { setSchoolContext } = require('../middleware/schoolIdMiddleware');
 
 // Public routes
 router.post('/login', loginUser);
@@ -78,15 +79,14 @@ router.put('/push-notification-preference', protect, async (req, res) => {
 });
 
 // Admin routes for user management
-router.get('/', protect, admin, getUsers);
-router.post('/admin/create', protect, admin, createUserByAdmin);
-router.get('/teachers', protect, admin, getTeachers);
-router.get('/role/:role', protect, admin, getUsersByRole);
+router.get('/', protect, admin, setSchoolContext, getUsers);
+router.post('/admin/create', protect, admin, setSchoolContext, createUserByAdmin);
+router.get('/teachers', protect, admin, setSchoolContext, getTeachers);
+router.get('/role/:role', protect, admin, setSchoolContext, getUsersByRole);
 
 // Route to get students - ADMIN ONLY (all students in school)
 router.get('/students', protect, admin, async (req, res) => {
   try {
-    console.log('[STUDENTS ENDPOINT] GET /api/users/students called by:', req.user?.name, req.user?.role);
     const User = require('../models/userModel');
     
     // Admin can see all students in their school
@@ -96,7 +96,6 @@ router.get('/students', protect, admin, async (req, res) => {
       .select('name email _id role')
       .sort({ name: 1 });
     
-    console.log(`[STUDENTS ENDPOINT] Found ${students.length} students for school:`, req.user.schoolId);
     res.status(200).json(students);
   } catch (error) {
     console.error('[STUDENTS ENDPOINT] Error fetching students:', error);
