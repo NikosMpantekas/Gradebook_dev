@@ -132,13 +132,14 @@ const AccountSwitcher = ({ isOpen, onClose }) => {
         {isSwitching ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
         ) : !isActive ? (
-          <button
+          <div
+            role="button"
             onClick={(e) => handleRemoveAccount(e, account)}
             className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all shrink-0 cursor-pointer"
             aria-label={`Remove ${account.name}`}
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </div>
         ) : null}
       </button>
     );

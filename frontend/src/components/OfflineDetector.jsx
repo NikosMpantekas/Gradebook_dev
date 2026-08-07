@@ -50,7 +50,6 @@ const OfflineDetector = ({ children }) => {
             offlineManager.setOfflineState(false);
             return true;
           }
-          console.log(`Failed to reach ${endpoint}:`, error.message);
           continue;
         }
       }
@@ -59,7 +58,6 @@ const OfflineDetector = ({ children }) => {
       offlineManager.setOfflineState(true);
       return false;
     } catch (error) {
-      console.log("All connectivity checks failed:", error.message);
       offlineManager.setOfflineState(true);
       return false;
     }
@@ -68,19 +66,16 @@ const OfflineDetector = ({ children }) => {
   // Listen for browser online/offline events as backup
   useEffect(() => {
     const handleOnline = async () => {
-      console.log("Browser went online, checking connectivity...");
       setIsChecking(true);
       const isConnected = await checkConnectivity();
       setIsChecking(false);
 
       if (isConnected) {
-        console.log("Connectivity confirmed, reloading page...");
         window.location.reload();
       }
     };
 
     const handleOffline = () => {
-      console.log("Browser went offline");
       offlineManager.setOfflineState(true);
     };
 
@@ -101,7 +96,6 @@ const OfflineDetector = ({ children }) => {
     try {
       const isConnected = await checkConnectivity();
       if (isConnected) {
-        console.log("Manual retry successful, reloading page...");
         window.location.reload();
       }
     } catch (error) {

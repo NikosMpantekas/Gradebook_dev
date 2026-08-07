@@ -23,7 +23,6 @@ class OfflineManager {
   setOfflineState(isOffline) {
     if (this.isOffline !== isOffline) {
       this.isOffline = isOffline;
-      console.log(`OfflineManager: State changed to ${isOffline ? 'offline' : 'online'}`);
       this.listeners.forEach(listener => listener(isOffline));
     }
   }
@@ -32,24 +31,13 @@ class OfflineManager {
   handleRequestFailure(error) {
     const now = Date.now();
     
-    console.log('OfflineManager: Request failure detected:', {
-      hasResponse: !!error.response,
-      status: error.response?.status,
-      message: error.message,
-      code: error.code,
-      url: error.config?.url
-    });
-    
     // Check if it's a network error (no response)
     if (!error.response) {
       this.axiosFailureCount++;
       this.lastFailureTime = now;
       
-      console.log(`OfflineManager: Network failure detected (count: ${this.axiosFailureCount})`);
-      
       // If we have multiple failures in a short time, go offline
       if (this.axiosFailureCount >= 2) {
-        console.log('OfflineManager: Setting network offline state');
         this.setOfflineState(true);
       }
     } else {

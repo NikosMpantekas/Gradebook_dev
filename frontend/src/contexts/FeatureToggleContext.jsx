@@ -18,8 +18,10 @@ const defaultFeatures = {
   enableContact: false,
   enableCalendar: false,
   enableSchedule: false,
+  enableScheduleWizard: false,
   enableRatingSystem: false,
   enableRatings: false,
+  enableAttendance: false,
   enableAnalytics: false,
   enableUserManagement: false,
   enableSchoolSettings: false,
@@ -120,7 +122,6 @@ export const FeatureToggleProvider = ({ children }) => {
     }
     
     // Default to false for safety
-    console.warn(`FeatureToggleProvider: Feature '${featureName}' not found in features object`);
     return false;
   };
 

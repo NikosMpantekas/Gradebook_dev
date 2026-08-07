@@ -135,19 +135,15 @@ const AdminDashboard = () => {
   // Check authentication and role
   useEffect(() => {
     if (!user) {
-      console.log('AdminDashboard: No user found, redirecting to login');
       navigate('/login');
       return;
     }
     
     if (user.role !== 'admin') {
-      console.log('AdminDashboard: User is not admin, redirecting');
       toast.error(t('admin.accessDenied'));
       navigate('/app/dashboard');
       return;
     }
-    
-    console.log('AdminDashboard: Admin user authenticated:', user.email);
   }, [user, navigate, t]);
 
   // Fetch dashboard data
@@ -172,8 +168,6 @@ const AdminDashboard = () => {
         setLoading(true);
       }
       setError(null);
-      
-      console.log('AdminDashboard: Fetching dashboard data...');
       
       const promises = [];
       const dataKeys = [];
@@ -224,7 +218,6 @@ const AdminDashboard = () => {
       if (updatedStats) {
         dispatch(setDashboardDataCache({ adminStats: updatedStats }));
       }
-      console.log('AdminDashboard: Dashboard data loaded successfully');
       
     } catch (error) {
       console.error('AdminDashboard: Error fetching dashboard data:', error);
@@ -237,8 +230,6 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      console.log('AdminDashboard: Fetching stats...');
-      
       // Fetch users to count by role
       const usersResponse = await axiosInstance.get(`${API_URL}/api/users`, getAuthConfig());
       const users = usersResponse.data || [];
@@ -256,7 +247,6 @@ const AdminDashboard = () => {
         recentActivity: 0 // This could be enhanced later with actual activity data
       };
       
-      console.log('AdminDashboard: Stats calculated:', stats);
       return stats;
       
     } catch (error) {
