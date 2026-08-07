@@ -24,7 +24,6 @@ try {
       sessionStorage.removeItem('user');
       user = null;
     } else {
-      console.log('Valid authentication found in storage');
     }
   }
 } catch (error) {

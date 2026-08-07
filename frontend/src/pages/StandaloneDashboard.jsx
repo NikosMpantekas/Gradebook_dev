@@ -21,13 +21,6 @@ const StandaloneDashboard = () => {
   const { user } = useSelector((state) => state.auth);
   
   useEffect(() => {
-    // Debug logging to help diagnose rendering issues
-    console.log('StandaloneDashboard rendering with user:', user ? {
-      id: user._id,
-      name: user.name,
-      role: user.role
-    } : 'No user');
-    
     // If no user, redirect to login
     if (!user) {
       navigate('/login');

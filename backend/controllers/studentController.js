@@ -4,12 +4,11 @@ const User = require('../models/userModel');
 const Subject = require('../models/subjectModel');
 const Class = require('../models/classModel');
 
-
 // @desc    Get all students
 // @route   GET /api/students
 // @access  Private/Admin/Teacher
 const getStudents = asyncHandler(async (req, res) => {
-  console.log('getStudents endpoint called');
+
   try {
     // Find all students (users with role='student') in the current school context
     const students = await User.find({ 
@@ -20,8 +19,7 @@ const getStudents = asyncHandler(async (req, res) => {
     .populate('direction', 'name')
     .populate('school', 'name')
     .lean();
-    
-    console.log(`Found ${students.length} students in school ID: ${req.user.schoolId}`);
+
     res.json(students);
   } catch (error) {
     console.error('Error in getStudents:', error.message);
@@ -35,8 +33,7 @@ const getStudents = asyncHandler(async (req, res) => {
 // @access  Private/Admin/Teacher
 const getStudentsBySubject = asyncHandler(async (req, res) => {
   const subjectId = req.params.id;
-  console.log(`getStudentsBySubject called for subject: ${subjectId}`);
-  
+
   try {
     // First verify the subject exists in this school
     const subject = await Subject.findOne({
@@ -45,15 +42,14 @@ const getStudentsBySubject = asyncHandler(async (req, res) => {
     });
     
     if (!subject) {
-      console.log(`Subject not found or not in this school: ${subjectId}`);
+
       res.status(404);
       throw new Error('Subject not found in this school');
     }
     
     // Get the direction IDs this subject belongs to
     const subjectDirections = subject.directions || [];
-    console.log(`Subject belongs to directions: ${subjectDirections}`);
-    
+
     // Find students who are in these directions and this school
     const students = await User.find({
       role: 'student',
@@ -64,8 +60,7 @@ const getStudentsBySubject = asyncHandler(async (req, res) => {
     .populate('direction', 'name')
     .populate('school', 'name')
     .lean();
-    
-    console.log(`Found ${students.length} students for subject ${subjectId}`);
+
     res.json(students);
   } catch (error) {
     console.error('Error in getStudentsBySubject:', error.message);
@@ -79,8 +74,7 @@ const getStudentsBySubject = asyncHandler(async (req, res) => {
 // @access  Private/Admin/Teacher
 const getStudentsByDirection = asyncHandler(async (req, res) => {
   const directionId = req.params.id;
-  console.log(`getStudentsByDirection called for direction: ${directionId}`);
-  
+
   try {
     // Find students in this direction and school
     const students = await User.find({
@@ -92,8 +86,7 @@ const getStudentsByDirection = asyncHandler(async (req, res) => {
     .populate('direction', 'name')
     .populate('school', 'name')
     .lean();
-    
-    console.log(`Found ${students.length} students for direction ${directionId}`);
+
     res.json(students);
   } catch (error) {
     console.error('Error in getStudentsByDirection:', error.message);
@@ -106,8 +99,7 @@ const getStudentsByDirection = asyncHandler(async (req, res) => {
 // @route   GET /api/students/teacher/classes
 // @access  Private/Teacher
 const getStudentsForTeacher = asyncHandler(async (req, res) => {
-  console.log('getStudentsForTeacher endpoint called for teacher:', req.user._id);
-  
+
   try {
     // Find all classes where this teacher is assigned
     const teacherClasses = await Class.find({
@@ -115,9 +107,7 @@ const getStudentsForTeacher = asyncHandler(async (req, res) => {
       teachers: req.user._id,
       active: true
     }).populate('students', 'name email');
-    
-    console.log(`Found ${teacherClasses.length} classes for teacher ${req.user._id}`);
-    
+
     // Extract unique students from all the teacher's classes
     const studentIds = new Set();
     const studentsMap = new Map();
@@ -152,9 +142,7 @@ const getStudentsForTeacher = asyncHandler(async (req, res) => {
     
     // Convert to array and add detailed student information
     const students = Array.from(studentsMap.values());
-    
-    console.log(`Found ${students.length} unique students across teacher's classes`);
-    
+
     res.json(students);
   } catch (error) {
     console.error('Error in getStudentsForTeacher:', error.message);
@@ -168,8 +156,7 @@ const getStudentsForTeacher = asyncHandler(async (req, res) => {
 // @access  Private/Teacher
 const getStudentsBySubjectForTeacher = asyncHandler(async (req, res) => {
   const subjectId = req.params.id;
-  console.log(`getStudentsBySubjectForTeacher called for teacher: ${req.user._id}, subject: ${subjectId}`);
-  
+
   try {
     // First verify the subject exists in this school
     const subject = await Subject.findOne({
@@ -178,13 +165,11 @@ const getStudentsBySubjectForTeacher = asyncHandler(async (req, res) => {
     });
     
     if (!subject) {
-      console.log(`Subject not found or not in this school: ${subjectId}`);
+
       res.status(404);
       throw new Error('Subject not found in this school');
     }
-    
-    console.log(`Subject found: ${subject.name}`);
-    
+
     // Find classes where:
     // 1. Teacher is assigned
     // 2. Subject matches
@@ -195,16 +180,13 @@ const getStudentsBySubjectForTeacher = asyncHandler(async (req, res) => {
       subject: subject.name, // Match by subject name
       active: true
     }).populate('students', 'name email');
-    
-    console.log(`Found ${teacherClasses.length} classes for teacher ${req.user._id} with subject ${subject.name}`);
-    
+
     // Extract unique students from matching classes
     const studentIds = new Set();
     const studentsMap = new Map();
     
     teacherClasses.forEach(cls => {
-      console.log(`Processing class: ${cls.name} (${cls.subject}) with ${cls.students?.length || 0} students`);
-      
+
       if (cls.students && Array.isArray(cls.students)) {
         cls.students.forEach(student => {
           if (student && student._id) {
@@ -234,9 +216,7 @@ const getStudentsBySubjectForTeacher = asyncHandler(async (req, res) => {
     
     // Convert to array
     const students = Array.from(studentsMap.values());
-    
-    console.log(`Found ${students.length} unique students for teacher ${req.user._id} and subject ${subject.name}`);
-    
+
     res.json(students);
   } catch (error) {
     console.error('Error in getStudentsBySubjectForTeacher:', error.message);
@@ -249,8 +229,7 @@ const getStudentsBySubjectForTeacher = asyncHandler(async (req, res) => {
 // @route   GET /api/students/teacher/filters
 // @access  Private/Teacher/Admin
 const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
-  console.log('getFilterOptionsForTeacher endpoint called for user:', req.user._id, 'role:', req.user.role);
-  
+
   try {
     let teacherClasses = [];
     
@@ -260,7 +239,7 @@ const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
         schoolId: req.user.schoolId,
         active: true
       });
-      console.log(`Admin user - found ${teacherClasses.length} classes in school ${req.user.schoolId}`);
+
     } else {
       // Find all classes where this teacher is assigned
       teacherClasses = await Class.find({
@@ -268,12 +247,11 @@ const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
         teachers: req.user._id,
         active: true
       });
-      console.log(`Teacher user - found ${teacherClasses.length} classes for teacher ${req.user._id}`);
+
     }
     
     // DEBUG: Log the actual class data to see what's in the schoolBranch field
-    console.log('First few classes data:', JSON.stringify(teacherClasses.slice(0, 2), null, 2));
-    
+
     // Extract unique filter options
     const schoolBranchIds = new Set();
     const directions = new Set();
@@ -296,9 +274,7 @@ const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
       const branchDocs = await School.find({
         _id: { $in: branchIds.filter(id => mongoose.Types.ObjectId.isValid(id)) }
       }).select('_id name');
-      
-      console.log('Found school branch documents:', branchDocs.map(b => ({ id: b._id, name: b.name })));
-      
+
       // Create mapping of branch IDs to names
       const branchNameMap = {};
       branchDocs.forEach(branch => {
@@ -322,16 +298,13 @@ const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
     }
     
     // Log the final school branches array
-    console.log('Final school branches options:', schoolBranches);
-    
+
     const filterOptions = {
       schoolBranches,
       directions: Array.from(directions).map(direction => ({ value: direction, label: direction })),
       subjects: Array.from(subjects).map(subject => ({ value: subject, label: subject }))
     };
-    
-    console.log('Filter options for user:', filterOptions);
-    
+
     res.json(filterOptions);
   } catch (error) {
     console.error('Error in getFilterOptionsForTeacher:', error);
@@ -345,8 +318,7 @@ const getFilterOptionsForTeacher = asyncHandler(async (req, res) => {
 // @access  Private/Teacher/Admin
 const getFilteredStudentsForTeacher = asyncHandler(async (req, res) => {
   const { schoolBranch, direction, subject } = req.query;
-  console.log(`getFilteredStudentsForTeacher called for user: ${req.user._id} (${req.user.role})`, { schoolBranch, direction, subject });
-  
+
   try {
     // Build the filter for classes
     const classFilter = {
@@ -363,14 +335,10 @@ const getFilteredStudentsForTeacher = asyncHandler(async (req, res) => {
     if (schoolBranch) classFilter.schoolBranch = schoolBranch;
     if (direction) classFilter.direction = direction;
     if (subject) classFilter.subject = subject;
-    
-    console.log('Class filter:', classFilter);
-    
+
     // Find classes matching the criteria
     const matchingClasses = await Class.find(classFilter).populate('students', 'name email');
-    
-    console.log(`Found ${matchingClasses.length} matching classes`);
-    
+
     // Extract unique students from all matching classes
     const studentMap = new Map();
     
@@ -398,9 +366,7 @@ const getFilteredStudentsForTeacher = asyncHandler(async (req, res) => {
     });
     
     const students = Array.from(studentMap.values());
-    
-    console.log(`Returning ${students.length} unique students`);
-    
+
     res.json(students);
   } catch (error) {
     console.error('Error in getFilteredStudentsForTeacher:', error);
@@ -413,10 +379,7 @@ const getFilteredStudentsForTeacher = asyncHandler(async (req, res) => {
 // @route   GET /api/students/notification/filters
 // @access  Private (Teachers and Admins)
 const getFilterOptionsForNotifications = asyncHandler(async (req, res) => {
-  console.log(`[NOTIFICATION FILTERS] getFilterOptionsForNotifications called for user: ${req.user._id} (${req.user.role})`);
-  console.log(`[NOTIFICATION FILTERS] School ID: ${req.user.schoolId}`);
-  console.log(`[NOTIFICATION FILTERS] Request headers:`, req.headers);
-  
+
   try {
     // Build the filter for classes
     const classFilter = {
@@ -428,13 +391,10 @@ const getFilterOptionsForNotifications = asyncHandler(async (req, res) => {
     if (req.user.role !== 'admin') {
       classFilter.teachers = req.user._id;
     }
-    
-    console.log('[NOTIFICATION FILTERS] Class filter for notifications:', classFilter);
-    
+
     // Find all classes the user has access to
     const classes = await Class.find(classFilter);
-    console.log(`[NOTIFICATION FILTERS] Found ${classes.length} accessible classes for notification filtering`);
-    
+
     // Extract unique filter options
     const schoolBranchIds = new Set();
     const directions = new Set();
@@ -480,10 +440,7 @@ const getFilterOptionsForNotifications = asyncHandler(async (req, res) => {
       directions: Array.from(directions).map(direction => ({ value: direction, label: direction })),
       subjects: Array.from(subjects).map(subject => ({ value: subject, label: subject }))
     };
-    
-    console.log('[NOTIFICATION FILTERS] Notification filter options for user:', filterOptions);
-    console.log(`[NOTIFICATION FILTERS] Returning ${filterOptions.schoolBranches.length} branches, ${filterOptions.directions.length} directions, ${filterOptions.subjects.length} subjects`);
-    
+
     res.json(filterOptions);
   } catch (error) {
     console.error('[NOTIFICATION FILTERS] Error in getFilterOptionsForNotifications:', error);
@@ -500,9 +457,7 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
   console.log(`[FILTERED USERS] getFilteredUsersForNotifications called for user: ${req.user._id} (${req.user.role})`, { 
     schoolBranch, direction, subject, userRole 
   });
-  console.log(`[FILTERED USERS] School ID: ${req.user.schoolId}`);
-  console.log(`[FILTERED USERS] Request headers:`, req.headers);
-  
+
   try {
     // Build the filter for classes
     const classFilter = {
@@ -519,15 +474,12 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
     if (req.user.role !== 'admin') {
       classFilter.teachers = req.user._id;
     }
-    
-    console.log('[FILTERED USERS] Class filter for notifications:', classFilter);
-    
+
     // Find all classes matching the criteria
     const classes = await Class.find(classFilter);
-    console.log(`[FILTERED USERS] Found ${classes.length} matching classes`);
-    
+
     if (classes.length === 0) {
-      console.log('[FILTERED USERS] No classes found matching criteria - returning empty array');
+
       return res.json([]);
     }
     
@@ -543,9 +495,7 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
         cls.teachers.forEach(teacherId => teacherIds.add(teacherId.toString()));
       }
     });
-    
-    console.log(`[FILTERED USERS] Found ${studentIds.size} unique students and ${teacherIds.size} unique teachers from classes`);
-    
+
     let users = [];
     
     // Determine which users to fetch based on userRole
@@ -558,8 +508,7 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
       })
       .select('_id name email role')
       .lean();
-      
-      console.log(`[FILTERED USERS] Found ${students.length} students in database`);
+
       users = users.concat(students);
     }
     
@@ -572,8 +521,7 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
       })
       .select('_id name email role')
       .lean();
-      
-      console.log(`[FILTERED USERS] Found ${teachers.length} teachers in database`);
+
       users = users.concat(teachers);
     }
     
@@ -586,8 +534,7 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
       })
       .select('_id name email role linkedStudentIds')
       .lean();
-      
-      console.log(`[FILTERED USERS] Found ${parents.length} parents linked to students in these classes`);
+
       users = users.concat(parents);
     }
     
@@ -605,11 +552,7 @@ const getFilteredUsersForNotifications = asyncHandler(async (req, res) => {
     
     // Sort users by name for better UX
     validUsers.sort((a, b) => a.name.localeCompare(b.name));
-    
-    console.log(`[FILTERED USERS] Filtered out ${users.length - validUsers.length} invalid users (ghost users)`);
-    console.log(`[FILTERED USERS] Returning ${validUsers.length} valid users for notifications`);
-    console.log(`[FILTERED USERS] User breakdown: ${validUsers.filter(u => u.role === 'student').length} students, ${validUsers.filter(u => u.role === 'teacher').length} teachers, ${validUsers.filter(u => u.role === 'parent').length} parents`);
-    
+
     res.json(validUsers);
   } catch (error) {
     console.error('[FILTERED USERS] Error in getFilteredUsersForNotifications:', error);

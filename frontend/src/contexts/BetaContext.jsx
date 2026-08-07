@@ -21,7 +21,6 @@ export const BetaProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         setBetaRoutes(data.routes || {});
-        console.log('[BetaContext] Loaded beta routes:', Object.keys(data.routes || {}).filter(k => data.routes[k]));
       }
     } catch (err) {
       console.error('[BetaContext] Failed to load beta features:', err);

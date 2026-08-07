@@ -43,48 +43,21 @@ export const FeatureToggleProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // EMERGENCY DEBUG: Show exact auth state
-  console.log('🚨 EMERGENCY DEBUG: FeatureToggleProvider initialized with auth state:', {
-    hasUser: !!user,
-    hasToken: !!token,
-    userEmail: user?.email,
-    userRole: user?.role,
-    userId: user?._id,
-    tokenLength: token?.length,
-    authStateKeys: Object.keys(useSelector((state) => state.auth))
-  });
-
   // Fetch feature toggles from the new permission system
   useEffect(() => {
-    console.log(' EMERGENCY DEBUG: FeatureToggleProvider useEffect triggered', { 
-      user: !!user, 
-      token: !!token,
-      userRole: user?.role,
-      userId: user?._id
-    });
-    
-
     // If no user or no token, reset features to default (disabled) but KEEP WATCHING
     if (!user || !token) {
-      console.log(' EMERGENCY DEBUG: No user or token yet, waiting for auth state...');
       setFeatures(defaultFeatures);
       setLoading(false);
       setError(null);
       return; // EXIT but useEffect will retrigger when user/token change
     }
 
-    console.log(' EMERGENCY DEBUG: User and token available, calling fetchFeatureToggles()');
-
     // Fetch feature toggles from the new permission system
     const fetchFeatureToggles = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log('FeatureToggleProvider: Auth state changed', { user: user?.email, hasToken: !!token });
-        
-        // Fetch feature toggles from the new permission system
-        console.log('FeatureToggleProvider: Fetching permissions from new system');
 
         const config = {
           headers: {
@@ -95,42 +68,10 @@ export const FeatureToggleProvider = ({ children }) => {
 
         // Use the new API endpoint for current user's school permissions
         const response = await axios.get(`${API_URL}/api/school-permissions/current`, config);
-        
-        console.log('FeatureToggleProvider: Permission response:', response.data);
-        
+
         if (response.data && response.data.success && response.data.data) {
-          const { features: fetchedFeatures, isSuperAdmin } = response.data.data;
-          
+          const { features: fetchedFeatures } = response.data.data;
           setFeatures(fetchedFeatures || defaultFeatures);
-          
-          console.log('========== FEATURE TOGGLE DEBUG ==========');
-          console.log('FeatureToggleProvider: Raw API response:', response.data);
-          console.log('FeatureToggleProvider: Extracted features:', fetchedFeatures);
-          console.log('FeatureToggleProvider: isSuperAdmin:', isSuperAdmin);
-          console.log('FeatureToggleProvider: Features count:', Object.keys(fetchedFeatures || {}).length);
-          
-          // Check specific admin features that should be visible
-          const expectedFeatures = [
-            'enableUserManagement',
-            'enableClasses', 
-            'enableGrades',
-            'enableNotifications',
-            'enableSchedule',
-            'enableSchoolSettings'
-          ];
-          
-          console.log('Expected admin features status:');
-          expectedFeatures.forEach(feature => {
-            const isEnabled = fetchedFeatures && fetchedFeatures[feature] === true;
-            console.log(`  ${feature}: ${isEnabled ? '✅ ENABLED' : '❌ DISABLED/MISSING'}`);
-          });
-          console.log('========== END FEATURE DEBUG ==========');
-          
-          console.log('FeatureToggleProvider: Features loaded successfully', {
-            isSuperAdmin,
-            featuresCount: Object.keys(fetchedFeatures || {}).length
-          });
-          
         } else {
           console.error('FeatureToggleProvider: Invalid response structure');
           setError('Invalid response from permission system');
@@ -175,9 +116,7 @@ export const FeatureToggleProvider = ({ children }) => {
     
     // Check if the feature exists in the loaded features
     if (features && featureName in features) {
-      const isEnabled = features[featureName] === true;
-      console.log(`[FEATURE TOGGLE] Feature '${featureName}' for ${user?.role}: ${isEnabled}`);
-      return isEnabled;
+      return features[featureName] === true;
     }
     
     // Default to false for safety
@@ -204,7 +143,6 @@ export const FeatureToggleProvider = ({ children }) => {
       }
     });
     
-    console.log(`[FEATURE TOGGLE] Enabled features for ${user?.role}:`, enabledFeatures);
     return enabledFeatures;
   };
 

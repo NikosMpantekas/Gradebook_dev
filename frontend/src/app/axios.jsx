@@ -16,9 +16,7 @@ const generateRequestId = () => {
 };
 
 // Debug logging helper for API calls
-const logApiCall = (message, data) => {
-  console.log(`[API] ${message}`, data);
-};
+const logApiCall = (message, data) => {};
 
 // Extract domain or IP from URL for logging
 const getHostFromUrl = (url) => {
@@ -39,10 +37,7 @@ const isHttpsUrl = (url) => {
   }
 };
 
-// Log current API configuration
-logApiCall("Base API URL", API_URL);
-logApiCall("Using HTTPS", isHttpsUrl(API_URL));
-logApiCall("Target host", getHostFromUrl(API_URL));
+
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
@@ -74,12 +69,7 @@ axiosInstance.defaults.headers.common["Access-Control-Allow-Methods"] =
 axiosInstance.defaults.headers.common["Access-Control-Allow-Headers"] =
   "Origin, X-Requested-With, Content-Type, Accept, Authorization";
 
-// Log axios configuration
-logApiCall("Axios instance created with custom configuration", {
-  timeout: axiosInstance.defaults.timeout,
-  baseHeaders: axiosInstance.defaults.headers,
-  validateStatus: "Custom validator installed",
-});
+
 
 // Add request interceptor for authentication and deduplication
 axiosInstance.interceptors.request.use(
@@ -91,15 +81,6 @@ axiosInstance.interceptors.request.use(
     if (state?.auth?.user?.token) {
       // Add token to request headers
       config.headers["Authorization"] = `Bearer ${state.auth.user.token}`;
-
-      // Debug log for token validation
-      console.log(
-        "Adding auth token to request: ",
-        state.auth.user.token ? "Valid token" : "Invalid token",
-      );
-    } else {
-      // For debugging - log when no token is available
-      console.log("No authentication token available for request:", config.url);
     }
 
     // Generate a unique request ID for tracing
@@ -115,8 +96,6 @@ axiosInstance.interceptors.request.use(
 
       // Check if an identical request is already in flight
       if (requestCache.has(signature)) {
-        console.log(`[DUPLICATE REQUEST PREVENTED] ${method} ${config.url}`);
-
         // Return the existing request promise to prevent duplicate
         const source = axios.CancelToken.source();
         config.cancelToken = source.token;
@@ -129,16 +108,12 @@ axiosInstance.interceptors.request.use(
         setTimeout(() => {
           requestCache.delete(signature);
         }, DEDUPE_TIMEOUT);
-
-        console.log(`[REQUEST ${requestId}] ${method} ${config.url} (unique)`);
       }
     }
 
     return config;
   },
   (error) => {
-    // Handle request error
-    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   },
 );
@@ -169,40 +144,18 @@ axiosInstance.interceptors.response.use(
   (error) => {
     // Don't handle axios cancellation errors (from our deduplication)
     if (axios.isCancel(error)) {
-      console.log("Request cancelled:", error.message);
       return Promise.reject(error);
     }
 
-    // Enhanced error logging with detailed information
     if (error.config) {
       const method = error.config.method?.toUpperCase();
       const url = error.config.url;
       const signature = `${method}:${url}:${JSON.stringify(error.config.data || {})}`;
       requestCache.delete(signature);
-
-      // Extract the host for better diagnostics
-      const host = getHostFromUrl(url);
-      const isHttps = isHttpsUrl(url);
-
-      // Log error with request ID and enhanced details
-      const requestId = error.config.headers["x-request-id"] || "unknown";
-      console.error(`[ERROR ${requestId}] ${method} ${url} - ${error.message}`);
-
-      // Add specific logging for network/HTTPS errors
-      if (error.message === "Network Error" && isHttps) {
-        console.error(
-          `[SSL ERROR] Connection to ${host} failed - this is likely due to an untrusted SSL certificate`,
-        );
-        console.error(
-          "[SSL SOLUTION] Try using HTTP instead of HTTPS for IP-based backends, or install a trusted certificate",
-        );
-      }
     }
 
     // Handle maintenance mode (503 Service Unavailable)
     if (error.response && error.response.status === 503) {
-      console.log("[MAINTENANCE DETECTED] System is in maintenance mode");
-
       // Check if the response indicates maintenance mode
       const responseData = error.response.data;
       if (responseData && responseData.isMaintenanceMode) {
@@ -219,17 +172,8 @@ axiosInstance.interceptors.response.use(
         const isOnPublicRoute = publicRoutes.includes(currentPath);
 
         if (isOnPublicRoute) {
-          console.log(
-            "[MAINTENANCE] On public route, suppressing redirect:",
-            currentPath,
-          );
           return Promise.reject(error);
         }
-
-        console.log("[MAINTENANCE] Redirecting to maintenance page:", {
-          message: responseData.maintenanceMessage,
-          estimatedCompletion: responseData.estimatedCompletion,
-        });
 
         // Redirect to maintenance page if not already there
         if (!currentPath.includes("/maintenance")) {
@@ -241,10 +185,6 @@ axiosInstance.interceptors.response.use(
 
     // Handle rate limiting (429 Too Many Requests)
     if (error.response && error.response.status === 429) {
-      console.warn(
-        "[RATE LIMITED]",
-        error.response.data?.message || "Too many requests",
-      );
 
       const retrySeconds = error.response.data?.retryAfterSeconds;
       sessionStorage.setItem(
@@ -259,15 +199,12 @@ axiosInstance.interceptors.response.use(
 
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
-      console.error("Authentication error:", error.response.data);
-
       // Clear user data from storage if unauthorized
       localStorage.removeItem("user");
       sessionStorage.removeItem("user");
 
       // Redirect to login page if not already there
       if (!window.location.pathname.includes("/login")) {
-        console.log("Redirecting to login due to auth error");
         window.location.href = "/login";
       }
     }

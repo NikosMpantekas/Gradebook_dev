@@ -18,15 +18,11 @@ const setupAxios = () => {
       if (user && user.token) {
         // Add token to headers
         config.headers.Authorization = `Bearer ${user.token}`;
-        console.log('Token added to request:', config.url);
-      } else {
-        console.log('No token available for request:', config.url);
       }
 
       return config;
     },
     (error) => {
-      console.error('Request interceptor error:', error);
       return Promise.reject(error);
     }
   );
@@ -44,7 +40,7 @@ const setupAxios = () => {
 
       // Handle rate limiting (429 Too Many Requests)
       if (error.response && error.response.status === 429) {
-        console.warn('[RATE LIMITED]', error.response.data?.message || 'Too many requests');
+
         const retrySeconds = error.response.data?.retryAfterSeconds;
         sessionStorage.setItem('rateLimited', JSON.stringify({ retrySeconds, ts: Date.now() }));
         const msg = retrySeconds
@@ -55,7 +51,6 @@ const setupAxios = () => {
       
       // Handle 401 Unauthorized errors
       if (error.response && error.response.status === 401) {
-        console.error('Authentication error - will redirect to login');
         // Clear auth data from storage
         localStorage.removeItem('user');
         sessionStorage.removeItem('user');

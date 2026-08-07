@@ -13,10 +13,7 @@ const OfflineDetector = ({ children }) => {
   // Listen to global offline manager
   useEffect(() => {
     const handleOfflineStateChange = (isOffline) => {
-      console.log(
-        "OfflineDetector: State changed to",
-        isOffline ? "offline" : "online",
-      );
+
       setIsOnline(!isOffline);
       if (!isOffline) {
         setRetryCount(0);

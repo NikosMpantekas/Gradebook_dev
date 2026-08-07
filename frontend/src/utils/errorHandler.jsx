@@ -18,8 +18,6 @@ export const initGlobalErrorHandlers = () => {
   // Add global error handlers
   window.addEventListener('error', handleGlobalError);
   window.addEventListener('unhandledrejection', handlePromiseRejection);
-  
-  console.log('[ErrorHandler] Global error handlers initialized');
 };
 
 /**

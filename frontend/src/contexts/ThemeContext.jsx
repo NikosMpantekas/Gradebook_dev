@@ -357,10 +357,8 @@ export const ThemeProvider = ({ children }) => {
 
     const user = getUserFromStorage();
     if (user && user.token) {
-      console.log('🎨 User authenticated, fetching themes from API');
       fetchThemesFromAPI();
     } else {
-      console.log('🎨 No authenticated user, applying public page CSS with dark mode support');
       applyPublicPageCSS(darkMode);
       setLoading(false);
     }
@@ -572,10 +570,11 @@ export const ThemeProvider = ({ children }) => {
   // Fetch themes from API
   const fetchThemesFromAPI = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/themes`);
+      const user = getUserFromStorage();
+      const headers = user?.token ? { Authorization: `Bearer ${user.token}` } : {};
+      const response = await fetch(`${API_URL}/api/themes`, { headers });
       if (response.ok) {
         const apiData = await response.json();
-        console.log('🎨 Fetched themes from API:', apiData.length, 'themes');
         setApiThemes(apiData);
 
         // Convert API themes to our theme format
@@ -603,12 +602,9 @@ export const ThemeProvider = ({ children }) => {
             setCurrentTheme(defaultTheme._id);
           }
         }
-      } else {
-        console.warn('Failed to fetch themes from API, using fallback themes');
       }
-    } catch (error) {
-      console.error('Error fetching themes:', error);
-      console.log('Using fallback themes due to API error');
+    } catch {
+      // Use fallback themes
     } finally {
       setLoading(false);
     }
@@ -762,13 +758,10 @@ export const ThemeProvider = ({ children }) => {
   // Apply theme whenever current theme, dark mode, or auth state changes
   useEffect(() => {
     if (isPublicPath()) {
-      console.log('🎨 Public page detected, applying public page CSS with dark mode:', darkMode);
       applyPublicPageCSS(darkMode);
     } else if (!loading && themes[currentTheme] && authUser?.token) {
-      console.log('🎨 Applying theme for authenticated user:', currentTheme);
       applyTheme(currentTheme, darkMode);
     } else if (!authUser?.token) {
-      console.log('🎨 No authenticated user, applying public page CSS with dark mode:', darkMode);
       applyPublicPageCSS(darkMode);
     }
   }, [currentTheme, darkMode, loading, themes, authUser]);

@@ -21,14 +21,10 @@ const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
     }
 
     if (req.user && maintenanceDoc.canBypassMaintenance(req.user.role)) {
-      console.log(`[MAINTENANCE] User ${req.user.role} can bypass maintenance - allowing request`);
       return next();
     }
 
-    console.log(`[MAINTENANCE] Blocking request - maintenance mode active and user cannot bypass`, {
-      userRole: req.user?.role || "anonymous",
-      path: req.originalUrl
-    });
+    console.log('[MAINTENANCE] Blocking request:', req.originalUrl);
 
     res.status(503).json({
       success: false,
@@ -39,7 +35,7 @@ const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
       error: "Service temporarily unavailable"
     });
   } catch (error) {
-    console.error("[MAINTENANCE] Error checking maintenance status - failing closed:", error);
+    console.error("[MAINTENANCE] Error checking maintenance status:", error.message);
     res.status(503).json({
       success: false,
       message: "Unable to verify system status",

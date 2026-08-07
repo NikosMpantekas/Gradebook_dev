@@ -68,7 +68,7 @@ export const setupPushNotifications = async () => {
       throw new Error('Push notifications are not supported in this browser');
     }
     
-    console.log('Push notification prerequisites check passed');
+
     
     // 2. Ensure push service worker is registered and active
     let registration;
@@ -252,8 +252,6 @@ class PushNotificationManager {
     this.registration = null;
     this.subscription = null;
     this.isInitialized = false;
-    
-    console.log('[PushManager] Initialized');
   }
 
   /**

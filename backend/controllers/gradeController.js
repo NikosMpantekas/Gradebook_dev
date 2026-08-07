@@ -39,7 +39,7 @@ const createGrade = asyncHandler(async (req, res) => {
     });
     
     if (!studentUser) {
-      console.log('Student not found or not in the same school:', student);
+
       res.status(400);
       throw new Error('Student not found in this school');
     }
@@ -51,7 +51,7 @@ const createGrade = asyncHandler(async (req, res) => {
     });
     
     if (!subjectDoc) {
-      console.log('Subject not found or not in the same school:', subject);
+
       res.status(400);
       throw new Error('Subject not found in this school');
     }
@@ -59,19 +59,16 @@ const createGrade = asyncHandler(async (req, res) => {
     // Class-based validation: Admin users can bypass this check, teachers must be in same class
     if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       // Only apply class-based restrictions to teachers, not admins
-      console.log('Checking class-based authorization for teacher:', req.user._id, 'student:', student, 'subject:', subject);
-      
+
       const classes = await Class.find({
         schoolId: req.user.schoolId,
         teachers: req.user._id,
         students: student,
         subject: subjectDoc.name // Use subject name to match class subject
       });
-      
-      console.log(`Found ${classes.length} classes where teacher and student are both assigned with matching subject`);
-      
+
       if (classes.length === 0) {
-        console.log('No shared classes found with matching criteria');
+
         res.status(403);
         throw new Error('You are not authorized to add grades for this student with this subject. The student must be in one of your classes with the matching subject.');
       }
@@ -85,13 +82,13 @@ const createGrade = asyncHandler(async (req, res) => {
         schoolBranch: c.schoolBranch
       })));
     } else {
-      console.log('Admin user detected - bypassing class-based authorization check for user:', req.user._id, 'role:', req.user.role);
+
     }
     
     // Convert value to number and ensure it's within valid range (0-100)
     const numericValue = Number(value);
     if (isNaN(numericValue) || numericValue < 0 || numericValue > 100) {
-      console.log('Invalid grade value:', value);
+
       res.status(400);
       throw new Error('Grade value must be a number between 0 and 100');
     }
@@ -99,7 +96,7 @@ const createGrade = asyncHandler(async (req, res) => {
     // Format the date or use current date
     const gradeDate = date ? new Date(date) : new Date();
     if (isNaN(gradeDate.getTime())) {
-      console.log('Invalid date format:', date);
+
       res.status(400);
       throw new Error('Invalid date format');
     }
@@ -113,7 +110,7 @@ const createGrade = asyncHandler(async (req, res) => {
     });
     
     if (existingGrade) {
-      console.log('Found existing grade with same student, subject, and date:', existingGrade._id);
+
       res.status(400);
       throw new Error('A grade already exists for this student, subject, and date. Please use a different date or update the existing grade.');
     }
@@ -134,13 +131,11 @@ const createGrade = asyncHandler(async (req, res) => {
       gradeData.description = description;
     }
 
-    console.log('Creating grade with data:', { ...gradeData, teacher: req.user._id.toString() });
-
     // Create the grade in the database
     const grade = await Grade.create(gradeData);
     
     if (grade) {
-      console.log(`Successfully created grade. ID: ${grade._id}, Student: ${student}, Subject: ${subject}, Value: ${numericValue}, School: ${req.user.schoolId}`);
+
       res.status(201).json({
         _id: grade._id,
         student: grade.student,
@@ -151,7 +146,7 @@ const createGrade = asyncHandler(async (req, res) => {
         message: 'Grade successfully created'
       });
     } else {
-      console.log('Failed to create grade');
+
       res.status(400);
       throw new Error('Invalid grade data');
     }
@@ -214,26 +209,20 @@ const getAllGrades = asyncHandler(async (req, res) => {
 // @access  Private
 const getStudentGrades = asyncHandler(async (req, res) => {
   try {
-    console.log(`[GRADES] User ${req.user.name} (${req.user.role}) requesting grades for student ID: ${req.params.id}`);
-    
+
     // Authorization checks based on user role
     if (req.user.role === 'student' && req.user.id !== req.params.id) {
-      console.log(`[GRADES] Student ${req.user.id} denied access to other student's grades`);
+
       res.status(403);
       throw new Error('Not authorized to view other students\' grades');
     }
     
     // Parent authorization: check if requesting grades for their linked student
     if (req.user.role === 'parent') {
-      console.log(`[GRADES] ⚠️  PARENT ATTEMPTING INDIVIDUAL GRADE ACCESS`);
-      console.log(`[GRADES] Parent ID: ${req.user.id}`);
-      console.log(`[GRADES] Student ID requested: ${req.params.id}`);
-      console.log(`[GRADES] Parent linkedStudentIds:`, req.user.linkedStudentIds);
-      
+
       // CRITICAL BLOCK: Parent requesting grades for themselves (wrong usage)
       if (req.params.id === req.user.id) {
-        console.log(`[GRADES] 🚫 BLOCKED: Parent ${req.user.id} tried to access grades using their own ID`);
-        console.log(`[GRADES] 💡 SOLUTION: Parents should use /api/grades/parent/students endpoint`);
+
         res.status(400);
         throw new Error('Parent users should use /api/grades/parent/students endpoint instead of individual student grade calls');
       }
@@ -244,7 +233,7 @@ const getStudentGrades = asyncHandler(async (req, res) => {
       );
       
       if (!hasAccess) {
-        console.log(`[GRADES] Parent ${req.user.id} denied access to student ${req.params.id} - not linked`);
+
         res.status(403);
         throw new Error('Not authorized to view this student\'s grades - student not linked to your account');
       }
@@ -258,13 +247,11 @@ const getStudentGrades = asyncHandler(async (req, res) => {
     });
     
     if (!student) {
-      console.log(`[GRADES] Student ${req.params.id} not found in school ${req.user.schoolId}`);
+
       res.status(404);
       throw new Error('Student not found in this school');
     }
-    
-    console.log(`[GRADES] Found student: ${student.name} (${student._id})`);
-    
+
     // Find all grades for this student in this school
     const grades = await Grade.find({
       student: req.params.id,
@@ -273,9 +260,7 @@ const getStudentGrades = asyncHandler(async (req, res) => {
       .populate('subject', 'name')
       .populate('teacher', 'name')
       .sort({ date: -1 });
-    
-    console.log(`[GRADES] Found ${grades.length} grades for student ${student.name}`);
-    
+
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getStudentGrades controller:', error.message);
@@ -289,8 +274,7 @@ const getStudentGrades = asyncHandler(async (req, res) => {
 // @access  Private/Parent
 const getParentStudentsGrades = asyncHandler(async (req, res) => {
   try {
-    console.log(`[PARENT_GRADES] Parent ${req.user.name} requesting all linked students' grades`);
-    
+
     // Only parents can access this endpoint
     if (req.user.role !== 'parent') {
       res.status(403);
@@ -300,31 +284,25 @@ const getParentStudentsGrades = asyncHandler(async (req, res) => {
     // Check if user is parent and trying to access student grades
     if (req.user.role === 'parent') {
       // CRITICAL LOG: Track parent grade access attempts
-      console.log(`[PARENT_GRADE_ACCESS] Parent ${req.user._id} (${req.user.name}) requesting grades for students`);
-      console.log(`[PARENT_GRADE_ACCESS] Parent linkedStudentIds:`, req.user.linkedStudentIds);
-      
+
       // Parent can only access grades for their linked students
       if (!req.user.linkedStudentIds || req.user.linkedStudentIds.length === 0) {
-        console.log(`[PARENT_ACCESS_DENIED] Parent ${req.user._id} tried to access grades, but has no linked students:`, req.user.linkedStudentIds);
+
         return res.status(200).json({
           students: [],
           message: 'No students linked to your account'
         });
       }
-      console.log(`[PARENT_ACCESS_GRANTED] Parent ${req.user._id} accessing grades for linked students`);
+
     }
-    
-    console.log(`[PARENT_GRADES] Parent has ${req.user.linkedStudentIds.length} linked students:`, req.user.linkedStudentIds);
-    
+
     // Get all linked students with their information
     const students = await User.find({
       _id: { $in: req.user.linkedStudentIds },
       role: 'student',
       schoolId: req.user.schoolId
     }).select('name email class').populate('class', 'name');
-    
-    console.log(`[PARENT_GRADES] Found ${students.length} valid students in same school`);
-    
+
     // Get grades for each student
     const studentsWithGrades = await Promise.all(
       students.map(async (student) => {
@@ -349,9 +327,7 @@ const getParentStudentsGrades = asyncHandler(async (req, res) => {
         };
       })
     );
-    
-    console.log(`[PARENT_GRADES] Returning data for ${studentsWithGrades.length} students`);
-    
+
     res.status(200).json({
       students: studentsWithGrades,
       totalStudents: studentsWithGrades.length
@@ -402,9 +378,7 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
       res.status(403);
       throw new Error('Not authorized to view grades assigned by other teachers');
     }
-    
-    console.log(`[GetTeacherGrades] Fetching grades for teacher ${req.params.id}, role: ${req.user.role}`);
-    
+
     let gradeQuery = {
       teacher: req.params.id,
       schoolId: req.user.schoolId // Multi-tenancy: Only find grades in the same school
@@ -417,18 +391,15 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
         teachers: req.user._id,
         schoolId: req.user.schoolId
       });
-      
-      console.log(`[GetTeacherGrades] Found ${teacherClasses.length} classes for teacher`);
-      
+
       if (teacherClasses.length === 0) {
-        console.log(`[GetTeacherGrades] No classes found for teacher ${req.user._id}`);
+
         return res.status(200).json([]);
       }
       
       // Extract subject names from classes
       const teacherSubjects = [...new Set(teacherClasses.map(cls => cls.subject))];
-      console.log(`[GetTeacherGrades] Teacher subjects: [${teacherSubjects.join(', ')}]`);
-      
+
       // Get subject IDs from names
       const subjectObjects = await Subject.find({
         name: { $in: teacherSubjects },
@@ -438,8 +409,7 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
       
       // Extract all student IDs from teacher's classes
       const allStudentIds = [...new Set(teacherClasses.flatMap(cls => cls.students))];
-      console.log(`[GetTeacherGrades] Teacher has ${allStudentIds.length} students across all classes`);
-      
+
       // Filter grades by teacher's subjects and students
       gradeQuery.subject = { $in: subjectIds };
       gradeQuery.student = { $in: allStudentIds };
@@ -450,8 +420,7 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
       .populate('student', 'name')
       .populate('subject', 'name')
       .sort({ date: -1 });
-    
-    console.log(`[GetTeacherGrades] Returning ${grades.length} grades for teacher ${req.params.id}`);
+
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getGradesByTeacher controller:', error.message);
@@ -537,7 +506,7 @@ const updateGrade = asyncHandler(async (req, res) => {
     // Update the grade fields if provided
     // Handle null, empty string, or undefined values correctly
     if (value !== undefined) {
-      console.log(`[UPDATE GRADE] Processing grade value update: ${JSON.stringify(value)}`);
+
       // Allow null values to be set (to represent no grade/deleted grade)
       grade.value = value;
     }
@@ -555,7 +524,7 @@ const updateGrade = asyncHandler(async (req, res) => {
       });
       
       if (!studentUser) {
-        console.log('Student not found or not in the same school:', student);
+
         res.status(400);
         throw new Error('Student not found in this school');
       }
@@ -572,7 +541,7 @@ const updateGrade = asyncHandler(async (req, res) => {
       });
       
       if (!subjectDoc) {
-        console.log('Subject not found or not in the same school:', subject);
+
         res.status(400);
         throw new Error('Subject not found in this school');
       }
@@ -635,8 +604,7 @@ const deleteGrade = asyncHandler(async (req, res) => {
     }
     
     // Delete the grade - using modern Mongoose method instead of deprecated remove()
-    console.log(`[DELETE GRADE] Attempting to delete grade with ID: ${req.params.id}`);
-    
+
     // Use findByIdAndDelete instead of the deprecated remove() method
     const deletedGrade = await Grade.findByIdAndDelete(req.params.id);
     
@@ -644,8 +612,7 @@ const deleteGrade = asyncHandler(async (req, res) => {
       res.status(404);
       throw new Error('Grade could not be deleted or was already removed');
     }
-    
-    console.log(`[DELETE GRADE] Successfully deleted grade with ID: ${req.params.id}`);
+
     res.status(200).json({ message: 'Grade deleted successfully' });
   } catch (error) {
     console.error('Error deleting grade:', error.message);
@@ -653,8 +620,6 @@ const deleteGrade = asyncHandler(async (req, res) => {
     throw new Error(`Failed to delete grade: ${error.message}`);
   }
 });
-
-
 
 module.exports = {
   createGrade,

@@ -58,8 +58,6 @@ const ParentDashboard = () => {
     try {
       setLoading(true);
       
-      console.log('[PARENT_DASHBOARD] Fetching parent students and grades...');
-      
       // Fetch parent's linked students and their grades in one call
       const gradesResponse = await fetch(`${API_URL}/api/grades/parent/students`, {
         headers: {
@@ -70,7 +68,6 @@ const ParentDashboard = () => {
 
       if (gradesResponse.ok) {
         const gradesData = await gradesResponse.json();
-        console.log('[PARENT_DASHBOARD] Received grades data:', gradesData);
         
         if (gradesData.students) {
           // Extract student information
@@ -93,16 +90,12 @@ const ParentDashboard = () => {
           // Sort by date and take the most recent
           allGrades.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
           setRecentGrades(allGrades.slice(0, 10));
-          
-          console.log(`[PARENT_DASHBOARD] Found ${students.length} students and ${allGrades.length} total grades`);
         } else {
-          console.log('[PARENT_DASHBOARD] No students data in response');
           setStudentsData([]);
           setRecentGrades([]);
         }
       } else {
         const errorData = await gradesResponse.json();
-        console.error('[PARENT_DASHBOARD] Failed to fetch grades:', errorData);
         setError(errorData.message || 'Failed to load student grades');
       }
 

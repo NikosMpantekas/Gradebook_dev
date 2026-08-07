@@ -102,9 +102,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
   // Navigation items based on user role and school permissions
   const getNavigationItems = () => {
-    console.log('🔍 SIDEBAR MENU DEBUG: Building navigation for role:', user?.role);
-    console.log('🔍 SIDEBAR MENU DEBUG: Permissions loading:', permissionsLoading);
-
     if (isSuperAdmin) {
       return [
         { icon: Building, label: t('navigation.schoolManagement'), path: '/superadmin/school-permissions' },
@@ -250,9 +247,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
 
     }
-
-    console.log('🔍 SIDEBAR MENU DEBUG: Final items count:', items.length);
-    console.log('🔍 SIDEBAR MENU DEBUG: Final items:', items.map(item => item.label));
 
     return items;
   };

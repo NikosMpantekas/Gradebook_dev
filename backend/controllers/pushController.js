@@ -30,10 +30,10 @@ try {
 
   // Log first few characters for debugging (safe)
   if (vapidPublicKey) {
-    console.log('[PushController] Public key preview:', vapidPublicKey.substring(0, 20) + '...');
+
   }
   if (vapidPrivateKey) {
-    console.log('[PushController] Private key preview:', vapidPrivateKey.substring(0, 10) + '...');
+
   }
 
   if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
@@ -54,8 +54,7 @@ try {
     );
     
     vapidConfigured = true;
-    console.log('[PushController] VAPID keys configured successfully');
-    console.log('[PushController] Subject:', subject);
+
   }
 } catch (error) {
   console.error('[PushController] Error configuring VAPID keys:', error);
@@ -67,7 +66,7 @@ try {
 class PushNotificationService {
   constructor() {
     this.activeSubscriptions = new Map();
-    console.log('[PushService] Service initialized');
+
   }
 
   /**
@@ -155,7 +154,7 @@ class PushNotificationService {
 
       // Handle subscription expiration/invalid subscriptions
       if (error.statusCode === 410 || error.statusCode === 404) {
-        console.log('[PushService] Subscription expired/invalid, marking for removal');
+
         return {
           success: false,
           expired: true,
@@ -175,8 +174,7 @@ class PushNotificationService {
    * Send push to multiple subscriptions
    */
   async sendToMultipleSubscriptions(subscriptions, payload, options = {}) {
-    console.log(`[PushService] Sending push to ${subscriptions.length} subscriptions`);
-    
+
     const results = await Promise.allSettled(
       subscriptions.map(subscription => 
         this.sendToSubscription(subscription, payload, options)
@@ -207,7 +205,6 @@ class PushNotificationService {
       }
     });
 
-    console.log('[PushService] Push batch completed:', summary);
     return summary;
   }
 }
@@ -218,8 +215,7 @@ const pushService = new PushNotificationService();
 // @route   GET /api/notifications/vapid-public-key  
 // @access  Private
 const getVapidPublicKey = asyncHandler(async (req, res) => {
-  console.log('[PushController] VAPID public key request from user:', req.user._id);
-  
+
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   
   console.log('[PushController] VAPID key check:', {
@@ -247,7 +243,6 @@ const getVapidPublicKey = asyncHandler(async (req, res) => {
     });
   }
 
-  console.log('[PushController] Returning VAPID public key to client');
   res.status(200).json({ 
     success: true,
     vapidPublicKey: publicKey 
@@ -258,8 +253,7 @@ const getVapidPublicKey = asyncHandler(async (req, res) => {
 // @route   POST /api/notifications/subscription
 // @access  Private  
 const createPushSubscription = asyncHandler(async (req, res) => {
-  console.log('[PushController] Creating push subscription for user:', req.user._id);
-  
+
   const { endpoint, keys, expirationTime, userAgent, platform } = req.body;
   
   // Validation
@@ -285,8 +279,7 @@ const createPushSubscription = asyncHandler(async (req, res) => {
     });
 
     if (subscription) {
-      console.log('[PushController] Updating existing subscription');
-      
+
       // Update existing subscription
       subscription.keys = keys;
       subscription.expirationTime = expirationTime;
@@ -296,8 +289,7 @@ const createPushSubscription = asyncHandler(async (req, res) => {
       
       await subscription.save();
     } else {
-      console.log('[PushController] Creating new subscription');
-      
+
       // Create new subscription
       subscription = new PushSubscription({
         userId: req.user._id,
@@ -341,8 +333,7 @@ const createPushSubscription = asyncHandler(async (req, res) => {
 // @route   DELETE /api/notifications/subscription
 // @access  Private
 const deletePushSubscription = asyncHandler(async (req, res) => {
-  console.log('[PushController] Deleting push subscription for user:', req.user._id);
-  
+
   const { endpoint } = req.body;
   
   if (!endpoint) {
@@ -365,8 +356,6 @@ const deletePushSubscription = asyncHandler(async (req, res) => {
       });
     }
 
-    console.log('[PushController] Subscription deleted successfully');
-    
     res.status(200).json({
       success: true,
       message: 'Push subscription deleted successfully'
@@ -385,8 +374,7 @@ const deletePushSubscription = asyncHandler(async (req, res) => {
 // @route   POST /api/notifications/test
 // @access  Private
 const sendTestPush = asyncHandler(async (req, res) => {
-  console.log('[PushController] Test push notification request from user:', req.user._id);
-  
+
   const { title, body } = req.body;
 
   try {
@@ -402,8 +390,6 @@ const sendTestPush = asyncHandler(async (req, res) => {
         error: 'No active push subscriptions found'
       });
     }
-
-    console.log(`[PushController] Found ${subscriptions.length} active subscriptions for test`);
 
     // Prepare test payload
     const testPayload = {
@@ -426,7 +412,7 @@ const sendTestPush = asyncHandler(async (req, res) => {
       await PushSubscription.deleteMany({
         endpoint: { $in: results.expiredSubscriptions.map(sub => sub.endpoint) }
       });
-      console.log(`[PushController] Cleaned up ${results.expiredSubscriptions.length} expired subscriptions`);
+
     }
 
     res.status(200).json({
@@ -453,15 +439,12 @@ const sendTestPush = asyncHandler(async (req, res) => {
 // @route   GET /api/notifications/subscriptions
 // @access  Private
 const getUserSubscriptions = asyncHandler(async (req, res) => {
-  console.log('[PushController] Getting subscriptions for user:', req.user._id);
 
   try {
     const subscriptions = await PushSubscription.find({
       userId: req.user._id,
       isActive: true
     }).select('-keys'); // Don't send keys to client
-
-    console.log(`[PushController] Found ${subscriptions.length} active subscriptions`);
 
     const subscriptionInfo = subscriptions.map(sub => ({
       id: sub._id,

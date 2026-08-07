@@ -191,19 +191,15 @@ const StudentDashboard = () => {
     }
     
     if (user.role !== 'student') {
-      console.log('StudentDashboard: User is not student, redirecting');
       toast.error(t('student.accessDenied'));
       navigate('/app/dashboard');
       return;
     }
-    
-    console.log('StudentDashboard: Student user authenticated:', user.email);
   }, [user, navigate]);
 
   // Listen for refresh header counts events
   useEffect(() => {
-    const handleRefresh = (e) => {
-      console.log('StudentDashboard: Refresh event received:', e?.detail);
+    const handleRefresh = () => {
       fetchDashboardData();
     };
 
@@ -235,8 +231,6 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('StudentDashboard: Fetching dashboard data...');
       
       const promises = [];
       const dataKeys = [];
@@ -305,7 +299,6 @@ const StudentDashboard = () => {
       }));
       
       setDashboardData(newData);
-      console.log('StudentDashboard: Dashboard data loaded successfully');
       
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {

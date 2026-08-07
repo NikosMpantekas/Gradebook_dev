@@ -138,8 +138,6 @@
     "createSession": "Create Session",
     "noSessions": "No Sessions Found",
     "noSessionsDescription": "Create a new session to start tracking attendance",
-    "present": "Present",
-    "absent": "Absent",
     "sessionCreated": "Session created successfully",
     "failedToCreateSession": "Failed to create session",
     "studentAlreadyInList": "This student is already in the attendance list",
@@ -220,7 +218,6 @@
     "present": "Present",
     "absent": "Absent",
     "late": "Late",
-    "saveAttendance": "Save Attendance",
     "attendanceMarked": "Attendance marked successfully",
     "failedToMarkAttendance": "Failed to mark attendance",
     "noActiveSession": "No Active Session",
@@ -256,8 +253,7 @@
     "monthlyProgress": "Monthly Progress",
     "classesForDate": "Classes for",
     "noClassesForDate": "No classes scheduled for this day",
-    "monthlyAttendances": "Monthly Attendances",
-    "export": "Export"
+    "monthlyAttendances": "Monthly Attendances"
   },
   "ratings": {
     "answerRequiredQuestions": "Please answer all required questions",
@@ -765,7 +761,8 @@
     "logoutConfirmTitle": "Confirm Logout",
     "logoutConfirmDescription": "Are you sure you want to log out? ",
     "logoutConfirmText": "You will be redirected to the login page.",
-    "switchAccount": "Switch account"
+    "switchAccount": "Switch account",
+    "addAccount": "Add account"
   },
   "teacher": {
     "accessDenied": "Access denied. Teacher privileges required.",

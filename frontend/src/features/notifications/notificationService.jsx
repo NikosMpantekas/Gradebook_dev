@@ -86,24 +86,18 @@ const createNotification = async (notificationData, token) => {
 const getMyNotifications = async (token) => {
   try {
     const endpoint = API_NOTIFICATIONS;
-    console.log('Fetching my notifications from:', endpoint);
+
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     };
 
-    console.log('Request config:', { headers: { Authorization: 'Bearer [REDACTED]' } });
     const response = await axiosInstance.get(endpoint, config);
     
     if (response.status === 200) {
-      console.log(`Received ${response.data?.length || 0} notifications for me with status ${response.status}`);
-      if (response.data?.length === 0) {
-        console.log('Received empty array from server - this is normal if user has no notifications');
-      }
       return response.data || [];
     } else {
-      console.error(`Unexpected status ${response.status} when fetching my notifications`);
       return [];
     }
   } catch (error) {

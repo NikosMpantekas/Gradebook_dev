@@ -31,17 +31,7 @@ const Layout = () => {
   const { isBetaRoute } = useBeta();
   const isCurrentPageBeta = isBetaRoute(location.pathname);
 
-  // Debug logging for layout rendering
-  useEffect(() => {
-    console.log('Layout component rendering at path:', location.pathname);
-    console.log('Current user data:', user ? {
-      id: user._id,
-      name: user.name,
-      role: user.role,
-      hasToken: !!user.token
-    } : 'No user');
-    console.log('Sidebar state on render:', mobileOpen);
-  }, [location.pathname, user, mobileOpen]);
+
 
   // Enhanced drawer toggle that also persists the state
   const handleDrawerToggle = () => {

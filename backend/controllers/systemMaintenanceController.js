@@ -6,26 +6,10 @@ const SystemMaintenance = require('../models/systemMaintenanceModel');
 // @access  Public (needed for maintenance check)
 const getMaintenanceStatus = asyncHandler(async (req, res) => {
   try {
-    console.log('[MAINTENANCE] ==> Getting current maintenance status');
-    console.log('[MAINTENANCE] ==> Request URL:', req.originalUrl);
-    console.log('[MAINTENANCE] ==> Request method:', req.method);
-    console.log('[MAINTENANCE] ==> Request headers:', {
-      origin: req.headers.origin,
-      referer: req.headers.referer,
-      accept: req.headers.accept
-    });
-    console.log('[MAINTENANCE] ==> SystemMaintenance model available:', !!SystemMaintenance);
-    console.log('[MAINTENANCE] ==> SystemMaintenance.getCurrentStatus available:', typeof SystemMaintenance.getCurrentStatus);
-
     // Force JSON response
     res.setHeader('Content-Type', 'application/json');
 
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
-    console.log('[MAINTENANCE] Retrieved maintenance document:', {
-      exists: !!maintenanceDoc,
-      isMaintenanceMode: maintenanceDoc?.isMaintenanceMode,
-      message: maintenanceDoc?.maintenanceMessage?.substring(0, 50)
-    });
 
     // Public response (limited info for security)
     const publicResponse = {
@@ -43,22 +27,11 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
     if (req.user) {
       publicResponse.canBypass = maintenanceDoc.canBypassMaintenance(req.user.role);
       publicResponse.userRole = req.user.role;
-      console.log('[MAINTENANCE] User authenticated:', {
-        userId: req.user._id,
-        role: req.user.role,
-        canBypass: publicResponse.canBypass
-      });
     }
 
-    console.log('[MAINTENANCE] Status response prepared successfully');
     res.json(publicResponse);
   } catch (error) {
-    console.error('[MAINTENANCE] Error getting status - Full details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      code: error.code
-    });
+    console.error('[MAINTENANCE] Error getting status:', error.message);
     res.status(500).json({
       error: 'Failed to get maintenance status',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
@@ -72,24 +45,17 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const getMaintenanceDetails = asyncHandler(async (req, res) => {
   try {
-    console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} requesting full maintenance details`);
-
-    const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
-
     // Safely populate references with fallback handling
     try {
       await maintenanceDoc.populate('lastModifiedBy', 'name email role');
       await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
     } catch (populateError) {
-      console.warn('[MAINTENANCE] Populate error (non-fatal):', populateError.message);
       // Continue without population if users don't exist
     }
 
-    console.log('[MAINTENANCE] Successfully retrieved maintenance details');
     res.json(maintenanceDoc);
   } catch (error) {
     console.error('[MAINTENANCE] Error getting details:', error.message);
-    console.error('[MAINTENANCE] Error stack:', error.stack);
     res.status(500).json({
       error: 'Failed to get maintenance details',
       message: error.message
@@ -110,12 +76,6 @@ const updateMaintenanceMode = asyncHandler(async (req, res) => {
       allowedRoles,
       maintenanceType
     } = req.body;
-
-    console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} updating maintenance mode:`, {
-      isMaintenanceMode,
-      reason,
-      allowedRoles
-    });
 
     // Validate inputs
     if (typeof isMaintenanceMode !== 'boolean') {
@@ -180,15 +140,12 @@ const updateMaintenanceMode = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const getMaintenanceHistory = asyncHandler(async (req, res) => {
   try {
-    console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} requesting maintenance history`);
-
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
 
     // Safely populate history references with fallback handling
     try {
       await maintenanceDoc.populate('maintenanceHistory.modifiedBy', 'name email role');
     } catch (populateError) {
-      console.warn('[MAINTENANCE] History populate error (non-fatal):', populateError.message);
       // Continue without population if users don't exist
     }
 
@@ -197,14 +154,12 @@ const getMaintenanceHistory = asyncHandler(async (req, res) => {
       new Date(b.timestamp) - new Date(a.timestamp)
     );
 
-    console.log('[MAINTENANCE] Successfully retrieved maintenance history');
     res.json({
       history: sortedHistory,
       totalEntries: sortedHistory.length
     });
   } catch (error) {
     console.error('[MAINTENANCE] Error getting history:', error.message);
-    console.error('[MAINTENANCE] Error stack:', error.stack);
     res.status(500).json({
       error: 'Failed to get maintenance history',
       message: error.message
@@ -217,13 +172,9 @@ const getMaintenanceHistory = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const clearMaintenanceHistory = asyncHandler(async (req, res) => {
   try {
-    console.log(`[MAINTENANCE] SuperAdmin ${req.user._id} clearing maintenance history`);
-
     const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
     maintenanceDoc.maintenanceHistory = [];
     await maintenanceDoc.save();
-
-    console.log('[MAINTENANCE] Maintenance history cleared');
 
     res.json({
       message: 'Maintenance history cleared successfully'

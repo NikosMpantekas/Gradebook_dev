@@ -37,18 +37,13 @@ export const getMyNotifications = createAsyncThunk(
   'notifications/getMyNotifications',
   async (_, thunkAPI) => {
     try {
-      console.log('Dispatching getMyNotifications action');
       const token = thunkAPI.getState().auth.user.token;
       const response = await notificationService.getMyNotifications(token);
-      
-      // The service now guarantees an array will be returned even on error
-      console.log(`Successfully received ${response.length} notifications in action creator`);
       return response;
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
         return thunkAPI.rejectWithValue('CANCELLED');
       }
-      console.error('Error in getMyNotifications action creator:', error);
       return thunkAPI.rejectWithValue(error.message || 'Failed to fetch notifications');
     }
   }
@@ -59,18 +54,13 @@ export const getSentNotifications = createAsyncThunk(
   'notifications/getSentNotifications',
   async (_, thunkAPI) => {
     try {
-      console.log('Dispatching getSentNotifications action');
       const token = thunkAPI.getState().auth.user.token;
       const response = await notificationService.getSentNotifications(token);
-      
-      // The service now guarantees an array will be returned even on error
-      console.log(`Successfully received ${response.length} notifications in action creator`);
       return response; 
     } catch (error) {
       if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
         return thunkAPI.rejectWithValue('CANCELLED');
       }
-      console.error('Error in getSentNotifications action creator:', error);
       return thunkAPI.rejectWithValue(error.message || 'Failed to fetch sent notifications');
     }
   }
@@ -181,7 +171,6 @@ export const markNotificationAsSeen = createAsyncThunk(
     try {
       const token = thunkAPI.getState().auth.user.token;
       const response = await notificationService.markNotificationAsSeen(id, token);
-      console.log('markNotificationAsSeen API response:', response);
       return {
         ...response,
         id: id
@@ -394,13 +383,11 @@ export const notificationSlice = createSlice({
       .addCase(markNotificationAsSeen.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        console.log('Redux: markNotificationAsSeen fulfilled', action.payload);
         
         // Update notifications array
         if (state.notifications && state.notifications.length > 0) {
           state.notifications = state.notifications.map((notification) => {
             if (notification._id === action.payload.id) {
-              console.log('Redux: Updating notification in array', notification._id);
               return { ...notification, isSeen: true, seen: true };
             }
             return notification;
@@ -409,7 +396,6 @@ export const notificationSlice = createSlice({
         
         // Update single notification
         if (state.notification && state.notification._id === action.payload.id) {
-          console.log('Redux: Updating single notification', state.notification._id);
           state.notification = { ...state.notification, isSeen: true, seen: true };
         }
       })

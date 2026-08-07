@@ -38,13 +38,6 @@ export const eventsEndpoint = createApiEndpoint('/api/events');
 export const directionsEndpoint = createApiEndpoint('/api/directions');
 
 
-// Debug logging in development
-if (import.meta.env.MODE !== 'production') {
-  console.log('API Configuration:');
-  console.log(`Base API URL: ${API_URL}`);
-  console.log(`Auth Endpoint: ${authEndpoint()}`);
-  console.log(`Schools Endpoint: ${schoolsEndpoint()}`);
-}
 
 // Export base URL for direct access
 export { API_URL };
