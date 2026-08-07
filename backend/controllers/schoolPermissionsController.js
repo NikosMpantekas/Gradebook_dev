@@ -176,8 +176,6 @@ const getCurrentSchoolPermissions = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const getAllSchoolPermissions = asyncHandler(async (_, res) => {
   try {
-    console.log('🔍 [SchoolPermissions] Getting all schools with permissions for superadmin...');
-    
     // Get all schools - simplified approach for superadmin
     const schools = await School.find({}).lean();
     
@@ -188,21 +186,12 @@ const getAllSchoolPermissions = asyncHandler(async (_, res) => {
                             school.dbConfig.dbName.trim().length > 0;
       
       if (!hasValidDbName) {
-        console.log(`🚫 [SchoolPermissions] Filtered out branch: ${school.name} (dbName: '${school.dbConfig?.dbName}')`);
         return false;
       }
       return true;
     });
     
-    console.log(`📊 [SchoolPermissions] Found ${mainSchools.length} MAIN schools (filtered out ${schools.length - mainSchools.length} branches)`);
-    
-    // Log details about what we found
-    mainSchools.forEach(school => {
-      console.log(`🏫 [SchoolPermissions] Main school: ${school.name} (dbName: ${school.dbConfig?.dbName})`);
-    });
-    
     if (mainSchools.length === 0) {
-      console.log('⚠️ [SchoolPermissions] No MAIN schools found in database');
       res.json({
         success: true,
         message: 'No main schools found',
@@ -217,11 +206,8 @@ const getAllSchoolPermissions = asyncHandler(async (_, res) => {
     
     for (const school of mainSchools) {
       try {
-        console.log(`🏫 [SchoolPermissions] Processing school: ${school.name} (${school._id})`);
-        
         // CRITICAL FIX: Validate school._id before using it
         if (!school._id) {
-          console.error(`❌ [SchoolPermissions] School has invalid ID: ${school.name}`);
           errors.push({ schoolName: school.name, error: 'Invalid school ID' });
           continue;
         }
@@ -230,7 +216,6 @@ const getAllSchoolPermissions = asyncHandler(async (_, res) => {
         const permissions = await SchoolPermissions.getSchoolPermissions(school._id);
         
         if (!permissions) {
-          console.log(`🆕 [SchoolPermissions] Creating default permissions for ${school.name}`);
           await SchoolPermissions.createDefaultPermissions(school._id);
           const newPermissions = await SchoolPermissions.getSchoolPermissions(school._id);
           
@@ -254,11 +239,7 @@ const getAllSchoolPermissions = asyncHandler(async (_, res) => {
             permissions: permissions
           });
         }
-        
-        console.log(`✅ [SchoolPermissions] Successfully processed ${school.name}`);
-        
       } catch (error) {
-        console.error(`💥 [SchoolPermissions] Error processing school ${school.name}:`, error.message);
         errors.push({ 
           schoolName: school.name, 
           schoolId: school._id,
@@ -267,8 +248,6 @@ const getAllSchoolPermissions = asyncHandler(async (_, res) => {
         // Continue with other schools even if one fails
       }
     }
-    
-    console.log(`🎉 [SchoolPermissions] Completed processing. Success: ${schoolsWithPermissions.length}, Errors: ${errors.length}`);
     
     res.json({
       success: true,
@@ -281,7 +260,7 @@ const getAllSchoolPermissions = asyncHandler(async (_, res) => {
     });
     
   } catch (error) {
-    console.error('💥 [SchoolPermissions] Critical error getting all school permissions:', error);
+    console.error('Critical error getting all school permissions:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get school permissions',
@@ -313,21 +292,12 @@ const fixSchoolPermissions = asyncHandler(async (req, res) => {
                             school.dbConfig.dbName.trim().length > 0;
       
       if (!hasValidDbName) {
-        console.log(`🚫 [SchoolPermissions] Filtered out branch: ${school.name} (dbName: '${school.dbConfig?.dbName}')`);
         return false;
       }
       return true;
     });
     
-    console.log(`📊 [SchoolPermissions] Found ${mainSchools.length} MAIN schools for permissions fix (filtered out ${schools.length - mainSchools.length} branches)`);
-    
-    // Log which schools we're processing
-    mainSchools.forEach(school => {
-      console.log(`🏫 [SchoolPermissions] Will fix: ${school.name} (dbName: ${school.dbConfig?.dbName})`);
-    });
-    
     if (mainSchools.length === 0) {
-      console.log('⚠️ [SchoolPermissions] No MAIN schools found to fix permissions for');
       res.json({
         success: true,
         message: 'No main schools found to fix permissions for',

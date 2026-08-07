@@ -159,7 +159,6 @@ const ManageUsers = () => {
       });
     }
 
-    console.log('Filtered users:', filtered.length, 'out of', users.length);
     setFilteredUsers(filtered);
     setPage(0);
   }, [users, searchTerm, roleFilter, schoolFilter, classFilter, classes]);
@@ -198,31 +197,14 @@ const ManageUsers = () => {
 
   // Monitor data loading state changes
   useEffect(() => {
-    console.log('Loading state changed:', {
-      usersLoading: isLoading,
-      usersCount: Array.isArray(users) ? users.length : 'not array',
-      schoolsCount: Array.isArray(schools) ? schools.length : 'not array'
-    });
-
     // If we just finished loading and have data, apply filters
     if (!isLoading && Array.isArray(users) && users.length > 0) {
       applyFilters();
     }
   }, [isLoading, users, schools, classes, applyFilters]);
 
-  // Debug logs
-  console.log('ManageUsers rendering:', {
-    userState: currentUser?.name,
-    usersInStore: Array.isArray(users) ? users.length : 'not an array',
-    isLoadingState: isLoading,
-    isErrorState: isError,
-    dataLoaded: dataLoaded.current
-  });
-
   // IMPORTANT: Fix for the infinite loading state issue
   useEffect(() => {
-    console.log('ManageUsers mounting and fetching data');
-
     // Reset the state first to clear any previous data
     dispatch(reset());
 
@@ -235,7 +217,6 @@ const ManageUsers = () => {
 
     // Clean up on unmount
     return () => {
-      console.log('ManageUsers unmounting');
       dataLoaded.current = false;
     };
   }, [dispatch]);
@@ -244,7 +225,6 @@ const ManageUsers = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('Tab became visible again, refreshing data');
         dispatch(getUsers());
         dispatch(getSchools());
       }
@@ -268,7 +248,6 @@ const ManageUsers = () => {
 
   useEffect(() => {
     if (Array.isArray(users) && users.length > 0) {
-      console.log('Applying filters to', users.length, 'users');
       applyFilters();
     } else if (!isLoading && Array.isArray(users)) {
       applyFilters();

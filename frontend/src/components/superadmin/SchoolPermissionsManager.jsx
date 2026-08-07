@@ -52,15 +52,13 @@ const SchoolPermissionsManager = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📋 [SchoolPermissions] API Response:', data);
         
         // Handle the nested structure from backend
         const schoolsArray = data?.data?.schools || data?.schools || [];
-        console.log('✅ [SchoolPermissions] Extracted schools array:', schoolsArray);
         
         // Ensure we have an array
         if (!Array.isArray(schoolsArray)) {
-          console.error('❌ [SchoolPermissions] Schools data is not an array:', schoolsArray);
+          console.error('[SchoolPermissions] Schools data is not an array:', schoolsArray);
           setSchools([]);
           return;
         }
@@ -297,12 +295,12 @@ const SchoolPermissionsManager = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-2xl font-bold">{school.name}</CardTitle>
-                  <p className="text-muted-foreground mt-1">
+                  <div className="text-muted-foreground mt-1">
                     {school.emailDomain} • 
                     <Badge variant={school.active ? "default" : "secondary"} className="ml-2">
                       {school.active ? "Active" : "Inactive"}
                     </Badge>
-                  </p>
+                  </div>
                 </div>
                 <Button
                   onClick={() => saveSchoolPermissions(school._id)}
