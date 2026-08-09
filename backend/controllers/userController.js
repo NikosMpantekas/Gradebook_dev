@@ -1,25 +1,32 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const asyncHandler = require('../utils/asyncHandler');
-const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
-const User = require('../models/userModel');
-const Class = require('../models/classModel');
-const logger = require('../utils/logger');
-const Contact = require('../models/contactModel');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const asyncHandler = require("../utils/asyncHandler");
+const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+const User = require("../models/userModel");
+const Class = require("../models/classModel");
+const logger = require("../utils/logger");
+const Contact = require("../models/contactModel");
 // Single database architecture - no need for multiDbConnect
 
 // Email service function for sending credentials via Brevo SMTP
-const sendCredentialsEmail = async ({ name, email, loginEmail, password, role, studentName }) => {
+const sendCredentialsEmail = async ({
+  name,
+  email,
+  loginEmail,
+  password,
+  role,
+  studentName,
+}) => {
   // Create transporter for Brevo SMTP
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
     port: process.env.SMTP_PORT || 587,
     secure: false, // false for port 587
     auth: {
       user: process.env.SMTP_USER, // Your Brevo account email
-      pass: process.env.SMTP_PASS  // Your Brevo SMTP key
-    }
+      pass: process.env.SMTP_PASS, // Your Brevo SMTP key
+    },
   });
 
   const emailTemplate = `
@@ -36,7 +43,7 @@ const sendCredentialsEmail = async ({ name, email, loginEmail, password, role, s
         
         <p style="color: #555; line-height: 1.6;">
           Your account has been created in the GradeBook system with the role of <strong>${role}</strong>.
-          ${role === 'parent' ? `This account is linked to your child <strong>${studentName}</strong>, allowing you to monitor their academic progress, grades, and school communications.` : 'You can now access the system using the credentials below.'}
+          ${role === "parent" ? `This account is linked to your child <strong>${studentName}</strong>, allowing you to monitor their academic progress, grades, and school communications.` : "You can now access the system using the credentials below."}
         </p>
         
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1976d2;">
@@ -54,7 +61,7 @@ const sendCredentialsEmail = async ({ name, email, loginEmail, password, role, s
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" 
+          <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/login" 
              style="background-color: #1976d2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
             🚀 Login to GradeBook
           </a>
@@ -70,15 +77,14 @@ const sendCredentialsEmail = async ({ name, email, loginEmail, password, role, s
   `;
 
   const mailOptions = {
-    from: `"${process.env.SMTP_FROM_NAME || 'GradeBook System'}" <${process.env.SMTP_FROM_EMAIL || 'mail@gradebook.pro'}>`,
+    from: `"${process.env.SMTP_FROM_NAME || "GradeBook System"}" <${process.env.SMTP_FROM_EMAIL || "mail@gradebook.pro"}>`,
     to: email,
     subject: `🎓 Welcome to GradeBook - Your Login Credentials`,
     html: emailTemplate,
-    replyTo: process.env.SMTP_FROM_EMAIL || 'mail@gradebook.pro'
+    replyTo: process.env.SMTP_FROM_EMAIL || "mail@gradebook.pro",
   };
 
   await transporter.sendMail(mailOptions);
-
 };
 
 // NEW: Forgot password request handler
@@ -89,31 +95,37 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   const { email } = req.body || {};
 
   // Always respond generically to avoid account enumeration
-  const genericOk = () => res.status(200).json({ message: 'If this email is registered, the appropriate administrator has been notified.' });
+  const genericOk = () =>
+    res
+      .status(200)
+      .json({
+        message:
+          "If this email is registered, the appropriate administrator has been notified.",
+      });
 
-  if (!email || typeof email !== 'string') {
-
+  if (!email || typeof email !== "string") {
     return genericOk();
   }
 
   try {
     // Try to find the user by email
-    const user = await User.findOne({ email }).select('_id name email role schoolId');
+    const user = await User.findOne({ email }).select(
+      "_id name email role schoolId",
+    );
 
     if (!user) {
-
       return genericOk();
     }
 
     // Resolve school name for display in the contact message
-    let schoolName = 'Μη διαθέσιμο';
+    let schoolName = "Μη διαθέσιμο";
     if (user.schoolId) {
-      const School = require('../models/schoolModel');
-      const school = await School.findById(user.schoolId).select('name').lean();
+      const School = require("../models/schoolModel");
+      const school = await School.findById(user.schoolId).select("name").lean();
       if (school) schoolName = school.name;
     }
 
-    console.log('[FORGOT-PASSWORD] Found user', {
+    console.log("[FORGOT-PASSWORD] Found user", {
       id: user._id?.toString(),
       name: user.name,
       email: user.email,
@@ -127,29 +139,29 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 
     const bodyLines = [
       `Ένας χρήστης ζήτησε επαναφορά κωδικού πρόσβασης.`,
-      `Όνομα: ${user.name || 'Μη διαθέσιμο'}`,
+      `Όνομα: ${user.name || "Μη διαθέσιμο"}`,
       `Email: ${user.email}`,
       `Ρόλος: ${user.role}`,
       `Φροντιστήριο: ${schoolName}`,
-      '',
-      'Αίτημα ενέργειας: Παρακαλώ επαναφέρετε τον κωδικό πρόσβασης του χρήστη μέσω του πίνακα διαχείρισης.',
+      "",
+      "Αίτημα ενέργειας: Παρακαλώ επαναφέρετε τον κωδικό πρόσβασης του χρήστη μέσω του πίνακα διαχείρισης.",
     ].filter(Boolean);
 
     const contactDoc = await Contact.create({
       user: user._id,
       schoolId: user.schoolId || undefined,
       subject,
-      message: bodyLines.join('\n'),
+      message: bodyLines.join("\n"),
       userName: user.name || user.email,
       userEmail: user.email,
       userRole: user.role,
-      status: 'new',
+      status: "new",
       read: false,
       isBugReport: false,
       isPublicContact: false,
     });
 
-    console.log('[FORGOT-PASSWORD] Contact message created', {
+    console.log("[FORGOT-PASSWORD] Contact message created", {
       contactId: contactDoc?._id?.toString(),
       subject,
       schoolId: contactDoc?.schoolId?.toString() || null,
@@ -157,7 +169,10 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 
     return genericOk();
   } catch (err) {
-    console.error('[FORGOT-PASSWORD] Handler error', { message: err.message, stack: err.stack });
+    console.error("[FORGOT-PASSWORD] Handler error", {
+      message: err.message,
+      stack: err.stack,
+    });
     return genericOk();
   }
 });
@@ -169,48 +184,53 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const clientIp = req.ip;
 
-  logger.info('AUTH', `Login attempt for email: ${email}`, {
+  logger.info("AUTH", `Login attempt for email: ${email}`, {
     ip: clientIp,
-    userAgent: req.headers['user-agent'],
-    requestPath: req.path
+    userAgent: req.headers["user-agent"],
+    requestPath: req.path,
   });
 
   // Special handling for superadmin logins - always check by role
   try {
-    const isSuperAdmin = await User.findOne({ email, role: 'superadmin' });
+    const isSuperAdmin = await User.findOne({ email, role: "superadmin" });
 
-    logger.info('AUTH', 'Superadmin check result', {
+    logger.info("AUTH", "Superadmin check result", {
       email,
       found: !!isSuperAdmin,
       superadminId: isSuperAdmin?._id,
-      hasPassword: !!isSuperAdmin?.password
+      hasPassword: !!isSuperAdmin?.password,
     });
 
     if (isSuperAdmin) {
-      logger.info('AUTH', 'Superadmin login attempt', {
+      logger.info("AUTH", "Superadmin login attempt", {
         id: isSuperAdmin._id,
         name: isSuperAdmin.name,
         active: isSuperAdmin.active,
         createdAt: isSuperAdmin.createdAt,
-        hasToken: false // Not yet generated
+        hasToken: false, // Not yet generated
       });
 
       // Verify superadmin password and login status
       if (isSuperAdmin.active === false) {
-        logger.warn('AUTH', `Superadmin account is disabled`, {
+        logger.warn("AUTH", `Superadmin account is disabled`, {
           id: isSuperAdmin._id,
-          email
+          email,
         });
         res.status(403);
-        throw new Error('Your account has been disabled. Please contact system administrator');
+        throw new Error(
+          "Your account has been disabled. Please contact system administrator",
+        );
       }
 
       const isMatch = await bcrypt.compare(password, isSuperAdmin.password);
       if (!isMatch) {
-        logger.warn('AUTH', 'Invalid superadmin password', { id: isSuperAdmin._id, email });
+        logger.warn("AUTH", "Invalid superadmin password", {
+          id: isSuperAdmin._id,
+          email,
+        });
 
         res.status(401);
-        throw new Error('Invalid credentials');
+        throw new Error("Invalid credentials");
       }
 
       // Update login timestamp and refresh token without triggering validation
@@ -219,29 +239,29 @@ const loginUser = asyncHandler(async (req, res) => {
         { _id: isSuperAdmin._id },
         {
           lastLogin: Date.now(),
-          saveCredentials: req.body.saveCredentials || false
-        }
+          saveCredentials: req.body.saveCredentials || false,
+        },
       );
 
       // Generate access token and refresh token for superadmin
       const accessToken = generateToken(isSuperAdmin._id);
       const userRefreshToken = generateRefreshToken(isSuperAdmin._id);
 
-      logger.info('AUTH', 'Superadmin tokens generated', {
+      logger.info("AUTH", "Superadmin tokens generated", {
         id: isSuperAdmin._id,
         hasAccessToken: !!accessToken,
         hasRefreshToken: !!userRefreshToken,
         accessTokenLength: accessToken?.length,
-        refreshTokenLength: userRefreshToken?.length
+        refreshTokenLength: userRefreshToken?.length,
       });
 
       // Save refresh token also using updateOne to bypass validation
       await User.updateOne(
         { _id: isSuperAdmin._id },
-        { refreshToken: userRefreshToken }
+        { refreshToken: userRefreshToken },
       );
 
-      logger.info('AUTH', 'Superadmin data updated successfully');
+      logger.info("AUTH", "Superadmin data updated successfully");
 
       // Prepare response object with detailed logging
       const responseObj = {
@@ -258,43 +278,43 @@ const loginUser = asyncHandler(async (req, res) => {
         schools: [],
         directions: [],
         subjects: [],
-        darkMode: isSuperAdmin.darkMode || false
+        darkMode: isSuperAdmin.darkMode || false,
       };
 
       // Log the response object keys for debugging
-      logger.info('AUTH', 'Superadmin login response prepared', {
+      logger.info("AUTH", "Superadmin login response prepared", {
         responseKeys: Object.keys(responseObj),
         hasId: !!responseObj._id,
         role: responseObj.role,
-        hasToken: !!responseObj.token
+        hasToken: !!responseObj.token,
       });
 
       // Return superadmin user information with all fields expected by frontend
       return res.json(responseObj);
     }
   } catch (error) {
-    logger.error('AUTH', 'Error during superadmin authentication', {
+    logger.error("AUTH", "Error during superadmin authentication", {
       error: error.message,
       stack: error.stack,
-      email
+      email,
     });
     throw error; // Re-throw to be caught by error handler
   }
 
   // For non-superadmin users, determine the school based on email domain
-  const emailDomain = email.split('@')[1];
+  const emailDomain = email.split("@")[1];
   if (!emailDomain) {
-
     res.status(401);
-    throw new Error('Invalid email format');
+    throw new Error("Invalid email format");
   }
 
   // Find the school associated with this email domain
-  const school = await mongoose.model('School').findOne({ emailDomain });
+  const school = await mongoose.model("School").findOne({ emailDomain });
   if (!school) {
-
     res.status(401);
-    throw new Error('Invalid email domain. Please use your school email address.');
+    throw new Error(
+      "Invalid email domain. Please use your school email address.",
+    );
   }
 
   // In the single-database architecture, we find the user directly with schoolId filter
@@ -303,29 +323,28 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const user = await User.findOne({
       email,
-      schoolId: school._id
+      schoolId: school._id,
     });
 
     // If user not found
     if (!user) {
-
       res.status(401);
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
     // Check if user account is active
     if (user.active === false) {
-
       res.status(403);
-      throw new Error('Your account has been disabled. Please contact administrator');
+      throw new Error(
+        "Your account has been disabled. Please contact administrator",
+      );
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-
       res.status(401);
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
     // Update user's last login timestamp
@@ -339,23 +358,31 @@ const loginUser = asyncHandler(async (req, res) => {
     // Get school feature permissions from the dedicated SchoolPermissions collection
     let schoolFeatures = null;
     if (user.schoolId) {
-      const SchoolPermissions = mongoose.model('SchoolPermissions');
+      const SchoolPermissions = mongoose.model("SchoolPermissions");
 
       // Try to find permissions for this school
-      let permissions = await SchoolPermissions.findOne({ schoolId: user.schoolId });
+      let permissions = await SchoolPermissions.findOne({
+        schoolId: user.schoolId,
+      });
 
       // If no permissions record exists yet, check legacy location and create one
       if (!permissions) {
-        logger.info('AUTH', 'No dedicated permissions found, creating default permissions', {
-          schoolId: user.schoolId,
-        });
+        logger.info(
+          "AUTH",
+          "No dedicated permissions found, creating default permissions",
+          {
+            schoolId: user.schoolId,
+          },
+        );
 
         // Create default permissions using SchoolPermissions model (no legacy fallback)
-        permissions = await SchoolPermissions.createDefaultPermissions(user.schoolId);
+        permissions = await SchoolPermissions.createDefaultPermissions(
+          user.schoolId,
+        );
 
-        logger.info('AUTH', 'Created new school permissions from legacy data', {
+        logger.info("AUTH", "Created new school permissions from legacy data", {
           schoolId: user.schoolId,
-          features: Object.keys(permissions.features)
+          features: Object.keys(permissions.features),
         });
       }
 
@@ -363,21 +390,25 @@ const loginUser = asyncHandler(async (req, res) => {
       if (permissions && permissions.features) {
         schoolFeatures = permissions.features;
 
-        logger.info('AUTH', 'School features loaded from permissions collection', {
-          schoolId: user.schoolId,
-          features: Object.keys(permissions.features),
-          lastModified: permissions.lastModifiedDate
-        });
+        logger.info(
+          "AUTH",
+          "School features loaded from permissions collection",
+          {
+            schoolId: user.schoolId,
+            features: Object.keys(permissions.features),
+            lastModified: permissions.lastModifiedDate,
+          },
+        );
       }
     }
 
-    logger.info('AUTH', 'Regular user login successful', {
+    logger.info("AUTH", "Regular user login successful", {
       userId: user._id,
       role: user.role,
       schoolId: user.schoolId,
       hasToken: true,
       tokenLength: token.length,
-      hasSchoolFeatures: !!schoolFeatures
+      hasSchoolFeatures: !!schoolFeatures,
     });
 
     const responseData = {
@@ -394,10 +425,10 @@ const loginUser = asyncHandler(async (req, res) => {
       canSendNotifications: user.canSendNotifications,
       canAddGradeDescriptions: user.canAddGradeDescriptions,
       // Profile fields
-      mobilePhone: user.mobilePhone || '',
-      personalEmail: user.personalEmail || '',
-      dateOfBirth: user.dateOfBirth || '',
-      department: user.department || '',
+      mobilePhone: user.mobilePhone || "",
+      personalEmail: user.personalEmail || "",
+      dateOfBirth: user.dateOfBirth || "",
+      department: user.department || "",
       // Include school feature permissions
       schoolFeatures,
       // First-login password change fields
@@ -407,13 +438,12 @@ const loginUser = asyncHandler(async (req, res) => {
     };
 
     // Add pack information for admin users
-    if (user.role === 'admin') {
-      responseData.packType = user.packType || 'lite';
+    if (user.role === "admin") {
+      responseData.packType = user.packType || "lite";
       responseData.monthlyPrice = user.monthlyPrice || 0;
     }
 
     res.json(responseData);
-
   } catch (error) {
     console.error(`Login error: ${error.message}`);
     res.status(401);
@@ -436,13 +466,16 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   if (!tokenFromRequest) {
     res.status(400);
-    throw new Error('Refresh token is required');
+    throw new Error("Refresh token is required");
   }
 
   // Rate limiting check
   const now = Date.now();
   const userKey = `${clientIP}:${tokenFromRequest.slice(-10)}`; // Use last 10 chars as identifier
-  const attempts = refreshAttempts.get(userKey) || { count: 0, resetTime: now + 15 * 60 * 1000 };
+  const attempts = refreshAttempts.get(userKey) || {
+    count: 0,
+    resetTime: now + 15 * 60 * 1000,
+  };
 
   if (now > attempts.resetTime) {
     // Reset attempts after 15 minutes
@@ -451,9 +484,11 @@ const refreshToken = asyncHandler(async (req, res) => {
   }
 
   if (attempts.count >= 10) {
-    console.warn(`[SECURITY] Refresh token rate limit exceeded for IP: ${clientIP}`);
+    console.warn(
+      `[SECURITY] Refresh token rate limit exceeded for IP: ${clientIP}`,
+    );
     res.status(429);
-    throw new Error('Too many refresh attempts. Please try again later.');
+    throw new Error("Too many refresh attempts. Please try again later.");
   }
 
   attempts.count += 1;
@@ -462,26 +497,28 @@ const refreshToken = asyncHandler(async (req, res) => {
   try {
     // Check if token is blacklisted (revoked)
     if (revokedRefreshTokens.has(tokenFromRequest)) {
-      console.warn(`[SECURITY] Attempted use of revoked refresh token from IP: ${clientIP}`);
+      console.warn(
+        `[SECURITY] Attempted use of revoked refresh token from IP: ${clientIP}`,
+      );
       res.status(401);
-      throw new Error('Refresh token has been revoked');
+      throw new Error("Refresh token has been revoked");
     }
 
     // Verify the refresh token
     const decoded = jwt.verify(tokenFromRequest, process.env.JWT_SECRET);
 
     // Check if it's actually a refresh token
-    if (!decoded.type || decoded.type !== 'refresh') {
+    if (!decoded.type || decoded.type !== "refresh") {
       res.status(401);
-      throw new Error('Invalid refresh token');
+      throw new Error("Invalid refresh token");
     }
 
     // Find the user
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
       res.status(401);
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // SECURITY: Token Rotation - Generate both new access AND refresh tokens
@@ -496,15 +533,17 @@ const refreshToken = asyncHandler(async (req, res) => {
 
     // Return new tokens (BOTH access and refresh)
     res.json({
-      token: newAccessToken,        // Frontend expects 'token' field
+      token: newAccessToken, // Frontend expects 'token' field
       refreshToken: newRefreshToken, // New refresh token for next rotation
-      message: 'Tokens refreshed successfully'
+      message: "Tokens refreshed successfully",
     });
-
   } catch (error) {
-    console.error(`[SECURITY] Refresh token validation failed for IP ${clientIP}:`, error.message);
+    console.error(
+      `[SECURITY] Refresh token validation failed for IP ${clientIP}:`,
+      error.message,
+    );
     res.status(401);
-    throw new Error('Invalid refresh token - ' + error.message);
+    throw new Error("Invalid refresh token - " + error.message);
   }
 });
 
@@ -525,8 +564,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   }
 
   res.json({
-    message: 'Logged out successfully',
-    revokedToken: !!refreshToken
+    message: "Logged out successfully",
+    revokedToken: !!refreshToken,
   });
 });
 
@@ -534,27 +573,25 @@ const logoutUser = asyncHandler(async (req, res) => {
 // @route   GET /api/users/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
-
   // Find user and populate all reference fields
   const user = await User.findById(req.user.id)
-    .select('-password')
+    .select("-password")
     // Populate both old and new field names for maximum compatibility
-    .populate('school', 'name')     // Old: Single school field (students)
-    .populate('schoolId', 'name')   // New: single DB tenant identifier
-    .populate('direction', 'name direction subject schoolBranch')  // Legacy field now references Class model
-    .populate('schools', 'name')    // New: Multiple schools array (teachers)
-    .populate('directions', 'name direction subject schoolBranch') // Legacy field now references Class model
-    .populate('subjects', 'name');  // Multiple subjects array (both roles)
+    .populate("school", "name") // Old: Single school field (students)
+    .populate("schoolId", "name") // New: single DB tenant identifier
+    .populate("direction", "name direction subject schoolBranch") // Legacy field now references Class model
+    .populate("schools", "name") // New: Multiple schools array (teachers)
+    .populate("directions", "name direction subject schoolBranch") // Legacy field now references Class model
+    .populate("subjects", "name"); // Multiple subjects array (both roles)
 
   if (user) {
     // Convert to plain object to add pack fields if needed
     const userResponse = user.toObject();
 
     // Add pack information for admin users
-    if (user.role === 'admin') {
-      userResponse.packType = user.packType || 'lite';
+    if (user.role === "admin") {
+      userResponse.packType = user.packType || "lite";
       userResponse.monthlyPrice = user.monthlyPrice || 0;
-
     }
 
     // Ensure schoolName is set since frontend expects it
@@ -567,7 +604,7 @@ const getMe = asyncHandler(async (req, res) => {
     res.status(200).json(userResponse);
   } else {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 });
 
@@ -580,23 +617,42 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (user) {
     user.name = req.body.name || user.name;
     // user.email = req.body.email || user.email; // Email updates disabled for security to match frontend policy
-    user.darkMode = req.body.darkMode !== undefined ? req.body.darkMode : user.darkMode;
-    user.saveCredentials = req.body.saveCredentials !== undefined ? req.body.saveCredentials : user.saveCredentials;
+    user.darkMode =
+      req.body.darkMode !== undefined ? req.body.darkMode : user.darkMode;
+    user.saveCredentials =
+      req.body.saveCredentials !== undefined
+        ? req.body.saveCredentials
+        : user.saveCredentials;
 
     // Handle contact/profile fields
     if (req.body.phone !== undefined) user.mobilePhone = req.body.phone;
-    if (req.body.mobilePhone !== undefined) user.mobilePhone = req.body.mobilePhone;
-    if (req.body.contactEmail !== undefined) user.personalEmail = req.body.contactEmail;
-    if (req.body.personalEmail !== undefined) user.personalEmail = req.body.personalEmail;
-    if (req.body.dateOfBirth !== undefined) user.dateOfBirth = req.body.dateOfBirth;
-    if (req.body.department !== undefined) user.department = req.body.department;
+    if (req.body.mobilePhone !== undefined)
+      user.mobilePhone = req.body.mobilePhone;
+    if (req.body.contactEmail !== undefined)
+      user.personalEmail = req.body.contactEmail;
+    if (req.body.personalEmail !== undefined)
+      user.personalEmail = req.body.personalEmail;
+    if (req.body.dateOfBirth !== undefined)
+      user.dateOfBirth = req.body.dateOfBirth;
+    if (req.body.department !== undefined)
+      user.department = req.body.department;
 
     // Handle avatar update if provided
     if (req.body.avatar) {
       user.avatar = req.body.avatar;
     }
 
-    if (req.body.password) {
+    if (req.body.newPassword) {
+      if (
+        !req.body.currentPassword ||
+        !(await user.matchPassword(req.body.currentPassword))
+      ) {
+        res.status(401);
+        throw new Error("Invalid current password");
+      }
+      user.password = req.body.newPassword;
+    } else if (req.body.password) {
+      // ponytail: fallback for older clients
       user.password = req.body.password;
     }
 
@@ -611,24 +667,24 @@ const updateProfile = asyncHandler(async (req, res) => {
       darkMode: updatedUser.darkMode,
       saveCredentials: updatedUser.saveCredentials,
       avatar: updatedUser.avatar,
-      mobilePhone: updatedUser.mobilePhone || '',
-      personalEmail: updatedUser.personalEmail || '',
-      dateOfBirth: updatedUser.dateOfBirth || '',
-      department: updatedUser.department || '',
+      mobilePhone: updatedUser.mobilePhone || "",
+      personalEmail: updatedUser.personalEmail || "",
+      dateOfBirth: updatedUser.dateOfBirth || "",
+      department: updatedUser.department || "",
       schoolId: updatedUser.schoolId,
       token: generateToken(updatedUser._id, updatedUser.schoolId),
     };
 
     // Add pack information for admin users
-    if (updatedUser.role === 'admin') {
-      responseData.packType = updatedUser.packType || 'lite';
+    if (updatedUser.role === "admin") {
+      responseData.packType = updatedUser.packType || "lite";
       responseData.monthlyPrice = updatedUser.monthlyPrice || 0;
     }
 
     res.json(responseData);
   } else {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 });
 
@@ -636,22 +692,20 @@ const updateProfile = asyncHandler(async (req, res) => {
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-
   try {
     let users = [];
 
     // Check if this is a request from a school-specific user
     if (req.school) {
-
       // In single-database architecture, we filter users by schoolId
       // Get all users for this school
       const rawUsers = await User.find({ schoolId: req.school._id })
-        .select('-password')
-        .populate('school', 'name')
-        .populate('direction', 'name direction subject schoolBranch')
-        .populate('subjects', 'name')
-        .populate('schools', 'name')
-        .populate('directions', 'name direction subject schoolBranch')
+        .select("-password")
+        .populate("school", "name")
+        .populate("direction", "name direction subject schoolBranch")
+        .populate("subjects", "name")
+        .populate("schools", "name")
+        .populate("directions", "name direction subject schoolBranch")
         .lean();
 
       // Use the raw users directly since we're already using the main User model
@@ -660,17 +714,18 @@ const getUsers = asyncHandler(async (req, res) => {
       // This is a superadmin or a user in the main database
 
       // Get users with common fields populated
-      users = await User.find({}).select('-password')
-        .populate('school', 'name')
-        .populate('direction', 'name direction subject schoolBranch')
-        .populate('subjects', 'name')
-        .populate('schools', 'name')
-        .populate('directions', 'name direction subject schoolBranch')
+      users = await User.find({})
+        .select("-password")
+        .populate("school", "name")
+        .populate("direction", "name direction subject schoolBranch")
+        .populate("subjects", "name")
+        .populate("schools", "name")
+        .populate("directions", "name direction subject schoolBranch")
         .lean();
     }
 
     // Process users to ensure consistent data structure
-    const processedUsers = users.map(user => {
+    const processedUsers = users.map((user) => {
       // Convert to plain object or use as is
       const userData = user.toObject ? user.toObject() : user;
 
@@ -681,40 +736,49 @@ const getUsers = asyncHandler(async (req, res) => {
 
       // Make sure contact fields are never undefined
       const contactFields = [
-        'mobilePhone', 'homePhone', 'address', 'city',
-        'state', 'zipCode', 'emergencyContact', 'emergencyPhone'
+        "mobilePhone",
+        "homePhone",
+        "address",
+        "city",
+        "state",
+        "zipCode",
+        "emergencyContact",
+        "emergencyPhone",
       ];
 
-      contactFields.forEach(field => {
+      contactFields.forEach((field) => {
         if (!userData.contact[field]) {
-          userData.contact[field] = '';
+          userData.contact[field] = "";
         }
       });
 
       // Ensure school array for teachers even if empty
-      if (userData.role === 'teacher' && !userData.schools) {
+      if (userData.role === "teacher" && !userData.schools) {
         userData.schools = [];
       }
 
       // Ensure directions array for teachers even if empty
-      if (userData.role === 'teacher' && !userData.directions) {
+      if (userData.role === "teacher" && !userData.directions) {
         userData.directions = [];
       }
 
       // Ensure subjects array for teachers and students even if empty
-      if ((userData.role === 'teacher' || userData.role === 'student') && !userData.subjects) {
+      if (
+        (userData.role === "teacher" || userData.role === "student") &&
+        !userData.subjects
+      ) {
         userData.subjects = [];
       }
 
       // Ensure proper structured school object for students
-      if (userData.role === 'student') {
+      if (userData.role === "student") {
         if (!userData.school && userData.schoolId) {
-          userData.school = { _id: userData.schoolId, name: 'Unknown School' };
+          userData.school = { _id: userData.schoolId, name: "Unknown School" };
         }
       }
 
       // Add secretary permissions if not present
-      if (userData.role === 'secretary' && !userData.secretaryPermissions) {
+      if (userData.role === "secretary" && !userData.secretaryPermissions) {
         userData.secretaryPermissions = {
           canManageGrades: false,
           canSendNotifications: false,
@@ -728,9 +792,9 @@ const getUsers = asyncHandler(async (req, res) => {
 
     res.status(200).json(processedUsers);
   } catch (error) {
-    console.error('Error fetching users:', error.message);
+    console.error("Error fetching users:", error.message);
     res.status(500);
-    throw new Error('Server error: ' + error.message);
+    throw new Error("Server error: " + error.message);
   }
 });
 
@@ -739,24 +803,26 @@ const getUsers = asyncHandler(async (req, res) => {
 // @access  Private/Admin/Teacher
 const getUsersByRole = asyncHandler(async (req, res) => {
   const { role } = req.params;
-  const validRoles = ['admin', 'teacher', 'student', 'secretary', 'parent'];
+  const validRoles = ["admin", "teacher", "student", "secretary", "parent"];
 
   if (!validRoles.includes(role)) {
     res.status(400);
-    throw new Error(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
+    throw new Error(`Invalid role. Must be one of: ${validRoles.join(", ")}`);
   }
 
   try {
     // Check if requesting user is admin, teacher, or secretary
-    const canAccess = ['admin', 'teacher', 'secretary', 'superadmin'].includes(req.user.role);
+    const canAccess = ["admin", "teacher", "secretary", "superadmin"].includes(
+      req.user.role,
+    );
     if (!canAccess) {
       res.status(403);
-      throw new Error('Not authorized to access user list by role');
+      throw new Error("Not authorized to access user list by role");
     }
 
     // Apply schoolId filtering for multi-tenancy (except for superadmin)
     const filter = { role };
-    if (req.user.role !== 'superadmin' && req.user.schoolId) {
+    if (req.user.role !== "superadmin" && req.user.schoolId) {
       filter.schoolId = req.user.schoolId;
     }
 
@@ -764,18 +830,20 @@ const getUsersByRole = asyncHandler(async (req, res) => {
     // If teacher is looking for students, only show students from their classes
     let users = [];
 
-    if (req.user.role === 'teacher' && role === 'student') {
+    if (req.user.role === "teacher" && role === "student") {
       // Get the teacher's classes first
 
       // Find classes where this teacher is assigned — scoped to their school
       const teacherClasses = await Class.find({
         schoolId: req.user.schoolId,
-        teachers: req.user._id
+        teachers: req.user._id,
       }).lean();
 
       if (teacherClasses && teacherClasses.length > 0) {
-        console.log(`Teacher has ${teacherClasses.length} assigned classes:`,
-          teacherClasses.map(c => c.name || c._id));
+        console.log(
+          `Teacher has ${teacherClasses.length} assigned classes:`,
+          teacherClasses.map((c) => c.name || c._id),
+        );
 
         // Get all student IDs from these classes
         const studentIds = [];
@@ -797,18 +865,17 @@ const getUsersByRole = asyncHandler(async (req, res) => {
           return res.json([]);
         }
       } else {
-
         return res.json([]);
       }
     }
 
     users = await User.find(filter)
-      .select('-password')
-      .populate('school', 'name')
-      .populate('direction', 'name direction subject schoolBranch')
-      .populate('subjects', 'name')
-      .populate('schools', 'name')
-      .populate('directions', 'name direction subject schoolBranch')
+      .select("-password")
+      .populate("school", "name")
+      .populate("direction", "name direction subject schoolBranch")
+      .populate("subjects", "name")
+      .populate("schools", "name")
+      .populate("directions", "name direction subject schoolBranch")
       .lean();
 
     return res.json(users); // Added return to ensure response completes
@@ -816,7 +883,7 @@ const getUsersByRole = asyncHandler(async (req, res) => {
     console.error(`Error in getUsersByRole (${role}):`, error.message);
     // Ensure we return proper error response
     return res.status(error.statusCode || 500).json({
-      message: error.message || `Error retrieving ${role} list`
+      message: error.message || `Error retrieving ${role} list`,
     });
   }
 });
@@ -825,13 +892,12 @@ const getUsersByRole = asyncHandler(async (req, res) => {
 // @route   GET /api/users/:id
 // @access  Private/Admin
 const getUserById = asyncHandler(async (req, res) => {
-
   try {
     // Check if id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       console.error(`Invalid user ID format: ${req.params.id}`);
       res.status(400);
-      throw new Error('Invalid user ID format');
+      throw new Error("Invalid user ID format");
     }
 
     // Find the user with multi-tenancy filtering for regular admins
@@ -839,23 +905,23 @@ const getUserById = asyncHandler(async (req, res) => {
     const query = { _id: req.params.id };
 
     // If not superadmin, restrict to users in the same school
-    if (req.user.role !== 'superadmin') {
+    if (req.user.role !== "superadmin") {
       query.schoolId = req.user.schoolId;
     }
 
     // Find user with populated fields
     const user = await User.findOne(query)
-      .select('-password')
-      .populate('school', 'name domain')
-      .populate('direction', 'name direction subject schoolBranch')
-      .populate('schools', 'name domain')
-      .populate('directions', 'name direction subject schoolBranch')
-      .populate('subjects', 'name');
+      .select("-password")
+      .populate("school", "name domain")
+      .populate("direction", "name direction subject schoolBranch")
+      .populate("schools", "name domain")
+      .populate("directions", "name direction subject schoolBranch")
+      .populate("subjects", "name");
 
     if (!user) {
       console.error(`User not found with ID: ${req.params.id}`);
       res.status(404);
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     res.status(200).json(user);
@@ -872,29 +938,32 @@ const getUserById = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/:id
 // @access  Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
-
   try {
     // Find the user with multi-tenancy filtering for regular admins
     // Superadmins can update any user
     const query = { _id: req.params.id };
 
-    if (req.user.role !== 'superadmin') {
+    if (req.user.role !== "superadmin") {
       query.schoolId = req.user.schoolId;
     }
 
     const user = await User.findOne(query);
 
     if (!user) {
-      console.error(`User with ID ${req.params.id} not found under active scope`);
+      console.error(
+        `User with ID ${req.params.id} not found under active scope`,
+      );
       res.status(404);
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Prevent updating of superadmin users by non-superadmins
-    if (user.role === 'superadmin' && req.user.role !== 'superadmin') {
-      console.error(`Non-superadmin ${req.user.name} attempted to update superadmin user`);
+    if (user.role === "superadmin" && req.user.role !== "superadmin") {
+      console.error(
+        `Non-superadmin ${req.user.name} attempted to update superadmin user`,
+      );
       res.status(403);
-      throw new Error('Cannot update superadmin users');
+      throw new Error("Cannot update superadmin users");
     }
 
     // Update user fields if provided in the request
@@ -902,81 +971,76 @@ const updateUser = asyncHandler(async (req, res) => {
     if (req.body.email) user.email = req.body.email;
     if (req.body.role) {
       // Prevent non-superadmins from assigning or changing to/from the superadmin role
-      if (req.body.role === 'superadmin' && req.user.role !== 'superadmin') {
+      if (req.body.role === "superadmin" && req.user.role !== "superadmin") {
         res.status(403);
-        throw new Error('Not authorized to assign the superadmin role');
+        throw new Error("Not authorized to assign the superadmin role");
       }
       user.role = req.body.role;
     }
     if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
-    if (req.body.mobilePhone !== undefined) user.mobilePhone = req.body.mobilePhone;
-    if (req.body.personalEmail !== undefined) user.personalEmail = req.body.personalEmail;
+    if (req.body.mobilePhone !== undefined)
+      user.mobilePhone = req.body.mobilePhone;
+    if (req.body.personalEmail !== undefined)
+      user.personalEmail = req.body.personalEmail;
 
     // Handle array fields specially - replacing the entire array if provided
     if (req.body.schools) {
-
       user.schools = req.body.schools;
 
       // CRITICAL FIX: Don't set school singular field for teachers/secretaries
       // This prevents schema validation errors with arrays vs single values
-      if (user.role === 'student' && req.body.school) {
+      if (user.role === "student" && req.body.school) {
         // Only set singular school field for students
         user.school = req.body.school;
       }
-    } else if (req.body.school && user.role === 'student') {
+    } else if (req.body.school && user.role === "student") {
       // Handle singular school field - only for students
       user.school = req.body.school;
     }
 
     if (req.body.directions) {
-
       // Set the array field
       user.directions = req.body.directions;
 
       // CRITICAL FIX: Don't set direction singular field for teachers/secretaries
       // This prevents the casting error when trying to assign an array to a single ObjectId
-      if (user.role === 'student' && req.body.direction) {
+      if (user.role === "student" && req.body.direction) {
         // Only set the singular direction field for students
         user.direction = req.body.direction;
       }
-    } else if (req.body.direction && user.role === 'student') {
+    } else if (req.body.direction && user.role === "student") {
       // Handle singular direction field - only for students
       user.direction = req.body.direction;
     }
 
     // Update subjects if provided
     if (req.body.subjects) {
-
       user.subjects = req.body.subjects;
     }
 
     // CRITICAL FIX: Handle teacher-specific permission fields
-    if (user.role === 'teacher') {
-
+    if (user.role === "teacher") {
       // Handle canSendNotifications permission
       if (req.body.canSendNotifications !== undefined) {
-
         user.canSendNotifications = req.body.canSendNotifications;
       }
 
       // Handle canAddGradeDescriptions permission
       if (req.body.canAddGradeDescriptions !== undefined) {
-
         user.canAddGradeDescriptions = req.body.canAddGradeDescriptions;
       }
     }
 
     // Handle secretary permissions if present
-    if (user.role === 'secretary' && req.body.secretaryPermissions) {
-
+    if (user.role === "secretary" && req.body.secretaryPermissions) {
       user.secretaryPermissions = {
         ...user.secretaryPermissions, // Keep existing permissions
-        ...req.body.secretaryPermissions // Apply updates
+        ...req.body.secretaryPermissions, // Apply updates
       };
     }
 
     // Only update password if provided and not empty
-    if (req.body.password && req.body.password.trim() !== '') {
+    if (req.body.password && req.body.password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.password, salt);
     }
@@ -1000,12 +1064,12 @@ const updateUser = asyncHandler(async (req, res) => {
       mobilePhone: updatedUser.mobilePhone,
       personalEmail: updatedUser.personalEmail,
       createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt
+      updatedAt: updatedUser.updatedAt,
     });
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error("Error updating user:", error);
     res.status(500);
-    throw new Error('Failed to update user: ' + error.message);
+    throw new Error("Failed to update user: " + error.message);
   }
 });
 
@@ -1013,21 +1077,20 @@ const updateUser = asyncHandler(async (req, res) => {
 // @route   GET /api/users/teachers
 // @access  Private/Admin
 const getTeachers = asyncHandler(async (req, res) => {
-
   try {
     const teachers = await User.find({
       schoolId: req.user.schoolId,
-      role: 'teacher',
-      isActive: { $ne: false }
+      role: "teacher",
+      isActive: { $ne: false },
     })
-      .select('_id name email')
+      .select("_id name email")
       .lean();
 
     res.json(teachers);
   } catch (error) {
-    console.error('Error fetching teachers:', error);
+    console.error("Error fetching teachers:", error);
     res.status(500);
-    throw new Error('Failed to fetch teachers');
+    throw new Error("Failed to fetch teachers");
   }
 });
 
@@ -1035,20 +1098,19 @@ const getTeachers = asyncHandler(async (req, res) => {
 // @route   DELETE /api/users/:id
 // @access  Private/Admin
 const deleteUser = asyncHandler(async (req, res) => {
-
   try {
     // Check if id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       console.error(`Invalid user ID format: ${req.params.id}`);
       res.status(400);
-      throw new Error('Invalid user ID format');
+      throw new Error("Invalid user ID format");
     }
 
     // Prevent users from deleting themselves
     if (req.params.id === req.user.id.toString()) {
       console.error(`User ${req.user.name} attempted to delete themselves`);
       res.status(400);
-      throw new Error('Cannot delete your own account');
+      throw new Error("Cannot delete your own account");
     }
 
     // Find the user with multi-tenancy filtering for regular admins
@@ -1056,7 +1118,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     const query = { _id: req.params.id };
 
     // If not superadmin, restrict to users in the same school
-    if (req.user.role !== 'superadmin') {
+    if (req.user.role !== "superadmin") {
       query.schoolId = req.user.schoolId;
     }
 
@@ -1066,23 +1128,29 @@ const deleteUser = asyncHandler(async (req, res) => {
     if (!userToDelete) {
       console.error(`User not found with ID: ${req.params.id}`);
       res.status(404);
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Prevent deletion of superadmin users by non-superadmins
-    if (userToDelete.role === 'superadmin' && req.user.role !== 'superadmin') {
-      console.error(`Non-superadmin ${req.user.name} attempted to delete superadmin user`);
+    if (userToDelete.role === "superadmin" && req.user.role !== "superadmin") {
+      console.error(
+        `Non-superadmin ${req.user.name} attempted to delete superadmin user`,
+      );
       res.status(403);
-      throw new Error('Cannot delete superadmin users');
+      throw new Error("Cannot delete superadmin users");
     }
 
     // CRITICAL FIX: Clean up push subscriptions before deleting user
     try {
-      const Subscription = require('../models/subscriptionModel');
-      const deletedSubscriptions = await Subscription.deleteMany({ user: req.params.id });
-
+      const Subscription = require("../models/subscriptionModel");
+      const deletedSubscriptions = await Subscription.deleteMany({
+        user: req.params.id,
+      });
     } catch (subscriptionError) {
-      console.warn(`PUSH_CLEANUP: Failed to clean up subscriptions for user ${userToDelete.name}:`, subscriptionError.message);
+      console.warn(
+        `PUSH_CLEANUP: Failed to clean up subscriptions for user ${userToDelete.name}:`,
+        subscriptionError.message,
+      );
       // Don't fail user deletion if subscription cleanup fails
     }
 
@@ -1095,13 +1163,13 @@ const deleteUser = asyncHandler(async (req, res) => {
         _id: userToDelete._id,
         name: userToDelete.name,
         email: userToDelete.email,
-        role: userToDelete.role
-      }
+        role: userToDelete.role,
+      },
     });
   } catch (error) {
     console.error(`Error in deleteUser:`, error.message);
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to delete user');
+    throw new Error(error.message || "Failed to delete user");
   }
 });
 
@@ -1113,13 +1181,13 @@ const generateToken = (id, schoolId = null) => {
     payload.schoolId = schoolId;
   }
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: '1d',
+    expiresIn: "1d",
   });
 };
 
 // Generate refresh token (longer-lived)
 const generateRefreshToken = (id, schoolId = null) => {
-  const payload = { id, type: 'refresh' };
+  const payload = { id, type: "refresh" };
 
   // Include schoolId in the token payload if provided
   if (schoolId) {
@@ -1129,7 +1197,7 @@ const generateRefreshToken = (id, schoolId = null) => {
   // Use the same secret for refresh token
   // We only need the 'type' field to differentiate between token types
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: '30d', // Refresh tokens typically have longer expiry
+    expiresIn: "30d", // Refresh tokens typically have longer expiry
   });
 };
 
@@ -1137,19 +1205,18 @@ const generateRefreshToken = (id, schoolId = null) => {
 // @route   POST /api/users/change-password
 // @access  Private
 const changePassword = asyncHandler(async (req, res) => {
-
   const { currentPassword, newPassword } = req.body;
 
   // Validate required fields
   if (!currentPassword || !newPassword) {
     res.status(400);
-    throw new Error('Current password and new password are required');
+    throw new Error("Current password and new password are required");
   }
 
   // Validate new password length
   if (newPassword.length < 6) {
     res.status(400);
-    throw new Error('New password must be at least 6 characters long');
+    throw new Error("New password must be at least 6 characters long");
   }
 
   try {
@@ -1158,16 +1225,18 @@ const changePassword = asyncHandler(async (req, res) => {
 
     if (!user) {
       res.status(404);
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
 
     if (!isCurrentPasswordValid) {
-
       res.status(400);
-      throw new Error('Current password is incorrect');
+      throw new Error("Current password is incorrect");
     }
 
     // Check if new password is different from current
@@ -1175,7 +1244,7 @@ const changePassword = asyncHandler(async (req, res) => {
 
     if (isSamePassword) {
       res.status(400);
-      throw new Error('New password must be different from current password');
+      throw new Error("New password must be different from current password");
     }
 
     // Hash the new password
@@ -1190,15 +1259,17 @@ const changePassword = asyncHandler(async (req, res) => {
     await user.save();
 
     res.json({
-      message: 'Password changed successfully',
+      message: "Password changed successfully",
       requirePasswordChange: false,
-      isFirstLogin: false
+      isFirstLogin: false,
     });
-
   } catch (error) {
-    console.error(`Error changing password for user ${req.user._id}:`, error.message);
+    console.error(
+      `Error changing password for user ${req.user._id}:`,
+      error.message,
+    );
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to change password');
+    throw new Error(error.message || "Failed to change password");
   }
 });
 
@@ -1206,7 +1277,6 @@ const changePassword = asyncHandler(async (req, res) => {
 // @route   POST /api/users/create-parent
 // @access  Private/Admin
 const createParentAccount = asyncHandler(async (req, res) => {
-
   const {
     studentIds, // Now accepts array of student IDs
     parentName,
@@ -1214,13 +1284,13 @@ const createParentAccount = asyncHandler(async (req, res) => {
     parentPassword,
     parentMobilePhone,
     parentPersonalEmail,
-    emailCredentials
+    emailCredentials,
   } = req.body;
 
   // Validate required fields — studentIds is now optional (can create standalone parent)
   if (!parentName || !parentEmail || !parentPassword) {
     res.status(400);
-    throw new Error('Parent name, email, and password are required');
+    throw new Error("Parent name, email, and password are required");
   }
 
   const safeStudentIds = Array.isArray(studentIds) ? studentIds : [];
@@ -1231,27 +1301,27 @@ const createParentAccount = asyncHandler(async (req, res) => {
     if (safeStudentIds.length > 0) {
       students = await User.find({
         _id: { $in: safeStudentIds },
-        role: 'student',
-        schoolId: req.user.schoolId
+        role: "student",
+        schoolId: req.user.schoolId,
       });
 
       if (students.length !== safeStudentIds.length) {
         res.status(404);
-        throw new Error('One or more students not found or not in your school');
+        throw new Error("One or more students not found or not in your school");
       }
     }
 
     // Check if parent email already exists in this school
     const emailExists = await User.findOne({
       email: parentEmail,
-      schoolId: req.user.schoolId
+      schoolId: req.user.schoolId,
     });
 
     if (emailExists) {
       // If parent already exists, link to additional students
-      if (emailExists.role !== 'parent') {
+      if (emailExists.role !== "parent") {
         res.status(400);
-        throw new Error('Email already exists for a non-parent account');
+        throw new Error("Email already exists for a non-parent account");
       }
 
       // If no students provided just return the existing parent
@@ -1264,16 +1334,21 @@ const createParentAccount = asyncHandler(async (req, res) => {
           linkedStudentIds: emailExists.linkedStudentIds,
           mobilePhone: emailExists.mobilePhone,
           personalEmail: emailExists.personalEmail,
-          message: 'Parent account already exists'
+          message: "Parent account already exists",
         });
       }
 
       // Add new students to existing parent's linkedStudentIds
-      const newStudentIds = safeStudentIds.filter(id => !emailExists.linkedStudentIds.map(s => s.toString()).includes(id.toString()));
+      const newStudentIds = safeStudentIds.filter(
+        (id) =>
+          !emailExists.linkedStudentIds
+            .map((s) => s.toString())
+            .includes(id.toString()),
+      );
 
       if (newStudentIds.length === 0) {
         res.status(400);
-        throw new Error('Parent is already linked to all specified students');
+        throw new Error("Parent is already linked to all specified students");
       }
 
       emailExists.linkedStudentIds.push(...newStudentIds);
@@ -1282,7 +1357,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
       // Update students' parentIds arrays
       await User.updateMany(
         { _id: { $in: newStudentIds } },
-        { $addToSet: { parentIds: emailExists._id } }
+        { $addToSet: { parentIds: emailExists._id } },
       );
 
       return res.status(200).json({
@@ -1291,10 +1366,10 @@ const createParentAccount = asyncHandler(async (req, res) => {
         email: emailExists.email,
         role: emailExists.role,
         linkedStudentIds: emailExists.linkedStudentIds,
-        linkedStudentNames: students.map(s => s.name),
+        linkedStudentNames: students.map((s) => s.name),
         mobilePhone: emailExists.mobilePhone,
         personalEmail: emailExists.personalEmail,
-        message: 'Parent linked to additional students'
+        message: "Parent linked to additional students",
       });
     }
 
@@ -1307,14 +1382,14 @@ const createParentAccount = asyncHandler(async (req, res) => {
       name: parentName,
       email: parentEmail,
       password: hashedPassword,
-      role: 'parent',
+      role: "parent",
       schoolId: req.user.schoolId,
       linkedStudentIds: safeStudentIds,
-      mobilePhone: parentMobilePhone || '',
-      personalEmail: parentPersonalEmail || '',
+      mobilePhone: parentMobilePhone || "",
+      personalEmail: parentPersonalEmail || "",
       active: true,
       requirePasswordChange: true, // Force password change on first login
-      isFirstLogin: true
+      isFirstLogin: true,
     };
 
     const parent = await User.create(parentData);
@@ -1323,7 +1398,7 @@ const createParentAccount = asyncHandler(async (req, res) => {
     if (safeStudentIds.length > 0) {
       await User.updateMany(
         { _id: { $in: safeStudentIds } },
-        { $addToSet: { parentIds: parent._id } }
+        { $addToSet: { parentIds: parent._id } },
       );
     }
 
@@ -1335,12 +1410,11 @@ const createParentAccount = asyncHandler(async (req, res) => {
           email: parentEmail,
           loginEmail: parentEmail,
           password: parentPassword,
-          role: 'parent',
-          studentName: students.map(s => s.name).join(', ')
+          role: "parent",
+          studentName: students.map((s) => s.name).join(", "),
         });
-
       } catch (emailError) {
-        console.error('Failed to send parent credentials email:', emailError);
+        console.error("Failed to send parent credentials email:", emailError);
         // Don't fail the entire operation if email fails
       }
     }
@@ -1352,16 +1426,15 @@ const createParentAccount = asyncHandler(async (req, res) => {
       email: parent.email,
       role: parent.role,
       linkedStudentIds: parent.linkedStudentIds,
-      linkedStudentNames: students.map(s => s.name),
+      linkedStudentNames: students.map((s) => s.name),
       mobilePhone: parent.mobilePhone,
       personalEmail: parent.personalEmail,
-      createdAt: parent.createdAt
+      createdAt: parent.createdAt,
     });
-
   } catch (error) {
-    console.error('Error creating parent account:', error.message);
+    console.error("Error creating parent account:", error.message);
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to create parent account');
+    throw new Error(error.message || "Failed to create parent account");
   }
 });
 
@@ -1369,55 +1442,55 @@ const createParentAccount = asyncHandler(async (req, res) => {
 // @route   GET /api/users/student/:studentId/parents
 // @access  Private/Admin
 const getParentsByStudent = asyncHandler(async (req, res) => {
-
   try {
     // Verify student exists and belongs to admin's school
     const student = await User.findOne({
       _id: req.params.studentId,
-      role: 'student',
-      schoolId: req.user.schoolId
+      role: "student",
+      schoolId: req.user.schoolId,
     });
 
     if (!student) {
       res.status(404);
-      throw new Error('Student not found or not in your school');
+      throw new Error("Student not found or not in your school");
     }
 
     // Find all parent accounts linked to this student using the student's parentIds array
     const parents = await User.find({
       _id: { $in: student.parentIds || [] },
-      role: 'parent',
-      schoolId: req.user.schoolId
-    }).select('-password');
+      role: "parent",
+      schoolId: req.user.schoolId,
+    }).select("-password");
 
     // Disable caching to ensure fresh parent data
     res.set({
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
     });
 
     res.json({
       hasParents: parents.length > 0,
       parentCount: parents.length,
-      parents: parents.map(parent => ({
+      parents: parents.map((parent) => ({
         _id: parent._id,
         name: parent.name,
         email: parent.email,
         role: parent.role,
         linkedStudentIds: parent.linkedStudentIds,
-        totalLinkedStudents: parent.linkedStudentIds ? parent.linkedStudentIds.length : 0, // CRITICAL FIX: Add count for EditUser UI
+        totalLinkedStudents: parent.linkedStudentIds
+          ? parent.linkedStudentIds.length
+          : 0, // CRITICAL FIX: Add count for EditUser UI
         mobilePhone: parent.mobilePhone,
         personalEmail: parent.personalEmail,
         active: parent.active,
-        createdAt: parent.createdAt
-      }))
+        createdAt: parent.createdAt,
+      })),
     });
-
   } catch (error) {
-    console.error('Error getting parents by student:', error.message);
+    console.error("Error getting parents by student:", error.message);
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to get parent accounts');
+    throw new Error(error.message || "Failed to get parent accounts");
   }
 });
 
@@ -1425,143 +1498,142 @@ const getParentsByStudent = asyncHandler(async (req, res) => {
 // @route   GET /api/users/parent/students-data
 // @access  Private/Parent
 const getStudentsDataForParent = asyncHandler(async (req, res) => {
-
   try {
     // Verify user is a parent
-    if (req.user.role !== 'parent') {
+    if (req.user.role !== "parent") {
       res.status(403);
-      throw new Error('Access denied. Parent role required.');
+      throw new Error("Access denied. Parent role required.");
     }
 
     // Debug parent user data
-    console.log('Parent user data:', {
+    console.log("Parent user data:", {
       id: req.user._id,
       email: req.user.email,
       role: req.user.role,
       hasLinkedStudentIds: !!req.user.linkedStudentIds,
       linkedStudentIdsCount: req.user.linkedStudentIds?.length || 0,
-      linkedStudentIds: req.user.linkedStudentIds
+      linkedStudentIds: req.user.linkedStudentIds,
     });
 
     // Get all parent's linked students
     const students = await User.find({
       _id: { $in: req.user.linkedStudentIds },
-      role: 'student'
-    }).select('-password');
+      role: "student",
+    }).select("-password");
 
-    console.log('Found linked students:', {
+    console.log("Found linked students:", {
       studentsCount: students.length,
-      studentIds: students.map(s => s._id),
-      studentNames: students.map(s => s.name)
+      studentIds: students.map((s) => s._id),
+      studentNames: students.map((s) => s.name),
     });
 
     if (students.length === 0) {
       res.status(404);
-      throw new Error('No linked students found');
+      throw new Error("No linked students found");
     }
 
-    const Grade = require('../models/gradeModel');
-    const Notification = require('../models/notificationModel');
+    const Grade = require("../models/gradeModel");
+    const Notification = require("../models/notificationModel");
 
     // Get data for each student
-    const studentsData = await Promise.all(students.map(async (student) => {
-      // Get recent grades for this student
-      const recentGrades = await Grade.find({
-        student: student._id
-      })
-        .populate('subject', 'name')
-        .populate('teacher', 'name')
-        .sort({ createdAt: -1 })
-        .limit(5); // Limit per student to avoid too much data
+    const studentsData = await Promise.all(
+      students.map(async (student) => {
+        // Get recent grades for this student
+        const recentGrades = await Grade.find({
+          student: student._id,
+        })
+          .populate("subject", "name")
+          .populate("teacher", "name")
+          .sort({ createdAt: -1 })
+          .limit(5); // Limit per student to avoid too much data
 
-      // Get recent notifications for this student
-      const recentNotifications = await Notification.find({
-        $or: [
-          { recipientIds: student._id },
-          { recipientRole: 'student' }
-        ]
-      })
-        .populate('senderId', 'name')
-        .sort({ createdAt: -1 })
-        .limit(5); // Limit per student
+        // Get recent notifications for this student
+        const recentNotifications = await Notification.find({
+          $or: [{ recipientIds: student._id }, { recipientRole: "student" }],
+        })
+          .populate("senderId", "name")
+          .sort({ createdAt: -1 })
+          .limit(5); // Limit per student
 
-      return {
-        student: {
-          _id: student._id,
-          name: student.name,
-          email: student.email,
-          mobilePhone: student.mobilePhone,
-          personalEmail: student.personalEmail,
-          active: student.active,
-          createdAt: student.createdAt
-        },
-        recentGrades: recentGrades.map(grade => ({
-          _id: grade._id,
-          value: grade.value,
-          subject: grade.subject?.name || 'Unknown Subject',
-          teacher: grade.teacher?.name || 'Unknown Teacher',
-          description: grade.description,
-          createdAt: grade.createdAt
-        })),
-        recentNotifications: recentNotifications.map(notification => ({
-          _id: notification._id,
-          title: notification.title,
-          message: notification.message,
-          sender: notification.senderId?.name || 'System',
-          priority: notification.priority,
-          createdAt: notification.createdAt
-        }))
-      };
-    }));
+        return {
+          student: {
+            _id: student._id,
+            name: student.name,
+            email: student.email,
+            mobilePhone: student.mobilePhone,
+            personalEmail: student.personalEmail,
+            active: student.active,
+            createdAt: student.createdAt,
+          },
+          recentGrades: recentGrades.map((grade) => ({
+            _id: grade._id,
+            value: grade.value,
+            subject: grade.subject?.name || "Unknown Subject",
+            teacher: grade.teacher?.name || "Unknown Teacher",
+            description: grade.description,
+            createdAt: grade.createdAt,
+          })),
+          recentNotifications: recentNotifications.map((notification) => ({
+            _id: notification._id,
+            title: notification.title,
+            message: notification.message,
+            sender: notification.senderId?.name || "System",
+            priority: notification.priority,
+            createdAt: notification.createdAt,
+          })),
+        };
+      }),
+    );
 
     // Also get combined recent activity across all students
-    const allStudentIds = students.map(s => s._id);
+    const allStudentIds = students.map((s) => s._id);
 
     const allRecentGrades = await Grade.find({
-      student: { $in: allStudentIds }
+      student: { $in: allStudentIds },
     })
-      .populate('student', 'name')
-      .populate('subject', 'name')
-      .populate('teacher', 'name')
+      .populate("student", "name")
+      .populate("subject", "name")
+      .populate("teacher", "name")
       .sort({ createdAt: -1 })
       .limit(10);
 
     const allRecentNotifications = await Notification.find({
       $or: [
         { recipientIds: { $in: allStudentIds } },
-        { recipientRole: 'student' }
-      ]
+        { recipientRole: "student" },
+      ],
     })
-      .populate('senderId', 'name')
+      .populate("senderId", "name")
       .sort({ createdAt: -1 })
       .limit(10);
 
     res.json({
       studentsCount: students.length,
       studentsData,
-      combinedRecentGrades: allRecentGrades.map(grade => ({
+      combinedRecentGrades: allRecentGrades.map((grade) => ({
         _id: grade._id,
         value: grade.value,
-        studentName: grade.student?.name || 'Unknown Student',
-        subject: grade.subject?.name || 'Unknown Subject',
-        teacher: grade.teacher?.name || 'Unknown Teacher',
+        studentName: grade.student?.name || "Unknown Student",
+        subject: grade.subject?.name || "Unknown Subject",
+        teacher: grade.teacher?.name || "Unknown Teacher",
         description: grade.description,
-        createdAt: grade.createdAt
+        createdAt: grade.createdAt,
       })),
-      combinedRecentNotifications: allRecentNotifications.map(notification => ({
-        _id: notification._id,
-        title: notification.title,
-        message: notification.message,
-        sender: notification.senderId?.name || 'System',
-        priority: notification.priority,
-        createdAt: notification.createdAt
-      }))
+      combinedRecentNotifications: allRecentNotifications.map(
+        (notification) => ({
+          _id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          sender: notification.senderId?.name || "System",
+          priority: notification.priority,
+          createdAt: notification.createdAt,
+        }),
+      ),
     });
-
   } catch (error) {
-    console.error('Error getting students data for parent:', error.message);
+    console.error("Error getting students data for parent:", error.message);
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to get students data');
+    throw new Error(error.message || "Failed to get students data");
   }
 });
 
@@ -1569,45 +1641,43 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
 // @route   GET /api/users/parent/:parentId/students
 // @access  Private/Admin
 const getStudentsByParent = asyncHandler(async (req, res) => {
-
   try {
     // Verify parent exists and belongs to admin's school
     const parent = await User.findOne({
       _id: req.params.parentId,
-      role: 'parent',
-      schoolId: req.user.schoolId
+      role: "parent",
+      schoolId: req.user.schoolId,
     });
 
     if (!parent) {
       res.status(404);
-      throw new Error('Parent not found or not in your school');
+      throw new Error("Parent not found or not in your school");
     }
 
     // Get all students linked to this parent
     const students = await User.find({
       _id: { $in: parent.linkedStudentIds },
-      role: 'student'
-    }).select('-password');
+      role: "student",
+    }).select("-password");
 
     res.json({
       parentId: parent._id,
       parentName: parent.name,
       studentsCount: students.length,
-      students: students.map(student => ({
+      students: students.map((student) => ({
         _id: student._id,
         name: student.name,
         email: student.email,
         mobilePhone: student.mobilePhone,
         personalEmail: student.personalEmail,
         active: student.active,
-        createdAt: student.createdAt
-      }))
+        createdAt: student.createdAt,
+      })),
     });
-
   } catch (error) {
-    console.error('Error getting students by parent:', error.message);
+    console.error("Error getting students by parent:", error.message);
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to get students');
+    throw new Error(error.message || "Failed to get students");
   }
 });
 
@@ -1615,50 +1685,48 @@ const getStudentsByParent = asyncHandler(async (req, res) => {
 // @route   DELETE /api/users/parent/:parentId/students
 // @access  Private/Admin
 const unlinkParentFromStudents = asyncHandler(async (req, res) => {
-
   const { studentIds } = req.body; // Array of student IDs to unlink
 
   if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
     res.status(400);
-    throw new Error('Student IDs array is required');
+    throw new Error("Student IDs array is required");
   }
 
   try {
     // Verify parent exists and belongs to admin's school
     const parent = await User.findOne({
       _id: req.params.parentId,
-      role: 'parent',
-      schoolId: req.user.schoolId
+      role: "parent",
+      schoolId: req.user.schoolId,
     });
 
     if (!parent) {
       res.status(404);
-      throw new Error('Parent not found or not in your school');
+      throw new Error("Parent not found or not in your school");
     }
 
     // Remove students from parent's linkedStudentIds
     parent.linkedStudentIds = parent.linkedStudentIds.filter(
-      id => !studentIds.includes(id.toString())
+      (id) => !studentIds.includes(id.toString()),
     );
     await parent.save();
 
     // Remove parent from students' parentIds arrays
     await User.updateMany(
       { _id: { $in: studentIds } },
-      { $pull: { parentIds: parent._id } }
+      { $pull: { parentIds: parent._id } },
     );
 
     res.json({
-      message: 'Parent-student links removed successfully',
+      message: "Parent-student links removed successfully",
       parentId: parent._id,
       unlinkedStudentIds: studentIds,
-      remainingLinkedStudents: parent.linkedStudentIds.length
+      remainingLinkedStudents: parent.linkedStudentIds.length,
     });
-
   } catch (error) {
-    console.error('Error unlinking parent from students:', error.message);
+    console.error("Error unlinking parent from students:", error.message);
     res.status(error.statusCode || 500);
-    throw new Error(error.message || 'Failed to unlink parent from students');
+    throw new Error(error.message || "Failed to unlink parent from students");
   }
 });
 
@@ -1678,28 +1746,26 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
     createParentAccount,
     parentName,
     parentEmail,
-    parentEmailCredentials
+    parentEmailCredentials,
   } = req.body;
 
   // Restrict roles school admin can create to prevent privilege escalation
-  const allowedRoles = ['teacher', 'student', 'secretary', 'parent'];
-  if (req.user.role !== 'superadmin' && !allowedRoles.includes(role)) {
+  const allowedRoles = ["teacher", "student", "secretary", "parent"];
+  if (req.user.role !== "superadmin" && !allowedRoles.includes(role)) {
     res.status(403);
-    throw new Error('Not authorized to create this user role');
+    throw new Error("Not authorized to create this user role");
   }
 
   if (!name || !email || !password || !role) {
-
     res.status(400);
-    throw new Error('Please provide name, email, password, and role');
+    throw new Error("Please provide name, email, password, and role");
   }
 
   // Check if user already exists
   const userExists = await User.findOne({ email });
   if (userExists) {
-
     res.status(400);
-    throw new Error('User already exists with this email');
+    throw new Error("User already exists with this email");
   }
 
   try {
@@ -1713,15 +1779,15 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
       password: hashedPassword,
       role,
       schoolId: req.user.schoolId,
-      mobilePhone: mobilePhone || '',
-      personalEmail: personalEmail || '',
+      mobilePhone: mobilePhone || "",
+      personalEmail: personalEmail || "",
       requirePasswordChange: !!generatedPassword,
-      isFirstLogin: !!generatedPassword
+      isFirstLogin: !!generatedPassword,
     };
 
-    console.log('CREATE_USER_BY_ADMIN', 'Creating user with data:', {
+    console.log("CREATE_USER_BY_ADMIN", "Creating user with data:", {
       ...userData,
-      password: '[HIDDEN]'
+      password: "[HIDDEN]",
     });
 
     // Create the user
@@ -1735,21 +1801,31 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
           email: user.email,
           loginEmail: user.email,
           password: generatedPassword,
-          role: user.role
+          role: user.role,
         });
-
       } catch (emailError) {
-        console.error('CREATE_USER_BY_ADMIN', `Failed to send credentials email:`, emailError.message);
+        console.error(
+          "CREATE_USER_BY_ADMIN",
+          `Failed to send credentials email:`,
+          emailError.message,
+        );
       }
     }
 
     // Create parent account if requested and user is a student
     let parentAccount = null;
-    if (createParentAccount && role === 'student' && parentName && parentEmail) {
+    if (
+      createParentAccount &&
+      role === "student" &&
+      parentName &&
+      parentEmail
+    ) {
       try {
-
         // Use the actual parent password from the request body
-        const parentPassword = req.body.parentPassword || req.body.parentGeneratedPassword || 'TempPass123!';
+        const parentPassword =
+          req.body.parentPassword ||
+          req.body.parentGeneratedPassword ||
+          "TempPass123!";
         const hashedParentPassword = await bcrypt.hash(parentPassword, 10);
 
         // Create parent account data
@@ -1757,18 +1833,18 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
           name: parentName,
           email: parentEmail,
           password: hashedParentPassword,
-          role: 'parent',
+          role: "parent",
           schoolId: req.user.schoolId,
           linkedStudentIds: [user._id],
           requirePasswordChange: true,
-          isFirstLogin: true
+          isFirstLogin: true,
         };
 
         parentAccount = await User.create(parentData);
 
         // Update student with parent link
         await User.findByIdAndUpdate(user._id, {
-          $push: { parentIds: parentAccount._id }
+          $push: { parentIds: parentAccount._id },
         });
 
         // Send parent credentials email if requested
@@ -1779,17 +1855,23 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
               email: parentAccount.email,
               loginEmail: parentAccount.email,
               password: parentPassword,
-              role: 'parent',
-              studentName: user.name
+              role: "parent",
+              studentName: user.name,
             });
-
           } catch (emailError) {
-            console.error('CREATE_USER_BY_ADMIN', `Failed to send parent credentials email:`, emailError.message);
+            console.error(
+              "CREATE_USER_BY_ADMIN",
+              `Failed to send parent credentials email:`,
+              emailError.message,
+            );
           }
         }
-
       } catch (parentError) {
-        console.error('CREATE_USER_BY_ADMIN', `Failed to create parent account:`, parentError.message);
+        console.error(
+          "CREATE_USER_BY_ADMIN",
+          `Failed to create parent account:`,
+          parentError.message,
+        );
         // Don't fail the main user creation if parent creation fails
       }
     }
@@ -1804,8 +1886,8 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
         role: user.role,
         schoolId: user.schoolId,
         mobilePhone: user.mobilePhone,
-        personalEmail: user.personalEmail
-      }
+        personalEmail: user.personalEmail,
+      },
     };
 
     if (parentAccount) {
@@ -1813,14 +1895,17 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
         _id: parentAccount._id,
         name: parentAccount.name,
         email: parentAccount.email,
-        role: parentAccount.role
+        role: parentAccount.role,
       };
     }
 
     res.status(201).json(response);
-
   } catch (error) {
-    console.error('CREATE_USER_BY_ADMIN', `Error creating user:`, error.message);
+    console.error(
+      "CREATE_USER_BY_ADMIN",
+      `Error creating user:`,
+      error.message,
+    );
     res.status(500);
     throw new Error(`Failed to create user: ${error.message}`);
   }
@@ -1831,11 +1916,10 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const getSchoolOwnersWithUserCounts = asyncHandler(async (req, res) => {
   try {
-
     // Get all admin users
-    const adminUsers = await User.find({ role: 'admin' })
-      .select('name email schoolId packType monthlyPrice active createdAt')
-      .populate('schoolId', 'name');
+    const adminUsers = await User.find({ role: "admin" })
+      .select("name email schoolId packType monthlyPrice active createdAt")
+      .populate("schoolId", "name");
 
     // Get user counts for each admin's school
     const adminUsersWithCounts = await Promise.all(
@@ -1844,7 +1928,7 @@ const getSchoolOwnersWithUserCounts = asyncHandler(async (req, res) => {
         if (admin.schoolId) {
           userCount = await User.countDocuments({
             schoolId: admin.schoolId._id,
-            role: { $in: ['teacher', 'student', 'parent', 'secretary'] }
+            role: { $in: ["teacher", "student", "parent", "secretary"] },
           });
         }
 
@@ -1852,27 +1936,26 @@ const getSchoolOwnersWithUserCounts = asyncHandler(async (req, res) => {
           _id: admin._id,
           name: admin.name,
           email: admin.email,
-          schoolName: admin.schoolId?.name || 'No School Assigned',
+          schoolName: admin.schoolId?.name || "No School Assigned",
           schoolId: admin.schoolId?._id,
-          packType: admin.packType || 'lite',
+          packType: admin.packType || "lite",
           monthlyPrice: admin.monthlyPrice || 0,
           active: admin.active,
           userCount,
-          createdAt: admin.createdAt
+          createdAt: admin.createdAt,
         };
-      })
+      }),
     );
 
     res.json(adminUsersWithCounts);
-
   } catch (error) {
-    console.error('[SUPERADMIN] Error getting school owners:', error.message);
+    console.error("[SUPERADMIN] Error getting school owners:", error.message);
     res.status(500);
-    throw new Error('Failed to get school owners data');
+    throw new Error("Failed to get school owners data");
   }
 });
 
-// @desc    Update admin pack and pricing (SuperAdmin only)  
+// @desc    Update admin pack and pricing (SuperAdmin only)
 // @route   PUT /api/users/superadmin/admin-pack/:id
 // @access  Private/SuperAdmin
 const updateAdminPack = asyncHandler(async (req, res) => {
@@ -1881,26 +1964,26 @@ const updateAdminPack = asyncHandler(async (req, res) => {
     const adminId = req.params.id;
 
     // Validate inputs
-    if (!['lite', 'pro'].includes(packType)) {
+    if (!["lite", "pro"].includes(packType)) {
       res.status(400);
       throw new Error('Pack type must be either "lite" or "pro"');
     }
 
-    if (typeof monthlyPrice !== 'number' || monthlyPrice < 0) {
+    if (typeof monthlyPrice !== "number" || monthlyPrice < 0) {
       res.status(400);
-      throw new Error('Monthly price must be a non-negative number');
+      throw new Error("Monthly price must be a non-negative number");
     }
 
     // Find and update admin user
     const adminUser = await User.findById(adminId);
     if (!adminUser) {
       res.status(404);
-      throw new Error('Admin user not found');
+      throw new Error("Admin user not found");
     }
 
-    if (adminUser.role !== 'admin') {
+    if (adminUser.role !== "admin") {
       res.status(400);
-      throw new Error('User is not an admin');
+      throw new Error("User is not an admin");
     }
 
     // Update pack information
@@ -1909,22 +1992,21 @@ const updateAdminPack = asyncHandler(async (req, res) => {
     await adminUser.save();
 
     // Populate school information for response
-    await adminUser.populate('schoolId', 'name');
+    await adminUser.populate("schoolId", "name");
 
     const response = {
       _id: adminUser._id,
       name: adminUser.name,
       email: adminUser.email,
-      schoolName: adminUser.schoolId?.name || 'No School Assigned',
+      schoolName: adminUser.schoolId?.name || "No School Assigned",
       packType: adminUser.packType,
       monthlyPrice: adminUser.monthlyPrice,
-      active: adminUser.active
+      active: adminUser.active,
     };
 
     res.json(response);
-
   } catch (error) {
-    console.error('[SUPERADMIN] Error updating admin pack:', error.message);
+    console.error("[SUPERADMIN] Error updating admin pack:", error.message);
     res.status(500);
     throw new Error(`Failed to update admin pack: ${error.message}`);
   }

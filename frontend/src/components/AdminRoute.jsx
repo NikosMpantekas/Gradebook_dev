@@ -12,11 +12,9 @@ const AdminRoute = ({ children }) => {
 
   // Minimal logging for debugging
   if (!user) {
-    console.log('AdminRoute - No user found');
   }
 
   if (user && user.role === 'secretary') {
-    console.log('Secretary permissions:', user.secretaryPermissions || 'none');
   }
 
   // Show loading state while authentication is in progress
@@ -26,7 +24,6 @@ const AdminRoute = ({ children }) => {
 
   // CHECK 1: Verify user exists
   if (!user) {
-    console.log('❌ AdminRoute - No user found, redirecting to login');
     return <Navigate to="/login" />;
   }
 
@@ -46,14 +43,12 @@ const AdminRoute = ({ children }) => {
 
   // CHECK 3: Allow admin access but check feature toggles
   if (user.role === 'admin') {
-    console.log('AdminRoute - Admin role verified, checking feature permissions');
     
     // COMPREHENSIVE FEATURE FLAG ENFORCEMENT FOR ALL ADMIN ROUTES
     
     // Classes Management
     if (location.pathname.includes('/app/admin/classes')) {
       if (!isFeatureEnabled('enableClasses')) {
-        console.log('❌ AdminRoute - Classes feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -61,7 +56,6 @@ const AdminRoute = ({ children }) => {
     // Grades Management
     if (location.pathname.includes('/app/admin/grades')) {
       if (!isFeatureEnabled('enableGrades')) {
-        console.log('❌ AdminRoute - Grades feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -69,7 +63,6 @@ const AdminRoute = ({ children }) => {
     // Notifications Management
     if (location.pathname.includes('/app/admin/notifications')) {
       if (!isFeatureEnabled('enableNotifications')) {
-        console.log('❌ AdminRoute - Notifications feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -77,7 +70,6 @@ const AdminRoute = ({ children }) => {
     // User Management
     if (location.pathname.includes('/app/admin/users')) {
       if (!isFeatureEnabled('enableUserManagement')) {
-        console.log('❌ AdminRoute - User Management feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -85,7 +77,6 @@ const AdminRoute = ({ children }) => {
     // School Settings
     if (location.pathname.includes('/app/admin/school-settings')) {
       if (!isFeatureEnabled('enableSchoolSettings')) {
-        console.log('❌ AdminRoute - School Settings feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -93,7 +84,6 @@ const AdminRoute = ({ children }) => {
     // School Branches Management
     if (location.pathname.includes('/app/admin/school-branches')) {
       if (!isFeatureEnabled('enableSchoolSettings')) {
-        console.log('❌ AdminRoute - School Branches feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -101,7 +91,6 @@ const AdminRoute = ({ children }) => {
     // Schedule Management
     if (location.pathname.includes('/app/admin/schedule')) {
       if (!isFeatureEnabled('enableSchedule')) {
-        console.log('❌ AdminRoute - Schedule feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -109,7 +98,6 @@ const AdminRoute = ({ children }) => {
     // Students Management
     if (location.pathname.includes('/app/admin/students')) {
       if (!isFeatureEnabled('enableStudents')) {
-        console.log('❌ AdminRoute - Students feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -117,7 +105,6 @@ const AdminRoute = ({ children }) => {
     // Teachers Management
     if (location.pathname.includes('/app/admin/teachers')) {
       if (!isFeatureEnabled('enableTeachers')) {
-        console.log('❌ AdminRoute - Teachers feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -126,7 +113,6 @@ const AdminRoute = ({ children }) => {
     // Analytics/Statistics
     if (location.pathname.includes('/app/admin/analytics') || location.pathname.includes('/app/admin/statistics')) {
       if (!isFeatureEnabled('enableAnalytics')) {
-        console.log('❌ AdminRoute - Analytics feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -134,7 +120,6 @@ const AdminRoute = ({ children }) => {
     // Bug Reports
     if (location.pathname.includes('/app/admin/bug-reports')) {
       if (!isFeatureEnabled('enableBugReports')) {
-        console.log('❌ AdminRoute - Bug Reports feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -142,7 +127,6 @@ const AdminRoute = ({ children }) => {
     // Patch Notes
     if (location.pathname.includes('/app/admin/patch-notes')) {
       if (!isFeatureEnabled('enablePatchNotes')) {
-        console.log('❌ AdminRoute - Patch Notes feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -150,7 +134,6 @@ const AdminRoute = ({ children }) => {
     // Student Progress
     if (location.pathname.includes('/app/admin/progress')) {
       if (!isFeatureEnabled('enableStudentProgress')) {
-        console.log('❌ AdminRoute - Student Progress feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -168,16 +151,13 @@ const AdminRoute = ({ children }) => {
     
 
     if (location.pathname.includes('/app/admin/progress') && !isFeatureEnabled('enableStudentProgress')) {
-      console.log('❌ AdminRoute - Student Progress feature disabled for this school');
       return <Navigate to="/app/dashboard" />;
     }
     
     if (location.pathname.includes('/app/admin/rating') && !isFeatureEnabled('enableRatingSystem')) {
-      console.log('❌ AdminRoute - Rating System feature disabled for this school');
       return <Navigate to="/app/dashboard" />;
     }
     
-    console.log('✅ AdminRoute - Admin access granted with required features enabled');
     // Force refresh state to ensure admin has all necessary data
     localStorage.setItem('admin_last_access', Date.now());
     return children;
@@ -186,14 +166,12 @@ const AdminRoute = ({ children }) => {
   // CHECK 4: For secretary, check both role permissions AND feature toggles
   if (user.role === 'secretary') {
     // Enable enhanced logging for secretary access attempts
-    console.log(`Secretary access attempt to: ${location.pathname}`);
     
     // For student progress - check school feature only
     if (location.pathname.includes('/app/admin/progress')) {
       const isFeatureActive = isFeatureEnabled('enableAnalytics');
       
       if (!isFeatureActive) {
-        console.log('❌ Secretary access denied - Analytics feature disabled for school');
         return <Navigate to="/app/dashboard" />;
       }
       
@@ -204,7 +182,6 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/users')) {
       const isFeatureActive = isFeatureEnabled('enableUserManagement');
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - User Management feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
       return children;
@@ -214,7 +191,6 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/schools')) {
       const isFeatureActive = isFeatureEnabled('enableSchoolSettings');
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - School Settings feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
       return children;
@@ -224,7 +200,6 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/classes')) {
       const isFeatureActive = isFeatureEnabled('enableClasses');
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - Classes feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
       return children;
@@ -234,10 +209,8 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/grades')) {
       const isFeatureActive = isFeatureEnabled('enableGrades');
       
-      console.log(`Grades feature enabled: ${isFeatureActive}`);
       
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - Grades feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -246,10 +219,8 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/notifications')) {
       const isFeatureActive = isFeatureEnabled('enableNotifications');
       
-      console.log(`Notifications feature enabled: ${isFeatureActive}`);
       
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - Notifications feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
     }
@@ -258,7 +229,6 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/schedule')) {
       const isFeatureActive = isFeatureEnabled('enableSchedule');
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - Schedule feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
       return children;
@@ -268,7 +238,6 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/rating')) {
       const isFeatureActive = isFeatureEnabled('enableRatings');
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - Ratings feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
       return children;
@@ -278,7 +247,6 @@ const AdminRoute = ({ children }) => {
     if (location.pathname.includes('/app/admin/contact')) {
       const isFeatureActive = isFeatureEnabled('enableContact');
       if (!isFeatureActive) {
-        console.log('❌ AdminRoute - Contact feature disabled for this school');
         return <Navigate to="/app/dashboard" />;
       }
       return children;
@@ -287,12 +255,10 @@ const AdminRoute = ({ children }) => {
     // For admin dashboard
     if (location.pathname === '/app/admin') {
       // Always grant access to the main admin dashboard
-      console.log('✅ AdminRoute - Secretary granted admin dashboard access');
       return children;
     }
   }
 
-  console.log(`❌ Access denied for role: ${user.role} to path: ${location.pathname}`);
   // Redirect to dashboard if they don't have permission
   return <Navigate to="/app/dashboard" />;
 };

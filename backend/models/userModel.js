@@ -26,6 +26,17 @@ const userSchema = mongoose.Schema(
       index: true, // Index for performance
     },
     // Mobile phone for contact purposes
+    dateOfBirth: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    department: {
+      type: String,
+      required: false,
+      default: '',
+      trim: true,
+    },
     mobilePhone: {
       type: String,
       required: false,

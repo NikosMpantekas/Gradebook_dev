@@ -163,7 +163,7 @@ const StudentStatsPrint = () => {
       </div>
 
       {/* Printable Content */}
-      <div className="p-4 max-w-4xl mx-auto">
+      <div className="p-4 print:p-8 max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold mb-1 print:text-black" style={{
@@ -187,7 +187,7 @@ const StudentStatsPrint = () => {
         {/* Grades by Subject */}
         {gradesData?.subjectAnalysis && Object.keys(gradesData.subjectAnalysis).length > 0 ? (
           Object.entries(gradesData.subjectAnalysis).map(([subjectName, subjectData], index) => (
-            <Card key={subjectName} className={`mb-4 print:shadow-none print:border print:border-black ${index > 0 ? 'print:break-before-page' : ''}`} style={{
+            <Card key={subjectName} className={`mb-4 print:shadow-none print:border print:border-black ${index > 0 ? 'print:break-before-page print:mt-8' : ''}`} style={{
               backgroundColor: darkMode ? themeData?.darkColors?.card : themeData?.colors?.card,
               borderColor: darkMode ? themeData?.darkColors?.border : themeData?.colors?.border
             }}>
@@ -441,7 +441,7 @@ const StudentStatsPrint = () => {
           }
           
           @page {
-            margin: 1cm;
+            margin: 0;
             size: A4;
           }
         }

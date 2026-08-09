@@ -17,65 +17,37 @@ const initialState = {
  */
 const isClusterSchool = (school) => {
   try {
-    // Handle null/undefined schools
-    if (!school) {
-      console.log('Filtering undefined/null school');
-      return true;
-    }
-    
-    // Log the school being checked for debugging
-    console.log(`Checking school: ${school.name || 'unnamed school'}, ID: ${school._id || 'no id'}`);
+    if (!school) return true;
     
     // CUSTOM filtering for Parothisi Database Structure
     
     // 1. Main School "Παρώθηση" - Filter out by exact ID
-    if (school._id === '6830531d4930876187757ec4') {
-      console.log(`Filtering main cluster by ID: ${school.name}`);
-      return true;
-    }
+    if (school._id === '6830531d4930876187757ec4') return true;
     
     // 2. Main School "Nikos" - Filter out by exact ID
-    if (school._id === '6834c513b7b423cc93e4afee') {
-      console.log(`Filtering main cluster by ID: ${school.name}`);
-      return true;
-    }
+    if (school._id === '6834c513b7b423cc93e4afee') return true;
     
     // 3. Branch "Φροντιστήριο Βαθύ" - Keep this one
-    if (school._id === '6834cef6ae7eb00ba4d0820d') {
-      console.log(`KEEPING confirmed branch school: ${school.name}`);
-      return false;
-    }
-    
-    // Additional heuristic filtering for future schools
+    if (school._id === '6834cef6ae7eb00ba4d0820d') return false;
     
     // 4. Schools that are direct branches should be kept
-    if (school.parentCluster) {
-      console.log(`KEEPING branch with parent: ${school.name}`);
-      return false;
-    }
+    if (school.parentCluster) return false;
     
     // 5. Special case - filter by name if it's one of our main clusters
     const mainClusterNames = ['Παρώθηση', 'Nikos'];
-    if (mainClusterNames.includes(school.name)) {
-      console.log(`Filtering known main cluster by name: ${school.name}`);
-      return true;
-    }
+    if (mainClusterNames.includes(school.name)) return true;
     
     // Default: Compare domain with name to detect if it's a main cluster
     if (school.schoolDomain && school.name) {
       const normalizedSchoolName = school.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const normalizedDomain = school.schoolDomain.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       
-      // If the domain exactly matches the school name, it's likely a main cluster
       if (normalizedSchoolName === normalizedDomain || 
-          normalizedDomain === 'parwthisi' && school.name === 'Παρώθηση') {
-        console.log(`Filtering main cluster by domain match: ${school.name}`);
+          (normalizedDomain === 'parwthisi' && school.name === 'Παρώθηση')) {
         return true;
       }
     }
     
-    // By default, keep schools that don't match our filtering criteria
-    console.log(`KEEPING school: ${school.name}`);
     return false;
   } catch (error) {
     console.error('Error in school filtering, keeping to be safe:', error);
@@ -97,10 +69,7 @@ const filterOutClusterSchools = (schools) => {
     }
     
     // Apply robust filtering
-    const filteredSchools = schools.filter(school => !isClusterSchool(school));
-    console.log(`Filtered ${schools.length - filteredSchools.length} cluster schools from data`);
-    
-    return filteredSchools;
+    return schools.filter(school => !isClusterSchool(school));
   } catch (error) {
     // Safety: If any error occurs during filtering, return empty array
     console.error('Critical error in school filtering, returning empty array:', error);
@@ -132,8 +101,6 @@ export const getSchools = createAsyncThunk(
   'schools/getAll',
   async (_, thunkAPI) => {
     try {
-      // Log the action and token availability for debugging
-      console.log('Fetching schools - checking auth state');
       const user = thunkAPI.getState().auth.user;
       
       // Handle missing user data more gracefully
@@ -215,23 +182,7 @@ export const updateSchool = createAsyncThunk(
         id = payload;
       }
 
-      console.log('UPDATE SCHOOL - Final parameters:', { id, schoolDataKeys: schoolData ? Object.keys(schoolData) : 'none' });
-            
-      // Validate school ID before making the API call
-      if (!id || id === 'undefined') {
-        console.error('School update missing ID:', payload);
-        return thunkAPI.rejectWithValue('School ID is required for update');
-      }
-      
-      // Check for user and token
-      const user = thunkAPI.getState().auth.user;
-      if (!user || !user.token) {
-        console.error('No user or token available in updateSchool thunk');
-        return thunkAPI.rejectWithValue('Authentication error: Please log in again');
-      }
-      
       const result = await schoolService.updateSchool(id, schoolData || {}, user.token);
-      console.log('UPDATE SCHOOL - Success response:', result);
       return result;
     } catch (error) {
       console.error('UPDATE SCHOOL - Error:', error);
@@ -302,10 +253,7 @@ export const schoolSlice = createSlice({
         // CRITICAL FIX: Apply cluster school filtering at the Redux level
         // This ensures cluster/primary schools never appear in the UI
         if (Array.isArray(action.payload)) {
-          console.log(`Received ${action.payload.length} schools from API`);
-          const filteredSchools = filterOutClusterSchools(action.payload);
-          console.log(`After filtering out cluster schools: ${filteredSchools.length} schools remain`);
-          state.schools = filteredSchools;
+          state.schools = filterOutClusterSchools(action.payload);
         } else {
           console.warn('Schools data is not an array:', action.payload);
           state.schools = [];

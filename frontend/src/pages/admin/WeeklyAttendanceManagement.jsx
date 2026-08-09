@@ -15,6 +15,7 @@ import {
   endOfMonth,
   addMonths
 } from 'date-fns';
+import { getDateFnsLocale } from '../../utils/dateLocale';
 import {
   Card,
   CardContent,
@@ -1043,7 +1044,7 @@ const WeeklyAttendanceManagement = () => {
                               </span>
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1.5 mt-0.5">
                                 <Calendar className="w-3 h-3 text-muted-foreground/70" />
-                                {format(inst.date, "MMM dd")}
+                                {format(inst.date, "d MMM", { locale: getDateFnsLocale() })}
                                 <span className="text-muted-foreground/40">
                                   •
                                 </span>
@@ -1205,7 +1206,7 @@ const WeeklyAttendanceManagement = () => {
                 <BookOpen className="w-4 h-4 text-primary" />
                 <span>
                   {t("attendance.classesForDate") || "Classes for"}{" "}
-                  {format(selectedDate, "MMMM dd, yyyy")}
+                  {format(selectedDate, "PPP", { locale: getDateFnsLocale() })}
                 </span>
               </h3>
 
@@ -1311,7 +1312,7 @@ const WeeklyAttendanceManagement = () => {
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground mt-1.5 flex items-center gap-1.5 font-medium">
                   <Calendar className="w-3.5 h-3.5" />
-                  {classDate && format(classDate, 'EEEE, MMM dd, yyyy')}
+                  {classDate && format(classDate, 'PPPP', { locale: getDateFnsLocale() })}
                 </DialogDescription>
               </div>
             </div>

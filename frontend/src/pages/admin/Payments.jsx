@@ -1,18 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent
-} from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
+} from "../../components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -21,18 +18,28 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../../components/ui/dialog';
-import { Badge } from '../../components/ui/badge';
-import { Textarea } from '../../components/ui/textarea';
-import { toast } from 'sonner';
-import { Plus, Search, Filter, Calendar, CheckCircle, XCircle, Clock, Download, Users, Lock } from 'lucide-react';
-import api from '../../app/axios';
-import { useFeatureToggles } from '../../contexts/FeatureToggleContext';
-import { useSelector } from 'react-redux';
-import { cn } from '../../lib/utils';
+} from "../../components/ui/dialog";
+import { Badge } from "../../components/ui/badge";
+import { Textarea } from "../../components/ui/textarea";
+import { toast } from "sonner";
+import {
+  Plus,
+  Search,
+  Filter,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Download,
+  Users,
+  Lock,
+} from "lucide-react";
+import api from "../../app/axios";
+import { useFeatureToggles } from "../../contexts/FeatureToggleContext";
+import { useSelector } from "react-redux";
+import { cn } from "../../lib/utils";
 
 const Payments = () => {
-
   const { isFeatureEnabled, loading: featureLoading } = useFeatureToggles();
   const darkMode = useSelector((state) => state.ui?.darkMode || false);
 
@@ -40,14 +47,19 @@ const Payments = () => {
   const [payments, setPayments] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ paid: 0, pending: 0, overdue: 0, total: 0 });
+  const [stats, setStats] = useState({
+    paid: 0,
+    pending: 0,
+    overdue: 0,
+    total: 0,
+  });
 
   // Filters and pagination
   const [filters, setFilters] = useState({
-    status: 'all',
-    student: '',
-    period: '',
-    search: ''
+    status: "all",
+    student: "",
+    period: "",
+    search: "",
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -59,17 +71,17 @@ const Payments = () => {
 
   // Form states
   const [paymentForm, setPaymentForm] = useState({
-    parentId: '',
-    studentId: '',
+    parentId: "",
+    studentId: "",
     linkedStudents: [],
-    paymentPeriod: '',
-    status: 'pending',
-    paymentMethod: '',
-    notes: ''
+    paymentPeriod: "",
+    status: "pending",
+    paymentMethod: "",
+    notes: "",
   });
   const [generateForm, setGenerateForm] = useState({
     year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1
+    month: new Date().getMonth() + 1,
   });
 
   // Load data on component mount
@@ -86,20 +98,16 @@ const Payments = () => {
       const params = new URLSearchParams({
         page: currentPage,
         limit: 20,
-        ...filters
+        ...filters,
       });
 
       const response = await api.get(`/api/payments?${params}`);
-      console.log('[PAYMENTS] API URL:', api.defaults.baseURL);
-      console.log('[PAYMENTS] Request URL:', `/api/payments?${params}`);
-      console.log('[PAYMENTS] Frontend response type:', typeof response.data);
-      console.log('[PAYMENTS] Frontend response:', response.data);
 
       setPayments(response.data.payments || []);
       setTotalPages(response.data.pagination?.pages || 1);
     } catch (error) {
-      console.error('Error fetching payments:', error);
-      toast.error('Error', { description: 'Failed to fetch payments' });
+      console.error("Error fetching payments:", error);
+      toast.error("Error", { description: "Failed to fetch payments" });
     } finally {
       setLoading(false);
     }
@@ -108,32 +116,35 @@ const Payments = () => {
   // Fetch parents with their linked students for dropdown
   const fetchStudents = async () => {
     try {
-      console.log('[PAYMENTS] Fetching parents with students...');
-      const parentsResponse = await api.get('/api/users?role=parent&limit=1000');
-      const studentsResponse = await api.get('/api/users?role=student&limit=1000');
+      const parentsResponse = await api.get(
+        "/api/users?role=parent&limit=1000",
+      );
+      const studentsResponse = await api.get(
+        "/api/users?role=student&limit=1000",
+      );
 
       const parents = parentsResponse.data.users || parentsResponse.data || [];
-      const allStudents = studentsResponse.data.users || studentsResponse.data || [];
-
-      console.log('[PAYMENTS] Parents response:', parents.length);
-      console.log('[PAYMENTS] Students response:', allStudents.length);
+      const allStudents =
+        studentsResponse.data.users || studentsResponse.data || [];
 
       // Create parent-student mapping for display
-      const parentsWithStudents = parents.map(parent => {
-        const linkedStudents = allStudents.filter(student =>
-          student.parentIds && student.parentIds.includes(parent._id)
-        );
-        return {
-          ...parent,
-          linkedStudents,
-          displayName: `${parent.name} (${linkedStudents.map(s => s.name).join(', ')})`
-        };
-      }).filter(parent => parent.linkedStudents.length > 0); // Only show parents with linked students
+      const parentsWithStudents = parents
+        .map((parent) => {
+          const linkedStudents = allStudents.filter(
+            (student) =>
+              student.parentIds && student.parentIds.includes(parent._id),
+          );
+          return {
+            ...parent,
+            linkedStudents,
+            displayName: `${parent.name} (${linkedStudents.map((s) => s.name).join(", ")})`,
+          };
+        })
+        .filter((parent) => parent.linkedStudents.length > 0); // Only show parents with linked students
 
       setStudents(parentsWithStudents);
-      console.log('[PAYMENTS] Processed parents with students:', parentsWithStudents.length);
     } catch (error) {
-      console.error('Error fetching parents/students:', error);
+      console.error("Error fetching parents/students:", error);
       setStudents([]);
     }
   };
@@ -141,10 +152,10 @@ const Payments = () => {
   // Fetch payment statistics
   const fetchStats = async () => {
     try {
-      const response = await api.get('/api/payments/stats');
+      const response = await api.get("/api/payments/stats");
       setStats(response.data);
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error("Error fetching stats:", error);
     }
   };
 
@@ -156,13 +167,17 @@ const Payments = () => {
         await api.put(`/api/payments/${selectedPayment._id}`, {
           status: paymentForm.status,
           paymentMethod: paymentForm.paymentMethod,
-          notes: paymentForm.notes
+          notes: paymentForm.notes,
         });
-        toast.success('Success', { description: 'Payment updated successfully' });
+        toast.success("Success", {
+          description: "Payment updated successfully",
+        });
       } else {
         // Create new payment
-        await api.post('/api/payments', paymentForm);
-        toast.success('Success', { description: 'Payment created successfully' });
+        await api.post("/api/payments", paymentForm);
+        toast.success("Success", {
+          description: "Payment created successfully",
+        });
       }
 
       setIsCreateModalOpen(false);
@@ -171,35 +186,40 @@ const Payments = () => {
       fetchPayments();
       fetchStats();
     } catch (error) {
-      console.error('Error saving payment:', error);
-      toast.error('Error', { description: error.response?.data?.message || 'Failed to save payment' });
+      console.error("Error saving payment:", error);
+      toast.error("Error", {
+        description: error.response?.data?.message || "Failed to save payment",
+      });
     }
   };
 
   // Handle monthly payment generation
   const handleGeneratePayments = async () => {
     try {
-      const response = await api.post('/api/payments/generate', generateForm);
-      toast.success('Success', { description: response.data.message });
+      const response = await api.post("/api/payments/generate", generateForm);
+      toast.success("Success", { description: response.data.message });
       setIsGenerateModalOpen(false);
       fetchPayments();
       fetchStats();
     } catch (error) {
-      console.error('Error generating payments:', error);
-      toast.error('Error', { description: error.response?.data?.message || 'Failed to generate payments' });
+      console.error("Error generating payments:", error);
+      toast.error("Error", {
+        description:
+          error.response?.data?.message || "Failed to generate payments",
+      });
     }
   };
 
   // Reset form
   const resetPaymentForm = () => {
     setPaymentForm({
-      parentId: '',
-      studentId: '',
+      parentId: "",
+      studentId: "",
       linkedStudents: [],
-      paymentPeriod: '',
-      status: 'pending',
-      paymentMethod: '',
-      notes: ''
+      paymentPeriod: "",
+      status: "pending",
+      paymentMethod: "",
+      notes: "",
     });
   };
 
@@ -210,8 +230,8 @@ const Payments = () => {
       studentId: payment.student._id,
       paymentPeriod: payment.paymentPeriod,
       status: payment.status,
-      paymentMethod: payment.paymentMethod || '',
-      notes: payment.notes || ''
+      paymentMethod: payment.paymentMethod || "",
+      notes: payment.notes || "",
     });
     setIsCreateModalOpen(true);
   };
@@ -219,9 +239,9 @@ const Payments = () => {
   // Get status badge color
   const getStatusBadge = (status) => {
     const variants = {
-      paid: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      overdue: { color: 'bg-red-100 text-red-800', icon: XCircle }
+      paid: { color: "bg-green-100 text-green-800", icon: CheckCircle },
+      pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      overdue: { color: "bg-red-100 text-red-800", icon: XCircle },
     };
 
     const variant = variants[status] || variants.pending;
@@ -241,11 +261,18 @@ const Payments = () => {
     const currentDate = new Date();
 
     for (let i = -2; i <= 6; i++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + i,
+        1,
+      );
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
-      const period = `${year}-${month.toString().padStart(2, '0')}`;
-      const display = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const period = `${year}-${month.toString().padStart(2, "0")}`;
+      const display = date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
       options.push({ value: period, label: display });
     }
 
@@ -264,20 +291,25 @@ const Payments = () => {
     );
   }
 
-  if (!isFeatureEnabled('enablePayments')) {
+  if (!isFeatureEnabled("enablePayments")) {
     return (
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Payment Management</h1>
-          <p className="text-gray-600">Track and manage student monthly payments</p>
+          <p className="text-gray-600">
+            Track and manage student monthly payments
+          </p>
         </div>
 
         <Card className="text-center py-12">
           <CardContent>
             <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Payment Feature Disabled</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Payment Feature Disabled
+            </h3>
             <p className="text-gray-600 mb-4">
-              The payment management feature is currently disabled for your school.
+              The payment management feature is currently disabled for your
+              school.
             </p>
             <p className="text-sm text-gray-500">
               Contact your system administrator to enable this feature.
@@ -293,23 +325,32 @@ const Payments = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">Payment Management</h1>
-          <p className="text-muted-foreground">Track and manage student monthly payments</p>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
+            Payment Management
+          </h1>
+          <p className="text-muted-foreground">
+            Track and manage student monthly payments
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Dialog open={isGenerateModalOpen} onOpenChange={setIsGenerateModalOpen}>
+          <Dialog
+            open={isGenerateModalOpen}
+            onOpenChange={setIsGenerateModalOpen}
+          >
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
                 <Calendar className="w-4 h-4 mr-2" />
                 Generate Monthly
               </Button>
             </DialogTrigger>
-            <DialogContent className={cn(
-              "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
-              darkMode
-                ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
-                : "bg-background text-foreground border-border"
-            )}>
+            <DialogContent
+              className={cn(
+                "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
+                darkMode
+                  ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
+                  : "bg-background text-foreground border-border",
+              )}
+            >
               <DialogHeader>
                 <DialogTitle>Generate Monthly Payments</DialogTitle>
                 <DialogDescription>
@@ -323,12 +364,17 @@ const Payments = () => {
                     id="year"
                     type="number"
                     value={generateForm.year}
-                    onChange={(e) => setGenerateForm({ ...generateForm, year: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setGenerateForm({
+                        ...generateForm,
+                        year: parseInt(e.target.value),
+                      })
+                    }
                     className={cn(
                       "transition-colors duration-100",
                       darkMode
                         ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
                     )}
                   />
                 </div>
@@ -336,23 +382,36 @@ const Payments = () => {
                   <Label htmlFor="month">Month</Label>
                   <Select
                     value={generateForm.month.toString()}
-                    onValueChange={(value) => setGenerateForm({ ...generateForm, month: parseInt(value) })}
+                    onValueChange={(value) =>
+                      setGenerateForm({
+                        ...generateForm,
+                        month: parseInt(value),
+                      })
+                    }
                   >
-                    <SelectTrigger className={cn(
-                      "transition-colors duration-100",
-                      darkMode
-                        ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                    )}>
+                    <SelectTrigger
+                      className={cn(
+                        "transition-colors duration-100",
+                        darkMode
+                          ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
+                          : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                      )}
+                    >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className={cn(
-                      "transition-colors duration-100",
-                      darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
-                    )}>
+                    <SelectContent
+                      className={cn(
+                        "transition-colors duration-100",
+                        darkMode
+                          ? "bg-[#23262b] border-[#2a3441]"
+                          : "bg-white border-[#e0e0e0]",
+                      )}
+                    >
                       {Array.from({ length: 12 }, (_, i) => (
                         <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'long' })}
+                          {new Date(2024, i, 1).toLocaleDateString("en-US", {
+                            month: "long",
+                          })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -360,12 +419,13 @@ const Payments = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsGenerateModalOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsGenerateModalOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleGeneratePayments}>
-                  Generate
-                </Button>
+                <Button onClick={handleGeneratePayments}>Generate</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -377,38 +437,58 @@ const Payments = () => {
                 Add Payment
               </Button>
             </DialogTrigger>
-            <DialogContent className={cn(
-              "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
-              darkMode
-                ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
-                : "bg-background text-foreground border-border"
-            )}>
+            <DialogContent
+              className={cn(
+                "w-[90vw] max-w-sm sm:max-w-md transition-colors duration-100",
+                darkMode
+                  ? "bg-[#181b20] text-foreground border-[#2a3441]/50"
+                  : "bg-background text-foreground border-border",
+              )}
+            >
               <DialogHeader>
                 <DialogTitle>
-                  {selectedPayment ? 'Edit Payment' : 'Add Payment Record'}
+                  {selectedPayment ? "Edit Payment" : "Add Payment Record"}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 sm:space-y-4">
                 {!selectedPayment && (
                   <>
                     <div>
-                      <Label htmlFor="student" className="text-sm">Parent (Students)</Label>
-                      <Select value={paymentForm.parentId} onValueChange={(value) => {
-                        const selectedParent = students.find(p => p._id === value);
-                        setPaymentForm({ ...paymentForm, parentId: value, linkedStudents: selectedParent?.linkedStudents || [] });
-                      }}>
-                        <SelectTrigger className={cn(
-                          "mt-1 transition-colors duration-100",
-                          darkMode
-                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                        )}>
+                      <Label htmlFor="student" className="text-sm">
+                        Parent (Students)
+                      </Label>
+                      <Select
+                        value={paymentForm.parentId}
+                        onValueChange={(value) => {
+                          const selectedParent = students.find(
+                            (p) => p._id === value,
+                          );
+                          setPaymentForm({
+                            ...paymentForm,
+                            parentId: value,
+                            linkedStudents:
+                              selectedParent?.linkedStudents || [],
+                          });
+                        }}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "mt-1 transition-colors duration-100",
+                            darkMode
+                              ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
+                              : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                          )}
+                        >
                           <SelectValue placeholder="Select parent" />
                         </SelectTrigger>
-                        <SelectContent className={cn(
-                          "transition-colors duration-100",
-                          darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
-                        )}>
+                        <SelectContent
+                          className={cn(
+                            "transition-colors duration-100",
+                            darkMode
+                              ? "bg-[#23262b] border-[#2a3441]"
+                              : "bg-white border-[#e0e0e0]",
+                          )}
+                        >
                           {students.map((parent) => (
                             <SelectItem key={parent._id} value={parent._id}>
                               {parent.displayName}
@@ -418,47 +498,83 @@ const Payments = () => {
                       </Select>
                     </div>
 
-                    {paymentForm.linkedStudents && paymentForm.linkedStudents.length > 0 && (
-                      <div>
-                        <Label htmlFor="specificStudent" className="text-sm">Select Student</Label>
-                        <Select value={paymentForm.studentId} onValueChange={(value) => setPaymentForm({ ...paymentForm, studentId: value })}>
-                          <SelectTrigger className={cn(
+                    {paymentForm.linkedStudents &&
+                      paymentForm.linkedStudents.length > 0 && (
+                        <div>
+                          <Label htmlFor="specificStudent" className="text-sm">
+                            Select Student
+                          </Label>
+                          <Select
+                            value={paymentForm.studentId}
+                            onValueChange={(value) =>
+                              setPaymentForm({
+                                ...paymentForm,
+                                studentId: value,
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "mt-1 transition-colors duration-100",
+                                darkMode
+                                  ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
+                                  : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                              )}
+                            >
+                              <SelectValue placeholder="Select specific student" />
+                            </SelectTrigger>
+                            <SelectContent
+                              className={cn(
+                                "transition-colors duration-100",
+                                darkMode
+                                  ? "bg-[#23262b] border-[#2a3441]"
+                                  : "bg-white border-[#e0e0e0]",
+                              )}
+                            >
+                              {paymentForm.linkedStudents.map((student) => (
+                                <SelectItem
+                                  key={student._id}
+                                  value={student._id}
+                                >
+                                  {student.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                    <div>
+                      <Label htmlFor="period" className="text-sm">
+                        Payment Period
+                      </Label>
+                      <Select
+                        value={paymentForm.paymentPeriod}
+                        onValueChange={(value) =>
+                          setPaymentForm({
+                            ...paymentForm,
+                            paymentPeriod: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger
+                          className={cn(
                             "mt-1 transition-colors duration-100",
                             darkMode
                               ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                              : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                          )}>
-                            <SelectValue placeholder="Select specific student" />
-                          </SelectTrigger>
-                          <SelectContent className={cn(
-                            "transition-colors duration-100",
-                            darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
-                          )}>
-                            {paymentForm.linkedStudents.map((student) => (
-                              <SelectItem key={student._id} value={student._id}>
-                                {student.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    <div>
-                      <Label htmlFor="period" className="text-sm">Payment Period</Label>
-                      <Select value={paymentForm.paymentPeriod} onValueChange={(value) => setPaymentForm({ ...paymentForm, paymentPeriod: value })}>
-                        <SelectTrigger className={cn(
-                          "mt-1 transition-colors duration-100",
-                          darkMode
-                            ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                            : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                        )}>
+                              : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                          )}
+                        >
                           <SelectValue placeholder="Select period" />
                         </SelectTrigger>
-                        <SelectContent className={cn(
-                          "transition-colors duration-100",
-                          darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
-                        )}>
+                        <SelectContent
+                          className={cn(
+                            "transition-colors duration-100",
+                            darkMode
+                              ? "bg-[#23262b] border-[#2a3441]"
+                              : "bg-white border-[#e0e0e0]",
+                          )}
+                        >
                           {periodOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -471,20 +587,33 @@ const Payments = () => {
                 )}
 
                 <div>
-                  <Label htmlFor="status" className="text-sm">Status</Label>
-                  <Select value={paymentForm.status} onValueChange={(value) => setPaymentForm({ ...paymentForm, status: value })}>
-                    <SelectTrigger className={cn(
-                      "mt-1 transition-colors duration-100",
-                      darkMode
-                        ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                    )}>
+                  <Label htmlFor="status" className="text-sm">
+                    Status
+                  </Label>
+                  <Select
+                    value={paymentForm.status}
+                    onValueChange={(value) =>
+                      setPaymentForm({ ...paymentForm, status: value })
+                    }
+                  >
+                    <SelectTrigger
+                      className={cn(
+                        "mt-1 transition-colors duration-100",
+                        darkMode
+                          ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
+                          : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                      )}
+                    >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className={cn(
-                      "transition-colors duration-100",
-                      darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
-                    )}>
+                    <SelectContent
+                      className={cn(
+                        "transition-colors duration-100",
+                        darkMode
+                          ? "bg-[#23262b] border-[#2a3441]"
+                          : "bg-white border-[#e0e0e0]",
+                      )}
+                    >
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
                       <SelectItem value="overdue">Overdue</SelectItem>
@@ -493,22 +622,37 @@ const Payments = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="paymentMethod" className="text-sm">Payment Method</Label>
-                  <Select value={paymentForm.paymentMethod} onValueChange={(value) => setPaymentForm({ ...paymentForm, paymentMethod: value })}>
-                    <SelectTrigger className={cn(
-                      "mt-1 transition-colors duration-100",
-                      darkMode
-                        ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
-                    )}>
+                  <Label htmlFor="paymentMethod" className="text-sm">
+                    Payment Method
+                  </Label>
+                  <Select
+                    value={paymentForm.paymentMethod}
+                    onValueChange={(value) =>
+                      setPaymentForm({ ...paymentForm, paymentMethod: value })
+                    }
+                  >
+                    <SelectTrigger
+                      className={cn(
+                        "mt-1 transition-colors duration-100",
+                        darkMode
+                          ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
+                          : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
+                      )}
+                    >
                       <SelectValue placeholder="Select method (optional)" />
                     </SelectTrigger>
-                    <SelectContent className={cn(
-                      "transition-colors duration-100",
-                      darkMode ? "bg-[#23262b] border-[#2a3441]" : "bg-white border-[#e0e0e0]"
-                    )}>
+                    <SelectContent
+                      className={cn(
+                        "transition-colors duration-100",
+                        darkMode
+                          ? "bg-[#23262b] border-[#2a3441]"
+                          : "bg-white border-[#e0e0e0]",
+                      )}
+                    >
                       <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="bank_transfer">
+                        Bank Transfer
+                      </SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                       <SelectItem value="check">Check</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
@@ -517,32 +661,39 @@ const Payments = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="notes" className="text-sm">Notes</Label>
+                  <Label htmlFor="notes" className="text-sm">
+                    Notes
+                  </Label>
                   <Textarea
                     id="notes"
                     placeholder="Optional notes..."
                     value={paymentForm.notes}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                    onChange={(e) =>
+                      setPaymentForm({ ...paymentForm, notes: e.target.value })
+                    }
                     rows={3}
                     className={cn(
                       "mt-1 transition-colors duration-100",
                       darkMode
                         ? "bg-[#1a1e24] border-[#2a3441] focus:border-[#337ab7]"
-                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]"
+                        : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
                     )}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => {
-                  setIsCreateModalOpen(false);
-                  setSelectedPayment(null);
-                  resetPaymentForm();
-                }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    setSelectedPayment(null);
+                    resetPaymentForm();
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSavePayment}>
-                  {selectedPayment ? 'Update' : 'Create'}
+                  {selectedPayment ? "Update" : "Create"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -566,8 +717,12 @@ const Payments = () => {
           <div className="flex items-center">
             <Clock className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Pending
+              </p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {stats.pending}
+              </p>
             </div>
           </div>
         </div>
@@ -576,7 +731,9 @@ const Payments = () => {
           <div className="flex items-center">
             <XCircle className="h-8 w-8 text-red-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Overdue
+              </p>
               <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
             </div>
           </div>
@@ -586,7 +743,9 @@ const Payments = () => {
           <div className="flex items-center">
             <Users className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Records</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Records
+              </p>
               <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
             </div>
           </div>
@@ -597,10 +756,17 @@ const Payments = () => {
       <div className="p-4 mb-6 rounded-lg border bg-card dark:border-gray-600">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
           <div className="md:col-span-3">
-            <Label htmlFor="statusFilter" className="text-sm font-medium mb-2 block text-foreground">Status</Label>
+            <Label
+              htmlFor="statusFilter"
+              className="text-sm font-medium mb-2 block text-foreground"
+            >
+              Status
+            </Label>
             <Select
               value={filters.status}
-              onValueChange={(value) => setFilters({ ...filters, status: value })}
+              onValueChange={(value) =>
+                setFilters({ ...filters, status: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -615,10 +781,17 @@ const Payments = () => {
           </div>
 
           <div className="md:col-span-3">
-            <Label htmlFor="studentFilter" className="text-sm font-medium mb-2 block text-foreground">Student</Label>
+            <Label
+              htmlFor="studentFilter"
+              className="text-sm font-medium mb-2 block text-foreground"
+            >
+              Student
+            </Label>
             <Select
               value={filters.student}
-              onValueChange={(value) => setFilters({ ...filters, student: value })}
+              onValueChange={(value) =>
+                setFilters({ ...filters, student: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="All students" />
@@ -635,10 +808,17 @@ const Payments = () => {
           </div>
 
           <div className="md:col-span-3">
-            <Label htmlFor="periodFilter" className="text-sm font-medium mb-2 block text-foreground">Period</Label>
+            <Label
+              htmlFor="periodFilter"
+              className="text-sm font-medium mb-2 block text-foreground"
+            >
+              Period
+            </Label>
             <Select
               value={filters.period}
-              onValueChange={(value) => setFilters({ ...filters, period: value })}
+              onValueChange={(value) =>
+                setFilters({ ...filters, period: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="All periods" />
@@ -655,11 +835,23 @@ const Payments = () => {
           </div>
 
           <div className="md:col-span-3">
-            <Label htmlFor="clearFilters" className="text-sm font-medium mb-2 block text-foreground">&nbsp;</Label>
+            <Label
+              htmlFor="clearFilters"
+              className="text-sm font-medium mb-2 block text-foreground"
+            >
+              &nbsp;
+            </Label>
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => setFilters({ status: 'all', student: '', period: '', search: '' })}
+              onClick={() =>
+                setFilters({
+                  status: "all",
+                  student: "",
+                  period: "",
+                  search: "",
+                })
+              }
             >
               Clear Filters
             </Button>
@@ -701,41 +893,52 @@ const Payments = () => {
                 <tr>
                   <td colSpan={7} className="text-center py-12">
                     <div className="flex justify-center items-center gap-3 py-6">
-                      <span className="text-base text-foreground">Loading payments...</span>
+                      <span className="text-base text-foreground">
+                        Loading payments...
+                      </span>
                     </div>
                   </td>
                 </tr>
               ) : (payments || []).length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12">
-                    <span className="text-muted-foreground text-base">No payment records found</span>
+                    <span className="text-muted-foreground text-base">
+                      No payment records found
+                    </span>
                   </td>
                 </tr>
               ) : (
                 (payments || []).map((payment) => (
-                  <tr key={payment._id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800">
+                  <tr
+                    key={payment._id}
+                    className="border-b border-gray-200 dark:border-gray-600 hover:bg-muted/50 dark:hover:bg-gray-800"
+                  >
                     <td className="p-4">
                       <span className="font-medium text-foreground text-base">
-                        {payment.student?.name || 'Unknown Student'}
+                        {payment.student?.name || "Unknown Student"}
                       </span>
                     </td>
                     <td className="p-4 text-foreground text-base">
-                      {new Date(payment.paymentPeriod + '-01').toLocaleDateString('en-US', {
-                        month: 'long',
-                        year: 'numeric'
+                      {new Date(
+                        payment.paymentPeriod + "-01",
+                      ).toLocaleDateString("en-US", {
+                        month: "long",
+                        year: "numeric",
                       })}
                     </td>
-                    <td className="p-4">
-                      {getStatusBadge(payment.status)}
-                    </td>
+                    <td className="p-4">{getStatusBadge(payment.status)}</td>
                     <td className="p-4 text-foreground text-base">
                       {new Date(payment.dueDate).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-foreground text-base">
-                      {payment.paidDate ? new Date(payment.paidDate).toLocaleDateString() : '-'}
+                      {payment.paidDate
+                        ? new Date(payment.paidDate).toLocaleDateString()
+                        : "-"}
                     </td>
                     <td className="p-4 text-foreground text-base">
-                      {payment.paymentMethod ? payment.paymentMethod.replace('_', ' ').toUpperCase() : '-'}
+                      {payment.paymentMethod
+                        ? payment.paymentMethod.replace("_", " ").toUpperCase()
+                        : "-"}
                     </td>
                     <td className="p-4">
                       <Button
@@ -782,4 +985,3 @@ const Payments = () => {
 };
 
 export default Payments;
-

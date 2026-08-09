@@ -1,7 +1,7 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
-
+import { getDateFnsLocale } from "../../utils/dateLocale"
 import { cn } from "../../lib/utils"
 import { Button } from "./button"
 import { Calendar } from "./calendar"
@@ -51,7 +51,7 @@ const DatePicker = React.forwardRef(({
           {...props}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          {date ? format(date, "PPP", { locale: getDateFnsLocale() }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -61,7 +61,7 @@ const DatePicker = React.forwardRef(({
           onSelect={handleSelect}
           initialFocus
           captionLayout="dropdown"
-          fromYear={min ? new Date(min).getFullYear() - 10 : 2000}
+          fromYear={min ? new Date(min).getFullYear() - 10 : 1900}
           toYear={max ? new Date(max).getFullYear() + 10 : 2035}
           showOutsideDays={false}
           disabled={(date) => {

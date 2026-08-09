@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   User,
   GraduationCap,
@@ -17,53 +17,72 @@ import {
   Euro,
   Star,
   Info,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback } from '../components/ui/avatar';
-import { Separator } from '../components/ui/separator';
-import { Spinner } from '../components/ui/spinner';
-import { DatePicker } from '../components/ui/date-picker';
-import { updateProfile, getUserData } from '../features/auth/authSlice';
-import { Badge } from '../components/ui/badge';
-import ThemeSelector from '../components/ui/theme-selector';
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Separator } from "../components/ui/separator";
+import { Spinner } from "../components/ui/spinner";
+import { DatePicker } from "../components/ui/date-picker";
+import { updateProfile, getUserData } from "../features/auth/authSlice";
+import { Badge } from "../components/ui/badge";
+import ThemeSelector from "../components/ui/theme-selector";
 
 // Hook to detect mobile devices
 const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkDevice = () => {
       // Check for mobile using multiple methods
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-      const isMobileWidth = window.innerWidth < 768
-      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const isTouchDevice =
+        "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      const isMobileWidth = window.innerWidth < 768;
+      const isMobileUserAgent =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        );
 
-      setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent))
-    }
+      setIsMobile(isTouchDevice && (isMobileWidth || isMobileUserAgent));
+    };
 
-    checkDevice()
-    window.addEventListener('resize', checkDevice)
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
 
-    return () => window.removeEventListener('resize', checkDevice)
-  }, [])
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
 
-  return isMobile
-}
+  return isMobile;
+};
 
 // Helper to reliably extract the school name
 const getSchoolName = (userObj) => {
-  if (!userObj) return '';
+  if (!userObj) return "";
   if (userObj.schoolName) return userObj.schoolName;
-  if (userObj.school && typeof userObj.school === 'object') return userObj.school.name || '';
-  if (userObj.schoolId && typeof userObj.schoolId === 'object') return userObj.schoolId.name || '';
-  if (typeof userObj.school === 'string' && userObj.school.length !== 24) return userObj.school; // Ignore raw hex IDs
-  if (userObj.schools && Array.isArray(userObj.schools) && userObj.schools.length > 0) {
-    return userObj.schools.map(s => typeof s === 'object' ? s.name : s).filter(Boolean).join(', ');
+  if (userObj.school && typeof userObj.school === "object")
+    return userObj.school.name || "";
+  if (userObj.schoolId && typeof userObj.schoolId === "object")
+    return userObj.schoolId.name || "";
+  if (typeof userObj.school === "string" && userObj.school.length !== 24)
+    return userObj.school; // Ignore raw hex IDs
+  if (
+    userObj.schools &&
+    Array.isArray(userObj.schools) &&
+    userObj.schools.length > 0
+  ) {
+    return userObj.schools
+      .map((s) => (typeof s === "object" ? s.name : s))
+      .filter(Boolean)
+      .join(", ");
   }
-  return '';
+  return "";
 };
 
 const Profile = () => {
@@ -73,21 +92,20 @@ const Profile = () => {
   const { user, isLoading } = useSelector((state) => state.auth);
   const isMobile = useIsMobile();
 
-
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    contactEmail: '',
-    dateOfBirth: '',
-    role: '',
-    school: '',
-    department: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    name: "",
+    email: "",
+    phone: "",
+    contactEmail: "",
+    dateOfBirth: "",
+    role: "",
+    school: "",
+    department: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -95,30 +113,36 @@ const Profile = () => {
   // Robust fallback: if user has a schoolId but no explicit schoolName, fetch fully populated me profile
   // This bypasses the Service Worker cache which might be intercepting initial logins
   useEffect(() => {
-    if (user && user.role !== 'superadmin' && user.schoolId && !user.schoolName && !user.school) {
+    if (
+      user &&
+      user.role !== "superadmin" &&
+      user.schoolId &&
+      !user.schoolName &&
+      !user.school
+    ) {
       dispatch(getUserData());
     }
   }, [user, dispatch]);
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
     // Initialize form data with current user info
     setFormData({
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.mobilePhone || user.phone || '',
-      contactEmail: user.personalEmail || user.contactEmail || '',
-      dateOfBirth: user.dateOfBirth || '',
-      role: user.role || '',
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.mobilePhone || user.phone || "",
+      contactEmail: user.personalEmail || user.contactEmail || "",
+      dateOfBirth: user.dateOfBirth || "",
+      role: user.role || "",
       school: getSchoolName(user),
-      department: user.department || '',
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
+      department: user.department || "",
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     });
   }, [user, navigate]);
 
@@ -130,31 +154,31 @@ const Profile = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   const handleDateChange = (dateValue) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      dateOfBirth: dateValue
+      dateOfBirth: dateValue,
     }));
 
     // Clear error when user changes date
     if (errors.dateOfBirth) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        dateOfBirth: ''
+        dateOfBirth: "",
       }));
     }
   };
@@ -163,21 +187,24 @@ const Profile = () => {
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = t('profile.nameRequired');
+      newErrors.name = t("profile.nameRequired");
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = t('profile.emailRequired');
+      newErrors.email = t("profile.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('profile.emailInvalid');
+      newErrors.email = t("profile.emailInvalid");
     }
 
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = t('profile.passwordMismatch');
+    if (
+      formData.newPassword &&
+      formData.newPassword !== formData.confirmPassword
+    ) {
+      newErrors.confirmPassword = t("profile.passwordMismatch");
     }
 
     if (formData.newPassword && formData.newPassword.length < 6) {
-      newErrors.newPassword = t('profile.passwordTooShort');
+      newErrors.newPassword = t("profile.passwordTooShort");
     }
 
     setErrors(newErrors);
@@ -195,7 +222,7 @@ const Profile = () => {
         phone: formData.phone,
         contactEmail: formData.contactEmail,
         dateOfBirth: formData.dateOfBirth,
-        department: formData.department
+        department: formData.department,
       };
 
       // Only include password fields if they're being changed
@@ -209,20 +236,20 @@ const Profile = () => {
       if (updateProfile.fulfilled.match(resultAction)) {
         // Refresh full user data from server so localStorage stays complete
         await dispatch(getUserData());
-        toast.success(t('profile.updateSuccess'));
+        toast.success(t("profile.updateSuccess"));
         setIsEditing(false);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
         }));
       } else {
-        toast.error(resultAction.payload || t('profile.updateError'));
+        toast.error(resultAction.payload || t("profile.updateError"));
       }
     } catch (error) {
-      console.error('Profile update error:', error);
-      toast.error(t('profile.updateErrorRetry'));
+      console.error("Profile update error:", error);
+      toast.error(t("profile.updateErrorRetry"));
     }
   };
 
@@ -230,17 +257,17 @@ const Profile = () => {
     setIsEditing(false);
     // Reset form data to original user data
     setFormData({
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.mobilePhone || user.phone || '',
-      contactEmail: user.personalEmail || user.contactEmail || '',
-      dateOfBirth: user.dateOfBirth || '',
-      role: user.role || '',
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.mobilePhone || user.phone || "",
+      contactEmail: user.personalEmail || user.contactEmail || "",
+      dateOfBirth: user.dateOfBirth || "",
+      role: user.role || "",
       school: getSchoolName(user),
-      department: user.department || '',
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
+      department: user.department || "",
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     });
     setErrors({});
   };
@@ -264,24 +291,36 @@ const Profile = () => {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">{t('profile.title')}</h1>
-          <p className="text-muted-foreground">{t('profile.subtitle')}</p>
+          <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
+            {t("profile.title")}
+          </h1>
+          <p className="text-muted-foreground">{t("profile.subtitle")}</p>
         </div>
         <div className="flex space-x-2">
           {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="flex items-center space-x-2">
+            <Button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center space-x-2"
+            >
               <Edit className="h-4 w-4" />
-              <span>{t('profile.editProfile')}</span>
+              <span>{t("profile.editProfile")}</span>
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={handleCancel} className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                className="flex items-center space-x-2"
+              >
                 <X className="h-4 w-4" />
-                <span>{t('common.cancel')}</span>
+                <span>{t("common.cancel")}</span>
               </Button>
-              <Button onClick={handleSave} className="flex items-center space-x-2">
+              <Button
+                onClick={handleSave}
+                className="flex items-center space-x-2"
+              >
                 <Save className="h-4 w-4" />
-                <span>{t('profile.saveChanges')}</span>
+                <span>{t("profile.saveChanges")}</span>
               </Button>
             </>
           )}
@@ -293,16 +332,16 @@ const Profile = () => {
         <div className="lg:col-span-1 space-y-4">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle>{t('profile.profilePicture')}</CardTitle>
+              <CardTitle>{t("profile.profilePicture")}</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <Avatar className="h-32 w-32 mx-auto mb-4">
                 <AvatarFallback className="text-3xl font-semibold">
-                  {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <p className="text-sm text-muted-foreground">
-                {t('profile.pictureManaged')}
+                {t("profile.pictureManaged")}
               </p>
             </CardContent>
           </Card>
@@ -310,29 +349,38 @@ const Profile = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Shield className="h-5 w-5" />
-                <span>{t('profile.accountInfo')}</span>
+                <span>{t("profile.accountInfo")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{t('profile.role')}:</span>
-                <Badge variant="secondary" className="capitalize">
-                  {user.role}
-                </Badge>
+                <span className="text-sm font-medium">
+                  {t("profile.role")}:
+                </span>
+                <span className="text-sm">
+                  {t(`admin.manageUsersPage.roles.${user.role}`, {
+                    defaultValue: user.role,
+                  })}
+                </span>
               </div>
-              {user.role !== 'superadmin' && user.role !== 'admin' && (
+              {user.role !== "superadmin" && (
                 <div className="flex items-center space-x-2">
                   <Building className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{t('profile.school')}:</span>
-                  <span className="text-sm">{getSchoolName(user) || t('profile.notSpecified')}</span>
+                  <span className="text-sm font-medium">
+                    {t("profile.school")}:
+                  </span>
+                  <span className="text-sm">
+                    {getSchoolName(user) || t("profile.notSpecified")}
+                  </span>
                 </div>
               )}
               {user.department && (
                 <div className="flex items-center space-x-2">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{t('profile.department')}:</span>
+                  <span className="text-sm font-medium">
+                    {t("profile.department")}:
+                  </span>
                   <span className="text-sm">{user.department}</span>
                 </div>
               )}
@@ -340,96 +388,82 @@ const Profile = () => {
           </Card>
 
           {/* Pack Information - Admin Only */}
-          {user?.role === 'admin' && (
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800">
+          {user?.role === "admin" && (
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                  <Package className="h-5 w-5" />
-                  {t('profile.currentPlan')}
-                </CardTitle>
+                <CardTitle>{t("profile.currentPlan")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                      {user.packType === 'pro' ? (
-                        <Star className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      {user.packType === "pro" ? (
+                        <Star className="h-4 w-4" />
                       ) : (
-                        <Package className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                        <Package className="h-4 w-4" />
                       )}
+                      <span className="text-sm">
+                        {t("profile.packageType")}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">{t('profile.packageType')}</p>
-                      <p className="font-semibold text-purple-700 dark:text-purple-300">
-                        {user.packType === 'pro' ? t('profile.proPlan') : t('profile.litePlan')}
-                      </p>
-                    </div>
+                    <span className="text-sm font-medium text-foreground">
+                      {user.packType === "pro"
+                        ? `${t("profile.proPlan")} ${t("profile.premiumActive")}`
+                        : `${t("profile.litePlan")} ${t("profile.basicActive")}`}
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                      <Euro className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Euro className="h-4 w-4" />
+                      <span className="text-sm">
+                        {t("profile.monthlyPrice")}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">{t('profile.monthlyPrice')}</p>
-                      <p className="font-semibold text-green-700 dark:text-green-300">
-                        €{user.monthlyPrice || 0}/{t('profile.perMonth')}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">{t('profile.planStatus')}</p>
-                      <Badge variant={user.packType === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                        {user.packType === 'pro' ? t('profile.premiumActive') : t('profile.basicActive')}
-                      </Badge>
-                    </div>
+                    <span className="text-sm font-medium text-foreground">
+                      €{user.monthlyPrice || 0}/{t("profile.perMonth")}
+                    </span>
                   </div>
                 </div>
 
-                {user.packType === 'lite' && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                {user.packType === "lite" && (
+                  <div className="pt-4 mt-2 border-t border-border">
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
                       <Info className="h-4 w-4" />
-                      <span className="text-sm">
-                        {t('profile.upgradeMessage')}
-                      </span>
-                    </div>
+                      {t("profile.upgradeMessage")}
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
-
         </div>
 
         {/* Main Profile Form */}
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('profile.personalInfo')}</CardTitle>
+              <CardTitle>{t("profile.personalInfo")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">{t('profile.fullName')} *</Label>
+                  <Label htmlFor="name">{t("profile.fullName")} *</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className={errors.name ? 'border-destructive' : ''}
+                    className={errors.name ? "border-destructive" : ""}
                   />
-                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t('common.email')} *</Label>
+                  <Label htmlFor="email">{t("common.email")} *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -439,11 +473,13 @@ const Profile = () => {
                     disabled={true}
                     className="bg-muted"
                   />
-                  <p className="text-sm text-muted-foreground">{t('profile.emailCannotChange')}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("profile.emailCannotChange")}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">{t('profile.phoneNumber')}</Label>
+                  <Label htmlFor="phone">{t("profile.phoneNumber")}</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -455,7 +491,9 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">{t('profile.contactEmail')}</Label>
+                  <Label htmlFor="contactEmail">
+                    {t("profile.contactEmail")}
+                  </Label>
                   <Input
                     id="contactEmail"
                     name="contactEmail"
@@ -463,13 +501,13 @@ const Profile = () => {
                     value={formData.contactEmail}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    placeholder={t('profile.contactEmailPlaceholder')}
+                    placeholder={t("profile.contactEmailPlaceholder")}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">{t('profile.dateOfBirth')}</Label>
+                <Label htmlFor="dateOfBirth">{t("profile.dateOfBirth")}</Label>
                 {isMobile ? (
                   // Mobile: Use native date input for better UX
                   <Input
@@ -479,22 +517,29 @@ const Profile = () => {
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    max={new Date().toISOString().split('T')[0]} // Prevent future dates
-                    className={errors.dateOfBirth ? 'border-destructive' : ''}
+                    max={new Date().toISOString().split("T")[0]} // Prevent future dates
+                    className={errors.dateOfBirth ? "border-destructive" : ""}
                   />
                 ) : (
                   // Desktop: Use shadcn DatePicker
                   <DatePicker
                     id="dateOfBirth"
-                    placeholder={t('profile.selectDateOfBirth', 'Select your date of birth')}
+                    placeholder={t(
+                      "profile.selectDateOfBirth",
+                      "Select your date of birth",
+                    )}
                     value={formData.dateOfBirth}
                     onChange={handleDateChange}
                     disabled={!isEditing}
-                    max={new Date().toISOString().split('T')[0]} // Prevent future dates
-                    className={errors.dateOfBirth ? 'border-destructive' : ''}
+                    max={new Date().toISOString().split("T")[0]} // Prevent future dates
+                    className={errors.dateOfBirth ? "border-destructive" : ""}
                   />
                 )}
-                {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
+                {errors.dateOfBirth && (
+                  <p className="text-sm text-destructive">
+                    {errors.dateOfBirth}
+                  </p>
+                )}
               </div>
 
               {/* Theme Selection Panel - Moved under Personal Information */}
@@ -509,20 +554,22 @@ const Profile = () => {
           {isEditing && (
             <Card>
               <CardHeader>
-                <CardTitle>{t('profile.changePassword')}</CardTitle>
+                <CardTitle>{t("profile.changePassword")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword">{t('profile.currentPassword')}</Label>
+                    <Label htmlFor="currentPassword">
+                      {t("profile.currentPassword")}
+                    </Label>
                     <div className="relative">
                       <Input
                         id="currentPassword"
                         name="currentPassword"
-                        type={showPassword ? 'text' : 'password'}
+                        type={showPassword ? "text" : "password"}
                         value={formData.currentPassword}
                         onChange={handleInputChange}
-                        placeholder={t('profile.currentPasswordPlaceholder')}
+                        placeholder={t("profile.currentPasswordPlaceholder")}
                       />
                       <Button
                         type="button"
@@ -531,47 +578,64 @@ const Profile = () => {
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">{t('profile.newPassword')}</Label>
+                    <Label htmlFor="newPassword">
+                      {t("profile.newPassword")}
+                    </Label>
                     <Input
                       id="newPassword"
                       name="newPassword"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       value={formData.newPassword}
                       onChange={handleInputChange}
-                      placeholder={t('profile.newPasswordPlaceholder')}
-                      className={errors.newPassword ? 'border-destructive' : ''}
+                      placeholder={t("profile.newPasswordPlaceholder")}
+                      className={errors.newPassword ? "border-destructive" : ""}
                     />
-                    {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
+                    {errors.newPassword && (
+                      <p className="text-sm text-destructive">
+                        {errors.newPassword}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t('profile.confirmPassword')}</Label>
+                  <Label htmlFor="confirmPassword">
+                    {t("profile.confirmPassword")}
+                  </Label>
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    placeholder={t('profile.confirmPasswordPlaceholder')}
-                    className={errors.confirmPassword ? 'border-destructive' : ''}
+                    placeholder={t("profile.confirmPasswordPlaceholder")}
+                    className={
+                      errors.confirmPassword ? "border-destructive" : ""
+                    }
                   />
-                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-destructive">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  {t('profile.passwordChangeNote')}
+                  {t("profile.passwordChangeNote")}
                 </p>
               </CardContent>
             </Card>
           )}
-
         </div>
       </div>
     </div>
