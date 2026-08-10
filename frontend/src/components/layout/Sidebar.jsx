@@ -369,18 +369,18 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
             variant={isPathSelected(getDashboardPath()) ? "secondary" : "ghost"}
             className={cn(
               "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden",
-              "transition-colors duration-150 ease-out",
+              "",
               isPathSelected(getDashboardPath())
                 ? "bg-primary/15 text-primary"
                 : "hover:bg-primary/5 hover:text-foreground"
             )}
             onClick={() => handleNavigation(getDashboardPath())}
           >
-            <LayoutDashboard className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+            <LayoutDashboard className={cn("mr-3 h-5 w-5 flex-shrink-0 ",
               isPathSelected(getDashboardPath()) ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
             <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('navigation.dashboard')}</span>
             {isBetaRoute(getDashboardPath()) && (
-              <span className="ml-1 text-[10px] font-bold px-1 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 flex-shrink-0">BETA</span>
+              <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary flex-shrink-0">{t("beta.tag")}</span>
             )}
             {isPathSelected(getDashboardPath()) && (
               <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
@@ -398,18 +398,18 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
                 variant={isSelected ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start h-auto py-3 px-4 rounded-lg group relative overflow-hidden",
-                  "transition-colors duration-150 ease-out",
+                  "",
                   isSelected
                     ? "bg-primary/15 text-primary"
                     : "hover:bg-primary/5 hover:text-foreground"
                 )}
                 onClick={() => handleNavigation(item.path)}
               >
-                <Icon className={cn("mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                <Icon className={cn("mr-3 h-5 w-5 flex-shrink-0 ",
                   isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
                 <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{item.label}</span>
                 {isBetaRoute(item.path) && (
-                  <span className="ml-1 text-[10px] font-bold px-1 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 flex-shrink-0">BETA</span>
+                  <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary flex-shrink-0">{t("beta.tag")}</span>
                 )}
                 {isSelected && (
                   <div className="absolute right-2 w-2 h-2 rounded-full bg-primary/60"></div>
@@ -428,9 +428,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       {/* Profile Switcher + Logout */}
       <div className="p-3 space-y-2">
         {/* Profile Switcher */}
-        <div className="flex flex-col rounded-lg transition-colors duration-150 ease-out bg-transparent">
+        <div className="flex flex-col rounded-lg  bg-transparent">
           <div className={cn(
-            "flex items-center rounded-lg transition-colors duration-150 ease-out w-full",
+            "flex items-center rounded-lg  w-full",
             isPathSelected('/app/profile')
               ? "bg-primary/10"
               : "hover:bg-primary/5"
@@ -456,7 +456,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
               </div>
             </button>
             <button
-              className="p-2 rounded-r-lg shrink-0 cursor-pointer bg-transparent border-0 text-muted-foreground hover:text-foreground transition-colors duration-150"
+              className="p-2 rounded-r-lg shrink-0 cursor-pointer bg-transparent border-0 text-muted-foreground hover:text-foreground "
               aria-label={t('sidebar.switchAccount')}
               onClick={() => setAccountSwitcherOpen(!accountSwitcherOpen)}
               tabIndex={0}
@@ -470,10 +470,10 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         {/* Logout Button */}
         <Button
           variant="ghost"
-          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors duration-150 ease-out group overflow-hidden"
+          className="w-full justify-start py-3 px-4 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10  group overflow-hidden"
           onClick={handleLogoutClick}
         >
-          <LogOut className="mr-3 h-5 w-5 flex-shrink-0 transition-colors group-hover:text-destructive" />
+          <LogOut className="mr-3 h-5 w-5 flex-shrink-0  group-hover:text-destructive" />
           <span className="text-sm font-medium truncate overflow-hidden max-w-[160px]">{t('sidebar.logout')}</span>
         </Button>
       </div>
@@ -536,7 +536,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
       {/* Desktop Sidebar - Below header */}
       <aside
-        className="hidden lg:flex fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50 transition-colors duration-150 border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
+        className="hidden lg:flex fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-64 no-animation overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary/50  border-r border-[#2a3441]/30 pt-[env(safe-area-inset-top)]"
         style={{
           backgroundColor: typeof themedSidebarBg === 'string' && themedSidebarBg.startsWith('rgba') ? themedSidebarBg : undefined
         }}

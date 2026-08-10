@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   format,
   startOfWeek,
@@ -13,29 +13,30 @@ import {
   isWithinInterval,
   startOfMonth,
   endOfMonth,
-  addMonths
-} from 'date-fns';
-import { getDateFnsLocale } from '../../utils/dateLocale';
+  addMonths,
+} from "date-fns";
+import { getDateFnsLocale } from "../../utils/dateLocale";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
-} from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { DatePicker } from '../../components/ui/date-picker';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import { Checkbox } from '../../components/ui/checkbox';
+  CardTitle,
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { DatePicker } from "../../components/ui/date-picker";
+import { TimePicker } from "../../components/ui/time-picker";
+import { Label } from "../../components/ui/label";
+import { Badge } from "../../components/ui/badge";
+import { Checkbox } from "../../components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
+} from "../../components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +45,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../../components/ui/dialog';
+} from "../../components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +55,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../components/ui/alert-dialog';
+} from "../../components/ui/alert-dialog";
 import {
   ChevronLeft,
   ChevronRight,
@@ -71,14 +72,14 @@ import {
   Check,
   CalendarRange,
   BarChart2,
-  X
-} from 'lucide-react';
-import { API_URL } from '../../config/apiConfig';
-import axios from 'axios';
-import { Spinner } from '../../components/ui/spinner';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { cn } from '../../lib/utils';
-import { convertToCSV, downloadCSV } from '../../utils/exportUtils';
+  X,
+} from "lucide-react";
+import { API_URL } from "../../config/apiConfig";
+import axios from "axios";
+import { Spinner } from "../../components/ui/spinner";
+import { ScrollArea } from "../../components/ui/scroll-area";
+import { cn } from "../../lib/utils";
+import { convertToCSV, downloadCSV } from "../../utils/exportUtils";
 
 // Memoized Student Row Component
 const StudentRow = React.memo(({ student, t, onToggle, onNoteChange }) => {
@@ -189,11 +190,15 @@ const WeeklyAttendanceManagement = () => {
   const { t } = useTranslation();
   const { user } = useSelector((state) => state.auth);
 
+  // Observer state for current week
+  const observerRef = useRef(null);
+  const [isCurrentWeekVisible, setIsCurrentWeekVisible] = useState(false);
+
   // State management
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [schoolBranches, setSchoolBranches] = useState([]);
-  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState("all");
   const [processedClasses, setProcessedClasses] = useState(new Set());
   const [error, setError] = useState(null);
 
@@ -204,16 +209,17 @@ const WeeklyAttendanceManagement = () => {
   // Export State
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportConfig, setExportConfig] = useState({
-    type: 'all',
-    filterId: '',
-    dateRange: 'month',
-    customStartDate: '',
-    customEndDate: ''
+    type: "all",
+    filterId: "",
+    dateRange: "month",
+    customStartDate: "",
+    customEndDate: "",
   });
   const [exportLoading, setExportLoading] = useState(false);
   const [exportStudents, setExportStudents] = useState([]);
-  const [exportStudentSearch, setExportStudentSearch] = useState('');
-  const [isSearchingExportStudents, setIsSearchingExportStudents] = useState(false);
+  const [exportStudentSearch, setExportStudentSearch] = useState("");
+  const [isSearchingExportStudents, setIsSearchingExportStudents] =
+    useState(false);
 
   // Class popup state
   const [selectedClass, setSelectedClass] = useState(null);
@@ -221,13 +227,13 @@ const WeeklyAttendanceManagement = () => {
   const [classDate, setClassDate] = useState(null);
   const [classAttendance, setClassAttendance] = useState({
     wasHeld: false,
-    startTime: '',
-    endTime: '',
+    startTime: "",
+    endTime: "",
     students: [],
-    notes: ''
+    notes: "",
   });
 
-  const [popupStudentFilter, setPopupStudentFilter] = useState('');
+  const [popupStudentFilter, setPopupStudentFilter] = useState("");
   const [popupLoading, setPopupLoading] = useState(false);
 
   // Logging function
@@ -236,25 +242,28 @@ const WeeklyAttendanceManagement = () => {
       userId: user?._id,
       userRole: user?.role,
       timestamp: new Date().toISOString(),
-      ...data
+      ...data,
     });
   };
 
   const getClassesForDay = useCallback(
     (date) => {
-      const dayName = format(date, 'EEEE'); // Monday, Tuesday, etc.
+      const dayName = format(date, "EEEE"); // Monday, Tuesday, etc.
 
-      return classes.filter(cls => {
+      return classes.filter((cls) => {
         // Check if class has schedule for this day
-        const hasScheduleForDay = cls.schedule?.some(sch => sch.day === dayName);
+        const hasScheduleForDay = cls.schedule?.some(
+          (sch) => sch.day === dayName,
+        );
 
         // Apply branch filter
-        const matchesBranch = selectedBranch === 'all' || cls.schoolBranch === selectedBranch;
+        const matchesBranch =
+          selectedBranch === "all" || cls.schoolBranch === selectedBranch;
 
         return hasScheduleForDay && matchesBranch && cls.active;
       });
     },
-    [classes, selectedBranch]
+    [classes, selectedBranch],
   );
 
   // All class instances for the currently viewed month (both processed and pending)
@@ -282,8 +291,8 @@ const WeeklyAttendanceManagement = () => {
       });
     });
 
-    // Sort chronologically, latest first
-    return instances.sort((a, b) => b.date.getTime() - a.date.getTime());
+    // Sort chronologically, oldest first
+    return instances.sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [currentMonthDate, classes, processedClasses, getClassesForDay]);
 
   // Calendar Days Grid Calculation
@@ -359,13 +368,59 @@ const WeeklyAttendanceManagement = () => {
     }
   }, [currentMonthDate, classes.length]);
 
+  useEffect(() => {
+    if (monthlyClassInstances.length > 0) {
+      if (observerRef.current) observerRef.current.disconnect();
+
+      // Small timeout to ensure rendering is done
+      setTimeout(() => {
+        const now = new Date();
+        const startOfCurrentWeek = startOfWeek(now, { weekStartsOn: 1 });
+        const firstCurrentWeekInst = monthlyClassInstances.findIndex(
+          (inst) => inst.date.getTime() >= startOfCurrentWeek.getTime()
+        );
+        
+        if (firstCurrentWeekInst !== -1) {
+          const inst = monthlyClassInstances[firstCurrentWeekInst];
+          const itemKey = `${inst._id}-${inst.dateStr}-${firstCurrentWeekInst}`;
+          const el = document.getElementById(`instance-${itemKey}`);
+          if (el) {
+            const scrollContainer = el.closest('[data-radix-scroll-area-viewport]') || el.closest('.overflow-y-auto') || el.closest('.overflow-auto');
+            if (scrollContainer) {
+              const containerRect = scrollContainer.getBoundingClientRect();
+              const elRect = el.getBoundingClientRect();
+              scrollContainer.scrollBy({
+                top: elRect.top - containerRect.top - 16,
+                behavior: 'smooth'
+              });
+            } else {
+              el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+            
+            observerRef.current = new IntersectionObserver(
+              ([entry]) => {
+                setIsCurrentWeekVisible(entry.isIntersecting);
+              },
+              { threshold: 0.1 }
+            );
+            observerRef.current.observe(el);
+          }
+        }
+      }, 100);
+    }
+    
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [monthlyClassInstances]);
+
   const fetchInitialData = async () => {
     try {
       setLoading(true);
       await fetchClasses();
     } catch (error) {
-      console.error('Error fetching initial data:', error);
-      setError('Failed to load initial data');
+      console.error("Error fetching initial data:", error);
+      setError("Failed to load initial data");
     } finally {
       setLoading(false);
     }
@@ -377,18 +432,23 @@ const WeeklyAttendanceManagement = () => {
       const start = format(startOfMonth(currentMonthDate), "yyyy-MM-dd");
       const end = format(endOfMonth(currentMonthDate), "yyyy-MM-dd");
 
-      const response = await axios.get(`${API_URL}/api/attendance/processed-classes`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { startDate: start, endDate: end }
-      });
+      const response = await axios.get(
+        `${API_URL}/api/attendance/processed-classes`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { startDate: start, endDate: end },
+        },
+      );
 
       if (response.data && response.data.success && response.data.data) {
-        const processedKeys = response.data.data.map(item => `${item.classId}-${item.date}`);
+        const processedKeys = response.data.data.map(
+          (item) => `${item.classId}-${item.date}`,
+        );
         setProcessedClasses(new Set(processedKeys));
       }
     } catch (error) {
-      console.error('Error loading processed classes:', error);
-      logAction('Error loading processed classes', { error: error.message });
+      console.error("Error loading processed classes:", error);
+      logAction("Error loading processed classes", { error: error.message });
     }
   };
 
@@ -408,44 +468,34 @@ const WeeklyAttendanceManagement = () => {
         setClasses(Array.isArray(classData) ? classData : []);
       }
     } catch (error) {
-      console.error('Error fetching classes:', error);
-      toast.error(t('attendance.failedToLoadClasses'));
+      console.error("Error fetching classes:", error);
+      toast.error(t("attendance.failedToLoadClasses"));
     }
   };
 
   const fetchSchoolBranches = async () => {
     try {
-      const branchIds = [...new Set(classes.map(cls => cls.schoolBranch))].filter(Boolean);
+      const branchIds = [...new Set(classes.map((cls) => cls.schoolBranch))].filter(Boolean);
+      if (branchIds.length === 0) return;
+
       const token = user?.token;
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      const response = await axios.get(`${API_URL}/api/schools`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      const branchDetails = await Promise.all(
-        branchIds.map(async (branchId) => {
-          try {
-            const response = await axios.get(`${API_URL}/api/school-branches/${branchId}`, config);
-            return {
-              id: branchId,
-              name: response.data.name || `Branch ${branchId}`
-            };
-          } catch (error) {
-            console.warn(`Failed to fetch branch ${branchId}:`, error);
-            return {
-              id: branchId,
-              name: `Branch ${branchId}`
-            };
-          }
-        })
-      );
+      const schools = response.data || [];
+      const branchMap = {};
+      schools.forEach((s) => { branchMap[s._id] = s.name; });
 
-      setSchoolBranches(branchDetails);
+      setSchoolBranches(branchIds.map((id) => ({
+        id,
+        name: branchMap[id] || id
+      })));
     } catch (error) {
-      console.error('Error processing school branches:', error);
-      const branches = [...new Set(classes.map(cls => cls.schoolBranch))].filter(Boolean);
-      setSchoolBranches(branches.map(id => ({ id, name: `Branch ${id}` })));
+      console.error("Error fetching branches:", error);
+      // Fallback to raw IDs if fetch fails
+      const branchIds = [...new Set(classes.map((cls) => cls.schoolBranch))].filter(Boolean);
+      setSchoolBranches(branchIds.map((id) => ({ id, name: id })));
     }
   };
 
@@ -464,179 +514,227 @@ const WeeklyAttendanceManagement = () => {
   };
 
   const openClassPopup = async (classData, date) => {
-    const dayName = format(date, 'EEEE');
-    const scheduleForDay = classData.schedule?.find(sch => sch.day === dayName);
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayName = format(date, "EEEE");
+    const scheduleForDay = classData.schedule?.find(
+      (sch) => sch.day === dayName,
+    );
+    const dateStr = format(date, "yyyy-MM-dd");
 
     setSelectedClass(classData);
     setClassDate(date);
-    setPopupStudentFilter('');
+    setPopupStudentFilter("");
     setClassPopupOpen(true);
     setPopupLoading(true);
 
     setClassAttendance({
       wasHeld: true,
-      startTime: scheduleForDay?.startTime || '',
-      endTime: scheduleForDay?.endTime || '',
+      startTime: scheduleForDay?.startTime || "",
+      endTime: scheduleForDay?.endTime || "",
       students: [],
-      notes: ''
+      notes: "",
     });
 
     try {
       const token = user?.token;
 
       const [studentsResponse, attendanceResponse] = await Promise.all([
-        axios.get(`${API_URL}/api/classes/${classData._id}/students`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/api/attendance/class-attendance`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { classId: classData._id, date: dateStr }
-        }).catch(() => ({ data: { success: false } }))
+        axios
+          .get(`${API_URL}/api/classes/${classData._id}/students`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .catch(() => ({ data: [] })),
+        axios
+          .get(`${API_URL}/api/attendance/class-attendance`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { classId: classData._id, date: dateStr },
+          })
+          .catch(() => ({ data: { success: false } })),
       ]);
 
       const classStudents = studentsResponse.data || [];
-      const existingData = attendanceResponse.data?.success ? attendanceResponse.data.data : null;
+      const existingData = attendanceResponse.data?.success
+        ? attendanceResponse.data.data
+        : null;
 
       if (existingData) {
         const classKey = `${classData._id}-${dateStr}`;
-        setProcessedClasses(prev => new Set([...prev, classKey]));
+        setProcessedClasses((prev) => new Set([...prev, classKey]));
 
         setClassAttendance({
           wasHeld: existingData.wasHeld || false,
-          startTime: existingData.startTime || scheduleForDay?.startTime || '',
-          endTime: existingData.endTime || scheduleForDay?.endTime || '',
-          students: classStudents.map(s => {
-            const existingStudent = existingData.students?.find(es => es.studentId === s._id || es.studentId?._id === s._id);
+          startTime: existingData.startTime || scheduleForDay?.startTime || "",
+          endTime: existingData.endTime || scheduleForDay?.endTime || "",
+          students: classStudents.map((s) => {
+            const existingStudent = existingData.students?.find(
+              (es) => es.studentId === s._id || es.studentId?._id === s._id,
+            );
             return {
               studentId: s._id,
               name: s.name,
               present: existingStudent ? existingStudent.present : true,
-              note: existingStudent ? existingStudent.note : ''
+              note: existingStudent ? existingStudent.note : "",
             };
           }),
-          notes: existingData.notes || ''
+          notes: existingData.notes || "",
         });
       } else {
-        setClassAttendance(prev => ({
+        setClassAttendance((prev) => ({
           ...prev,
-          students: classStudents.map(s => ({
+          students: classStudents.map((s) => ({
             studentId: s._id,
             name: s.name,
             present: true,
-            note: ''
-          }))
+            note: "",
+          })),
         }));
       }
     } catch (error) {
-      console.error('Error opening class popup:', error);
-      toast.error(t('attendance.failedToLoadAttendance'));
+      console.error("Error opening class popup:", error);
+      toast.error(t("attendance.failedToLoadAttendance"));
     } finally {
       setPopupLoading(false);
-      setPopupStudentFilter('');
+      setPopupStudentFilter("");
     }
   };
 
   const updateStudentAttendance = useCallback((studentId, field, value) => {
-    setClassAttendance(prev => ({
+    setClassAttendance((prev) => ({
       ...prev,
-      students: prev.students.map(student =>
+      students: prev.students.map((student) =>
         student.studentId === studentId
           ? { ...student, [field]: value }
-          : student
-      )
+          : student,
+      ),
     }));
   }, []);
 
-  const handleToggleAttendance = useCallback((studentId, shouldBePresent) => {
-    updateStudentAttendance(studentId, 'present', shouldBePresent);
-  }, [updateStudentAttendance]);
+  const handleToggleAttendance = useCallback(
+    (studentId, shouldBePresent) => {
+      updateStudentAttendance(studentId, "present", shouldBePresent);
+    },
+    [updateStudentAttendance],
+  );
 
-  const handleNoteChange = useCallback((studentId, note) => {
-    updateStudentAttendance(studentId, 'note', note);
-  }, [updateStudentAttendance]);
+  const handleNoteChange = useCallback(
+    (studentId, note) => {
+      updateStudentAttendance(studentId, "note", note);
+    },
+    [updateStudentAttendance],
+  );
 
   const filteredPopupStudents = useMemo(() => {
-    return classAttendance.students.filter(s =>
-      !popupStudentFilter ||
-      s.name?.toLowerCase().includes(popupStudentFilter.toLowerCase())
+    return classAttendance.students.filter(
+      (s) =>
+        !popupStudentFilter ||
+        s.name?.toLowerCase().includes(popupStudentFilter.toLowerCase()),
     );
   }, [classAttendance.students, popupStudentFilter]);
 
   const saveClassAttendance = async () => {
     try {
-      logAction('Saving class attendance', { classId: selectedClass._id, date: classDate });
+      logAction("Saving class attendance", {
+        classId: selectedClass._id,
+        date: classDate,
+      });
 
       const token = user?.token;
-      const startDateTime = new Date(`${format(classDate, 'yyyy-MM-dd')}T${classAttendance.startTime}:00`);
-      const endDateTime = new Date(`${format(classDate, 'yyyy-MM-dd')}T${classAttendance.endTime}:00`);
+      const startDateTime = new Date(
+        `${format(classDate, "yyyy-MM-dd")}T${classAttendance.startTime}:00`,
+      );
+      const endDateTime = new Date(
+        `${format(classDate, "yyyy-MM-dd")}T${classAttendance.endTime}:00`,
+      );
 
       const attendanceData = {
         classId: selectedClass._id,
-        date: format(classDate, 'yyyy-MM-dd'),
+        date: format(classDate, "yyyy-MM-dd"),
         wasHeld: classAttendance.wasHeld,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         students: classAttendance.students,
-        notes: classAttendance.notes
+        notes: classAttendance.notes,
       };
 
-      const response = await axios.post(`${API_URL}/api/attendance/class-session`, attendanceData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.post(
+        `${API_URL}/api/attendance/class-session`,
+        attendanceData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
       if (response.data && response.data.success) {
-        toast.success(t('attendance.attendanceSaved'));
+        toast.success(t("attendance.attendanceSaved"));
 
-        const classKey = `${selectedClass._id}-${format(classDate, 'yyyy-MM-dd')}`;
-        setProcessedClasses(prev => new Set([...prev, classKey]));
+        const classKey = `${selectedClass._id}-${format(classDate, "yyyy-MM-dd")}`;
+        setProcessedClasses((prev) => new Set([...prev, classKey]));
 
         setClassPopupOpen(false);
-        setPopupStudentFilter('');
-        logAction('Class attendance saved successfully');
+        setPopupStudentFilter("");
+        logAction("Class attendance saved successfully");
       } else {
-        throw new Error('Failed to save attendance - no success response');
+        throw new Error("Failed to save attendance - no success response");
       }
     } catch (error) {
-      console.error('Error saving attendance:', error);
-      logAction('Error saving attendance', { error: error.message });
-      toast.error(t('attendance.failedToSaveAttendance'));
+      console.error("Error saving attendance:", error);
+      logAction("Error saving attendance", { error: error.message });
+      toast.error(t("attendance.failedToSaveAttendance"));
     }
   };
 
   const handleResetAttendance = async () => {
-    if (!window.confirm(t('attendance.confirmReset', 'Are you sure you want to reset the attendance for this class? All marked data and the session record will be permanently deleted.'))) {
+    if (
+      !window.confirm(
+        t(
+          "attendance.confirmReset",
+          "Are you sure you want to reset the attendance for this class? All marked data and the session record will be permanently deleted.",
+        ),
+      )
+    ) {
       return;
     }
 
     try {
-      const dateStr = format(classDate, 'yyyy-MM-dd');
-      logAction('Resetting class attendance', { classId: selectedClass._id, date: dateStr });
-
-      const token = user?.token;
-      const response = await axios.delete(`${API_URL}/api/attendance/class-session/${selectedClass._id}/${dateStr}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const dateStr = format(classDate, "yyyy-MM-dd");
+      logAction("Resetting class attendance", {
+        classId: selectedClass._id,
+        date: dateStr,
       });
 
+      const token = user?.token;
+      const response = await axios.delete(
+        `${API_URL}/api/attendance/class-session/${selectedClass._id}/${dateStr}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
       if (response.data && response.data.success) {
-        toast.success(t('attendance.attendanceResetSuccess', 'Attendance reset successfully'));
+        toast.success(
+          t(
+            "attendance.attendanceResetSuccess",
+            "Attendance reset successfully",
+          ),
+        );
 
         const classKey = `${selectedClass._id}-${dateStr}`;
-        setProcessedClasses(prev => {
+        setProcessedClasses((prev) => {
           const newSet = new Set(prev);
           newSet.delete(classKey);
           return newSet;
         });
 
         setClassPopupOpen(false);
-        logAction('Class attendance reset successfully');
+        logAction("Class attendance reset successfully");
       }
     } catch (error) {
-      console.error('Error resetting attendance:', error);
-      toast.error(t('attendance.failedToResetAttendance', 'Failed to reset attendance'));
+      console.error("Error resetting attendance:", error);
+      toast.error(
+        t("attendance.failedToResetAttendance", "Failed to reset attendance"),
+      );
     }
   };
 
@@ -650,32 +748,46 @@ const WeeklyAttendanceManagement = () => {
       const today = new Date();
 
       switch (exportConfig.dateRange) {
-        case 'week':
-          start = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-          end = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        case "week":
+          start = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
+          end = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
           break;
-        case 'month':
-          start = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
-          end = format(new Date(today.getFullYear(), today.getMonth() + 1, 0), 'yyyy-MM-dd');
+        case "month":
+          start = format(
+            new Date(today.getFullYear(), today.getMonth(), 1),
+            "yyyy-MM-dd",
+          );
+          end = format(
+            new Date(today.getFullYear(), today.getMonth() + 1, 0),
+            "yyyy-MM-dd",
+          );
           break;
-        case 'custom':
+        case "custom":
           start = exportConfig.customStartDate;
           end = exportConfig.customEndDate;
           break;
         default:
-          start = format(new Date(today.getFullYear(), today.getMonth(), 1), 'yyyy-MM-dd');
-          end = format(new Date(today.getFullYear(), today.getMonth() + 1, 0), 'yyyy-MM-dd');
+          start = format(
+            new Date(today.getFullYear(), today.getMonth(), 1),
+            "yyyy-MM-dd",
+          );
+          end = format(
+            new Date(today.getFullYear(), today.getMonth() + 1, 0),
+            "yyyy-MM-dd",
+          );
       }
 
       const params = {
         type: exportConfig.type,
         startDate: start,
-        endDate: end
+        endDate: end,
       };
 
-      if (exportConfig.type !== 'all') {
+      if (exportConfig.type !== "all") {
         if (!exportConfig.filterId) {
-          toast.error(t('attendance.selectTarget', 'Please select a target for export'));
+          toast.error(
+            t("attendance.selectTarget", "Please select a target for export"),
+          );
           setExportLoading(false);
           return;
         }
@@ -684,55 +796,64 @@ const WeeklyAttendanceManagement = () => {
 
       const response = await axios.get(`${API_URL}/api/attendance/export`, {
         headers: { Authorization: `Bearer ${token}` },
-        params
+        params,
       });
 
       if (response.data && response.data.success && response.data.data) {
         const data = response.data.data;
         if (data.length === 0) {
-          toast.info(t('attendance.noDataForExport', 'No records found for the selected criteria'));
+          toast.info(
+            t(
+              "attendance.noDataForExport",
+              "No records found for the selected criteria",
+            ),
+          );
           setExportLoading(false);
           return;
         }
 
         const total = data.length;
-        const present = data.filter(r => r.status === 'present').length;
-        const absent = data.filter(r => r.status === 'absent').length;
-        const uniqueSessions = new Set(data.map(r => `${format(new Date(r.date), 'yyyy-MM-dd')}|${r.className}`)).size;
+        const present = data.filter((r) => r.status === "present").length;
+        const absent = data.filter((r) => r.status === "absent").length;
+        const uniqueSessions = new Set(
+          data.map(
+            (r) => `${format(new Date(r.date), "yyyy-MM-dd")}|${r.className}`,
+          ),
+        ).size;
         const percentage = total > 0 ? ((present / total) * 100).toFixed(2) : 0;
 
         const formattedData = data
-          .filter(r => r.status === 'absent')
-          .map(r => ({
+          .filter((r) => r.status === "absent")
+          .map((r) => ({
             ...r,
-            date: r.date ? format(new Date(r.date), 'yyyy-MM-dd') : '',
-            status: t(`attendance.${r.status}`)
+            date: r.date ? format(new Date(r.date), "yyyy-MM-dd") : "",
+            status: t(`attendance.${r.status}`),
           }));
 
         const columns = [
-          { key: 'date', label: t('common.date') },
-          { key: 'className', label: t('classes.className') },
-          { key: 'studentName', label: t('students.studentName') },
-          { key: 'status', label: t('common.status') },
-          { key: 'note', label: t('attendance.note') }
+          { key: "date", label: t("common.date") },
+          { key: "className", label: t("classes.className") },
+          { key: "studentName", label: t("students.studentName") },
+          { key: "status", label: t("common.status") },
+          { key: "note", label: t("attendance.note") },
         ];
 
         let csv = convertToCSV(formattedData, columns);
-        
+
         csv += `\n\n`;
-        csv += `${t('attendance.totalPresent')},${present}\n`;
-        csv += `${t('attendance.totalAbsent')},${absent}\n`;
-        csv += `${t('attendance.totalSessions')},${uniqueSessions}\n`;
-        csv += `${t('attendance.attendancePercentage')},${percentage}%\n`;
+        csv += `${t("attendance.totalPresent")},${present}\n`;
+        csv += `${t("attendance.totalAbsent")},${absent}\n`;
+        csv += `${t("attendance.totalSessions")},${uniqueSessions}\n`;
+        csv += `${t("attendance.attendancePercentage")},${percentage}%\n`;
 
         const filename = `Attendance_${exportConfig.type}_${start}_${end}.csv`;
         downloadCSV(csv, filename);
-        toast.success(t('attendance.exportCompleted'));
+        toast.success(t("attendance.exportCompleted"));
         setExportDialogOpen(false);
       }
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error(t('attendance.exportFailed'));
+      console.error("Export error:", error);
+      toast.error(t("attendance.exportFailed"));
     } finally {
       setExportLoading(false);
     }
@@ -743,15 +864,18 @@ const WeeklyAttendanceManagement = () => {
     try {
       setIsSearchingExportStudents(true);
       const token = user?.token;
-      const response = await axios.get(`${API_URL}/api/attendance/students/search`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { query }
-      });
+      const response = await axios.get(
+        `${API_URL}/api/attendance/students/search`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { query },
+        },
+      );
       if (response.data && response.data.success) {
         setExportStudents(response.data.students);
       }
     } catch (error) {
-      console.error('Error searching students for export:', error);
+      console.error("Error searching students for export:", error);
     } finally {
       setIsSearchingExportStudents(false);
     }
@@ -781,7 +905,7 @@ const WeeklyAttendanceManagement = () => {
           <CardContent className="p-6 text-center">
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={fetchInitialData} variant="outline">
-              {t('common.retry')}
+              {t("common.retry")}
             </Button>
           </CardContent>
         </Card>
@@ -795,10 +919,10 @@ const WeeklyAttendanceManagement = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
-            {t('attendance.weeklyManagement')}
+            {t("attendance.weeklyManagement")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {t('attendance.manageWeeklyAttendance')}
+            {t("attendance.manageWeeklyAttendance")}
           </p>
         </div>
 
@@ -806,12 +930,19 @@ const WeeklyAttendanceManagement = () => {
           <div className="w-[180px]">
             <Select value={selectedBranch} onValueChange={setSelectedBranch}>
               <SelectTrigger className="h-10 bg-background shadow-sm hover:shadow-sm">
-                <SelectValue placeholder={t('attendance.selectBranch', 'Select Branch')} />
+                <SelectValue
+                  placeholder={t("attendance.selectBranch", "Select Branch")}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t('attendance.allBranches', 'All Branches')}</SelectItem>
-                {schoolBranches.map(branch => (
-                  <SelectItem key={branch.id || branch} value={branch.id || branch}>
+                <SelectItem value="all">
+                  {t("attendance.allBranches", "All Branches")}
+                </SelectItem>
+                {schoolBranches.map((branch) => (
+                  <SelectItem
+                    key={branch.id || branch}
+                    value={branch.id || branch}
+                  >
                     {branch.name || branch}
                   </SelectItem>
                 ))}
@@ -821,9 +952,14 @@ const WeeklyAttendanceManagement = () => {
 
           <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 gap-2 shadow-sm hover:shadow-md bg-background">
+              <Button
+                variant="outline"
+                className="h-10 gap-2 shadow-sm hover:shadow-md bg-background"
+              >
                 <Download className="w-4 h-4 text-primary" />
-                <span className="font-semibold">{t('attendance.exportReports', 'Export Reports')}</span>
+                <span className="font-semibold">
+                  {t("attendance.exportReports", "Export Reports")}
+                </span>
               </Button>
             </DialogTrigger>
             <DialogContent className="fixed inset-0 m-auto translate-x-0 translate-y-0 w-[95vw] sm:max-w-[500px] h-fit max-h-[95vh] p-0 gap-0 shadow-2xl border overflow-hidden flex flex-col duration-0 animate-none data-[state=open]:animate-none data-[state=closed]:animate-none">
@@ -833,8 +969,15 @@ const WeeklyAttendanceManagement = () => {
                     <Download className="w-5 h-5" />
                   </div>
                   <div>
-                    <DialogTitle className="text-xl font-bold">{t('attendance.exportReports')}</DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground mt-1">{t('attendance.exportDescription', 'Generate and download attendance reports in CSV format')}</DialogDescription>
+                    <DialogTitle className="text-xl font-bold">
+                      {t("attendance.exportReports")}
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground mt-1">
+                      {t(
+                        "attendance.exportDescription",
+                        "Generate and download attendance reports in CSV format",
+                      )}
+                    </DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
@@ -842,52 +985,80 @@ const WeeklyAttendanceManagement = () => {
               <div className="p-6 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
                 {/* Export Type / Scope */}
                 <div className="space-y-3">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.exportScope', 'Export Scope')}</Label>
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    {t("attendance.exportScope", "Export Scope")}
+                  </Label>
                   <div className="grid grid-cols-3 gap-2">
-                    {['all', 'class', 'student'].map((type) => (
+                    {["all", "class", "student"].map((type) => (
                       <Button
                         key={type}
                         type="button"
-                        variant={exportConfig.type === type ? "default" : "outline"}
+                        variant={
+                          exportConfig.type === type ? "default" : "outline"
+                        }
                         className={cn(
                           "h-10 text-xs font-bold uppercase tracking-wider transition-all",
-                          exportConfig.type === type ? "shadow-md shadow-primary/20" : "hover:bg-primary/5"
+                          exportConfig.type === type
+                            ? "shadow-md shadow-primary/20"
+                            : "hover:bg-primary/5",
                         )}
-                        onClick={() => setExportConfig({ ...exportConfig, type, filterId: '' })}
+                        onClick={() =>
+                          setExportConfig({
+                            ...exportConfig,
+                            type,
+                            filterId: "",
+                          })
+                        }
                       >
-                        {t(`attendance.${type}`, type.charAt(0).toUpperCase() + type.slice(1))}
+                        {t(
+                          `attendance.${type}`,
+                          type.charAt(0).toUpperCase() + type.slice(1),
+                        )}
                       </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Target Selection (Conditional) */}
-                {exportConfig.type === 'class' && (
+                {exportConfig.type === "class" && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.selectClass')}</Label>
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                      {t("attendance.selectClass")}
+                    </Label>
                     <Select
                       value={exportConfig.filterId}
-                      onValueChange={(val) => setExportConfig({ ...exportConfig, filterId: val })}
+                      onValueChange={(val) =>
+                        setExportConfig({ ...exportConfig, filterId: val })
+                      }
                     >
                       <SelectTrigger className="h-11">
-                        <SelectValue placeholder={t('attendance.chooseClass', 'Select a class...')} />
+                        <SelectValue
+                          placeholder={t(
+                            "attendance.chooseClass",
+                            "Select a class...",
+                          )}
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        {classes.map(cls => (
-                          <SelectItem key={cls._id} value={cls._id}>{cls.name}</SelectItem>
+                        {classes.map((cls) => (
+                          <SelectItem key={cls._id} value={cls._id}>
+                            {cls.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 )}
 
-                {exportConfig.type === 'student' && (
+                {exportConfig.type === "student" && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.selectStudent')}</Label>
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                      {t("attendance.selectStudent")}
+                    </Label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
-                        placeholder={t('attendance.searchStudents')}
+                        placeholder={t("attendance.searchStudents")}
                         value={exportStudentSearch}
                         onChange={(e) => setExportStudentSearch(e.target.value)}
                         className="pl-9 h-11"
@@ -898,27 +1069,38 @@ const WeeklyAttendanceManagement = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     {exportStudents.length > 0 && (
                       <div className="border rounded-lg divide-y bg-muted/20 max-h-[150px] overflow-y-auto overflow-x-hidden">
-                        {exportStudents.map(student => (
+                        {exportStudents.map((student) => (
                           <div
                             key={student._id}
                             className={cn(
                               "p-2.5 px-4 text-sm cursor-pointer transition-colors flex items-center justify-between group",
-                              exportConfig.filterId === student._id ? "bg-primary/10 text-primary" : "hover:bg-background"
+                              exportConfig.filterId === student._id
+                                ? "bg-primary/10 text-primary"
+                                : "hover:bg-background",
                             )}
                             onClick={() => {
-                              setExportConfig({ ...exportConfig, filterId: student._id });
+                              setExportConfig({
+                                ...exportConfig,
+                                filterId: student._id,
+                              });
                               setExportStudentSearch(student.name);
                               setExportStudents([]);
                             }}
                           >
                             <div className="flex flex-col">
-                              <span className="font-semibold">{student.name}</span>
-                              <span className="text-[10px] text-muted-foreground group-hover:text-primary/70">{student.email}</span>
+                              <span className="font-semibold">
+                                {student.name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground group-hover:text-primary/70">
+                                {student.email}
+                              </span>
                             </div>
-                            {exportConfig.filterId === student._id && <CheckCircle2 className="w-4 h-4" />}
+                            {exportConfig.filterId === student._id && (
+                              <CheckCircle2 className="w-4 h-4" />
+                            )}
                           </div>
                         ))}
                       </div>
@@ -928,39 +1110,63 @@ const WeeklyAttendanceManagement = () => {
 
                 {/* Date Range Selection */}
                 <div className="space-y-3">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{t('attendance.dateRange', 'Date Range')}</Label>
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    {t("attendance.dateRange", "Date Range")}
+                  </Label>
                   <Select
                     value={exportConfig.dateRange}
-                    onValueChange={(val) => setExportConfig({ ...exportConfig, dateRange: val })}
+                    onValueChange={(val) =>
+                      setExportConfig({ ...exportConfig, dateRange: val })
+                    }
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="week">{t('attendance.currentWeek')}</SelectItem>
-                      <SelectItem value="month">{t('attendance.currentMonth', 'Current Month')}</SelectItem>
-                      <SelectItem value="custom">{t('attendance.customRange', 'Custom Range')}</SelectItem>
+                      <SelectItem value="week">
+                        {t("attendance.currentWeek")}
+                      </SelectItem>
+                      <SelectItem value="month">
+                        {t("attendance.currentMonth", "Current Month")}
+                      </SelectItem>
+                      <SelectItem value="custom">
+                        {t("attendance.customRange", "Custom Range")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {exportConfig.dateRange === 'custom' && (
+                {exportConfig.dateRange === "custom" && (
                   <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('attendance.startDate')}</Label>
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                        {t("attendance.startDate")}
+                      </Label>
                       <Input
                         type="date"
                         value={exportConfig.customStartDate}
-                        onChange={(e) => setExportConfig({ ...exportConfig, customStartDate: e.target.value })}
+                        onChange={(e) =>
+                          setExportConfig({
+                            ...exportConfig,
+                            customStartDate: e.target.value,
+                          })
+                        }
                         className="h-10"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('attendance.endDate')}</Label>
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                        {t("attendance.endDate")}
+                      </Label>
                       <Input
                         type="date"
                         value={exportConfig.customEndDate}
-                        onChange={(e) => setExportConfig({ ...exportConfig, customEndDate: e.target.value })}
+                        onChange={(e) =>
+                          setExportConfig({
+                            ...exportConfig,
+                            customEndDate: e.target.value,
+                          })
+                        }
                         className="h-10"
                       />
                     </div>
@@ -975,7 +1181,7 @@ const WeeklyAttendanceManagement = () => {
                   onClick={() => setExportDialogOpen(false)}
                   className="px-6 h-9 font-medium"
                 >
-                  {t('common.cancel')}
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   size="sm"
@@ -988,14 +1194,13 @@ const WeeklyAttendanceManagement = () => {
                   ) : (
                     <Download className="w-4 h-4 mr-2" />
                   )}
-                  {t('attendance.downloadCSV', 'Download CSV')}
+                  {t("attendance.downloadCSV", "Download CSV")}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       </div>
-
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
@@ -1004,11 +1209,9 @@ const WeeklyAttendanceManagement = () => {
           <Card className="border border-border/80 shadow-sm bg-card hover:shadow-md transition-all duration-300 flex flex-col lg:absolute lg:inset-0 overflow-hidden">
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0 gap-4 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="p-1.5 bg-primary/10 text-primary rounded-lg shrink-0">
-                  <BarChart2 className="w-4 h-4" />
-                </div>
                 <CardTitle className="text-base font-bold tracking-tight truncate">
-                  {t("attendance.monthlyAttendances") || "Monthly Attendances"}
+                  {t("attendance.monthlyAttendances") || "Attendances"}
+                  {isCurrentWeekVisible && ` - ${t("attendance.currentWeek") || "Current Week"}`}
                 </CardTitle>
               </div>
             </CardHeader>
@@ -1029,6 +1232,7 @@ const WeeklyAttendanceManagement = () => {
                       return (
                         <div
                           key={itemKey}
+                          id={`instance-${itemKey}`}
                           onClick={() => openClassPopup(inst, inst.date)}
                           className={cn(
                             "p-2.5 rounded-xl border flex flex-col gap-2 transition-all duration-200 cursor-pointer select-none",
@@ -1044,7 +1248,9 @@ const WeeklyAttendanceManagement = () => {
                               </span>
                               <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1.5 mt-0.5">
                                 <Calendar className="w-3 h-3 text-muted-foreground/70" />
-                                {format(inst.date, "d MMM", { locale: getDateFnsLocale() })}
+                                {format(inst.date, "d MMM", {
+                                  locale: getDateFnsLocale(),
+                                })}
                                 <span className="text-muted-foreground/40">
                                   •
                                 </span>
@@ -1103,7 +1309,7 @@ const WeeklyAttendanceManagement = () => {
                   variant="ghost"
                   size="icon"
                   onClick={goToPreviousMonth}
-                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
@@ -1111,7 +1317,7 @@ const WeeklyAttendanceManagement = () => {
                   variant="ghost"
                   size="icon"
                   onClick={goToNextMonth}
-                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95"
+                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </Button>
@@ -1296,8 +1502,6 @@ const WeeklyAttendanceManagement = () => {
         </div>
       </div>
 
-
-
       {/* Class Attendance Popup */}
       <Dialog open={classPopupOpen} onOpenChange={setClassPopupOpen}>
         <DialogContent className="fixed inset-0 m-auto translate-x-0 translate-y-0 w-[95vw] sm:max-w-4xl h-fit max-h-[95vh] sm:max-h-[90vh] p-0 gap-0 shadow-2xl border overflow-hidden flex flex-col duration-0 animate-none data-[state=open]:animate-none data-[state=closed]:animate-none">
@@ -1312,16 +1516,25 @@ const WeeklyAttendanceManagement = () => {
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground mt-1.5 flex items-center gap-1.5 font-medium">
                   <Calendar className="w-3.5 h-3.5" />
-                  {classDate && format(classDate, 'PPPP', { locale: getDateFnsLocale() })}
+                  {classDate &&
+                    format(classDate, "PPPP", { locale: getDateFnsLocale() })}
                 </DialogDescription>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-4 pr-10">
               <Badge variant="secondary" className="font-mono">
-                {classAttendance.students.length} {t('attendance.total')}
+                {classAttendance.students.length} {t("attendance.total")}
               </Badge>
-              <Badge variant={classAttendance.students.some(s => !s.present) ? "destructive" : "outline"} className="font-mono">
-                {classAttendance.students.filter(s => !s.present).length} {t('attendance.absent')}
+              <Badge
+                variant={
+                  classAttendance.students.some((s) => !s.present)
+                    ? "destructive"
+                    : "outline"
+                }
+                className="font-mono"
+              >
+                {classAttendance.students.filter((s) => !s.present).length}{" "}
+                {t("attendance.absent")}
               </Badge>
             </div>
           </DialogHeader>
@@ -1330,7 +1543,10 @@ const WeeklyAttendanceManagement = () => {
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Spinner size="lg" className="text-primary" />
               <p className="text-sm text-muted-foreground font-medium">
-                {t('attendance.loadingAttendance', 'Loading attendance details...')}
+                {t(
+                  "attendance.loadingAttendance",
+                  "Loading attendance details...",
+                )}
               </p>
             </div>
           ) : (
@@ -1343,39 +1559,51 @@ const WeeklyAttendanceManagement = () => {
                       id="wasHeld"
                       checked={classAttendance.wasHeld}
                       onCheckedChange={(checked) =>
-                        setClassAttendance(prev => ({ ...prev, wasHeld: checked }))
+                        setClassAttendance((prev) => ({
+                          ...prev,
+                          wasHeld: checked,
+                        }))
                       }
                     />
-                    <Label htmlFor="wasHeld" className="text-sm font-semibold cursor-pointer">
-                      {t('attendance.classWasHeld')}
+                    <Label
+                      htmlFor="wasHeld"
+                      className="text-sm font-semibold cursor-pointer"
+                    >
+                      {t("attendance.classWasHeld")}
                     </Label>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('attendance.startTime')}</Label>
+                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                        {t("attendance.startTime")}
+                      </Label>
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          type="time"
+                        <TimePicker
                           value={classAttendance.startTime}
-                          className="pl-9 h-10 font-mono"
-                          onChange={(e) =>
-                            setClassAttendance(prev => ({ ...prev, startTime: e.target.value }))
+                          className="h-10 font-mono"
+                          onChange={(value) =>
+                            setClassAttendance((prev) => ({
+                              ...prev,
+                              startTime: value,
+                            }))
                           }
                         />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('attendance.endTime')}</Label>
+                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                        {t("attendance.endTime")}
+                      </Label>
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          type="time"
+                        <TimePicker
                           value={classAttendance.endTime}
-                          className="pl-9 h-10 font-mono"
-                          onChange={(e) =>
-                            setClassAttendance(prev => ({ ...prev, endTime: e.target.value }))
+                          className="h-10 font-mono"
+                          onChange={(value) =>
+                            setClassAttendance((prev) => ({
+                              ...prev,
+                              endTime: value,
+                            }))
                           }
                         />
                       </div>
@@ -1387,11 +1615,13 @@ const WeeklyAttendanceManagement = () => {
               {/* Student List Section */}
               <div className="space-y-4 pt-2 border-t">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h3 className="text-base font-semibold text-foreground">{t('attendance.students')}</h3>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {t("attendance.students")}
+                  </h3>
                   <div className="relative w-full sm:w-[320px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      placeholder={t('attendance.searchByName')}
+                      placeholder={t("attendance.searchByName")}
                       value={popupStudentFilter}
                       onChange={(e) => setPopupStudentFilter(e.target.value)}
                       className="pl-9 h-9 text-sm"
@@ -1413,7 +1643,9 @@ const WeeklyAttendanceManagement = () => {
                   {popupStudentFilter && filteredPopupStudents.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
                       <Search className="w-8 h-8 mb-2 opacity-20" />
-                      <p className="text-sm font-medium">{t('attendance.noResults')}</p>
+                      <p className="text-sm font-medium">
+                        {t("attendance.noResults")}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1423,7 +1655,9 @@ const WeeklyAttendanceManagement = () => {
 
           <DialogFooter className="p-4 bg-muted/50 border-t flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {processedClasses.has(`${selectedClass?._id}-${classDate && format(classDate, 'yyyy-MM-dd')}`) && (
+              {processedClasses.has(
+                `${selectedClass?._id}-${classDate && format(classDate, "yyyy-MM-dd")}`,
+              ) && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1431,7 +1665,7 @@ const WeeklyAttendanceManagement = () => {
                   onClick={handleResetAttendance}
                 >
                   <X className="w-3.5 h-3.5 mr-2" />
-                  {t('common.reset')}
+                  {t("common.reset")}
                 </Button>
               )}
             </div>
@@ -1442,7 +1676,7 @@ const WeeklyAttendanceManagement = () => {
                 className="px-6 h-9 font-medium"
                 onClick={() => setClassPopupOpen(false)}
               >
-                {t('common.cancel')}
+                {t("common.cancel")}
               </Button>
               <Button
                 size="sm"
@@ -1451,7 +1685,7 @@ const WeeklyAttendanceManagement = () => {
                 onClick={saveClassAttendance}
               >
                 <Save className="w-3.5 h-3.5 mr-2" />
-                {t('attendance.saveAttendance')}
+                {t("attendance.saveAttendance")}
               </Button>
             </div>
           </DialogFooter>

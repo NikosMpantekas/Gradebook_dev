@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useBeta } from '../../contexts/BetaContext';
@@ -14,6 +15,7 @@ import { useIsMobile } from '../hooks/use-mobile';
 
 const Layout = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   // Use the mobile detection hook for consistent behavior
   // This hook returns true for screens up to 1023px (mobile, tablet, small desktop)
@@ -150,9 +152,9 @@ const Layout = () => {
         >
           <OfflineDetector>
             {isCurrentPageBeta && (
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm">
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm">
                 <FlaskConical className="h-4 w-4 flex-shrink-0" />
-                <span><strong>Beta Feature</strong> — This page is currently in beta testing. Feedback and bug reports are appreciated.</span>
+                <span><strong>{t("beta.feature")}</strong> — {t("beta.message")}</span>
               </div>
             )}
             <Outlet />

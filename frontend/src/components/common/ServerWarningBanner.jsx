@@ -22,7 +22,7 @@ const ServerWarningBanner = () => {
       <DialogTrigger asChild>
         <button
           className={cn(
-            "fixed bottom-6 right-6 z-[9999] flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95",
+            "fixed bottom-6 right-6 z-[9999] flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-transform hover:scale-105",
             "bg-amber-500/90 text-white backdrop-blur-md border border-amber-400/30",
           )}
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}

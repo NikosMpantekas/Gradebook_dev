@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Bell,
   BellOff,
@@ -10,11 +10,16 @@ import {
   Menu as MenuIcon,
   Palette,
   Loader2,
-  XCircle
-} from 'lucide-react';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip';
+  XCircle,
+} from "lucide-react";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "../ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,37 +27,45 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import { cn } from '../../lib/utils';
-import { Switch } from '../ui/switch';
-import { Label } from '../ui/label';
-import { useSelector, useDispatch } from 'react-redux';
-import { toggleDarkMode } from '../../features/ui/uiSlice';
-import LanguageSwitcher from '../common/LanguageSwitcher';
-import authService from '../../features/auth/authService';
-import axiosInstance from '../../app/axios';
-import { API_URL } from '../../config/appConfig';
-import { getMyNotifications, markNotificationAsRead } from '../../features/notifications/notificationSlice';
-import { useIsMobile } from '../hooks/use-mobile';
-import { useTheme } from '../../contexts/ThemeContext';
-import AccessibilityMenu from '../common/AccessibilityMenu';
-import PushNotificationManager from '../../services/PushNotificationManager';
+} from "../ui/dropdown-menu";
+import { cn } from "../../lib/utils";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleDarkMode } from "../../features/ui/uiSlice";
+import LanguageSwitcher from "../common/LanguageSwitcher";
+import authService from "../../features/auth/authService";
+import axiosInstance from "../../app/axios";
+import { API_URL } from "../../config/appConfig";
+import {
+  getMyNotifications,
+  markNotificationAsRead,
+} from "../../features/notifications/notificationSlice";
+import { useIsMobile } from "../hooks/use-mobile";
+import { useTheme } from "../../contexts/ThemeContext";
+import AccessibilityMenu from "../common/AccessibilityMenu";
+import PushNotificationManager from "../../services/PushNotificationManager";
 
 // Custom hook to fetch latest version from patch notes
 const useLatestVersion = () => {
-  const [version, setVersion] = useState('');
+  const [version, setVersion] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchLatestVersion = async () => {
       try {
-        const response = await axiosInstance.get(`${API_URL}/api/patch-notes/public`, {
-          timeout: 10000
-        });
+        const response = await axiosInstance.get(
+          `${API_URL}/api/patch-notes/public`,
+          {
+            timeout: 10000,
+          },
+        );
 
         if (response.data && response.data.length > 0) {
           // Sort patch notes by creation date (newest first) and get the latest version
-          const sortedPatchNotes = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          const sortedPatchNotes = response.data.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+          );
           const latestPatchNote = sortedPatchNotes[0];
 
           if (latestPatchNote.version) {
@@ -60,10 +73,13 @@ const useLatestVersion = () => {
           }
         }
       } catch (error) {
-        if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+        if (
+          error.name === "CanceledError" ||
+          error.message?.includes("Duplicate request")
+        ) {
           return;
         }
-        console.error('Failed to fetch latest version:', error);
+        console.error("Failed to fetch latest version:", error);
       } finally {
         setIsLoading(false);
       }
@@ -89,14 +105,13 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { getCurrentThemeData } = useTheme();
 
   const getDashboardPath = () => {
-    if (user?.role === 'superadmin') return '/superadmin/dashboard';
-    if (user?.role === 'admin') return '/app/admin';
-    if (user?.role === 'teacher') return '/app/teacher';
-    if (user?.role === 'student') return '/app/student';
-    if (user?.role === 'parent') return '/app/parent';
-    return '/app/dashboard';
+    if (user?.role === "superadmin") return "/superadmin/dashboard";
+    if (user?.role === "admin") return "/app/admin";
+    if (user?.role === "teacher") return "/app/teacher";
+    if (user?.role === "student") return "/app/student";
+    if (user?.role === "parent") return "/app/parent";
+    return "/app/dashboard";
   };
-
 
   // Use the mobile detection hook instead of Tailwind breakpoints
   const isMobile = useIsMobile();
@@ -119,10 +134,14 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         const userPref = user.pushNotificationEnabled !== false;
         const hasSub = await pushManagerRef.current.hasActiveSubscription();
         if (mounted) setPushEnabled(userPref && hasSub);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
     load();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   const handlePushToggle = async () => {
@@ -161,7 +180,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         }
       }
     } catch (e) {
-      console.error('[Header] Push toggle error:', e);
+      console.error("[Header] Push toggle error:", e);
       setPushError(true);
       setTimeout(() => setPushError(false), 3000);
     } finally {
@@ -173,11 +192,16 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { version: latestVersion } = useLatestVersion();
 
   // Check if version contains "beta"
-  const isBetaVersion = latestVersion && latestVersion.toLowerCase().includes('beta');
+  const isBetaVersion =
+    latestVersion && latestVersion.toLowerCase().includes("beta");
 
   // Count unread notifications - forced to 0 for superadmins to prevent distracting badges
-  const notifUnreadCount = user?.role === 'superadmin' ? 0 : (notifications?.filter(n => !n.isRead).length || 0);
-  const combinedUnreadCount = (notifUnreadCount || 0) + (contactUnreadCount || 0);
+  const notifUnreadCount =
+    user?.role === "superadmin"
+      ? 0
+      : notifications?.filter((n) => !n.isRead).length || 0;
+  const combinedUnreadCount =
+    (notifUnreadCount || 0) + (contactUnreadCount || 0);
 
   // Function to fetch contact unread count - using useCallback to prevent recreation
   const fetchContactUnread = useCallback(async () => {
@@ -189,24 +213,32 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
         },
       };
 
-      if (user.role === 'admin' || user.role === 'superadmin') {
+      if (user.role === "admin" || user.role === "superadmin") {
         // Admins: unread are messages with read === false in school scope
         const res = await axiosInstance.get(`${API_URL}/api/contact`, config);
-        const unread = (res.data || []).filter(m => m && m.read === false);
+        const unread = (res.data || []).filter((m) => m && m.read === false);
         setContactUnreadCount(unread.length);
         setContactUnreadPreview(unread.slice(0, 5));
       } else {
         // Regular users: unread are admin replies they haven't read
-        const res = await axiosInstance.get(`${API_URL}/api/contact/user`, config);
-        const unread = (res.data || []).filter(m => m && m.status === 'replied' && m.adminReply && !m.replyRead);
+        const res = await axiosInstance.get(
+          `${API_URL}/api/contact/user`,
+          config,
+        );
+        const unread = (res.data || []).filter(
+          (m) => m && m.status === "replied" && m.adminReply && !m.replyRead,
+        );
         setContactUnreadCount(unread.length);
         setContactUnreadPreview(unread.slice(0, 5));
       }
     } catch (error) {
-      if (error.name === 'CanceledError' || error.message?.includes('Duplicate request')) {
+      if (
+        error.name === "CanceledError" ||
+        error.message?.includes("Duplicate request")
+      ) {
         return;
       }
-      console.error('Failed to fetch contact unread:', error);
+      console.error("Failed to fetch contact unread:", error);
     }
   }, [user]);
   useEffect(() => {
@@ -216,13 +248,14 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
   // Listen for global refresh events to update counts instantly
   useEffect(() => {
     const handleRefresh = () => {
-      console.log('[Header] Global refresh event received: re-fetching counts');
+      console.log("[Header] Global refresh event received: re-fetching counts");
       fetchContactUnread();
       dispatch(getMyNotifications());
     };
 
-    window.addEventListener('refreshHeaderCounts', handleRefresh);
-    return () => window.removeEventListener('refreshHeaderCounts', handleRefresh);
+    window.addEventListener("refreshHeaderCounts", handleRefresh);
+    return () =>
+      window.removeEventListener("refreshHeaderCounts", handleRefresh);
   }, [fetchContactUnread, dispatch]);
 
   // Fetch notifications on page load
@@ -245,15 +278,15 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
       // Refresh notifications to update the count
       dispatch(getMyNotifications());
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      console.error("Failed to mark notification as read:", error);
     }
 
     // Navigate to the appropriate notification detail page
-    if (user?.role === 'superadmin') {
+    if (user?.role === "superadmin") {
       navigate(`/superadmin/notifications/${id}`);
-    } else if (user?.role === 'admin') {
+    } else if (user?.role === "admin") {
       navigate(`/app/admin/notifications/${id}`);
-    } else if (user?.role === 'teacher') {
+    } else if (user?.role === "teacher") {
       navigate(`/app/teacher/notifications/${id}`);
     } else {
       navigate(`/app/notifications/${id}`);
@@ -262,18 +295,18 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
   const handleViewContactMessages = () => {
     handleNotificationsClose();
-    if (user?.role === 'superadmin') {
-      navigate('/superadmin/contact');
-    } else if (user?.role === 'admin') {
-      navigate('/app/admin/contact');
-    } else if (user?.role === 'teacher') {
-      navigate('/app/teacher/contact');
-    } else if (user?.role === 'student') {
-      navigate('/app/student/contact');
-    } else if (user?.role === 'parent') {
-      navigate('/app/parent/contact');
+    if (user?.role === "superadmin") {
+      navigate("/superadmin/contact");
+    } else if (user?.role === "admin") {
+      navigate("/app/admin/contact");
+    } else if (user?.role === "teacher") {
+      navigate("/app/teacher/contact");
+    } else if (user?.role === "student") {
+      navigate("/app/student/contact");
+    } else if (user?.role === "parent") {
+      navigate("/app/parent/contact");
     } else {
-      navigate('/app/contact-messages');
+      navigate("/app/contact-messages");
     }
   };
 
@@ -284,23 +317,25 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
 
   const handleViewAllNotifications = () => {
     handleNotificationsClose();
-    if (user?.role === 'student') {
-      navigate('/app/student/notifications');
-    } else if (user?.role === 'teacher') {
-      navigate('/app/teacher/notifications');
-    } else if (user?.role === 'admin') {
-      navigate('/app/admin/notifications/manage');
-    } else if (user?.role === 'superadmin') {
-      navigate('/app/admin/notifications/manage');
-    } else if (user?.role === 'parent') {
-      navigate('/app/parent/notifications');
+    if (user?.role === "student") {
+      navigate("/app/student/notifications");
+    } else if (user?.role === "teacher") {
+      navigate("/app/teacher/notifications");
+    } else if (user?.role === "admin") {
+      navigate("/app/admin/notifications/manage");
+    } else if (user?.role === "superadmin") {
+      navigate("/app/admin/notifications/manage");
+    } else if (user?.role === "parent") {
+      navigate("/app/parent/notifications");
     } else {
-      navigate('/app/notifications');
+      navigate("/app/notifications");
     }
   };
 
   // Prepare notification preview
-  const notifPreview = (notifications || []).filter(n => !n.isRead).slice(0, 5);
+  const notifPreview = (notifications || [])
+    .filter((n) => !n.isRead)
+    .slice(0, 5);
 
   // Get themed background color for header
   const getThemedHeaderBg = () => {
@@ -308,13 +343,15 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     if (!themeData) return darkMode ? "bg-[#181b20]/90" : "bg-background/90";
 
     try {
-      const colors = darkMode ? themeData.darkColors || themeData.colors : themeData.colors;
-      const bgHex = colors.background.replace('#', '');
+      const colors = darkMode
+        ? themeData.darkColors || themeData.colors
+        : themeData.colors;
+      const bgHex = colors.background.replace("#", "");
       const bgR = parseInt(bgHex.substr(0, 2), 16);
       const bgG = parseInt(bgHex.substr(2, 2), 16);
       const bgB = parseInt(bgHex.substr(4, 2), 16);
 
-      const primaryHex = colors.primary.replace('#', '');
+      const primaryHex = colors.primary.replace("#", "");
       const pR = parseInt(primaryHex.substr(0, 2), 16);
       const pG = parseInt(primaryHex.substr(2, 2), 16);
       const pB = parseInt(primaryHex.substr(4, 2), 16);
@@ -338,15 +375,17 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
     <TooltipProvider>
       <header
         className={cn(
-          "fixed top-0 z-40 w-full border-b backdrop-blur-xl transition-colors duration-150",
+          "fixed top-0 z-40 w-full border-b backdrop-blur-xl",
           "pt-[env(safe-area-inset-top)]",
           "shadow-sm",
-          darkMode
-            ? "border-[#2a3441]/30"
-            : "border-border/30"
+          darkMode ? "border-[#2a3441]/30" : "border-border/30",
         )}
         style={{
-          backgroundColor: typeof themedHeaderBg === 'string' && themedHeaderBg.startsWith('rgba') ? themedHeaderBg : undefined
+          backgroundColor:
+            typeof themedHeaderBg === "string" &&
+            themedHeaderBg.startsWith("rgba")
+              ? themedHeaderBg
+              : undefined,
         }}
       >
         <div className="flex h-14 items-center px-4 lg:pl-0 lg:pr-6 w-full">
@@ -368,15 +407,16 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
             <RouterLink
               to={user ? getDashboardPath() : "/"}
               className={cn(
-
                 "flex items-center justify-start lg:justify-center",
-                "no-underline text-foreground hover:text-primary transition-colors"
+                "no-underline text-foreground hover:text-primary",
               )}
             >
-              <span className={cn(
-                "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
-                "relative inline-block"
-              )}>
+              <span
+                className={cn(
+                  "text-xl sm:text-2xl md:text-3xl font-light tracking-wide",
+                  "relative inline-block",
+                )}
+              >
                 GradeBook
                 {isBetaVersion && (
                   <span className="relative -bottom-1 -right-0.5 text-primary text-xs font-light italic leading-none">
@@ -400,9 +440,15 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                       <Palette className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[280px] p-0 overflow-hidden dropdown-slide-in" sideOffset={8}>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-[280px] p-0 overflow-hidden dropdown-slide-in"
+                    sideOffset={8}
+                  >
                     <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-semibold">{t('settings.appearance', 'Appearance')}</p>
+                      <p className="text-sm font-semibold">
+                        {t("settings.appearance", "Appearance")}
+                      </p>
                     </div>
 
                     <div className="py-1">
@@ -411,9 +457,15 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                         onClick={handleDarkModeToggle}
                         className="flex items-center gap-2 px-4 py-2 focus:bg-accent/50 cursor-pointer"
                       >
-                        {darkMode ? <Sun className="h-4 w-4 text-primary" /> : <Moon className="h-4 w-4 text-primary" />}
+                        {darkMode ? (
+                          <Sun className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Moon className="h-4 w-4 text-primary" />
+                        )}
                         <span className="text-sm font-medium">
-                          {darkMode ? t('settings.lightMode', 'Light Mode') : t('settings.darkMode', 'Dark Mode')}
+                          {darkMode
+                            ? t("settings.lightMode", "Light Mode")
+                            : t("settings.darkMode", "Dark Mode")}
                         </span>
                       </DropdownMenuItem>
                     </div>
@@ -438,7 +490,11 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                         size="icon"
                         onClick={handleDarkModeToggle}
                       >
-                        {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                        {darkMode ? (
+                          <Sun className="h-5 w-5" />
+                        ) : (
+                          <Moon className="h-5 w-5" />
+                        )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -468,7 +524,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                   sideOffset={8}
                 >
                   {/* Only show notifications section for non-superadmin users */}
-                  {user?.role !== 'superadmin' && (
+                  {user?.role !== "superadmin" && (
                     <>
                       <DropdownMenuLabel className="flex items-center">
                         <Bell className="mr-2 h-4 w-4" />
@@ -480,10 +536,15 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                           No unread notifications
                         </DropdownMenuItem>
                       ) : (
-                        notifPreview.map(n => (
-                          <DropdownMenuItem key={n._id} onClick={() => handleViewNotification(n._id)}>
+                        notifPreview.map((n) => (
+                          <DropdownMenuItem
+                            key={n._id}
+                            onClick={() => handleViewNotification(n._id)}
+                          >
                             <div className="flex flex-col space-y-1">
-                              <p className="text-sm font-medium truncate">{n.title || 'Notification'}</p>
+                              <p className="text-sm font-medium truncate">
+                                {n.title || "Notification"}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(n.createdAt).toLocaleString()}
                               </p>
@@ -506,12 +567,19 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                       No unread contact messages
                     </DropdownMenuItem>
                   ) : (
-                    contactUnreadPreview.map(m => (
-                      <DropdownMenuItem key={m._id} onClick={() => handleViewContactMessage(m._id)}>
+                    contactUnreadPreview.map((m) => (
+                      <DropdownMenuItem
+                        key={m._id}
+                        onClick={() => handleViewContactMessage(m._id)}
+                      >
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium truncate">{m.subject || 'Contact Message'}</p>
+                          <p className="text-sm font-medium truncate">
+                            {m.subject || "Contact Message"}
+                          </p>
                           {m.userName && (
-                            <p className="text-xs text-muted-foreground">From: {m.userName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              From: {m.userName}
+                            </p>
                           )}
                         </div>
                       </DropdownMenuItem>
@@ -535,8 +603,11 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                       ) : (
                         <BellOff className="h-4 w-4 text-muted-foreground" />
                       )}
-                      <Label htmlFor="push-notif-toggle" className="cursor-pointer">
-                        {t('settings.pushNotifications', 'Push Notifications')}
+                      <Label
+                        htmlFor="push-notif-toggle"
+                        className="cursor-pointer"
+                      >
+                        {t("settings.pushNotifications", "Push Notifications")}
                       </Label>
                     </div>
                     <Switch
@@ -550,7 +621,7 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
                   <DropdownMenuSeparator />
 
                   {/* Only show "View all notifications" for non-superadmin users */}
-                  {user?.role !== 'superadmin' && (
+                  {user?.role !== "superadmin" && (
                     <DropdownMenuItem onClick={handleViewAllNotifications}>
                       View all notifications
                     </DropdownMenuItem>

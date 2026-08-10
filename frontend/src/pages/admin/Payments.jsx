@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -40,6 +41,8 @@ import { useSelector } from "react-redux";
 import { cn } from "../../lib/utils";
 
 const Payments = () => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === "gr" || i18n.language === "el" ? "el-GR" : "en-US";
   const { isFeatureEnabled, loading: featureLoading } = useFeatureToggles();
   const darkMode = useSelector((state) => state.ui?.darkMode || false);
 
@@ -107,7 +110,7 @@ const Payments = () => {
       setTotalPages(response.data.pagination?.pages || 1);
     } catch (error) {
       console.error("Error fetching payments:", error);
-      toast.error("Error", { description: "Failed to fetch payments" });
+      toast.error(t("adminPayments.error"), { description: t("adminPayments.failedFetch") });
     } finally {
       setLoading(false);
     }
@@ -197,7 +200,7 @@ const Payments = () => {
   const handleGeneratePayments = async () => {
     try {
       const response = await api.post("/api/payments/generate", generateForm);
-      toast.success("Success", { description: response.data.message });
+      toast.success(t("adminPayments.success"), { description: response.data.message });
       setIsGenerateModalOpen(false);
       fetchPayments();
       fetchStats();
@@ -250,7 +253,7 @@ const Payments = () => {
     return (
       <Badge className={variant.color}>
         <Icon className="w-3 h-3 mr-1" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {t(`adminPayments.${status}`)}
       </Badge>
     );
   };
@@ -269,7 +272,7 @@ const Payments = () => {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const period = `${year}-${month.toString().padStart(2, "0")}`;
-      const display = date.toLocaleDateString("en-US", {
+      const display = date.toLocaleDateString(dateLocale, {
         month: "long",
         year: "numeric",
       });
@@ -286,7 +289,7 @@ const Payments = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t("adminPayments.loading")}</span>
       </div>
     );
   }
@@ -295,9 +298,9 @@ const Payments = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Payment Management</h1>
+          <h1 className="text-3xl font-bold">{t("adminPayments.title")}</h1>
           <p className="text-gray-600">
-            Track and manage student monthly payments
+            {t("adminPayments.subtitle")}
           </p>
         </div>
 
@@ -305,14 +308,13 @@ const Payments = () => {
           <CardContent>
             <Lock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Payment Feature Disabled
+              {t("adminPayments.featureDisabled")}
             </h3>
             <p className="text-gray-600 mb-4">
-              The payment management feature is currently disabled for your
-              school.
+              {t("adminPayments.featureDisabledMsg")}
             </p>
             <p className="text-sm text-gray-500">
-              Contact your system administrator to enable this feature.
+              {t("adminPayments.contactAdmin")}
             </p>
           </CardContent>
         </Card>
@@ -326,10 +328,10 @@ const Payments = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-light tracking-wide text-foreground mb-2">
-            Payment Management
+            {t("adminPayments.title")}
           </h1>
           <p className="text-muted-foreground">
-            Track and manage student monthly payments
+            {t("adminPayments.subtitle")}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -340,7 +342,7 @@ const Payments = () => {
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
                 <Calendar className="w-4 h-4 mr-2" />
-                Generate Monthly
+                {t("adminPayments.generateMonthlyBtn")}
               </Button>
             </DialogTrigger>
             <DialogContent
@@ -352,14 +354,14 @@ const Payments = () => {
               )}
             >
               <DialogHeader>
-                <DialogTitle>Generate Monthly Payments</DialogTitle>
+                <DialogTitle>{t("adminPayments.generateMonthlyTitle")}</DialogTitle>
                 <DialogDescription>
-                  Create payment records for all students for a specific month
+                  {t("adminPayments.generateMonthlyDesc")}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="year">Year</Label>
+                  <Label htmlFor="year">{t("adminPayments.year")}</Label>
                   <Input
                     id="year"
                     type="number"
@@ -379,7 +381,7 @@ const Payments = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="month">Month</Label>
+                  <Label htmlFor="month">{t("adminPayments.month")}</Label>
                   <Select
                     value={generateForm.month.toString()}
                     onValueChange={(value) =>
@@ -409,7 +411,7 @@ const Payments = () => {
                     >
                       {Array.from({ length: 12 }, (_, i) => (
                         <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {new Date(2024, i, 1).toLocaleDateString("en-US", {
+                          {new Date(2024, i, 1).toLocaleDateString(dateLocale, {
                             month: "long",
                           })}
                         </SelectItem>
@@ -425,7 +427,7 @@ const Payments = () => {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleGeneratePayments}>Generate</Button>
+                <Button onClick={handleGeneratePayments}>{t("adminPayments.generate")}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -434,7 +436,7 @@ const Payments = () => {
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
-                Add Payment
+                {t("adminPayments.addPaymentBtn")}
               </Button>
             </DialogTrigger>
             <DialogContent
@@ -447,7 +449,7 @@ const Payments = () => {
             >
               <DialogHeader>
                 <DialogTitle>
-                  {selectedPayment ? "Edit Payment" : "Add Payment Record"}
+                  {selectedPayment ? t("adminPayments.editPaymentTitle") : t("adminPayments.addPaymentTitle")}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 sm:space-y-4">
@@ -479,7 +481,7 @@ const Payments = () => {
                               : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
                           )}
                         >
-                          <SelectValue placeholder="Select parent" />
+                          <SelectValue placeholder={t("adminPayments.selectParent")} />
                         </SelectTrigger>
                         <SelectContent
                           className={cn(
@@ -521,7 +523,7 @@ const Payments = () => {
                                   : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
                               )}
                             >
-                              <SelectValue placeholder="Select specific student" />
+                              <SelectValue placeholder={t("adminPayments.selectSpecificStudent")} />
                             </SelectTrigger>
                             <SelectContent
                               className={cn(
@@ -565,7 +567,7 @@ const Payments = () => {
                               : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
                           )}
                         >
-                          <SelectValue placeholder="Select period" />
+                          <SelectValue placeholder={t("adminPayments.selectPeriod")} />
                         </SelectTrigger>
                         <SelectContent
                           className={cn(
@@ -588,8 +590,8 @@ const Payments = () => {
 
                 <div>
                   <Label htmlFor="status" className="text-sm">
-                    Status
-                  </Label>
+                  {t("adminPayments.status")}
+                </Label>
                   <Select
                     value={paymentForm.status}
                     onValueChange={(value) =>
@@ -614,9 +616,9 @@ const Payments = () => {
                           : "bg-white border-[#e0e0e0]",
                       )}
                     >
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="overdue">Overdue</SelectItem>
+                      <SelectItem value="pending">{t("adminPayments.pending")}</SelectItem>
+                      <SelectItem value="paid">{t("adminPayments.paid")}</SelectItem>
+                      <SelectItem value="overdue">{t("adminPayments.overdue")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -639,7 +641,7 @@ const Payments = () => {
                           : "bg-[#f0f2f5] border-[#d1d5db] focus:border-[#337ab7]",
                       )}
                     >
-                      <SelectValue placeholder="Select method (optional)" />
+                      <SelectValue placeholder={t("adminPayments.selectMethod")} />
                     </SelectTrigger>
                     <SelectContent
                       className={cn(
@@ -649,13 +651,13 @@ const Payments = () => {
                           : "bg-white border-[#e0e0e0]",
                       )}
                     >
-                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="cash">{t("adminPayments.cash")}</SelectItem>
                       <SelectItem value="bank_transfer">
                         Bank Transfer
                       </SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                      <SelectItem value="check">Check</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="card">{t("adminPayments.card")}</SelectItem>
+                      <SelectItem value="check">{t("adminPayments.check")}</SelectItem>
+                      <SelectItem value="other">{t("adminPayments.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -666,7 +668,7 @@ const Payments = () => {
                   </Label>
                   <Textarea
                     id="notes"
-                    placeholder="Optional notes..."
+                    placeholder={t("adminPayments.optionalNotes")}
                     value={paymentForm.notes}
                     onChange={(e) =>
                       setPaymentForm({ ...paymentForm, notes: e.target.value })
@@ -693,7 +695,7 @@ const Payments = () => {
                   Cancel
                 </Button>
                 <Button onClick={handleSavePayment}>
-                  {selectedPayment ? "Update" : "Create"}
+                  {selectedPayment ? t("adminPayments.update") : t("adminPayments.create")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -707,7 +709,7 @@ const Payments = () => {
           <div className="flex items-center">
             <CheckCircle className="h-8 w-8 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">Paid</p>
+              <p className="text-sm font-medium text-muted-foreground">{t("adminPayments.paid")}</p>
               <p className="text-2xl font-bold text-green-600">{stats.paid}</p>
             </div>
           </div>
@@ -718,7 +720,7 @@ const Payments = () => {
             <Clock className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">
-                Pending
+                {t("adminPayments.pending")}
               </p>
               <p className="text-2xl font-bold text-yellow-600">
                 {stats.pending}
@@ -732,7 +734,7 @@ const Payments = () => {
             <XCircle className="h-8 w-8 text-red-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">
-                Overdue
+                {t("adminPayments.overdue")}
               </p>
               <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
             </div>
@@ -744,7 +746,7 @@ const Payments = () => {
             <Users className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-muted-foreground">
-                Total Records
+                {t("adminPayments.totalRecords")}
               </p>
               <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
             </div>
@@ -760,8 +762,8 @@ const Payments = () => {
               htmlFor="statusFilter"
               className="text-sm font-medium mb-2 block text-foreground"
             >
-              Status
-            </Label>
+                  {t("adminPayments.status")}
+                </Label>
             <Select
               value={filters.status}
               onValueChange={(value) =>
@@ -772,10 +774,10 @@ const Payments = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="all">{t("adminPayments.allStatus")}</SelectItem>
+                <SelectItem value="paid">{t("adminPayments.paid")}</SelectItem>
+                <SelectItem value="pending">{t("adminPayments.pending")}</SelectItem>
+                <SelectItem value="overdue">{t("adminPayments.overdue")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -785,8 +787,8 @@ const Payments = () => {
               htmlFor="studentFilter"
               className="text-sm font-medium mb-2 block text-foreground"
             >
-              Student
-            </Label>
+                  {t("adminPayments.student")}
+                </Label>
             <Select
               value={filters.student}
               onValueChange={(value) =>
@@ -794,10 +796,10 @@ const Payments = () => {
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="All students" />
+                <SelectValue placeholder={t("adminPayments.allStudents")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="all">{t("adminPayments.allStudents")}</SelectItem>
                 {students.map((student) => (
                   <SelectItem key={student._id} value={student._id}>
                     {student.name}
@@ -812,8 +814,8 @@ const Payments = () => {
               htmlFor="periodFilter"
               className="text-sm font-medium mb-2 block text-foreground"
             >
-              Period
-            </Label>
+                  {t("adminPayments.period")}
+                </Label>
             <Select
               value={filters.period}
               onValueChange={(value) =>
@@ -821,10 +823,10 @@ const Payments = () => {
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="All periods" />
+                <SelectValue placeholder={t("adminPayments.allPeriods")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Periods</SelectItem>
+                <SelectItem value="all">{t("adminPayments.allPeriods")}</SelectItem>
                 {periodOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -853,7 +855,7 @@ const Payments = () => {
                 })
               }
             >
-              Clear Filters
+              {t("adminPayments.clearFilters")}
             </Button>
           </div>
         </div>
@@ -866,25 +868,25 @@ const Payments = () => {
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-600">
                 <th className="text-left p-4 text-foreground font-medium">
-                  Student
+                  {t("adminPayments.student")}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  Period
+                  {t("adminPayments.period")}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  Status
+                  {t("adminPayments.status")}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  Due Date
+                  {t("adminPayments.dueDate")}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  Paid Date
+                  {t("adminPayments.paidDate")}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  Method
+                  {t("adminPayments.method")}
                 </th>
                 <th className="text-left p-4 text-foreground font-medium">
-                  Actions
+                  {t("adminPayments.actions")}
                 </th>
               </tr>
             </thead>
@@ -894,7 +896,7 @@ const Payments = () => {
                   <td colSpan={7} className="text-center py-12">
                     <div className="flex justify-center items-center gap-3 py-6">
                       <span className="text-base text-foreground">
-                        Loading payments...
+                        {t("adminPayments.loadingPayments")}
                       </span>
                     </div>
                   </td>
@@ -903,7 +905,7 @@ const Payments = () => {
                 <tr>
                   <td colSpan={7} className="text-center py-12">
                     <span className="text-muted-foreground text-base">
-                      No payment records found
+                      {t("adminPayments.noRecords")}
                     </span>
                   </td>
                 </tr>
@@ -915,29 +917,29 @@ const Payments = () => {
                   >
                     <td className="p-4">
                       <span className="font-medium text-foreground text-base">
-                        {payment.student?.name || "Unknown Student"}
+                        {payment.student?.name || t("adminPayments.unknownStudent")}
                       </span>
                     </td>
                     <td className="p-4 text-foreground text-base">
                       {new Date(
                         payment.paymentPeriod + "-01",
-                      ).toLocaleDateString("en-US", {
+                      ).toLocaleDateString(dateLocale, {
                         month: "long",
                         year: "numeric",
                       })}
                     </td>
                     <td className="p-4">{getStatusBadge(payment.status)}</td>
                     <td className="p-4 text-foreground text-base">
-                      {new Date(payment.dueDate).toLocaleDateString()}
+                      {new Date(payment.dueDate).toLocaleDateString(dateLocale)}
                     </td>
                     <td className="p-4 text-foreground text-base">
                       {payment.paidDate
-                        ? new Date(payment.paidDate).toLocaleDateString()
+                        ? new Date(payment.paidDate).toLocaleDateString(dateLocale)
                         : "-"}
                     </td>
                     <td className="p-4 text-foreground text-base">
                       {payment.paymentMethod
-                        ? payment.paymentMethod.replace("_", " ").toUpperCase()
+                        ? t(`adminPayments.${payment.paymentMethod.toLowerCase()}`, { defaultValue: payment.paymentMethod.replace("_", " ").toUpperCase() })
                         : "-"}
                     </td>
                     <td className="p-4">
@@ -947,7 +949,7 @@ const Payments = () => {
                         onClick={() => handleEditPayment(payment)}
                         className="hover:bg-muted dark:hover:bg-gray-700 px-4 py-2"
                       >
-                        Edit
+                        {t("adminPayments.edit")}
                       </Button>
                     </td>
                   </tr>
@@ -965,17 +967,17 @@ const Payments = () => {
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(currentPage - 1)}
             >
-              Previous
+              {t("adminPayments.previous")}
             </Button>
             <span className="text-sm text-gray-600">
-              Page {currentPage} of {totalPages}
+              {t("adminPayments.page")} {currentPage} {t("adminPayments.of")} {totalPages}
             </span>
             <Button
               variant="outline"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
-              Next
+              {t("adminPayments.next")}
             </Button>
           </div>
         )}
