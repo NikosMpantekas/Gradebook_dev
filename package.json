@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "homepage": "https://gradebookbeta.netlify.app",
   "description": "A Progressive Web App for managing student grades and notifications",
+  "engines": {
+    "node": ">=20.6.0"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node --env-file=backend/.env backend/server.js",
