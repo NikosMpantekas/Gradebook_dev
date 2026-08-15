@@ -1,16 +1,12 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import Backend from 'i18next-http-backend';
 
 // Import translation files
 import enTranslations from './locales/en.json';
 import grTranslations from './locales/gr.json';
 
 i18n
-  // Load translation using http -> see /public/locales (i.e. https://github.com/i18next/react-i18next/tree/master/example/react/public/locales)
-  // Learn more: https://github.com/i18next/i18next-http-backend
-  .use(Backend)
   // Detect user language
   // Learn more: https://github.com/i18next/i18next-browser-languageDetector
   .use(LanguageDetector)
@@ -42,11 +38,6 @@ i18n
       gr: {
         translation: grTranslations
       }
-    },
-
-    // Backend settings (if using external JSON files)
-    backend: {
-      loadPath: '/locales/{{lng}}.json',
     },
 
     // React-specific options

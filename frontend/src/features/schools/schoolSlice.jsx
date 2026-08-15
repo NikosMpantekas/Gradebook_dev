@@ -154,6 +154,11 @@ export const updateSchool = createAsyncThunk(
   'schools/update',
   async (payload, thunkAPI) => {
     try {
+      const user = thunkAPI.getState().auth.user;
+      if (!user || !user.token) {
+        return thunkAPI.rejectWithValue('Authentication error: Please log in again');
+      }
+
       // Handle both object format { id, schoolData } and direct id format
       let id, schoolData;
       

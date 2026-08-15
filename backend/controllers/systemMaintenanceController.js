@@ -45,6 +45,11 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 const getMaintenanceDetails = asyncHandler(async (req, res) => {
   try {
+    const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
+    if (!maintenanceDoc) {
+      return res.status(404).json({ error: 'No maintenance record found' });
+    }
+
     // Safely populate references with fallback handling
     try {
       await maintenanceDoc.populate('lastModifiedBy', 'name email role');

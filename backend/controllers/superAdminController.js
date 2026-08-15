@@ -680,10 +680,11 @@ const searchUsersForNotifications = asyncHandler(async (req, res) => {
 
     // Add text search if query provided
     if (query && query.trim()) {
+      const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       andConditions.push({
         $or: [
-          { name: { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(query.trim()), $options: "i" } },
-          { email: { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(query.trim()), $options: "i" } },
+          { name: { $regex: escaped, $options: "i" } },
+          { email: { $regex: escaped, $options: "i" } },
         ],
       });
       console.log(`  - Added text search for: "${query.trim()}"`);

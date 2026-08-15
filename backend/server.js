@@ -356,8 +356,9 @@ const {
   checkMaintenanceMode,
 } = require("./middleware/authMiddleware");
 
+// ponytail: /api/contact (singular) is the canonical path used by frontend
 app.use(
-  "/api/contacts",
+  "/api/contact",
   checkMaintenanceMode,
   require("./routes/contactRoutes"),
 );
@@ -516,11 +517,6 @@ app.use(
   require("./routes/schoolRoutes"),
 );
 
-app.use(
-  "/api/contact",
-  checkMaintenanceMode,
-  require("./routes/contactRoutes"),
-);
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes"));
 app.use("/api/superadmin", require("./routes/superAdminRoutes"));
 app.use(
