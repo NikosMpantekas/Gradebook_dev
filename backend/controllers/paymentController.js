@@ -1,14 +1,15 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Payment = require('../models/paymentModel');
 const User = require('../models/userModel');
-const { getPaginationParams } = require('../utils/queryHelper');
 
 // @desc    Get all payments for school (Admin only)
 // @route   GET /api/payments
 // @access  Private (Admin)
 const getPayments = asyncHandler(async (req, res) => {
   const { status, student, period, month, year } = req.query;
-  const { page, limit, skip } = getPaginationParams(req.query, 20);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
 
   // Build query
   let query = { schoolId: req.user.schoolId };
