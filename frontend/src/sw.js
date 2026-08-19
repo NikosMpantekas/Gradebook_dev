@@ -117,7 +117,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then(res => {
-          if (res.status === 200) {
+          if (res.status === 200 && event.request.method === 'GET') {
             const clone = res.clone();
             caches.open(CACHE_NAMES.data).then(c => c.put(event.request, clone));
           }
@@ -131,7 +131,7 @@ self.addEventListener('fetch', (event) => {
   // Cache First for Assets
   event.respondWith(
     caches.match(event.request).then(res => res || fetch(event.request).then(netRes => {
-      if (netRes.status === 200) {
+      if (netRes.status === 200 && event.request.method === 'GET') {
         const clone = netRes.clone();
         caches.open(CACHE_NAMES.dynamic).then(c => c.put(event.request, clone));
       }

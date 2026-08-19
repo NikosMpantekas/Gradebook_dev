@@ -103,6 +103,7 @@ classSchema.index({ direction: 1, schoolId: 1 });
 classSchema.index({ schoolBranch: 1, schoolId: 1 });
 classSchema.index({ 'teachers': 1, schoolId: 1 });
 classSchema.index({ 'students': 1, schoolId: 1 });
+classSchema.index({ schoolId: 1, teachers: 1 });
 
 // Apply audit logging plugin to track class changes
 classSchema.plugin(auditLogPlugin, {

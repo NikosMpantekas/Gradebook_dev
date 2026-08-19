@@ -209,9 +209,29 @@ const updateSchool = asyncHandler(async (req, res) => {
     }
   }
 
+  // Whitelist updateable fields
+  const allowedUpdates = {
+    ...(req.body.name !== undefined && { name: req.body.name }),
+    ...(req.body.address !== undefined && { address: req.body.address }),
+    ...(req.body.phone !== undefined && { phone: req.body.phone }),
+    ...(req.body.email !== undefined && { email: req.body.email }),
+    ...(req.body.website !== undefined && { website: req.body.website }),
+    ...(req.body.logo !== undefined && { logo: req.body.logo }),
+    ...(req.body.branchDescription !== undefined && { branchDescription: req.body.branchDescription }),
+  };
+
+  // Only superadmin can modify cluster or core tenancy configurations
+  if (req.user.role === "superadmin") {
+    if (req.body.active !== undefined) allowedUpdates.active = req.body.active;
+    if (req.body.schoolDomain !== undefined) allowedUpdates.schoolDomain = req.body.schoolDomain;
+    if (req.body.emailDomain !== undefined) allowedUpdates.emailDomain = req.body.emailDomain;
+    if (req.body.isClusterSchool !== undefined) allowedUpdates.isClusterSchool = req.body.isClusterSchool;
+    if (req.body.parentCluster !== undefined) allowedUpdates.parentCluster = req.body.parentCluster;
+  }
+
   const updatedSchool = await School.findByIdAndUpdate(
     req.params.id,
-    req.body,
+    allowedUpdates,
     { new: true, runValidators: true },
   );
 

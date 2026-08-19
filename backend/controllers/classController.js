@@ -221,9 +221,9 @@ const getClasses = asyncHandler(async (req, res) => {
   // Optional filters from query params
   const { subject, direction, schoolBranch, teacher, student } = req.query;
 
-  if (subject) query.subject = { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(subject), $options: 'i' };
-  if (direction) query.direction = { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(direction), $options: 'i' };
-  if (schoolBranch) query.schoolBranch = { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(schoolBranch), $options: 'i' };
+  if (subject) query.subject = { $regex: ((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(subject), $options: 'i' };
+  if (direction) query.direction = { $regex: ((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(direction), $options: 'i' };
+  if (schoolBranch) query.schoolBranch = { $regex: ((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(schoolBranch), $options: 'i' };
   if (teacher && mongoose.Types.ObjectId.isValid(teacher)) {
     query.teachers = new mongoose.Types.ObjectId(teacher);
   }

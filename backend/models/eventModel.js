@@ -103,5 +103,7 @@ eventSchema.index({ 'audience.schools': 1 });
 eventSchema.index({ 'audience.directions': 1 });
 eventSchema.index({ creator: 1 });
 eventSchema.index({ schoolId: 1 });
+eventSchema.index({ schoolId: 1, startDate: 1 });
+eventSchema.index({ schoolId: 1, audience: 1 });
 
 module.exports = mongoose.model('Event', eventSchema);

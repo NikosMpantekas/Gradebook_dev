@@ -47,6 +47,9 @@ const gradeSchema = mongoose.Schema(
 // Create a compound index to ensure unique grades per student, subject, date, and schoolId
 gradeSchema.index({ student: 1, subject: 1, date: 1, schoolId: 1 }, { unique: true });
 
+gradeSchema.index({ schoolId: 1, student: 1 });
+gradeSchema.index({ schoolId: 1, subject: 1 });
+
 // Apply audit logging plugin to track grade changes
 gradeSchema.plugin(auditLogPlugin, {
   modelName: 'Grade',

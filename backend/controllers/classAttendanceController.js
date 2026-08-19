@@ -337,8 +337,8 @@ const searchStudents = asyncHandler(async (req, res) => {
       schoolId: req.user.schoolId,
       active: true,
       $or: [
-        { name: { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(query), $options: 'i' } },
-        { email: { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(query), $options: 'i' } }
+        { name: { $regex: ((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(query), $options: 'i' } },
+        { email: { $regex: ((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(query), $options: 'i' } }
       ]
     }).select('_id name email').limit(10);
 

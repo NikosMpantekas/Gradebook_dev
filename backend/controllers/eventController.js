@@ -134,24 +134,24 @@ const getEvents = asyncHandler(async (req, res) => {
       audienceCriteria.push({}); // Empty criteria means all events
     } else if (userRole === 'admin') {
       // Admins can see events targeted to all, admins, and events for their school
-      audienceCriteria.push({ 'audience.targetType': 'all' });
-      audienceCriteria.push({ 'audience.targetType': 'admins' });
+      audienceCriteria.push({ 'audience.targetType': 'all', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
+      audienceCriteria.push({ 'audience.targetType': 'admins', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
       audienceCriteria.push({ 
         'audience.targetType': 'specific',
         'audience.schools': userSchoolId
       });
     } else if (userRole === 'secretary') {
       // Secretaries can see events targeted to all, admins, and events for their school
-      audienceCriteria.push({ 'audience.targetType': 'all' });
-      audienceCriteria.push({ 'audience.targetType': 'admins' });
+      audienceCriteria.push({ 'audience.targetType': 'all', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
+      audienceCriteria.push({ 'audience.targetType': 'admins', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
       audienceCriteria.push({ 
         'audience.targetType': 'specific',
         'audience.schools': userSchoolId
       });
     } else if (userRole === 'teacher') {
       // Teachers can see events for all, teachers, and events for their school/directions
-      audienceCriteria.push({ 'audience.targetType': 'all' });
-      audienceCriteria.push({ 'audience.targetType': 'teachers' });
+      audienceCriteria.push({ 'audience.targetType': 'all', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
+      audienceCriteria.push({ 'audience.targetType': 'teachers', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
       
       // Add school and direction criteria if they exist
       if (req.user.schools && req.user.schools.length > 0) {
@@ -169,8 +169,8 @@ const getEvents = asyncHandler(async (req, res) => {
       }
     } else if (userRole === 'student') {
       // Students can see events for all, students, and events for their school/direction
-      audienceCriteria.push({ 'audience.targetType': 'all' });
-      audienceCriteria.push({ 'audience.targetType': 'students' });
+      audienceCriteria.push({ 'audience.targetType': 'all', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
+      audienceCriteria.push({ 'audience.targetType': 'students', $or: [{ schoolId: userSchoolId }, { isGlobal: true }] });
       
       // Add school criteria if it exists
       if (req.user.school) {
@@ -189,10 +189,21 @@ const getEvents = asyncHandler(async (req, res) => {
       }
     }
     
+    // Scope non-global audience criteria by user's school for non-superadmins
+    const scopedCriteria = (userRole === 'superadmin' || !userSchoolId)
+      ? audienceCriteria
+      : audienceCriteria.map(criterion => ({
+          ...criterion,
+          $or: [
+            { schoolId: userSchoolId },
+            { isGlobal: true }
+          ]
+        }));
+
     // Combine the base query with the audience criteria
     const finalQuery = {
       ...query,
-      $or: audienceCriteria
+      $or: scopedCriteria
     };
     
     // Execute the query with populated fields
@@ -369,6 +380,11 @@ async function userCanAccessEvent(user, event) {
   
   // Event creator can always access their own events
   if (event.creator.toString() === user._id.toString()) return true;
+
+  // Tenant boundary: non-global events must match the user's school
+  if (!event.isGlobal && event.schoolId && user.schoolId && event.schoolId.toString() !== user.schoolId.toString()) {
+    return false;
+  }
   
   // Check target audience type
   if (event.audience.targetType === 'all') return true;

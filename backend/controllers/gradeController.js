@@ -194,7 +194,8 @@ const getAllGrades = asyncHandler(async (req, res) => {
       .populate('student', 'name email')
       .populate('subject', 'name')
       .populate('teacher', 'name')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .lean();
     
     res.status(200).json(grades);
   } catch (error) {
@@ -259,7 +260,8 @@ const getStudentGrades = asyncHandler(async (req, res) => {
     })
       .populate('subject', 'name')
       .populate('teacher', 'name')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .lean();
 
     res.status(200).json(grades);
   } catch (error) {
@@ -360,7 +362,8 @@ const getGradesBySubject = asyncHandler(async (req, res) => {
     const grades = await Grade.find(query)
       .populate('student', 'name')
       .populate('teacher', 'name')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .lean();
     
     res.status(200).json(grades);
   } catch (error) {
@@ -419,7 +422,8 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
     const grades = await Grade.find(gradeQuery)
       .populate('student', 'name')
       .populate('subject', 'name')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .lean();
 
     res.status(200).json(grades);
   } catch (error) {

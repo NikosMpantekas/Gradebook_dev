@@ -477,29 +477,7 @@ axios.interceptors.request.use(
     } catch (error) {
     }
     // If we have a user with a token, validate it's not obviously expired
-    if (user && user.token) {
-      try {
-        // Basic JWT structure validation
-        const tokenParts = user.token.split('.');
-        if (tokenParts.length === 3) {
-          // Decode the payload (middle part)
-          const payload = JSON.parse(atob(tokenParts[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          // Check if token is expired
-          if (payload.exp && payload.exp < currentTime) {
-            // Clear expired token
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('user');
-            // Redirect to login
-            const cacheBuster = new Date().getTime();
-            window.location.replace(`/login?expired=true&cache=${cacheBuster}`);
-            // Cancel the request
-            return Promise.reject(new Error('Token expired - redirecting to login'));
-          }
-        }
-      } catch (error) {
-      }
-    }
+    // Let requests proceed to server so 401 response interceptor can refresh the token
     return config;
   },
   (error) => {

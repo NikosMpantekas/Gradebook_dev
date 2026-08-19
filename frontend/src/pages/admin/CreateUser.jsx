@@ -172,11 +172,6 @@ const CreateUser = (props) => {
 
   // Check if secretary restriction is enabled from URL parameter
   const [restrictSecretary, setRestrictSecretary] = useState(false);
-  
-  // Check if admin already exists (only one admin allowed per organization)
-  const [restrictAdmin, setRestrictAdmin] = useState(false);
-  const [adminExists, setAdminExists] = useState(false);
-
   useEffect(() => {
     // Check URL parameters to see if secretary role creation should be restricted
     const queryParams = new URLSearchParams(window.location.search);
@@ -185,39 +180,6 @@ const CreateUser = (props) => {
       setRestrictSecretary(true);
     }
   }, [user]);
-  
-  // Check for existing admin account on component mount
-  useEffect(() => {
-    const checkExistingAdmin = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/users`, {
-          headers: {
-            'Authorization': `Bearer ${user?.token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const users = await response.json();
-          const hasAdmin = users.some(u => u.role === 'admin');
-          
-          if (hasAdmin) {
-            setAdminExists(true);
-            setRestrictAdmin(true);
-            console.log('Admin account already exists - preventing creation of second admin');
-          }
-        } else {
-          console.error('Failed to check for existing admin accounts');
-        }
-      } catch (error) {
-        console.error('Error checking for existing admin accounts:', error);
-      }
-    };
-    
-    if (user?.token) {
-      checkExistingAdmin();
-    }
-  }, [user?.token]);
 
   // Additional state for loading options
   const [loadingOptions, setLoadingOptions] = useState({
@@ -304,7 +266,7 @@ const CreateUser = (props) => {
   }, [formData.createParentAccount, formData.name, formData.email, formData.role]);
 
   const handleGenerateParentPassword = () => {
-    const newPassword = generateEasyPassword();
+    const newPassword = generateSecurePassword();
     setFormData(prev => ({
       ...prev,
       parentPassword: newPassword,
@@ -408,25 +370,43 @@ const CreateUser = (props) => {
     e.preventDefault();
   };
 
-  // Password generation functions
-  const generateEasyPassword = () => {
-    // Generate an easy-to-remember password with format: Word1234!
-    const words = [
-      'Apple', 'Beach', 'Cloud', 'Dance', 'Eagle', 'Flame', 'Grace', 'Happy',
-      'Island', 'Jungle', 'Knight', 'Light', 'Magic', 'Night', 'Ocean', 'Peace',
-      'Quick', 'River', 'Smile', 'Trust', 'Unity', 'Voice', 'Water', 'Youth'
+  // Cryptographically secure password generator
+  const generateSecurePassword = (length = 14) => {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+    const numbers = '23456789';
+    const symbols = '!@#$%^&*_-+=';
+    const allChars = uppercase + lowercase + numbers + symbols;
+
+    const getRandomInt = (max) => {
+      const array = new Uint32Array(1);
+      window.crypto.getRandomValues(array);
+      return array[0] % max;
+    };
+
+    // Ensure at least one from each character group
+    const passwordArray = [
+      uppercase[getRandomInt(uppercase.length)],
+      lowercase[getRandomInt(lowercase.length)],
+      numbers[getRandomInt(numbers.length)],
+      symbols[getRandomInt(symbols.length)]
     ];
-    
-    const word = words[Math.floor(Math.random() * words.length)];
-    const numbers = Math.floor(1000 + Math.random() * 9000); // 4-digit number
-    const symbols = ['!', '@', '#', '$', '%'];
-    const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-    
-    return `${word}${numbers}${symbol}`;
+
+    for (let i = 4; i < length; i++) {
+      passwordArray.push(allChars[getRandomInt(allChars.length)]);
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = passwordArray.length - 1; i > 0; i--) {
+      const j = getRandomInt(i + 1);
+      [passwordArray[i], passwordArray[j]] = [passwordArray[j], passwordArray[i]];
+    }
+
+    return passwordArray.join('');
   };
 
   const handleGeneratePassword = () => {
-    const newPassword = generateEasyPassword();
+    const newPassword = generateSecurePassword();
     setGeneratedPassword(newPassword);
     setFormData({
       ...formData,
@@ -1085,11 +1065,6 @@ const CreateUser = (props) => {
               </Select>
               {formErrors.role && (
                 <p className="text-sm text-red-500">{formErrors.role}</p>
-              )}
-              {adminExists && (
-                <p className="text-sm text-amber-600">
-                  ⚠️ An admin account already exists for this organization. Only one admin is allowed.
-                </p>
               )}
             </div>
 

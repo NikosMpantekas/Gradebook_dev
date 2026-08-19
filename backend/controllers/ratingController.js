@@ -668,6 +668,9 @@ const getRatingStats = asyncHandler(async (req, res) => {
   const { periodId } = req.query;
 
   const query = { targetType, targetId };
+  if (!req.isSuperadmin && req.user?.schoolId) {
+    query.schoolId = req.user.schoolId;
+  }
   if (periodId) {
     query.ratingPeriod = periodId;
   }

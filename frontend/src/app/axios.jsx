@@ -15,6 +15,20 @@ const generateRequestId = () => {
   return `req-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
 };
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Debug logging helper for API calls
 const logApiCall = (message, data) => {};
 
@@ -141,7 +155,7 @@ axiosInstance.interceptors.response.use(
 
     return response;
   },
-  (error) => {
+  async (error) => {
     // Don't handle axios cancellation errors (from our deduplication)
     if (axios.isCancel(error)) {
       return Promise.reject(error);
@@ -199,13 +213,71 @@ axiosInstance.interceptors.response.use(
 
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
-      // Clear user data from storage if unauthorized
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("user");
+      const originalRequest = error.config;
 
-      // Redirect to login page if not already there
-      if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
+      // If already retried, bail to login
+      if (originalRequest._retry) {
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
+      // If a refresh is already in flight, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers["Authorization"] = `Bearer ${token}`;
+          return axiosInstance(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const state = store.getState();
+        const refreshToken = state?.auth?.user?.refreshToken;
+        if (!refreshToken) throw new Error("No refresh token");
+
+        const { data } = await axios.post(
+          `${originalRequest.baseURL || ""}/api/users/refresh-token`,
+          { refreshToken }
+        );
+
+        const newToken = data.token;
+        // Update stored user with new token
+        const storedUser = JSON.parse(
+          localStorage.getItem("user") || sessionStorage.getItem("user") || "{}"
+        );
+        if (storedUser.token) {
+          storedUser.token = newToken;
+          if (storedUser.refreshToken && data.refreshToken) {
+            storedUser.refreshToken = data.refreshToken;
+          }
+          if (localStorage.getItem("user")) {
+            localStorage.setItem("user", JSON.stringify(storedUser));
+          } else {
+            sessionStorage.setItem("user", JSON.stringify(storedUser));
+          }
+        }
+
+        processQueue(null, newToken);
+        originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

@@ -15,8 +15,18 @@ class ReportingService {
       const endDate = new Date(date);
       endDate.setHours(23, 59, 59, 999);
 
+      // Build initial match query
+      const matchQuery = {
+        active: true,
+        ...(auditContext.schoolId && { schoolId: auditContext.schoolId }),
+        ...(classId && { classId })
+      };
+
       // Build aggregation pipeline
       const pipeline = [
+        {
+          $match: matchQuery
+        },
         {
           $lookup: {
             from: 'sessions',
@@ -27,6 +37,14 @@ class ReportingService {
         },
         {
           $unwind: '$session'
+        },
+        {
+          $match: {
+            'session.scheduledStartAt': {
+              $gte: startDate,
+              $lte: endDate
+            }
+          }
         },
         {
           $lookup: {
@@ -49,22 +67,8 @@ class ReportingService {
         },
         {
           $unwind: '$student'
-        },
-        {
-          $match: {
-            'session.scheduledStartAt': {
-              $gte: startDate,
-              $lte: endDate
-            },
-            'session.schoolId': auditContext.schoolId,
-            active: true
-          }
         }
       ];
-
-      if (classId) {
-        pipeline[5].$match.classId = classId;
-      }
 
       // Add grouping for summary
       pipeline.push(

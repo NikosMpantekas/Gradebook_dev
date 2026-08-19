@@ -1,15 +1,14 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Payment = require('../models/paymentModel');
 const User = require('../models/userModel');
+const { getPaginationParams } = require('../utils/queryHelper');
 
 // @desc    Get all payments for school (Admin only)
 // @route   GET /api/payments
 // @access  Private (Admin)
 const getPayments = asyncHandler(async (req, res) => {
   const { status, student, period, month, year } = req.query;
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
-  const skip = (page - 1) * limit;
+  const { page, limit, skip } = getPaginationParams(req.query, 20);
 
   // Build query
   let query = { schoolId: req.user.schoolId };
@@ -268,29 +267,31 @@ const generateMonthlyPayments = asyncHandler(async (req, res) => {
   // Calculate due date (15th of the payment month)
   const dueDate = new Date(year, month - 1, 15);
 
-  const paymentPromises = students.map(async (student) => {
-    // Check if payment record already exists
-    const existingPayment = await Payment.findOne({
-      student: student._id,
-      paymentPeriod,
-      schoolId: req.user.schoolId
-    });
-
-    if (!existingPayment) {
-      return Payment.create({
+  const operations = students.map(student => ({
+    updateOne: {
+      filter: {
         student: student._id,
-        schoolId: req.user.schoolId,
         paymentPeriod,
-        status: 'pending',
-        dueDate
-      });
+        schoolId: req.user.schoolId
+      },
+      update: {
+        $setOnInsert: {
+          student: student._id,
+          schoolId: req.user.schoolId,
+          paymentPeriod,
+          status: 'pending',
+          dueDate
+        }
+      },
+      upsert: true
     }
-    
-    return existingPayment;
-  });
+  }));
 
-  const payments = await Promise.all(paymentPromises);
-  const newPaymentsCount = payments.filter(payment => payment.isNew !== false).length;
+  let newPaymentsCount = 0;
+  if (operations.length > 0) {
+    const result = await Payment.bulkWrite(operations);
+    newPaymentsCount = result.upsertedCount;
+  }
 
   res.status(201).json({
     message: `Generated ${newPaymentsCount} new payment records for ${Payment.parsePaymentPeriod(paymentPeriod).monthName} ${year}`,

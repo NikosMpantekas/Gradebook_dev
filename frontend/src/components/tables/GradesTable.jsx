@@ -32,6 +32,136 @@ import {
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Spinner } from '../ui/spinner';
 
+const getGradeColor = (percentage) => {
+  if (percentage >= 90) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+  if (percentage >= 80) return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+  if (percentage >= 70) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+  if (percentage >= 60) return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+  return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+};
+
+const getAssignmentTypeColor = (type) => {
+  const colors = {
+    homework: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    quiz: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+    test: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    exam: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    project: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    participation: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
+    other: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  };
+  return colors[type] || colors.other;
+};
+
+const GradeRow = React.memo(({ grade, onView, onEdit, onDelete }) => {
+  const percentage = grade.maxScore ? (grade.score / grade.maxScore) * 100 : 0;
+  const letterGrade = grade.letterGrade || 'N/A';
+  
+  return (
+    <tr className="hover:bg-muted/50">
+      <td className="px-4 py-3">
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs">
+              {grade.studentName?.charAt(0)?.toUpperCase() || 'S'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{grade.studentName}</div>
+            <div className="text-sm text-muted-foreground">{grade.studentEmail}</div>
+          </div>
+        </div>
+      </td>
+      
+      <td className="px-4 py-3">
+        <div className="flex items-center space-x-2">
+          <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{grade.subjectName}</span>
+        </div>
+      </td>
+      
+      <td className="px-4 py-3">
+        <div>
+          <div className="font-medium">{grade.title}</div>
+          {grade.comments && (
+            <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+              {grade.comments}
+            </div>
+          )}
+        </div>
+      </td>
+      
+      <td className="px-4 py-3">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <span className="font-medium">{grade.score}</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-muted-foreground">{grade.maxScore}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge className={getGradeColor(percentage)}>
+              {letterGrade}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {percentage.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </td>
+      
+      <td className="px-4 py-3">
+        <div className="flex items-center space-x-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">
+            {new Date(grade.date).toLocaleDateString()}
+          </span>
+        </div>
+      </td>
+      
+      <td className="px-4 py-3">
+        <Badge className={getAssignmentTypeColor(grade.assignmentType)}>
+          {grade.assignmentType}
+        </Badge>
+      </td>
+      
+      <td className="px-4 py-3">
+        <Badge variant={grade.isFinal ? "destructive" : "secondary"}>
+          {grade.isFinal ? "Final" : "Draft"}
+        </Badge>
+      </td>
+      
+      <td className="px-4 py-3 text-right">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onView(grade)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(grade)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Grade
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => onDelete(grade._id)}
+              className="text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Grade
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </td>
+    </tr>
+  );
+});
+
 const GradesTable = ({ 
   grades = [], 
   students = [], 
@@ -97,27 +227,6 @@ const GradesTable = ({
       setSortField(field);
       setSortDirection('asc');
     }
-  };
-
-  const getGradeColor = (percentage) => {
-    if (percentage >= 90) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    if (percentage >= 80) return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-    if (percentage >= 70) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-    if (percentage >= 60) return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-  };
-
-  const getAssignmentTypeColor = (type) => {
-    const colors = {
-      homework: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      quiz: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-      test: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-      exam: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-      project: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      participation: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
-      other: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-    };
-    return colors[type] || colors.other;
   };
 
   const exportGrades = () => {
@@ -286,114 +395,15 @@ const GradesTable = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {currentGrades.map((grade) => {
-                  const percentage = grade.maxScore ? (grade.score / grade.maxScore) * 100 : 0;
-                  const letterGrade = grade.letterGrade || 'N/A';
-                  
-                  return (
-                    <tr key={grade._id} className="hover:bg-muted/50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {grade.studentName?.charAt(0)?.toUpperCase() || 'S'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{grade.studentName}</div>
-                            <div className="text-sm text-muted-foreground">{grade.studentEmail}</div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-2">
-                          <BookOpen className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{grade.subjectName}</span>
-                        </div>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <div>
-                          <div className="font-medium">{grade.title}</div>
-                          {grade.comments && (
-                            <div className="text-sm text-muted-foreground truncate max-w-[200px]">
-                              {grade.comments}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium">{grade.score}</span>
-                            <span className="text-muted-foreground">/</span>
-                            <span className="text-muted-foreground">{grade.maxScore}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={getGradeColor(percentage)}>
-                              {letterGrade}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              {percentage.toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {new Date(grade.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <Badge className={getAssignmentTypeColor(grade.assignmentType)}>
-                          {grade.assignmentType}
-                        </Badge>
-                      </td>
-                      
-                      <td className="px-4 py-3">
-                        <Badge variant={grade.isFinal ? "destructive" : "secondary"}>
-                          {grade.isFinal ? "Final" : "Draft"}
-                        </Badge>
-                      </td>
-                      
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => onView(grade)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onEdit(grade)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Grade
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => onDelete(grade._id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Grade
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {currentGrades.map((grade) => (
+                  <GradeRow 
+                    key={grade._id} 
+                    grade={grade} 
+                    onView={onView} 
+                    onEdit={onEdit} 
+                    onDelete={onDelete} 
+                  />
+                ))}
               </tbody>
             </table>
           </div>

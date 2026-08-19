@@ -642,7 +642,8 @@ const updateProfile = asyncHandler(async (req, res) => {
       user.avatar = req.body.avatar;
     }
 
-    if (req.body.newPassword) {
+    if (req.body.newPassword || req.body.password) {
+      const passwordToSet = req.body.newPassword || req.body.password;
       if (
         !req.body.currentPassword ||
         !(await user.matchPassword(req.body.currentPassword))
@@ -650,10 +651,7 @@ const updateProfile = asyncHandler(async (req, res) => {
         res.status(401);
         throw new Error("Invalid current password");
       }
-      user.password = req.body.newPassword;
-    } else if (req.body.password) {
-      // ponytail: fallback for older clients
-      user.password = req.body.password;
+      user.password = passwordToSet;
     }
 
     const updatedUser = await user.save();
@@ -1140,22 +1138,26 @@ const deleteUser = asyncHandler(async (req, res) => {
       throw new Error("Cannot delete superadmin users");
     }
 
-    // CRITICAL FIX: Clean up push subscriptions before deleting user
-    try {
-      const Subscription = require("../models/subscriptionModel");
-      const deletedSubscriptions = await Subscription.deleteMany({
-        user: req.params.id,
-      });
-    } catch (subscriptionError) {
-      console.warn(
-        `PUSH_CLEANUP: Failed to clean up subscriptions for user ${userToDelete.name}:`,
-        subscriptionError.message,
-      );
-      // Don't fail user deletion if subscription cleanup fails
-    }
+    // Wrap cascading deletions in a transaction
+    const session = await mongoose.startSession();
+    await session.withTransaction(async () => {
+      try {
+        const Subscription = require("../models/subscriptionModel");
+        await Subscription.deleteMany({ user: req.params.id }).session(session);
+      } catch (subscriptionError) {
+        console.warn(`PUSH_CLEANUP: Failed to clean up subscriptions`, subscriptionError.message);
+      }
 
-    // Delete the user
-    await User.findByIdAndDelete(req.params.id);
+      if (userToDelete.role === 'student') {
+        const Grade = require("../models/gradeModel");
+        const Attendance = require("../models/attendanceModel");
+        await Grade.deleteMany({ student: req.params.id }).session(session);
+        await Attendance.deleteMany({ studentId: req.params.id }).session(session);
+      }
+
+      await User.findByIdAndDelete(req.params.id).session(session);
+    });
+    session.endSession();
 
     res.json({
       message: `User ${userToDelete.name} deleted successfully`,

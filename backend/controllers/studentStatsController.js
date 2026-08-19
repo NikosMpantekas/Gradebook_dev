@@ -109,7 +109,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
 
     // Add search filter if provided
     if (search && search.trim()) {
-      studentQuery.name = { $regex: ((s) => s.replace(/[.*+?^()|[\]\\]/g, '\escapeRegex('))(search.trim()), $options: 'i' };
+      studentQuery.name = { $regex: ((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))(search.trim()), $options: 'i' };
     }
 
     let students;
@@ -146,63 +146,72 @@ const getStudentStats = asyncHandler(async (req, res) => {
 
     console.log(`[StudentStats] Found ${students.length} students matching criteria`);
 
+    // Fetch all grades for these students at once
+    const studentIds = students.map(s => s._id);
+    const allGrades = await Grade.find({
+      student: { $in: studentIds },
+      schoolId: req.user.schoolId
+    }).populate('subject', 'name').lean();
+    
+    // Group grades by student
+    const gradesByStudent = {};
+    allGrades.forEach(grade => {
+      const sId = grade.student.toString();
+      if (!gradesByStudent[sId]) gradesByStudent[sId] = [];
+      gradesByStudent[sId].push(grade);
+    });
+
     // Calculate statistics for each student
-    const studentStats = await Promise.all(
-      students.map(async (student) => {
-        // Get all grades for this student
-        const grades = await Grade.find({
-          student: student._id,
-          schoolId: req.user.schoolId
-        }).populate('subject', 'name');
+    const studentStats = students.map((student) => {
+      const grades = gradesByStudent[student._id.toString()] || [];
 
-        // Calculate statistics
-        const gradeCount = grades.length;
-        const gradeValues = grades.map(g => g.value);
-        const averageGrade = gradeCount > 0
-          ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
-          : 0;
+      // Calculate statistics
+      const gradeCount = grades.length;
+      const gradeValues = grades.map(g => g.value);
+      const averageGrade = gradeCount > 0
+        ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
+        : 0;
 
-        // Get subject breakdown
-        const subjectStats = {};
-        grades.forEach(grade => {
-          const subjectName = grade.subject?.name || 'Unknown Subject';
-          if (!subjectStats[subjectName]) {
-            subjectStats[subjectName] = {
-              count: 0,
-              total: 0,
-              average: 0
-            };
-          }
-          subjectStats[subjectName].count++;
-          subjectStats[subjectName].total += grade.value;
-        });
+      // Get subject breakdown
+      const subjectStats = {};
+      grades.forEach(grade => {
+        const subjectName = grade.subject?.name || 'Unknown Subject';
+        if (!subjectStats[subjectName]) {
+          subjectStats[subjectName] = {
+            count: 0,
+            total: 0,
+            average: 0
+          };
+        }
+        subjectStats[subjectName].count++;
+        subjectStats[subjectName].total += grade.value;
+      });
 
-        // Calculate averages for each subject
-        Object.keys(subjectStats).forEach(subject => {
-          const stats = subjectStats[subject];
-          stats.average = Math.round((stats.total / stats.count) * 100) / 100;
-        });
+      // Calculate averages for each subject
+      Object.keys(subjectStats).forEach(subject => {
+        const stats = subjectStats[subject];
+        stats.average = Math.round((stats.total / stats.count) * 100) / 100;
+      });
 
-        // Find highest and lowest grades
-        const highestGrade = gradeCount > 0 ? Math.max(...gradeValues) : 0;
-        const lowestGrade = gradeCount > 0 ? Math.min(...gradeValues) : 0;
+      // Find highest and lowest grades
+      const highestGrade = gradeCount > 0 ? Math.max(...gradeValues) : 0;
+      const lowestGrade = gradeCount > 0 ? Math.min(...gradeValues) : 0;
 
-        return {
-          student: {
-            _id: student._id,
-            name: student.name,
-            email: student.email
-          },
-          statistics: {
-            gradeCount,
-            averageGrade,
-            highestGrade,
-            lowestGrade,
-            subjectStats
-          }
-        };
-      })
-    );
+      return {
+        student: {
+          _id: student._id,
+          name: student.name,
+          email: student.email
+        },
+        statistics: {
+          gradeCount,
+          averageGrade,
+          highestGrade,
+          lowestGrade,
+          subjectStats
+        }
+      };
+    });
 
     // Sort by student name
     studentStats.sort((a, b) => a.student.name.localeCompare(b.student.name));

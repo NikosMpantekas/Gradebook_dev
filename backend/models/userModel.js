@@ -352,6 +352,9 @@ userSchema.pre('save', async function (next) {
   }
 });
 
+userSchema.index({ schoolId: 1, role: 1 });
+userSchema.index({ schoolId: 1, email: 1 });
+
 // Apply audit logging plugin to track user changes
 userSchema.plugin(auditLogPlugin, {
   modelName: 'User',
