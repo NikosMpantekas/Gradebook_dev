@@ -29,6 +29,9 @@ class OfflineManager {
 
   // Handle axios request failure
   handleRequestFailure(error) {
+    // Ignore aborted/canceled requests (e.g., from navigation or React Strict Mode)
+    if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') return;
+
     const now = Date.now();
     
     // Check if it's a network error (no response)

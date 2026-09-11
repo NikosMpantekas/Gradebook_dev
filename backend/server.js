@@ -90,7 +90,7 @@ app.use("/api/users/change-password", authLimiter);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs
+  max: process.env.NODE_ENV === "production" ? 200 : 2000,
   message: {
     message: "Too many requests from this IP. Please try again later.",
     code: "RATE_LIMITED",
@@ -356,7 +356,6 @@ const {
   checkMaintenanceMode,
 } = require("./middleware/authMiddleware");
 
-// ponytail: /api/contact (singular) is the canonical path used by frontend
 app.use(
   "/api/contact",
   checkMaintenanceMode,
@@ -542,9 +541,9 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "127.0.0.1", () => {
-  const ANSI_GREEN_BOLD = '\x1b[32m\x1b[1m';
-  const ANSI_RESET = '\x1b[0m';
+  const ANSI_GREEN_BOLD = "\x1b[32m\x1b[1m";
+  const ANSI_RESET = "\x1b[0m";
   console.log(
-    `${ANSI_GREEN_BOLD}Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}${ANSI_RESET}`
+    `${ANSI_GREEN_BOLD}Server running in ${process.env.NODE_ENV} mode on localhost:${PORT}${ANSI_RESET}`,
   );
 });
