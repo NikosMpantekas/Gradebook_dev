@@ -1,21 +1,35 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CardHeader, CardTitle, CardContent } from "./ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { BarChart3 } from "lucide-react";
 import useReducedMotion from "./hooks/useReducedMotion";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "./ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "./ui/chart";
 
 export function GradesGraph({ recentGrades }) {
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
-  
+
   // Extract available subjects
   const subjects = useMemo(
     () =>
       Array.from(
-        new Set(recentGrades.map((g) => g.subject?.name || "Unknown Subject"))
+        new Set(recentGrades.map((g) => g.subject?.name || "Unknown Subject")),
       ),
-    [recentGrades]
+    [recentGrades],
   );
 
   const [selectedSubject, setSelectedSubject] = useState(subjects[0] || "");
@@ -34,18 +48,21 @@ export function GradesGraph({ recentGrades }) {
     }
 
     const sortedGrades = [...recentGrades]
-      .filter(grade => grade && grade.value !== undefined)
-      .sort((a, b) => new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date));
+      .filter((grade) => grade && grade.value !== undefined)
+      .sort(
+        (a, b) =>
+          new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date),
+      );
 
     const selectedSubjectGrades = sortedGrades.filter(
-      grade => (grade.subject?.name || "Unknown Subject") === selectedSubject
+      (grade) => (grade.subject?.name || "Unknown Subject") === selectedSubject,
     );
 
     const allGradesData = sortedGrades.map((grade, index) => ({
       index: index + 1,
       grade: Number(grade.value) || 0,
       subject: grade.subject?.name || "Unknown Subject",
-      date: new Date(grade.createdAt || grade.date).toLocaleDateString()
+      date: new Date(grade.createdAt || grade.date).toLocaleDateString(),
     }));
 
     let subjectData = [];
@@ -56,16 +73,17 @@ export function GradesGraph({ recentGrades }) {
         const gradeValue = Number(selectedSubjectGrades[0].value) || 0;
         subjectData = [
           { index: 1, selectedSubjectGrade: gradeValue },
-          { index: totalWidth, selectedSubjectGrade: gradeValue }
+          { index: totalWidth, selectedSubjectGrade: gradeValue },
         ];
       } else {
         subjectData = selectedSubjectGrades.map((grade, index) => {
-          const position = 1 + (index * (totalWidth - 1)) / (selectedSubjectGrades.length - 1);
+          const position =
+            1 + (index * (totalWidth - 1)) / (selectedSubjectGrades.length - 1);
           return {
             index: Math.round(position),
             selectedSubjectGrade: Number(grade.value) || 0,
             subject: grade.subject?.name || "Unknown Subject",
-            date: new Date(grade.createdAt || grade.date).toLocaleDateString()
+            date: new Date(grade.createdAt || grade.date).toLocaleDateString(),
           };
         });
       }
@@ -73,43 +91,49 @@ export function GradesGraph({ recentGrades }) {
 
     return {
       chartData: allGradesData,
-      subjectChartData: subjectData
+      subjectChartData: subjectData,
     };
   }, [recentGrades, selectedSubject]);
 
   // Combined data for the chart
   const combinedData = useMemo(() => {
     return chartData.map((point) => {
-      const subjectPoint = subjectChartData.find(sp => sp.index === point.index);
+      const subjectPoint = subjectChartData.find(
+        (sp) => sp.index === point.index,
+      );
       return {
         ...point,
-        selectedSubjectGrade: subjectPoint ? subjectPoint.selectedSubjectGrade : undefined,
+        selectedSubjectGrade: subjectPoint
+          ? subjectPoint.selectedSubjectGrade
+          : undefined,
       };
     });
   }, [chartData, subjectChartData]);
 
   // Chart configuration for shadcn
-  const chartConfig = useMemo(() => ({
-    grade: {
-      label: "All Grades",
-      color: "hsl(var(--chart-1))",
-    },
-    selectedSubjectGrade: {
-      label: selectedSubject || "Subject Grade",
-      color: "hsl(var(--chart-2))",
-    },
-  }), [selectedSubject]);
+  const chartConfig = useMemo(
+    () => ({
+      grade: {
+        label: t("allGrades", "All Grades"),
+        color: "hsl(var(--chart-1))",
+      },
+      selectedSubjectGrade: {
+        label: selectedSubject || t("student.subjectGrade", "Subject Grade"),
+        color: "hsl(var(--chart-2))",
+      },
+    }),
+    [selectedSubject, t],
+  );
 
   return (
     <>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center space-x-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <span>Grade Progress</span>
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
+        <CardTitle>{t("student.gradeProgress", "Grade Progress")}</CardTitle>
         <Select value={selectedSubject} onValueChange={setSelectedSubject}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select subject" />
+            <SelectValue
+              placeholder={t("student.selectSubject", "Select subject")}
+            />
           </SelectTrigger>
           <SelectContent>
             {subjects.map((subject) => (
@@ -120,7 +144,7 @@ export function GradesGraph({ recentGrades }) {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {recentGrades && recentGrades.length > 0 ? (
           <ChartContainer config={chartConfig} className="h-[200px] w-full">
             <LineChart
@@ -130,7 +154,7 @@ export function GradesGraph({ recentGrades }) {
                 left: 0,
                 right: 20,
                 top: 10,
-                bottom: 5
+                bottom: 5,
               }}
             >
               <CartesianGrid vertical={false} />
@@ -186,8 +210,13 @@ export function GradesGraph({ recentGrades }) {
           <div className="flex items-center justify-center h-[200px] text-muted-foreground">
             <div className="text-center">
               <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No grade data available</p>
-              <p className="text-sm">Grades will appear here once they are added</p>
+              <p>{t("student.noGradesAvailable", "No grade data available")}</p>
+              <p className="text-sm">
+                {t(
+                  "student.noGradesYet",
+                  "Grades will appear here once they are added",
+                )}
+              </p>
             </div>
           </div>
         )}

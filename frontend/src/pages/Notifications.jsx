@@ -229,7 +229,7 @@ const Notifications = () => {
             handleRefresh();
             toast.info(t('notifications.refreshing'));
           }}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
         >
           <RefreshCw className="mr-2 w-4 h-4" />
           {t('notifications.refresh')}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, BookOpen } from 'lucide-react';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -7,6 +7,12 @@ import { useTranslation } from 'react-i18next';
 export function MonthlyCalendar({ scheduleData = {} }) {
   const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    const handleReset = () => setCurrentDate(new Date());
+    window.addEventListener('reset-calendar', handleReset);
+    return () => window.removeEventListener('reset-calendar', handleReset);
+  }, []);
 
   // Get current month and year
   const currentMonth = currentDate.getMonth();
@@ -238,17 +244,8 @@ export function MonthlyCalendar({ scheduleData = {} }) {
         </Button>
       </div>
 
-      {/* Today Button and Legend */}
-      <div className="flex items-start justify-between mb-4 gap-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentDate(new Date())}
-          className="h-8 px-4 text-xs font-semibold hover:bg-primary hover:text-primary-foreground border-primary/20 hover:border-primary transition-all duration-200 shadow-sm hover:shadow-md shrink-0"
-        >
-          <CalendarIcon className="w-3 h-3 mr-1.5" />
-          {t('calendar.today') || 'Today'}
-        </Button>
+      {/* Legend */}
+      <div className="flex items-center justify-end mb-4 gap-4">
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground justify-end">
           {Object.entries(subjectColors).length > 0 ? (

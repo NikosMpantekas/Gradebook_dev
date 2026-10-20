@@ -133,7 +133,7 @@ const GradeDetail = () => {
       <Button
         variant="outline"
         onClick={handleBack}
-        className="mb-6"
+        className="mb-6 transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         {t('grades.backToGrades', 'Back to Grades')}

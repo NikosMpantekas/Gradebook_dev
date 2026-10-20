@@ -399,47 +399,38 @@ const AdminDashboard = () => {
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <span>{t('admin.quickActions')}</span>
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
+          <CardTitle>{t('admin.quickActions')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button onClick={handleManageUsers} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-              <Users className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-              <span className="text-center group-hover:text-primary">{t('admin.manageUsers')}</span>
+            <Button onClick={handleManageUsers} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group">
+              <Users className="h-8 w-8 mb-2" />
+              <span className="text-center">{t('admin.manageUsers')}</span>
             </Button>
             
-            <Button onClick={handleManageSchools} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-              <Building className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-              <span className="text-center group-hover:text-primary">{t('admin.schoolBranches')}</span>
+            <Button onClick={handleManageSchools} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group">
+              <Building className="h-8 w-8 mb-2" />
+              <span className="text-center">{t('admin.schoolBranches')}</span>
             </Button>
             
-            <Button onClick={handleManageGrades} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-              <Book className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-              <span className="text-center group-hover:text-primary">{t('admin.manageGrades')}</span>
+            <Button onClick={handleManageGrades} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group">
+              <Book className="h-8 w-8 mb-2" />
+              <span className="text-center">{t('admin.manageGrades')}</span>
             </Button>
             
-            <Button onClick={handleManageSubjects} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-              <FileText className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-              <span className="text-center group-hover:text-primary">{t('admin.manageClasses')}</span>
+            <Button onClick={handleManageSubjects} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group">
+              <FileText className="h-8 w-8 mb-2" />
+              <span className="text-center">{t('admin.manageClasses')}</span>
             </Button>
             
-            <Button onClick={handleStudentProgress} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-              <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-              <span className="text-center group-hover:text-primary">{t('admin.studentProgress')}</span>
+            <Button onClick={handleStudentProgress} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group">
+              <BarChart3 className="h-8 w-8 mb-2" />
+              <span className="text-center">{t('admin.studentProgress')}</span>
             </Button>
-            <Button onClick={handleManageSchedule} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-            style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
-              <Calendar className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-              <span className="text-center group-hover:text-primary">{t('admin.manageSchedule')}</span>
+            <Button onClick={handleManageSchedule} variant="ghost" className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group">
+              <Calendar className="h-8 w-8 mb-2" />
+              <span className="text-center">{t('admin.manageSchedule')}</span>
             </Button>
           </div>
         </CardContent>
@@ -448,11 +439,8 @@ const AdminDashboard = () => {
       {/* Recent Notifications */}
       {isFeatureEnabled('enableNotifications') && (
         <Card className="flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
-              <Bell className="h-5 w-5 text-primary" />
-              <span>{t('admin.recentNotifications')}</span>
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
+            <CardTitle>{t('admin.recentNotifications')}</CardTitle>
             <Button 
               variant="outline" 
               size="sm" 

@@ -381,11 +381,16 @@ const TeacherDashboard = () => {
             {/* Calendar - spans 2 rows on desktop */}
             <div className="order-2 lg:order-1 lg:row-span-2 h-full flex flex-col">
               <Card className="flex flex-col lg:min-h-[620px] h-full overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <span>{t('student.monthlyCalendar')}</span>
-                  </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
+                  <CardTitle>{t('student.monthlyCalendar')}</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.dispatchEvent(new Event('reset-calendar'))}
+                    className="transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary"
+                  >
+                    {t('calendar.today', 'Today')}
+                  </Button>
                 </CardHeader>
                 <CardContent className="p-0 flex flex-col flex-1">
                   <MonthlyCalendar scheduleData={scheduleForDashboard} />
@@ -396,49 +401,42 @@ const TeacherDashboard = () => {
             {/* Quick Actions */}
             <div className="order-1 lg:order-2">
               <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Zap className="h-5 w-5 text-primary" />
-                    <span>{t('teacher.quickActions')}</span>
-                  </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
+                  <CardTitle>{t('teacher.quickActions')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     <Button
                       onClick={() => navigate('/app/teacher/grades/manage')}
                       variant="ghost"
-                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-                      style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
                     >
-                      <Edit className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                      <span className="text-center group-hover:text-primary">{t('teacher.manageGrades')}</span>
+                      <Edit className="h-8 w-8 mb-2" />
+                      <span className="text-center">{t('teacher.manageGrades')}</span>
                     </Button>
                     <Button
                       onClick={() => navigate('/app/teacher/notifications/create')}
                       variant="ghost"
-                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-                      style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
                     >
-                      <Bell className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                      <span className="text-center group-hover:text-primary">{t('teacher.sendNotifications')}</span>
+                      <Bell className="h-8 w-8 mb-2" />
+                      <span className="text-center">{t('teacher.sendNotifications')}</span>
                     </Button>
                     <Button
                       onClick={() => navigate('/app/teacher/schedule')}
                       variant="ghost"
-                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-                      style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
                     >
-                      <Calendar className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                      <span className="text-center group-hover:text-primary">{t('teacher.schedule')}</span>
+                      <Calendar className="h-8 w-8 mb-2" />
+                      <span className="text-center">{t('teacher.schedule')}</span>
                     </Button>
                     <Button
                       onClick={() => navigate('/app/teacher/student-stats')}
                       variant="ghost"
-                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg hover:border-primary/50 hover:bg-primary/5 group"
-                      style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+                      className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
                     >
-                      <BarChart3 className="h-8 w-8 mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-                      <span className="text-center group-hover:text-primary">{t('teacher.studentStats')}</span>
+                      <BarChart3 className="h-8 w-8 mb-2" />
+                      <span className="text-center">{t('teacher.studentStats')}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -448,11 +446,8 @@ const TeacherDashboard = () => {
             {/* Notifications */}
             <div className="order-3 lg:order-3 h-full flex flex-col">
               <Card className="flex flex-col h-full">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Bell className="h-5 w-5 text-primary" />
-                    <span>{t('teacher.recentNotifications')}</span>
-                  </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
+                  <CardTitle>{t('teacher.recentNotifications')}</CardTitle>
                   <Button
                     variant="outline"
                     size="sm"

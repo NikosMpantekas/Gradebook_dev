@@ -257,22 +257,34 @@ const ParentDashboard = () => {
 
           {/* Quick Actions */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 h-[4.5rem] px-6 py-3">
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Button onClick={navigateToGrades} className="h-20 flex-col">
-                  <Award className="h-6 w-6 mb-2" />
-                  View Grades
+                <Button
+                  onClick={navigateToGrades}
+                  variant="ghost"
+                  className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
+                >
+                  <Award className="h-8 w-8 mb-2" />
+                  <span className="text-center">View Grades</span>
                 </Button>
-                <Button onClick={navigateToNotifications} variant="outline" className="h-20 flex-col">
-                  <Bell className="h-6 w-6 mb-2" />
-                  Check Notifications
+                <Button
+                  onClick={navigateToNotifications}
+                  variant="ghost"
+                  className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
+                >
+                  <Bell className="h-8 w-8 mb-2" />
+                  <span className="text-center">Check Notifications</span>
                 </Button>
-                <Button onClick={navigateToPayments} variant="outline" className="h-20 flex-col">
-                  <CreditCard className="h-6 w-6 mb-2" />
-                  View Payments
+                <Button
+                  onClick={navigateToPayments}
+                  variant="ghost"
+                  className="h-full p-4 flex-col bg-muted/30 border border-border/50 rounded-lg transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary group"
+                >
+                  <CreditCard className="h-8 w-8 mb-2" />
+                  <span className="text-center">View Payments</span>
                 </Button>
               </div>
             </CardContent>

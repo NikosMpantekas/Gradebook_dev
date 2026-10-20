@@ -481,7 +481,7 @@
     "darkTheme": "Σκοτεινό Θέμα",
     "notifications": "Ειδοποιήσεις",
     "emailNotifications": "Ειδοποιήσεις Email",
-    "pushNotifications": "Push Ειδοποιήσεις",
+    "pushNotifications": "Ειδοποιήσεις Push",
     "settingsUpdated": "Οι ρυθμίσεις ενημερώθηκαν επιτυχώς",
     "changePassword": "Αλλαγή Κωδικού Πρόσβασης",
     "currentPassword": "Τρέχων Κωδικός Πρόσβασης",
@@ -622,6 +622,8 @@
   },
   "student": {
     "welcomeBack": "Καλώς ήρθες πίσω",
+    "gradeProgress": "Πρόοδος Βαθμών",
+    "selectSubject": "Επιλέξτε μάθημα",
     "trackProgress": "Παρακολουθήστε την πρόοδο σας.",
     "totalSubjects": "Σύνολο Μαθημάτων",
     "enrolledSubjects": "Εγγεγραμμένα μαθήματα",

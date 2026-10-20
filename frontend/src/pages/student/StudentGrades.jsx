@@ -4,10 +4,6 @@ import { useTheme } from "../../components/theme-provider";
 import {
   Search,
   Eye,
-  TrendingUp,
-  Award,
-  AlertTriangle,
-  CheckCircle,
   XCircle,
   BookOpen,
   Calendar,
@@ -69,9 +65,6 @@ const GradesSkeleton = ({ isMobile, t }) => (
         {[1, 2, 3, 4].map((i) => (
           <Card key={i}>
             <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
-              <div className="flex items-center justify-center mb-2">
-                <Skeleton className="h-5 w-5 rounded-full" />
-              </div>
               <Skeleton className="h-4 w-20 mx-auto mb-1" />
               <Skeleton className="h-8 w-16 mx-auto" />
             </CardContent>
@@ -422,7 +415,7 @@ const StudentGrades = () => {
                   size="sm"
                   onClick={() => handleViewGrade(grade._id)}
                   title={t("student.viewDetails")}
-                  className="hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 gap-2"
+                  className="transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary gap-2"
                 >
                   <Eye className="h-4 w-4" />
                   {t("student.viewDetails")}
@@ -502,7 +495,7 @@ const StudentGrades = () => {
                               size="sm"
                               onClick={() => handleViewGrade(grade._id)}
                               title={t("student.viewDetails")}
-                              className="hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 px-4 py-2"
+                              className="transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary px-4 py-2"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -566,9 +559,6 @@ const StudentGrades = () => {
                 {/* Average Grade */}
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
-                    <div className="flex items-center justify-center mb-2">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                    </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       {t("student.average")}
                     </p>
@@ -581,12 +571,6 @@ const StudentGrades = () => {
                 {/* Highest Grade */}
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
-                    <div className="flex items-center justify-center mb-2">
-                      <Award
-                        className="h-5 w-5"
-                        style={{ color: "hsl(var(--success))" }}
-                      />
-                    </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       {t("student.highest")}
                     </p>
@@ -602,12 +586,6 @@ const StudentGrades = () => {
                 {/* Lowest Grade */}
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
-                    <div className="flex items-center justify-center mb-2">
-                      <AlertTriangle
-                        className="h-5 w-5"
-                        style={{ color: "hsl(var(--error))" }}
-                      />
-                    </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       {t("student.lowest")}
                     </p>
@@ -623,12 +601,6 @@ const StudentGrades = () => {
                 {/* Passing Rate */}
                 <Card>
                   <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
-                    <div className="flex items-center justify-center mb-2">
-                      <CheckCircle
-                        className="h-5 w-5"
-                        style={{ color: "hsl(var(--info))" }}
-                      />
-                    </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       {t("student.passingRate")}
                     </p>
@@ -756,6 +728,7 @@ const StudentGrades = () => {
                       size="sm"
                       onClick={() => handleChangePage(page - 1)}
                       disabled={page === 0}
+                      className="transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary disabled:hover:scale-100 disabled:hover:shadow-none disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                     >
                       {t("student.previous")}
                     </Button>
@@ -766,6 +739,7 @@ const StudentGrades = () => {
                       disabled={
                         (page + 1) * rowsPerPage >= filteredGrades.length
                       }
+                      className="transition-[transform,box-shadow] hover:scale-105 hover:shadow-md hover:border-primary hover:bg-primary/5 hover:text-primary disabled:hover:scale-100 disabled:hover:shadow-none disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                     >
                       {t("student.next")}
                     </Button>

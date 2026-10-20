@@ -620,6 +620,8 @@
   },
   "student": {
     "welcomeBack": "Welcome back",
+    "gradeProgress": "Grade Progress",
+    "selectSubject": "Select subject",
     "trackProgress": "Track your academic progress and stay updated with your studies.",
     "totalSubjects": "Total Subjects",
     "enrolledSubjects": "Enrolled subjects",
