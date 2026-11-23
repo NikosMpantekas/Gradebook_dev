@@ -37,7 +37,7 @@ const { setSchoolContext } = require('../middleware/schoolIdMiddleware');
 router.post('/login', loginUser);
 router.post('/refresh-token', refreshToken);
 router.post('/forgot-password', forgotPasswordRequest);
-router.post('/logout', protect, logoutUser); 
+router.post('/logout', logoutUser);
 
 // Protected routes - accessible to authenticated users
 router.get('/me', protect, getMe);

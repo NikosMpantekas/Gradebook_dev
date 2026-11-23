@@ -250,6 +250,7 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    sessionsRevokedAt: Date,
     lastPasswordChange: {
       type: Date,
       default: Date.now,

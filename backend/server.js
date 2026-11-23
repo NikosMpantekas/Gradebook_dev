@@ -87,6 +87,13 @@ const authLimiter = rateLimit({
 app.use("/api/users/login", authLimiter);
 app.use("/api/users/forgot-password", authLimiter);
 app.use("/api/users/change-password", authLimiter);
+app.use("/api/users/refresh-token", rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

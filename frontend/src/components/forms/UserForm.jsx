@@ -91,7 +91,7 @@ const UserForm = ({
         department: user.department || '',
         password: '',
         confirmPassword: '',
-        isActive: user.isActive !== undefined ? user.isActive : true,
+        isActive: user.active ?? user.isActive ?? true,
         permissions: {
           canManageUsers: user.permissions?.canManageUsers || false,
           canManageGrades: user.permissions?.canManageGrades || false,

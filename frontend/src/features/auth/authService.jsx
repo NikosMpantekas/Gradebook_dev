@@ -340,19 +340,19 @@ const updateProfile = async (userData, token) => {
   return response.data;
 };
 // Automatic token refresh function
-const refreshTokenFunction = async (refreshToken) => {
-  try {
-    const response = await axios.post(`${API_USERS}/refresh-token`, {
-      refreshToken: refreshToken
-    });
-    if (response.data && response.data.token) {
-      return response.data;
-    } else {
-      throw new Error('Invalid refresh response');
-    }
-  } catch (error) {
-    throw error;
+const pendingRefreshes = new Map();
+
+const refreshTokenFunction = refreshToken => {
+  if (!pendingRefreshes.has(refreshToken)) {
+    const request = axios.post(`${API_USERS}/refresh-token`, { refreshToken })
+      .then(({ data }) => {
+        if (!data?.token) throw new Error('Invalid refresh response');
+        return data;
+      })
+      .finally(() => pendingRefreshes.delete(refreshToken));
+    pendingRefreshes.set(refreshToken, request);
   }
+  return pendingRefreshes.get(refreshToken);
 };
 // Setup axios response interceptor for automatic token expiration handling with refresh
 axios.interceptors.response.use(
@@ -362,6 +362,7 @@ axios.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    if (originalRequest?.url === `${API_USERS}/refresh-token`) return Promise.reject(error);
     // Handle 401 errors (token expiration)
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       const errorMessage = error.response.data?.message || '';

@@ -69,6 +69,7 @@ const EditUser = () => {
     mobilePhone: '',
     personalEmail: '',
     role: '',
+    isActive: true,
     changePassword: false,
     password: '',
     confirmPassword: '',
@@ -135,6 +136,7 @@ const EditUser = () => {
           mobilePhone: user.mobilePhone || '',
           personalEmail: user.personalEmail || '',
           role: user.role || '',
+          isActive: user.active !== false,
           changePassword: false,
           password: '',
           confirmPassword: '',
@@ -299,6 +301,7 @@ const EditUser = () => {
         secretaryPermissions: formData.secretaryPermissions,
       };
 
+      if (formData.isActive !== (userData.active !== false)) updateData.isActive = formData.isActive;
       if (formData.changePassword) {
         updateData.password = formData.password;
       }
@@ -520,6 +523,12 @@ const EditUser = () => {
                   {t('admin.createUserPage.editUserPage.form.roleCannotBeChanged')}
                 </span>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch id="accountActive" checked={formData.isActive}
+                onCheckedChange={isActive => setFormData(prev => ({ ...prev, isActive }))} />
+              <Label htmlFor="accountActive">{t('common.active')}</Label>
             </div>
 
             {/* Password Change Section */}

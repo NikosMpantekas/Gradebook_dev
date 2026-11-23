@@ -1,3 +1,5 @@
+const { createHash, randomUUID } = require("node:crypto");
+const RefreshSession = require("../models/refreshSessionModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("../utils/asyncHandler");
@@ -245,7 +247,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
       // Generate access token and refresh token for superadmin
       const accessToken = generateToken(isSuperAdmin._id);
-      const userRefreshToken = generateRefreshToken(isSuperAdmin._id);
+      const userRefreshToken = await generateRefreshToken(isSuperAdmin._id);
 
       logger.info("AUTH", "Superadmin tokens generated", {
         id: isSuperAdmin._id,
@@ -254,14 +256,6 @@ const loginUser = asyncHandler(async (req, res) => {
         accessTokenLength: accessToken?.length,
         refreshTokenLength: userRefreshToken?.length,
       });
-
-      // Save refresh token also using updateOne to bypass validation
-      await User.updateOne(
-        { _id: isSuperAdmin._id },
-        { refreshToken: userRefreshToken },
-      );
-
-      logger.info("AUTH", "Superadmin data updated successfully");
 
       // Prepare response object with detailed logging
       const responseObj = {
@@ -451,122 +445,39 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-// In-memory blacklist for revoked refresh tokens (in production, use Redis)
-const revokedRefreshTokens = new Set();
+const hashRefreshToken = token => createHash("sha256").update(token).digest("hex");
 
-// Rate limiting map for refresh attempts
-const refreshAttempts = new Map();
-
-// @desc    Refresh access token using refresh token
-// @route   POST /api/users/refresh-token
-// @access  Public
-const refreshToken = asyncHandler(async (req, res) => {
-  const { refreshToken: tokenFromRequest } = req.body;
-  const clientIP = req.ip || req.connection.remoteAddress;
-
-  if (!tokenFromRequest) {
-    res.status(400);
-    throw new Error("Refresh token is required");
-  }
-
-  // Rate limiting check
-  const now = Date.now();
-  const userKey = `${clientIP}:${tokenFromRequest.slice(-10)}`; // Use last 10 chars as identifier
-  const attempts = refreshAttempts.get(userKey) || {
-    count: 0,
-    resetTime: now + 15 * 60 * 1000,
-  };
-
-  if (now > attempts.resetTime) {
-    // Reset attempts after 15 minutes
-    attempts.count = 0;
-    attempts.resetTime = now + 15 * 60 * 1000;
-  }
-
-  if (attempts.count >= 10) {
-    console.warn(
-      `[SECURITY] Refresh token rate limit exceeded for IP: ${clientIP}`,
-    );
-    res.status(429);
-    throw new Error("Too many refresh attempts. Please try again later.");
-  }
-
-  attempts.count += 1;
-  refreshAttempts.set(userKey, attempts);
-
+function verifyRefreshToken(token) {
   try {
-    // Check if token is blacklisted (revoked)
-    if (revokedRefreshTokens.has(tokenFromRequest)) {
-      console.warn(
-        `[SECURITY] Attempted use of revoked refresh token from IP: ${clientIP}`,
-      );
-      res.status(401);
-      throw new Error("Refresh token has been revoked");
-    }
+    const claims = jwt.verify(token, process.env.JWT_SECRET);
+    if (claims.type === "refresh" && mongoose.isObjectIdOrHexString(claims.sid)) return claims;
+  } catch {}
+  return null;
+}
 
-    // Verify the refresh token
-    const decoded = jwt.verify(tokenFromRequest, process.env.JWT_SECRET);
+const refreshToken = asyncHandler(async (req, res) => {
+  const token = req.body.refreshToken;
+  const claims = verifyRefreshToken(token);
+  if (!claims) return res.status(401).json({ message: "Invalid refresh token" });
 
-    // Check if it's actually a refresh token
-    if (!decoded.type || decoded.type !== "refresh") {
-      res.status(401);
-      throw new Error("Invalid refresh token");
-    }
-
-    // Find the user
-    const user = await User.findById(decoded.id).select("-password");
-
-    if (!user) {
-      res.status(401);
-      throw new Error("User not found");
-    }
-
-    // SECURITY: Token Rotation - Generate both new access AND refresh tokens
-    const newAccessToken = generateToken(user._id, decoded.schoolId);
-    const newRefreshToken = generateRefreshToken(user._id, decoded.schoolId);
-
-    // SECURITY: Blacklist the old refresh token (prevents replay attacks)
-    revokedRefreshTokens.add(tokenFromRequest);
-
-    // Reset rate limiting on successful refresh
-    refreshAttempts.delete(userKey);
-
-    // Return new tokens (BOTH access and refresh)
-    res.json({
-      token: newAccessToken, // Frontend expects 'token' field
-      refreshToken: newRefreshToken, // New refresh token for next rotation
-      message: "Tokens refreshed successfully",
-    });
-  } catch (error) {
-    console.error(
-      `[SECURITY] Refresh token validation failed for IP ${clientIP}:`,
-      error.message,
-    );
-    res.status(401);
-    throw new Error("Invalid refresh token - " + error.message);
+  const user = await User.findById(claims.id).select("schoolId active sessionsRevokedAt");
+  if (!user || user.active === false || (user.sessionsRevokedAt && claims.iat * 1000 < user.sessionsRevokedAt.getTime())) {
+    return res.status(401).json({ message: "Session expired" });
   }
+
+  const nextToken = signRefreshToken(user._id, claims.sid);
+  const result = await RefreshSession.updateOne(
+    { _id: claims.sid, userId: user._id, tokenHash: hashRefreshToken(token), expiresAt: { $gt: new Date() } },
+    { $set: { tokenHash: hashRefreshToken(nextToken), expiresAt: new Date(jwt.decode(nextToken).exp * 1000) } }
+  );
+  if (!result.modifiedCount) return res.status(401).json({ message: "Session expired" });
+  res.json({ token: generateToken(user._id, user.schoolId), refreshToken: nextToken, message: "Tokens refreshed successfully" });
 });
 
-// @desc    Logout user and revoke refresh token
-// @route   POST /api/users/logout
-// @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
-  const clientIP = req.ip || req.connection.remoteAddress;
-
-  // If refresh token is provided, add it to blacklist
-  if (refreshToken) {
-    revokedRefreshTokens.add(refreshToken);
-
-    // Clear any rate limiting attempts for this token
-    const userKey = `${clientIP}:${refreshToken.slice(-10)}`;
-    refreshAttempts.delete(userKey);
-  }
-
-  res.json({
-    message: "Logged out successfully",
-    revokedToken: !!refreshToken,
-  });
+  const claims = verifyRefreshToken(req.body.refreshToken);
+  if (claims) await RefreshSession.deleteOne({ _id: claims.sid, userId: claims.id });
+  res.json({ message: "Logged out successfully", revokedToken: !!claims });
 });
 
 // @desc    Get user data
@@ -907,6 +818,16 @@ const getUserById = asyncHandler(async (req, res) => {
       query.schoolId = req.user.schoolId;
     }
 
+    if (req.user.role !== "superadmin" && !req.user.schoolId) return res.status(403).json({ message: "School required" });
+    const fullProfile = ["admin", "superadmin"].includes(req.user.role) || String(req.user._id) === req.params.id;
+    if (!fullProfile) {
+      const linked = req.user.role === "parent" && req.user.linkedStudentIds?.some(id => String(id) === req.params.id);
+      if (!linked) return res.status(403).json({ message: "Profile access denied" });
+      const student = await User.findOne({ ...query, role: "student" }).select("name");
+      if (!student) return res.status(404).json({ message: "Student not found" });
+      return res.json(student);
+    }
+
     // Find user with populated fields
     const user = await User.findOne(query)
       .select("-password")
@@ -975,7 +896,11 @@ const updateUser = asyncHandler(async (req, res) => {
       }
       user.role = req.body.role;
     }
-    if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
+    if (req.body.isActive !== undefined) {
+      if (typeof req.body.isActive !== "boolean") return res.status(400).json({ message: "isActive must be a boolean" });
+      if (user.active && !req.body.isActive) user.sessionsRevokedAt = new Date();
+      user.active = req.body.isActive;
+    }
     if (req.body.mobilePhone !== undefined)
       user.mobilePhone = req.body.mobilePhone;
     if (req.body.personalEmail !== undefined)
@@ -1052,7 +977,8 @@ const updateUser = asyncHandler(async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
-      isActive: updatedUser.isActive,
+      active: updatedUser.active,
+      isActive: updatedUser.active,
       schools: updatedUser.schools,
       directions: updatedUser.directions,
       subjects: updatedUser.subjects,
@@ -1079,7 +1005,7 @@ const getTeachers = asyncHandler(async (req, res) => {
     const teachers = await User.find({
       schoolId: req.user.schoolId,
       role: "teacher",
-      isActive: { $ne: false },
+      active: { $ne: false },
     })
       .select("_id name email")
       .lean();
@@ -1192,20 +1118,15 @@ const generateToken = (id, schoolId = null) => {
   });
 };
 
-// Generate refresh token (longer-lived)
-const generateRefreshToken = (id, schoolId = null) => {
-  const payload = { id, type: "refresh" };
+const signRefreshToken = (id, sid) => jwt.sign(
+  { id, sid, type: "refresh" }, process.env.JWT_SECRET, { expiresIn: "30d", jwtid: randomUUID() }
+);
 
-  // Include schoolId in the token payload if provided
-  if (schoolId) {
-    payload.schoolId = schoolId;
-  }
-
-  // Use the same secret for refresh token
-  // We only need the 'type' field to differentiate between token types
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "30d", // Refresh tokens typically have longer expiry
-  });
+const generateRefreshToken = async id => {
+  const sid = new mongoose.Types.ObjectId();
+  const token = signRefreshToken(id, sid);
+  await RefreshSession.create({ _id: sid, userId: id, tokenHash: hashRefreshToken(token), expiresAt: new Date(jwt.decode(token).exp * 1000) });
+  return token;
 };
 
 // @desc    Change user password
@@ -1526,6 +1447,7 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
     const students = await User.find({
       _id: { $in: req.user.linkedStudentIds },
       role: "student",
+      schoolId: req.user.schoolId,
     }).select("-password");
 
     console.log("Found linked students:", {
@@ -1547,6 +1469,7 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
       students.map(async (student) => {
         // Get recent grades for this student
         const recentGrades = await Grade.find({
+          schoolId: req.user.schoolId,
           student: student._id,
         })
           .populate("subject", "name")
@@ -1596,6 +1519,7 @@ const getStudentsDataForParent = asyncHandler(async (req, res) => {
     const allStudentIds = students.map((s) => s._id);
 
     const allRecentGrades = await Grade.find({
+      schoolId: req.user.schoolId,
       student: { $in: allStudentIds },
     })
       .populate("student", "name")
@@ -1768,6 +1692,17 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
     throw new Error("Please provide name, email, password, and role");
   }
 
+  const creatingParent = role === "student" && createParentAccount;
+  const parentPassword = req.body.parentPassword || req.body.parentGeneratedPassword;
+  if (creatingParent && (
+    typeof parentName !== "string" || !parentName.trim() ||
+    typeof parentEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail) ||
+    typeof parentPassword !== "string" || parentPassword.trim().length < 6
+  )) {
+    res.status(400);
+    throw new Error("A parent name, valid email and password of at least 6 characters are required");
+  }
+
   // Check if user already exists
   const userExists = await User.findOne({ email });
   if (userExists) {
@@ -1821,18 +1756,8 @@ const createUserByAdmin = asyncHandler(async (req, res) => {
 
     // Create parent account if requested and user is a student
     let parentAccount = null;
-    if (
-      createParentAccount &&
-      role === "student" &&
-      parentName &&
-      parentEmail
-    ) {
+    if (creatingParent) {
       try {
-        // Use the actual parent password from the request body
-        const parentPassword =
-          req.body.parentPassword ||
-          req.body.parentGeneratedPassword ||
-          "TempPass123!";
         const hashedParentPassword = await bcrypt.hash(parentPassword, 10);
 
         // Create parent account data

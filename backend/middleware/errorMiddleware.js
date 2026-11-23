@@ -43,7 +43,6 @@ const errorHandler = (err, req, res, _) => {
     ip: req.ip,
     userId: req.user?._id,
     userRole: req.user?.role,
-    requestBody: statusCode !== 401 ? req.body : "[REDACTED]", // Don't log credentials
     errorName: err.name,
     stack: err.stack,
   };

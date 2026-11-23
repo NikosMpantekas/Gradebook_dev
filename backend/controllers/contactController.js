@@ -138,6 +138,11 @@ const sendContactMessage = asyncHandler(async (req, res) => {
 // @desc    Get all contact messages (for admin)
 // @route   GET /api/contact
 // @access  Private (admin only)
+const contactScope = user => {
+  if (user.role === 'superadmin') return {};
+  return user.schoolId ? { schoolId: user.schoolId } : { _id: { $in: [] } };
+};
+
 const getContactMessages = asyncHandler(async (req, res) => {
   // Check if user is admin or superadmin
   if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
@@ -152,17 +157,7 @@ const getContactMessages = asyncHandler(async (req, res) => {
       schoolId: req.user.schoolId?.toString() || null,
     });
 
-    // Superadmins can see all messages including public ones
-    // Regular admins see messages within their school, plus any untagged messages
-    const filter = req.user.role === 'superadmin'
-      ? {}
-      : {
-          $or: [
-            { schoolId: req.user.schoolId },
-            { schoolId: null },
-            { schoolId: { $exists: false } }
-          ]
-        };
+    const filter = contactScope(req.user);
 
     console.log('[CONTACT] Using filter', JSON.stringify(filter));
 
@@ -170,17 +165,6 @@ const getContactMessages = asyncHandler(async (req, res) => {
     const messages = await Contact.find(filter)
       .sort({ createdAt: -1 })
       .lean();
-
-    // Debug diagnostics for admins
-    if (req.user.role === 'admin') {
-      const [bySchool, byNull, byMissing, total] = await Promise.all([
-        Contact.countDocuments({ schoolId: req.user.schoolId }),
-        Contact.countDocuments({ schoolId: null }),
-        Contact.countDocuments({ schoolId: { $exists: false } }),
-        Contact.countDocuments({}),
-      ]);
-      console.log('[CONTACT] DEBUG: schoolId match breakdown — bySchool:', bySchool, 'byNull:', byNull, 'byMissing:', byMissing, 'total:', total);
-    }
 
     console.log('[CONTACT] Retrieved messages count', messages.length);
 
@@ -218,19 +202,11 @@ const updateContactMessage = asyncHandler(async (req, res) => {
     console.log('[CONTACT] updateContactMessage', { id, status, read, hasReply: !!adminReply });
 
     // ENHANCED FIX: First verify the message exists before attempting updates
-    const existingMessage = await Contact.findById(id);
+    const existingMessage = await Contact.findOne({ _id: id, ...contactScope(req.user) });
     if (!existingMessage) {
       console.log('[CONTACT] updateContactMessage - not found', { id });
       res.status(404);
       throw new Error('Message not found');
-    }
-
-    // Apply school filtering if user is not superadmin
-    if (req.user.role !== 'superadmin' && req.user.schoolId) {
-      if (existingMessage.schoolId && existingMessage.schoolId.toString() !== req.user.schoolId.toString()) {
-        res.status(403);
-        throw new Error('Not authorized to update this message');
-      }
     }
 
     // Build update object with guaranteed defaults
@@ -283,12 +259,7 @@ const updateContactMessage = asyncHandler(async (req, res) => {
     // Save the updated message
     await existingMessage.save();
 
-    // Reload to make sure we have the latest version
-    const updatedMessage = await Contact.findById(id);
-
-    console.log('[CONTACT] updateContactMessage - updated', { id, status: updatedMessage.status });
-
-    res.json(updatedMessage);
+    res.json(existingMessage);
   } catch (error) {
     console.error('[CONTACT] updateContactMessage - error', error);
     if (!res.statusCode || res.statusCode === 200) {
@@ -303,18 +274,8 @@ const updateContactMessage = asyncHandler(async (req, res) => {
 // @access  Private (any authenticated user)
 const getUserMessages = asyncHandler(async (req, res) => {
   try {
-    // Admins/superadmins see all messages for their school (plus untagged); regular users see only their own
-    const filter = (req.user.role === 'superadmin')
-      ? {}
-      : (req.user.role === 'admin')
-        ? {
-            $or: [
-              { schoolId: req.user.schoolId },
-              { schoolId: null },
-              { schoolId: { $exists: false } }
-            ]
-          }
-        : { user: req.user._id, schoolId: req.user.schoolId };
+    const filter = contactScope(req.user);
+    if (!['superadmin', 'admin'].includes(req.user.role)) filter.user = req.user._id;
 
     // CRITICAL FIX: First get ALL messages that might need fixing
     const allUserMessages = await Contact.find(filter).lean();
@@ -603,24 +564,8 @@ const deleteContactMessage = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Find the message to check if it exists and get schoolId for filtering
-    const message = await Contact.findById(id);
-
-    if (!message) {
-      res.status(404);
-      throw new Error('Contact message not found');
-    }
-
-    // Apply school filtering if user is not superadmin
-    if (req.user.role !== 'superadmin' && req.user.schoolId) {
-      if (message.schoolId && message.schoolId.toString() !== req.user.schoolId.toString()) {
-        res.status(403);
-        throw new Error('Not authorized to delete this message');
-      }
-    }
-
-    // Delete the message
-    await Contact.findByIdAndDelete(id);
+    const message = await Contact.findOneAndDelete({ _id: id, ...contactScope(req.user) });
+    if (!message) return res.status(404).json({ message: 'Contact message not found' });
 
     res.json({
       success: true,

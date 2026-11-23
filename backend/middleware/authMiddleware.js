@@ -77,6 +77,11 @@ const protect = asyncHandler(async (req, res, next) => {
         throw new Error('User not found');
       }
 
+      if (user.sessionsRevokedAt && (!decoded.iat || decoded.iat * 1000 < user.sessionsRevokedAt.getTime())) {
+        res.status(401);
+        throw new Error("Session expired. Please sign in again.");
+      }
+
       // Check if user account is active
       if (user.active === false) {
         logger.warn('AUTH', `User account is disabled: ${user.email}`);

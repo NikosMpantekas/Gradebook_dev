@@ -1,3 +1,4 @@
+const gradeReadScope = require('../utils/gradeReadScope');
 const asyncHandler = require('../utils/asyncHandler');
 const Grade = require('../models/gradeModel');
 const mongoose = require('mongoose');
@@ -20,6 +21,7 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
 
     // Get all grades for this student
     const grades = await Grade.find({
+      $and: [await gradeReadScope(req.user)],
       student: studentId,
       schoolId: req.user.schoolId
     })
@@ -149,6 +151,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
     const studentIds = students.map(student => student._id);
     const groups = await Grade.aggregate([
       { $match: {
+        $and: [await gradeReadScope(req.user)],
         student: { $in: studentIds },
         schoolId: Grade.schema.path('schoolId').cast(req.user.schoolId)
       } },
@@ -243,6 +246,7 @@ const getStudentDetailedStats = asyncHandler(async (req, res) => {
 
     // Get all grades for this student with full details
     const grades = await Grade.find({
+      $and: [await gradeReadScope(req.user)],
       student: studentId,
       schoolId: req.user.schoolId
     })

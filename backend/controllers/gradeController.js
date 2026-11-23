@@ -1,3 +1,4 @@
+const gradeReadScope = require('../utils/gradeReadScope');
 const asyncHandler = require('../utils/asyncHandler');
 const Grade = require('../models/gradeModel');
 const User = require('../models/userModel');
@@ -190,7 +191,7 @@ const getAllGrades = asyncHandler(async (req, res) => {
     }
     
     // Get all grades with the filter
-    const grades = await Grade.find(filter)
+    const grades = await Grade.find({ $and: [filter, await gradeReadScope(req.user)] })
       .populate('student', 'name email')
       .populate('subject', 'name')
       .populate('teacher', 'name')
@@ -255,6 +256,7 @@ const getStudentGrades = asyncHandler(async (req, res) => {
 
     // Find all grades for this student in this school
     const grades = await Grade.find({
+      $and: [await gradeReadScope(req.user)],
       student: req.params.id,
       schoolId: req.user.schoolId // Multi-tenancy: Only find grades in the same school
     })
@@ -266,7 +268,7 @@ const getStudentGrades = asyncHandler(async (req, res) => {
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getStudentGrades controller:', error.message);
-    res.status(error.statusCode || 500);
+    res.status(error.statusCode || (res.statusCode >= 400 ? res.statusCode : 500));
     throw new Error(error.message || 'Error retrieving student grades');
   }
 });
@@ -337,7 +339,7 @@ const getParentStudentsGrades = asyncHandler(async (req, res) => {
     
   } catch (error) {
     console.error('Error in getParentStudentsGrades controller:', error.message);
-    res.status(error.statusCode || 500);
+    res.status(error.statusCode || (res.statusCode >= 400 ? res.statusCode : 500));
     throw new Error(error.message || 'Error retrieving parent students grades');
   }
 });
@@ -353,13 +355,7 @@ const getGradesBySubject = asyncHandler(async (req, res) => {
       schoolId: req.user.schoolId // Multi-tenancy: Only find grades in the same school
     };
     
-    // Students can only view their own grades
-    if (req.user.role === 'student') {
-      query.student = req.user._id;
-    }
-    
-    // Find all grades for this subject with proper filtering
-    const grades = await Grade.find(query)
+    const grades = await Grade.find({ ...query, $and: [await gradeReadScope(req.user)] })
       .populate('student', 'name')
       .populate('teacher', 'name')
       .sort({ date: -1 })
@@ -368,6 +364,7 @@ const getGradesBySubject = asyncHandler(async (req, res) => {
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getGradesBySubject controller:', error.message);
+    throw error;
   }
 });
 
@@ -387,39 +384,7 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
       schoolId: req.user.schoolId // Multi-tenancy: Only find grades in the same school
     };
     
-    // For teachers: only show grades for subjects they teach in classes with students
-    if (req.user.role === 'teacher') {
-      // Get all classes where this teacher teaches
-      const teacherClasses = await Class.find({
-        teachers: req.user._id,
-        schoolId: req.user.schoolId
-      });
-
-      if (teacherClasses.length === 0) {
-
-        return res.status(200).json([]);
-      }
-      
-      // Extract subject names from classes
-      const teacherSubjects = [...new Set(teacherClasses.map(cls => cls.subject))];
-
-      // Get subject IDs from names
-      const subjectObjects = await Subject.find({
-        name: { $in: teacherSubjects },
-        schoolId: req.user.schoolId
-      });
-      const subjectIds = subjectObjects.map(s => s._id);
-      
-      // Extract all student IDs from teacher's classes
-      const allStudentIds = [...new Set(teacherClasses.flatMap(cls => cls.students))];
-
-      // Filter grades by teacher's subjects and students
-      gradeQuery.subject = { $in: subjectIds };
-      gradeQuery.student = { $in: allStudentIds };
-    }
-    
-    // Find all grades matching the query
-    const grades = await Grade.find(gradeQuery)
+    const grades = await Grade.find({ ...gradeQuery, $and: [await gradeReadScope(req.user)] })
       .populate('student', 'name')
       .populate('subject', 'name')
       .sort({ date: -1 })
@@ -428,8 +393,7 @@ const getGradesByTeacher = asyncHandler(async (req, res) => {
     res.status(200).json(grades);
   } catch (error) {
     console.error('Error in getGradesByTeacher controller:', error.message);
-    res.status(500);
-    throw new Error('Error retrieving teacher grades');
+    throw error;
   }
 });
 
@@ -441,6 +405,7 @@ const getGradeById = asyncHandler(async (req, res) => {
     // Find the grade in the current school
     const grade = await Grade.findOne({
       _id: req.params.id,
+      $and: [await gradeReadScope(req.user)],
       schoolId: req.user.schoolId // Multi-tenancy: Only find grades in the same school
     })
       .populate('student', 'name email')
@@ -470,7 +435,7 @@ const getGradeById = asyncHandler(async (req, res) => {
     res.status(200).json(grade);
   } catch (error) {
     console.error('Error in getGradeById controller:', error.message);
-    res.status(error.statusCode || 500);
+    res.status(error.statusCode || (res.statusCode >= 400 ? res.statusCode : 500));
     throw new Error(error.message || 'Error retrieving grade');
   }
 });
