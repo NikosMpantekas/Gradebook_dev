@@ -1,4 +1,4 @@
-const logger = require('../utils/logger');
+const logger = require("../utils/logger");
 
 /**
  * Not Found Error Handler - When a route is not found
@@ -7,13 +7,13 @@ const notFound = (req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
 
   // Log the 404 error with request details
-  logger.warn('SERVER', `404 Not Found: ${req.originalUrl}`, {
+  logger.warn("SERVER", `404 Not Found: ${req.originalUrl}`, {
     method: req.method,
     ip: req.ip,
     headers: req.headers,
     path: req.path,
     params: req.params,
-    query: req.query
+    query: req.query,
   });
 
   res.status(404);
@@ -31,8 +31,8 @@ const errorHandler = (err, req, res, _) => {
   res.status(statusCode);
 
   // Log detailed error information
-  const logLevel = statusCode >= 500 ? 'error' : 'warn';
-  const category = 'SERVER';
+  const logLevel = statusCode >= 500 ? "error" : "warn";
+  const category = "SERVER";
   const message = `${statusCode} Error: ${err.message}`;
 
   // Additional contextual data for debugging
@@ -43,19 +43,27 @@ const errorHandler = (err, req, res, _) => {
     ip: req.ip,
     userId: req.user?._id,
     userRole: req.user?.role,
-    requestBody: statusCode !== 401 ? req.body : '[REDACTED]', // Don't log credentials
+    requestBody: statusCode !== 401 ? req.body : "[REDACTED]", // Don't log credentials
     errorName: err.name,
-    stack: err.stack
+    stack: err.stack,
   };
 
   // If authentication related, log additional details
-  if (req.path.includes('/login') || req.path.includes('/auth') || statusCode === 401) {
-    logger.warn('AUTH', `Authentication error: ${err.message}`, logData);
+  if (
+    req.path.includes("/login") ||
+    req.path.includes("/auth") ||
+    statusCode === 401
+  ) {
+    logger.warn("AUTH", `Authentication error: ${err.message}`, logData);
   }
 
   // If superadmin related, add special logging
-  if (req.path.includes('/superadmin')) {
-    logger.error('SUPERADMIN', `Error in superadmin route: ${err.message}`, logData);
+  if (req.path.includes("/superadmin")) {
+    logger.error(
+      "SUPERADMIN",
+      `Error in superadmin route: ${err.message}`,
+      logData,
+    );
   }
 
   // Log the error with appropriate level
@@ -65,9 +73,9 @@ const errorHandler = (err, req, res, _) => {
   res.json({
     message: err.message,
     // Only include stack trace in development
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    stack: process.env.NODE_ENV === "production" ? null : err.stack,
     // Include a request ID for correlation in logs
-    requestId: req.id || Math.random().toString(36).substring(2, 15)
+    requestId: req.id || Math.random().toString(36).substring(2, 15),
   });
 };
 

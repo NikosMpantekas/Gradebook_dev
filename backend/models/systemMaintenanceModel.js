@@ -82,9 +82,9 @@ const systemMaintenanceSchema = mongoose.Schema(
 systemMaintenanceSchema.index({}, { unique: true });
 
 // Static method to get current maintenance status
-systemMaintenanceSchema.statics.getCurrentStatus = async function () {
+systemMaintenanceSchema.statics.getCurrentStatus = async function (projection) {
   try {
-    let maintenanceDoc = await this.findOne();
+    let maintenanceDoc = await this.findOne({}, projection);
 
     // Create default document if none exists
     if (!maintenanceDoc) {

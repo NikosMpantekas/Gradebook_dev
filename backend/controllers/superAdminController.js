@@ -146,22 +146,19 @@ const getSchoolOwners = asyncHandler(async (_, res) => {
     .select("-password")
     .populate("school", "name address email emailDomain active");
 
-  // Get user counts for each school
-  const ownersWithUserCounts = await Promise.all(
-    schoolOwners.map(async (owner) => {
-      const userCount = await User.countDocuments({
-        schoolId: owner.schoolId || owner.school?._id,
-      });
-
-      return {
-        ...owner.toObject(),
-        userCount,
-        schoolName: owner.school?.name || "No School",
-        packType: owner.packType || "lite",
-        monthlyPrice: owner.monthlyPrice || 0,
-      };
-    }),
-  );
+  const schoolIds = schoolOwners.map(owner => owner.schoolId || owner.school?._id || null);
+  const counts = await User.aggregate([
+    { $match: { schoolId: { $in: schoolIds } } },
+    { $group: { _id: '$schoolId', count: { $sum: 1 } } }
+  ]);
+  const countsBySchool = new Map(counts.map(row => [String(row._id), row.count]));
+  const ownersWithUserCounts = schoolOwners.map((owner, index) => ({
+    ...owner.toObject(),
+    userCount: countsBySchool.get(String(schoolIds[index])) ?? 0,
+    schoolName: owner.school?.name || "No School",
+    packType: owner.packType || "lite",
+    monthlyPrice: owner.monthlyPrice || 0,
+  }));
 
   res.status(200).json(ownersWithUserCounts);
 });

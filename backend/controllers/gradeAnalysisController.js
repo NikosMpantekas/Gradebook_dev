@@ -117,6 +117,16 @@ const getStudentPeriodAnalysis = asyncHandler(async (req, res) => {
     });
 
     // Calculate analysis for each subject
+    const subjectIds = Object.values(subjectGroups).map(grades => grades[0].subject?._id).filter(Boolean);
+    const averages = await Grade.aggregate([
+      { $match: {
+        schoolId: Grade.schema.path('schoolId').cast(req.user.schoolId),
+        subject: { $in: subjectIds },
+        date: gradeQuery.date
+      } },
+      { $group: { _id: '$subject', average: { $avg: '$value' } } }
+    ]);
+    const averagesBySubject = new Map(averages.map(row => [String(row._id), row.average]));
     const subjectAnalysis = {};
     
     for (const [subjectName, grades] of Object.entries(subjectGroups)) {
@@ -130,19 +140,7 @@ const getStudentPeriodAnalysis = asyncHandler(async (req, res) => {
       const studentAverage = gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length;
 
       // Calculate class average for this subject in the same period
-      let classAverage = 0;
-      if (subjectId) {
-        const classGrades = await Grade.find({
-          subject: subjectId,
-          schoolId: req.user.schoolId,
-          date: { $gte: parsedStartDate, $lte: parsedEndDate }
-        });
-        
-        if (classGrades.length > 0) {
-          const classGradeValues = classGrades.map(g => g.value);
-          classAverage = classGradeValues.reduce((sum, val) => sum + val, 0) / classGradeValues.length;
-        }
-      }
+      const classAverage = averagesBySubject.get(String(subjectId)) ?? 0;
 
       subjectAnalysis[subjectName] = {
         grades: grades.map(grade => ({

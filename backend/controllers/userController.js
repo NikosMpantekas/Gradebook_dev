@@ -36,39 +36,39 @@ const sendCredentialsEmail = async ({
           <h1 style="color: #1976d2; margin: 0;">📚 GradeBook</h1>
           <p style="color: #666; margin: 5px 0 0 0;">Your Educational Management System</p>
         </div>
-        
+
         <h2 style="color: #333; margin-bottom: 20px;">Welcome to GradeBook!</h2>
-        
+
         <p style="color: #555; line-height: 1.6;">Hello <strong>${name}</strong>,</p>
-        
+
         <p style="color: #555; line-height: 1.6;">
           Your account has been created in the GradeBook system with the role of <strong>${role}</strong>.
           ${role === "parent" ? `This account is linked to your child <strong>${studentName}</strong>, allowing you to monitor their academic progress, grades, and school communications.` : "You can now access the system using the credentials below."}
         </p>
-        
+
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1976d2;">
           <h3 style="color: #1976d2; margin-top: 0;">🔐 Login Credentials</h3>
           <p style="margin: 10px 0;"><strong>Email:</strong> ${loginEmail}</p>
           <p style="margin: 10px 0;"><strong>Password:</strong> <code style="background: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${password}</code></p>
         </div>
-        
+
         <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
           <h4 style="color: #856404; margin-top: 0;">⚠️ Important Security Notice</h4>
           <p style="color: #856404; margin: 0; line-height: 1.5;">
-            For your security, you will be required to change this password when you first log in. 
+            For your security, you will be required to change this password when you first log in.
             Please choose a strong, unique password that only you know.
           </p>
         </div>
-        
+
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/login" 
+          <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/login"
              style="background-color: #1976d2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
             🚀 Login to GradeBook
           </a>
         </div>
-        
+
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        
+
         <p style="color: #888; font-size: 12px; text-align: center; margin: 0;">
           This email was sent from GradeBook System. If you did not expect this email, please contact your administrator.
         </p>
@@ -1145,14 +1145,19 @@ const deleteUser = asyncHandler(async (req, res) => {
         const Subscription = require("../models/subscriptionModel");
         await Subscription.deleteMany({ user: req.params.id }).session(session);
       } catch (subscriptionError) {
-        console.warn(`PUSH_CLEANUP: Failed to clean up subscriptions`, subscriptionError.message);
+        console.warn(
+          `PUSH_CLEANUP: Failed to clean up subscriptions`,
+          subscriptionError.message,
+        );
       }
 
-      if (userToDelete.role === 'student') {
+      if (userToDelete.role === "student") {
         const Grade = require("../models/gradeModel");
         const Attendance = require("../models/attendanceModel");
         await Grade.deleteMany({ student: req.params.id }).session(session);
-        await Attendance.deleteMany({ studentId: req.params.id }).session(session);
+        await Attendance.deleteMany({ studentId: req.params.id }).session(
+          session,
+        );
       }
 
       await User.findByIdAndDelete(req.params.id).session(session);

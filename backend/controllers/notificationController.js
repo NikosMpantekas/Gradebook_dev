@@ -351,31 +351,6 @@ const createNotification = asyncHandler(async (req, res) => {
     console.log('[PUSH_SECURITY]', `Found ${subscriptions.length} push subscriptions for intended recipients only`);
     console.log('[PUSH_SECURITY] Subscription user IDs:', subscriptions.map(sub => sub.userId.toString()));
 
-    // EMERGENCY DEBUG: Get ALL push subscriptions to check for sharing
-    const allSubscriptions = await PushSubscription.find({ isActive: true }).select('userId endpoint');
-    console.log('[EMERGENCY_DEBUG] ALL ACTIVE PUSH SUBSCRIPTIONS:');
-    allSubscriptions.forEach((sub, index) => {
-      console.log(`[EMERGENCY_DEBUG] ${index + 1}. User: ${sub.userId} | Endpoint: ${sub.endpoint.substring(0, 50)}...`);
-    });
-
-    // Check for endpoint sharing
-    const endpointMap = new Map();
-    allSubscriptions.forEach(sub => {
-      if (!endpointMap.has(sub.endpoint)) {
-        endpointMap.set(sub.endpoint, []);
-      }
-      endpointMap.get(sub.endpoint).push(sub.userId.toString());
-    });
-
-    console.log('[EMERGENCY_DEBUG] ENDPOINT SHARING ANALYSIS:');
-    for (const [endpoint, userIds] of endpointMap) {
-      if (userIds.length > 1) {
-        console.log(`[EMERGENCY_DEBUG] ❌ SHARED ENDPOINT: ${endpoint.substring(0, 50)}... used by users: ${userIds.join(', ')}`);
-      } else {
-        console.log(`[EMERGENCY_DEBUG] ✅ UNIQUE ENDPOINT: ${endpoint.substring(0, 50)}... used by user: ${userIds[0]}`);
-      }
-    }
-
     // Send push notifications (if web push is enabled)
     if (subscriptions.length > 0) {
       const webpush = require('web-push');

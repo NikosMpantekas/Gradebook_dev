@@ -14,7 +14,7 @@ const checkMaintenanceMode = asyncHandler(async (req, res, next) => {
       return next();
     }
 
-    const maintenanceDoc = await SystemMaintenance.getCurrentStatus();
+    const maintenanceDoc = await SystemMaintenance.getCurrentStatus("isMaintenanceMode maintenanceMessage estimatedCompletion allowedRoles");
 
     if (!maintenanceDoc.isMaintenanceMode) {
       return next();

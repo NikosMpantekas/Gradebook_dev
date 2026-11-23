@@ -1,4 +1,6 @@
 const express = require("express");
+const PushSubscription = require("../models/pushSubscriptionModel");
+const asyncHandler = require("../utils/asyncHandler");
 const router = express.Router();
 const {
   createSchoolOwner,
@@ -38,6 +40,16 @@ router.get("/schools", getSchoolsForNotifications);
 router.get("/users/search", searchUsersForNotifications);
 
 // System logs routes
+router.get("/push-subscriptions/shared", asyncHandler(async (_, res) => {
+  const shared = await PushSubscription.aggregate([
+    { $match: { isActive: true } },
+    { $group: { _id: "$endpoint", users: { $addToSet: "$userId" } } },
+    { $match: { "users.1": { $exists: true } } },
+    { $project: { _id: 0, users: 1 } }
+  ]);
+  res.json(shared);
+}));
+
 router.get("/logs", getSystemLogs);
 router.get("/pm2-status", getPM2Status);
 

@@ -1,5 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
 const School = require("../models/schoolModel");
+const SchoolPermissions = require("../models/schoolPermissionsModel");
 const mongoose = require("mongoose");
 
 
@@ -83,6 +84,22 @@ const getSchools = asyncHandler(async (req, res) => {
     if (req.user.role === "superadmin") {
       // Superadmin can see all schools
       console.log("Fetching all schools for superadmin");
+      if (req.query.include === "features") {
+        const [schools, permissions] = await Promise.all([
+          School.find({}).select("name").lean(),
+          SchoolPermissions.find({}).select("schoolId features.enableCalendar features.enableRatingSystem features.enablePayments")
+        ]);
+        const defaults = new SchoolPermissions().features;
+        const bySchool = new Map(permissions.map(row => [String(row.schoolId), row.features]));
+        return res.json(schools.map(school => {
+          const features = bySchool.get(String(school._id)) ?? defaults;
+          return { ...school, features: {
+            enableCalendar: features.enableCalendar,
+            enableRatingSystem: features.enableRatingSystem,
+            enablePayments: features.enablePayments
+          } };
+        }));
+      }
       schools = await School.find({});
     } else if (req.user.role === "admin") {
       // Get the admin's email domain to filter schools

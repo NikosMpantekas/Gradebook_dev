@@ -532,7 +532,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       <ScrollArea className="flex-1 px-3 py-4 space-y-1">
         <nav className="space-y-2">
           {permissionsLoading && !isSuperAdmin ? (
-            // ponytail: uniform skeleton placeholders for entire nav while permissions load
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 py-3 px-4">
                 <Skeleton className="h-5 w-5 rounded flex-shrink-0" />

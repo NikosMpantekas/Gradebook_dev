@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 const ManageSchoolFeatures = () => {
   const navigate = useNavigate();
-  const { user, token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,43 +35,12 @@ const ManageSchoolFeatures = () => {
 
       const config = {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${user.token}`
         }
       };
 
-      const schoolsResponse = await axios.get(`${API_URL}/api/schools`, config);
-      
-      const schoolsWithFeatures = await Promise.all(
-        schoolsResponse.data.map(async (school) => {
-          try {
-            const permissionsResponse = await axios.get(
-              `${API_URL}/api/schools/${school._id}/permissions`,
-              config
-            );
-            
-            return {
-              ...school,
-              features: permissionsResponse.data?.features || {
-                enableCalendar: false,
-                enableRatingSystem: false,
-                enablePayments: false
-              }
-            };
-          } catch (err) {
-            console.error(`Error fetching features for school ${school._id}:`, err);
-            return {
-              ...school,
-              features: {
-                enableCalendar: false,
-                enableRatingSystem: false,
-                enablePayments: false
-              }
-            };
-          }
-        })
-      );
-
-      setSchools(schoolsWithFeatures);
+      const { data } = await axios.get(`${API_URL}/api/schools?include=features`, config);
+      setSchools(data);
     } catch (err) {
       console.error('Error fetching schools:', err);
       setError('Failed to load schools. Please try again.');
@@ -107,12 +76,12 @@ const ManageSchoolFeatures = () => {
       const config = {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${user.token}`
         }
       };
 
       await axios.put(
-        `${API_URL}/api/schools/${schoolId}/permissions`,
+        `${API_URL}/api/school-permissions/${schoolId}`,
         { features: school.features },
         config
       );

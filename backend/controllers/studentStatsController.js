@@ -117,7 +117,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
     if (req.user.role === 'admin') {
       // Admin can see all students in their school
       console.log('[StudentStats] Admin access - fetching all students');
-      students = await User.find(studentQuery).select('_id name email');
+      students = await User.find(studentQuery).select('_id name email').lean();
     } else if (req.user.role === 'teacher') {
       // Teacher can only see students from their assigned classes
       console.log('[StudentStats] Teacher access - fetching students from assigned classes');
@@ -138,7 +138,7 @@ const getStudentStats = asyncHandler(async (req, res) => {
       // Add student ID filter to the query
       studentQuery._id = { $in: studentIds };
 
-      students = await User.find(studentQuery).select('_id name email');
+      students = await User.find(studentQuery).select('_id name email').lean();
     } else {
       res.status(403);
       throw new Error('Not authorized to view student statistics');
@@ -146,72 +146,48 @@ const getStudentStats = asyncHandler(async (req, res) => {
 
     console.log(`[StudentStats] Found ${students.length} students matching criteria`);
 
-    // Fetch all grades for these students at once
-    const studentIds = students.map(s => s._id);
-    const allGrades = await Grade.find({
-      student: { $in: studentIds },
-      schoolId: req.user.schoolId
-    }).populate('subject', 'name').lean();
-    
-    // Group grades by student
-    const gradesByStudent = {};
-    allGrades.forEach(grade => {
-      const sId = grade.student.toString();
-      if (!gradesByStudent[sId]) gradesByStudent[sId] = [];
-      gradesByStudent[sId].push(grade);
-    });
+    const studentIds = students.map(student => student._id);
+    const groups = await Grade.aggregate([
+      { $match: {
+        student: { $in: studentIds },
+        schoolId: Grade.schema.path('schoolId').cast(req.user.schoolId)
+      } },
+      { $group: {
+        _id: { student: '$student', subject: '$subject' },
+        count: { $sum: 1 },
+        total: { $sum: '$value' },
+        highest: { $max: '$value' },
+        lowest: { $min: '$value' }
+      } },
+      { $lookup: {
+        from: 'subjects', localField: '_id.subject', foreignField: '_id', as: 'subject'
+      } },
+      { $project: { student: '$_id.student', subject: { $first: '$subject.name' }, count: 1, total: 1, highest: 1, lowest: 1 } }
+    ]);
 
-    // Calculate statistics for each student
-    const studentStats = students.map((student) => {
-      const grades = gradesByStudent[student._id.toString()] || [];
-
-      // Calculate statistics
-      const gradeCount = grades.length;
-      const gradeValues = grades.map(g => g.value);
-      const averageGrade = gradeCount > 0
-        ? Math.round((gradeValues.reduce((sum, val) => sum + val, 0) / gradeCount) * 100) / 100
-        : 0;
-
-      // Get subject breakdown
-      const subjectStats = {};
-      grades.forEach(grade => {
-        const subjectName = grade.subject?.name || 'Unknown Subject';
-        if (!subjectStats[subjectName]) {
-          subjectStats[subjectName] = {
-            count: 0,
-            total: 0,
-            average: 0
-          };
-        }
-        subjectStats[subjectName].count++;
-        subjectStats[subjectName].total += grade.value;
-      });
-
-      // Calculate averages for each subject
-      Object.keys(subjectStats).forEach(subject => {
-        const stats = subjectStats[subject];
-        stats.average = Math.round((stats.total / stats.count) * 100) / 100;
-      });
-
-      // Find highest and lowest grades
-      const highestGrade = gradeCount > 0 ? Math.max(...gradeValues) : 0;
-      const lowestGrade = gradeCount > 0 ? Math.min(...gradeValues) : 0;
-
-      return {
-        student: {
-          _id: student._id,
-          name: student.name,
-          email: student.email
-        },
-        statistics: {
-          gradeCount,
-          averageGrade,
-          highestGrade,
-          lowestGrade,
-          subjectStats
-        }
-      };
-    });
+    const byStudent = new Map(students.map(student => [String(student._id), {
+      student,
+      statistics: { gradeCount: 0, averageGrade: 0, highestGrade: 0, lowestGrade: 0, subjectStats: Object.create(null) }
+    }]));
+    for (const group of groups) {
+      const stats = byStudent.get(String(group.student)).statistics;
+      stats.lowestGrade = stats.gradeCount ? Math.min(stats.lowestGrade, group.lowest) : group.lowest;
+      stats.highestGrade = Math.max(stats.highestGrade, group.highest);
+      stats.gradeCount += group.count;
+      const name = group.subject || 'Unknown Subject';
+      const subject = stats.subjectStats[name] ??= { count: 0, total: 0 };
+      subject.count += group.count;
+      subject.total += group.total;
+    }
+    const studentStats = [...byStudent.values()];
+    for (const { statistics } of studentStats) {
+      let total = 0;
+      for (const subject of Object.values(statistics.subjectStats)) {
+        subject.average = Math.round(subject.total / subject.count * 100) / 100;
+        total += subject.total;
+      }
+      if (statistics.gradeCount) statistics.averageGrade = Math.round(total / statistics.gradeCount * 100) / 100;
+    }
 
     // Sort by student name
     studentStats.sort((a, b) => a.student.name.localeCompare(b.student.name));

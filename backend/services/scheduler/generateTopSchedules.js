@@ -90,7 +90,11 @@ const generateTopSchedules = async (classIds, options = {}, schoolId) => {
   const validCandidates = [];
   let attempts = 0;
 
+  const lengths = Object.values(classSlotSets).map(sets => sets.length);
+  if (lengths.includes(0)) return [];
+
   while (attempts < MAX_ATTEMPTS) {
+    if (attempts > 0 && lengths.every(length => attempts % length === 0)) break;
     attempts++;
 
     const assignments = classes.map((cls) => {

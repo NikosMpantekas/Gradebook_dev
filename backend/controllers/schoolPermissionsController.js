@@ -88,10 +88,9 @@ const updateSchoolPermissions = asyncHandler(async (req, res) => {
     }
     
     // Update the features
-    permissions.features = {
-      ...permissions.features,
-      ...features
-    };
+    for (const [key, value] of Object.entries(features)) {
+      permissions.set(`features.${key}`, value);
+    }
     
     permissions.updatedBy = req.user._id;
     permissions.lastUpdated = new Date();

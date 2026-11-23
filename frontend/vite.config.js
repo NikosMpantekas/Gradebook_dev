@@ -42,6 +42,14 @@ export default defineConfig({
       filename: 'sw.js',
       manifest: false, // Use existing manifest.json in public/
       injectManifest: {
+        manifestTransforms: [async entries => {
+          if (process.env.NODE_ENV !== 'production') return { manifest: entries, warnings: [] };
+          const html = fs.readFileSync(path.resolve(__dirname, 'build/index.html'), 'utf8');
+          return {
+            manifest: entries.filter(({ url }) => !url.startsWith('assets/') || html.includes(`"/${url}"`)),
+            warnings: [],
+          };
+        }],
         globPatterns: ['**/*.{js,css,html,png,jpg,svg,json}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },

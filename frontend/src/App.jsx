@@ -50,58 +50,58 @@ import Notifications from "./pages/Notifications";
 import NotificationDetail from "./pages/NotificationDetail";
 import UserContactMessages from "./pages/UserContactMessages";
 import ContactMessages from "./pages/ContactMessages";
-import Schedule from "./pages/common/Schedule";
-import StudentStats from "./pages/common/StudentStats";
-import StudentStatsPrint from "./pages/common/StudentStatsPrint";
-import PrintGradePage from "./pages/print/PrintGradePage";
+const Schedule = React.lazy(() => import("./pages/common/Schedule"));
+const StudentStats = React.lazy(() => import("./pages/common/StudentStats"));
+const StudentStatsPrint = React.lazy(() => import("./pages/common/StudentStatsPrint"));
+const PrintGradePage = React.lazy(() => import("./pages/print/PrintGradePage"));
 
 // Teacher Pages
-import TeacherDashboard from "./pages/teacher/TeacherDashboard";
-import TeacherAttendance from "./pages/teacher/TeacherAttendance";
+const TeacherDashboard = React.lazy(() => import("./pages/teacher/TeacherDashboard"));
+const TeacherAttendance = React.lazy(() => import("./pages/teacher/TeacherAttendance"));
 
 // Student Pages
-import StudentDashboard from "./pages/student/StudentDashboard";
-import StudentGrades from "./pages/student/StudentGrades";
-import GradeDetail from "./pages/student/GradeDetail";
-import RatingSubmission from "./pages/student/RatingSubmission";
+const StudentDashboard = React.lazy(() => import("./pages/student/StudentDashboard"));
+const StudentGrades = React.lazy(() => import("./pages/student/StudentGrades"));
+const GradeDetail = React.lazy(() => import("./pages/student/GradeDetail"));
+const RatingSubmission = React.lazy(() => import("./pages/student/RatingSubmission"));
 
 // Parent Pages
-import ParentDashboard from "./pages/ParentDashboard";
-import ParentGrades from "./pages/parent/ParentGrades";
-import ParentPayments from "./pages/parent/Payments";
+const ParentDashboard = React.lazy(() => import("./pages/ParentDashboard"));
+const ParentGrades = React.lazy(() => import("./pages/parent/ParentGrades"));
+const ParentPayments = React.lazy(() => import("./pages/parent/Payments"));
 
 // Teacher Pages
-import ManageGrades from "./pages/teacher/ManageGrades";
-import CreateGradeSimple from "./pages/teacher/CreateGradeSimple";
-import NotificationsManager from "./pages/teacher/TeacherNotifications";
-import CreateNotification from "./pages/teacher/CreateNotification";
+const ManageGrades = React.lazy(() => import("./pages/teacher/ManageGrades"));
+const CreateGradeSimple = React.lazy(() => import("./pages/teacher/CreateGradeSimple"));
+const NotificationsManager = React.lazy(() => import("./pages/teacher/TeacherNotifications"));
+const CreateNotification = React.lazy(() => import("./pages/teacher/CreateNotification"));
 
 // Admin Pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ManageUsers from "./pages/admin/ManageUsers";
-import CreateUserErrorWrapper from "./pages/admin/CreateUserErrorWrapper";
-import EditUser from "./pages/admin/EditUser";
-import AdminContactMessages from "./pages/admin/ContactMessages";
-import ManageClasses from "./pages/admin/ManageClasses";
-import SchoolBranchManager from "./pages/admin/SchoolBranchManager";
-import RatingManager from "./pages/admin/RatingManager";
-import RatingStatistics from "./pages/admin/RatingStatistics";
-import SystemMaintenance from "./pages/superadmin/SystemMaintenance";
-import AdminPayments from "./pages/admin/Payments";
-import WeeklyAttendanceManagement from "./pages/admin/WeeklyAttendanceManagement";
-import StudentAttendanceView from "./pages/student/StudentAttendanceView";
-import ScheduleWizard from "./pages/admin/ScheduleWizard";
+const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
+const ManageUsers = React.lazy(() => import("./pages/admin/ManageUsers"));
+const CreateUserErrorWrapper = React.lazy(() => import("./pages/admin/CreateUserErrorWrapper"));
+const EditUser = React.lazy(() => import("./pages/admin/EditUser"));
+const AdminContactMessages = React.lazy(() => import("./pages/admin/ContactMessages"));
+const ManageClasses = React.lazy(() => import("./pages/admin/ManageClasses"));
+const SchoolBranchManager = React.lazy(() => import("./pages/admin/SchoolBranchManager"));
+const RatingManager = React.lazy(() => import("./pages/admin/RatingManager"));
+const RatingStatistics = React.lazy(() => import("./pages/admin/RatingStatistics"));
+const SystemMaintenance = React.lazy(() => import("./pages/superadmin/SystemMaintenance"));
+const AdminPayments = React.lazy(() => import("./pages/admin/Payments"));
+const WeeklyAttendanceManagement = React.lazy(() => import("./pages/admin/WeeklyAttendanceManagement"));
+const StudentAttendanceView = React.lazy(() => import("./pages/student/StudentAttendanceView"));
+const ScheduleWizard = React.lazy(() => import("./pages/admin/ScheduleWizard"));
 import ErrorBoundary from "./components/common/ErrorBoundary";
 
 // SuperAdmin Pages
-import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
-import CreateSchoolOwner from "./pages/superadmin/CreateSchoolOwner";
-import SchoolOwnerDetails from "./pages/superadmin/SchoolOwnerDetails";
-import ManageSchoolFeatures from "./pages/superadmin/ManageSchoolFeatures";
-import SuperAdminNotifications from "./pages/superadmin/SuperAdminNotifications";
-import MaintenanceAnnouncements from "./pages/superadmin/MaintenanceAnnouncements";
-import SchoolPermissionsManager from "./components/superadmin/SchoolPermissionsManager";
-import SystemLogs from "./pages/superadmin/SystemLogs";
+const SuperAdminDashboard = React.lazy(() => import("./pages/superadmin/SuperAdminDashboard"));
+const CreateSchoolOwner = React.lazy(() => import("./pages/superadmin/CreateSchoolOwner"));
+const SchoolOwnerDetails = React.lazy(() => import("./pages/superadmin/SchoolOwnerDetails"));
+const ManageSchoolFeatures = React.lazy(() => import("./pages/superadmin/ManageSchoolFeatures"));
+const SuperAdminNotifications = React.lazy(() => import("./pages/superadmin/SuperAdminNotifications"));
+const MaintenanceAnnouncements = React.lazy(() => import("./pages/superadmin/MaintenanceAnnouncements"));
+const SchoolPermissionsManager = React.lazy(() => import("./components/superadmin/SchoolPermissionsManager"));
+const SystemLogs = React.lazy(() => import("./pages/superadmin/SystemLogs"));
 
 // Modern Push notification service
 import PushNotificationManager from "./services/PushNotificationManager";
@@ -112,7 +112,7 @@ import { appConfig, initAppConfig } from "./config/appConfig";
 // Feature toggles context provider
 import { FeatureToggleProvider } from "./contexts/FeatureToggleContext";
 import { BetaProvider } from "./contexts/BetaContext";
-import BetaManager from "./pages/superadmin/BetaManager";
+const BetaManager = React.lazy(() => import("./pages/superadmin/BetaManager"));
 
 // Custom components
 import HomeScreenPrompt from "./components/HomeScreenPrompt";
@@ -865,7 +865,9 @@ function App() {
           <FeatureToggleProvider>
             <BetaProvider>
               <HomeScreenPrompt />
-              <RouterProvider router={router} />
+              <React.Suspense fallback={<span role="status">Loading…</span>}>
+                <RouterProvider router={router} />
+              </React.Suspense>
             </BetaProvider>
           </FeatureToggleProvider>
           <Toaster />
